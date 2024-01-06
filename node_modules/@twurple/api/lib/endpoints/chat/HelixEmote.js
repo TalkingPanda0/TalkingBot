@@ -1,0 +1,86 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HelixEmote = void 0;
+const tslib_1 = require("tslib");
+const common_1 = require("@twurple/common");
+/**
+ * A Twitch emote.
+ */
+let HelixEmote = class HelixEmote extends common_1.DataObject {
+    /**
+     * The ID of the emote.
+     */
+    get id() {
+        return this[common_1.rawDataSymbol].id;
+    }
+    /**
+     * The name of the emote.
+     */
+    get name() {
+        return this[common_1.rawDataSymbol].name;
+    }
+    /**
+     * The formats that the emote is available in.
+     */
+    get formats() {
+        return this[common_1.rawDataSymbol].format;
+    }
+    /**
+     * The scales that the emote is available in.
+     */
+    get scales() {
+        return this[common_1.rawDataSymbol].scale;
+    }
+    /**
+     * The theme modes that the emote is available in.
+     */
+    get themeModes() {
+        return this[common_1.rawDataSymbol].theme_mode;
+    }
+    /**
+     * Gets the URL of the emote image in the given scale.
+     *
+     * @param scale The scale of the image.
+     */
+    getImageUrl(scale) {
+        return this[common_1.rawDataSymbol].images[`url_${scale}x`];
+    }
+    /**
+     * Gets the URL of the emote image in static format at the given scale and theme mode, or null if a static emote image at that scale/theme mode doesn't exist.
+     *
+     * @param scale The scale of the image.
+     * @param themeMode The theme mode of the image, either `light` or `dark`.
+     */
+    getStaticImageUrl(scale = '1.0', themeMode = 'light') {
+        if (this[common_1.rawDataSymbol].format.includes('static') && this[common_1.rawDataSymbol].scale.includes(scale)) {
+            return this.getFormattedImageUrl(scale, 'static', themeMode);
+        }
+        return null;
+    }
+    /**
+     * Gets the URL of the emote image in animated format at the given scale and theme mode, or null if an animated emote image at that scale/theme mode doesn't exist.
+     *
+     * @param scale The scale of the image.
+     * @param themeMode The theme mode of the image, either `light` or `dark`.
+     */
+    getAnimatedImageUrl(scale = '1.0', themeMode = 'light') {
+        if (this[common_1.rawDataSymbol].format.includes('animated') && this[common_1.rawDataSymbol].scale.includes(scale)) {
+            return this.getFormattedImageUrl(scale, 'animated', themeMode);
+        }
+        return null;
+    }
+    /**
+     * Gets the URL of the emote image in the given scale, format, and theme mode.
+     *
+     * @param scale The scale of the image, either `1.0` (small), `2.0` (medium), or `3.0` (large).
+     * @param format The format of the image, either `static` or `animated`.
+     * @param themeMode The theme mode of the image, either `light` or `dark`.
+     */
+    getFormattedImageUrl(scale = '1.0', format = 'static', themeMode = 'light') {
+        return `https://static-cdn.jtvnw.net/emoticons/v2/${this[common_1.rawDataSymbol].id}/${format}/${themeMode}/${scale}`;
+    }
+};
+HelixEmote = tslib_1.__decorate([
+    (0, common_1.rtfm)('api', 'HelixEmote', 'id')
+], HelixEmote);
+exports.HelixEmote = HelixEmote;

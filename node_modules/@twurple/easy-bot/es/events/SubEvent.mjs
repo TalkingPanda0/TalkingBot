@@ -1,0 +1,189 @@
+import { __decorate } from "tslib";
+import { Enumerable } from '@d-fischer/shared-utils';
+import { toUserName } from '@twurple/chat';
+import { checkRelationAssertion, rtfm } from '@twurple/common';
+/**
+ * An event representing a user subscribing to a channel.
+ *
+ * @meta category events
+ */
+let SubEvent = class SubEvent {
+    /** @internal */
+    constructor(channel, userName, info, msg, bot) {
+        this._broadcasterName = toUserName(channel);
+        this._userName = userName;
+        this._info = info;
+        this._msg = msg;
+        this._bot = bot;
+    }
+    /**
+     * The ID of the broadcaster.
+     */
+    get broadcasterId() {
+        return this._msg.channelId;
+    }
+    /**
+     * The name of the broadcaster.
+     */
+    get broadcasterName() {
+        return this._broadcasterName;
+    }
+    /**
+     * Gets more information about the broadcaster.
+     */
+    async getBroadcaster() {
+        return checkRelationAssertion(await this._bot.api.users.getUserById(this.broadcasterId));
+    }
+    /**
+     * The ID of the user subscribing to the channel.
+     */
+    get userId() {
+        return this._msg.userInfo.userId;
+    }
+    /**
+     * The name of the user subscribing to the channel.
+     */
+    get userName() {
+        return this._userName;
+    }
+    /**
+     * The display name of the user subscribing to the channel.
+     */
+    get userDisplayName() {
+        return this._info.displayName;
+    }
+    /**
+     * Gets more information about the user subscribing to the channel.
+     */
+    async getUser() {
+        return checkRelationAssertion(await this._bot.api.users.getUserById(this.userId));
+    }
+    /**
+     * The plan of the subscription.
+     */
+    get plan() {
+        return this._info.plan;
+    }
+    /**
+     * The display name of the plan of the subscription.
+     */
+    get planName() {
+        return this._info.planName;
+    }
+    /**
+     * Whether the subscription was "paid" for using Prime Gaming.
+     */
+    get isPrime() {
+        return this._info.isPrime;
+    }
+    /**
+     * The number of total months of subscriptions for the channel.
+     */
+    get months() {
+        return this._info.months;
+    }
+    /**
+     * The number of consecutive months of subscriptions for the channel,
+     * or `null` if the user resubscribing does not choose to share that information.
+     */
+    get streak() {
+        var _a;
+        return (_a = this._info.streak) !== null && _a !== void 0 ? _a : null;
+    }
+    /**
+     * The message sent with the subscription, or `null` if there is none.
+     */
+    get message() {
+        var _a;
+        return (_a = this._info.message) !== null && _a !== void 0 ? _a : null;
+    }
+    /**
+     * The full object that contains all the message information.
+     */
+    get messageObject() {
+        return this._msg;
+    }
+    /**
+     * Whether the announced subscription is a continuation of a previously gifted multi-month subscription.
+     */
+    get wasGift() {
+        return !!this._info.originalGiftInfo;
+    }
+    /**
+     * Whether the announced subscription is a continuation of a previously anonymously gifter multi-month subscription.
+     */
+    get wasAnonymousGift() {
+        var _a, _b;
+        return (_b = (_a = this._info.originalGiftInfo) === null || _a === void 0 ? void 0 : _a.anonymous) !== null && _b !== void 0 ? _b : false;
+    }
+    /**
+     * The ID of the user who originally gifted the current multi-month subscription,
+     * or `null` if they were anonymous or the subscription is not a continuation of a multi-month subscription.
+     */
+    get originalGifterId() {
+        var _a, _b;
+        return (_b = (_a = this._info.originalGiftInfo) === null || _a === void 0 ? void 0 : _a.userId) !== null && _b !== void 0 ? _b : null;
+    }
+    /**
+     * The name of the user who originally gifted the current multi-month subscription,
+     * or `null` if they were anonymous or the subscription is not a continuation of a multi-month subscription.
+     */
+    get originalGifterName() {
+        var _a, _b;
+        return (_b = (_a = this._info.originalGiftInfo) === null || _a === void 0 ? void 0 : _a.userName) !== null && _b !== void 0 ? _b : null;
+    }
+    /**
+     * The display name of the user who originally gifted the current multi-month subscription,
+     * or `null` if they were anonymous or the subscription is not a continuation of a multi-month subscription.
+     */
+    get originalGifterDisplayName() {
+        var _a, _b;
+        return (_b = (_a = this._info.originalGiftInfo) === null || _a === void 0 ? void 0 : _a.userDisplayName) !== null && _b !== void 0 ? _b : null;
+    }
+    /**
+     * Gets more information about the user who originally gifted the current multi-month subscription,
+     * or `null` if they were anonymous or the subscription is not a continuation of a multi-month subscription.
+     */
+    async getOriginalGifter() {
+        const id = this.originalGifterId;
+        if (!id) {
+            return null;
+        }
+        return checkRelationAssertion(await this._bot.api.users.getUserById(id));
+    }
+    /**
+     * The total duration of the current multi-month subscription,
+     * or `null` if the subscription is not a continuation of a multi-month subscription.
+     */
+    get originalGiftDuration() {
+        var _a, _b;
+        return (_b = (_a = this._info.originalGiftInfo) === null || _a === void 0 ? void 0 : _a.duration) !== null && _b !== void 0 ? _b : null;
+    }
+    /**
+     * The number of the month out of the total gift duration that was just redeemed,
+     * or `null` if the subscription is not a continuation of a multi-month subscription.
+     */
+    get giftRedeemedMonth() {
+        var _a, _b;
+        return (_b = (_a = this._info.originalGiftInfo) === null || _a === void 0 ? void 0 : _a.redeemedMonth) !== null && _b !== void 0 ? _b : null;
+    }
+};
+__decorate([
+    Enumerable(false)
+], SubEvent.prototype, "_broadcasterName", void 0);
+__decorate([
+    Enumerable(false)
+], SubEvent.prototype, "_userName", void 0);
+__decorate([
+    Enumerable(false)
+], SubEvent.prototype, "_info", void 0);
+__decorate([
+    Enumerable(false)
+], SubEvent.prototype, "_msg", void 0);
+__decorate([
+    Enumerable(false)
+], SubEvent.prototype, "_bot", void 0);
+SubEvent = __decorate([
+    rtfm('easy-bot', 'SubEvent', 'userId')
+], SubEvent);
+export { SubEvent };

@@ -1,0 +1,52 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HelixChatBadgeVersion = void 0;
+const tslib_1 = require("tslib");
+const common_1 = require("@twurple/common");
+/**
+ * A version of a chat badge.
+ */
+let HelixChatBadgeVersion = class HelixChatBadgeVersion extends common_1.DataObject {
+    /**
+     * The badge version ID.
+     */
+    get id() {
+        return this[common_1.rawDataSymbol].id;
+    }
+    /**
+     * Gets an image URL for the given scale.
+     *
+     * @param scale The scale of the badge image.
+     */
+    getImageUrl(scale) {
+        return this[common_1.rawDataSymbol][`image_url_${scale}x`];
+    }
+    /**
+     * The title of the badge.
+     */
+    get title() {
+        return this[common_1.rawDataSymbol].title;
+    }
+    /**
+     * The description of the badge.
+     */
+    get description() {
+        return this[common_1.rawDataSymbol].description;
+    }
+    /**
+     * The action to take when clicking on the badge. Set to `null` if no action is specified.
+     */
+    get clickAction() {
+        return this[common_1.rawDataSymbol].click_action;
+    }
+    /**
+     * The URL to navigate to when clicking on the badge. Set to `null` if no URL is specified.
+     */
+    get clickUrl() {
+        return this[common_1.rawDataSymbol].click_url;
+    }
+};
+HelixChatBadgeVersion = tslib_1.__decorate([
+    (0, common_1.rtfm)('api', 'HelixChatBadgeVersion', 'id')
+], HelixChatBadgeVersion);
+exports.HelixChatBadgeVersion = HelixChatBadgeVersion;
