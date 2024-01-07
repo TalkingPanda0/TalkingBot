@@ -1,10 +1,12 @@
 
-const { StaticAuthProvider } = require('@twurple/auth');
-const { Bot, createBotCommand } =  require('@twurple/easy-bot');
 const { RefreshingAuthProvider } = require('@twurple/auth');
+const { Bot, createBotCommand } =  require('@twurple/easy-bot');
+const { PubSubClient, PubSubRedemptionMessage,PubSubModActionMessage } = require('@twurple/pubsub');
+const { ApiClient } = require('@twurple/api')
 
 // Get the tokens from ../tokens.json
 const { clientId, accessToken, refreshToken, clientSecret } = require('../tokens.json');
+
 
 
 const authProvider = new RefreshingAuthProvider({clientId,clientSecret});
@@ -30,6 +32,7 @@ class Twitch {
     sendTTS = () => {};
     channelName = "";
     bot;
+    pubsubClient;
 
      constructor(sendTTS,channelName){
         this.sendTTS = sendTTS;
@@ -37,10 +40,12 @@ class Twitch {
         
      } 
     async initBot() {
+
         await authProvider.addUserForToken({
             accessToken,
             refreshToken
         }, ['chat']);
+        authProvider.onRefresh(async (userId, newTokenData) => await fs.writeFile(`./tokens.json`, JSON.stringify(newTokenData, null, 4), 'UTF-8'));
         
         const bot = new Bot(
             { 
@@ -89,7 +94,7 @@ class Twitch {
         ]
         }
         );
-    
+        
         bot.onAuthenticationSuccess(() => {
             console.log("\x1b[35m%s\x1b[0m","Twitch setup complete");
             //bot.say(this.channelName,"Talkingbot initiated!");

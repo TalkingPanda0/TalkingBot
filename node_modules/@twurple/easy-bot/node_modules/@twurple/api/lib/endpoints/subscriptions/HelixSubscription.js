@@ -1,0 +1,91 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HelixSubscription = void 0;
+const tslib_1 = require("tslib");
+const common_1 = require("@twurple/common");
+const HelixUserSubscription_1 = require("./HelixUserSubscription");
+/**
+ * A (paid) subscription of a user to a broadcaster.
+ *
+ * @inheritDoc
+ */
+let HelixSubscription = class HelixSubscription extends HelixUserSubscription_1.HelixUserSubscription {
+    /**
+     * The user ID of the broadcaster.
+     */
+    get broadcasterId() {
+        return this[common_1.rawDataSymbol].broadcaster_id;
+    }
+    /**
+     * The name of the broadcaster.
+     */
+    get broadcasterName() {
+        return this[common_1.rawDataSymbol].broadcaster_login;
+    }
+    /**
+     * The display name of the broadcaster.
+     */
+    get broadcasterDisplayName() {
+        return this[common_1.rawDataSymbol].broadcaster_name;
+    }
+    /**
+     * Gets more information about the broadcaster.
+     */
+    async getBroadcaster() {
+        return (0, common_1.checkRelationAssertion)(await this._client.users.getUserById(this[common_1.rawDataSymbol].broadcaster_id));
+    }
+    /**
+     * The user ID of the gifter.
+     */
+    get gifterId() {
+        return this[common_1.rawDataSymbol].is_gift ? this[common_1.rawDataSymbol].gifter_id : null;
+    }
+    /**
+     * The name of the gifter.
+     */
+    get gifterName() {
+        return this[common_1.rawDataSymbol].is_gift ? this[common_1.rawDataSymbol].gifter_login : null;
+    }
+    /**
+     * The display name of the gifter.
+     */
+    get gifterDisplayName() {
+        return this[common_1.rawDataSymbol].is_gift ? this[common_1.rawDataSymbol].gifter_name : null;
+    }
+    /**
+     * Gets more information about the gifter.
+     */
+    async getGifter() {
+        return this[common_1.rawDataSymbol].is_gift
+            ? (0, common_1.checkRelationAssertion)(await this._client.users.getUserById(this[common_1.rawDataSymbol].gifter_id))
+            : null;
+    }
+    /**
+     * The user ID of the subscribed user.
+     */
+    get userId() {
+        return this[common_1.rawDataSymbol].user_id;
+    }
+    /**
+     * The name of the subscribed user.
+     */
+    get userName() {
+        return this[common_1.rawDataSymbol].user_login;
+    }
+    /**
+     * The display name of the subscribed user.
+     */
+    get userDisplayName() {
+        return this[common_1.rawDataSymbol].user_name;
+    }
+    /**
+     * Gets more information about the subscribed user.
+     */
+    async getUser() {
+        return (0, common_1.checkRelationAssertion)(await this._client.users.getUserById(this[common_1.rawDataSymbol].user_id));
+    }
+};
+HelixSubscription = tslib_1.__decorate([
+    (0, common_1.rtfm)('api', 'HelixSubscription', 'userId')
+], HelixSubscription);
+exports.HelixSubscription = HelixSubscription;

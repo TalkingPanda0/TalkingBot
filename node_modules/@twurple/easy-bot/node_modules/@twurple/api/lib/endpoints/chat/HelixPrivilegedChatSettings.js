@@ -1,0 +1,29 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HelixPrivilegedChatSettings = void 0;
+const tslib_1 = require("tslib");
+const common_1 = require("@twurple/common");
+const HelixChatSettings_1 = require("./HelixChatSettings");
+/**
+ * The settings of a broadcaster's chat, with additional privileged data.
+ */
+let HelixPrivilegedChatSettings = class HelixPrivilegedChatSettings extends HelixChatSettings_1.HelixChatSettings {
+    /**
+     * Whether non-moderator messages are delayed.
+     */
+    get nonModeratorChatDelayEnabled() {
+        return this[common_1.rawDataSymbol].non_moderator_chat_delay;
+    }
+    /**
+     * The delay of non-moderator messages, in seconds.
+     *
+     * Is `null` if non-moderator message delay is disabled.
+     */
+    get nonModeratorChatDelay() {
+        return this[common_1.rawDataSymbol].non_moderator_chat_delay_duration;
+    }
+};
+HelixPrivilegedChatSettings = tslib_1.__decorate([
+    (0, common_1.rtfm)('api', 'HelixPrivilegedChatSettings', 'broadcasterId')
+], HelixPrivilegedChatSettings);
+exports.HelixPrivilegedChatSettings = HelixPrivilegedChatSettings;
