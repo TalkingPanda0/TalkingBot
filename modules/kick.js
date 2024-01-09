@@ -9,13 +9,16 @@ function isCommand(message,command){
   return message.trim().startsWith(`!${command}`);
 }
 
+function parseEmotes(message){
+
+  return  message.replace(regex, (match, id, name) => name);
+}
+
 
 function cleanMessage(message){
   message = message.substr(message.indexOf(" ") + 1);
-  
-  // Clean emotes
 
-  return  message.replace(regex, (match, id, name) => name).replaceAll("sweetbabooo-o","");
+  return  parseEmotes(message).replaceAll("sweetbabooo-o","");
 }
 
 
@@ -38,7 +41,6 @@ function initBot(sendChat,sendMessage,sendTTS,channelID){
     );
 
     console.log("\x1b[32m%s\x1b[0m","Kick Setup Complete")
-    sendChat({"text":"message","sender": "jsonDataSub.sender.username","color":"#ffffff"})
   });
 
   chat.on("error", console.error);
@@ -48,17 +50,31 @@ function initBot(sendChat,sendMessage,sendTTS,channelID){
   });
 
   chat.on("message", function message(data) {
-    //sendChat({"text":"message","sender": "jsonDataSub.sender.username","color":"#ffffff"})
     try {
       // Order to get things.
       // decode message to get components needed.
+      let badges = ["https://kick.com/favicon.ico"];
       const dataString = data.toString();
       const jsonData = JSON.parse(dataString);
       const jsonDataSub = JSON.parse(jsonData.data);
-      
       let message = jsonDataSub.content;
 
-      sendChat({"icon":"https://kick.com/favicon.ico","text":message,"sender": jsonDataSub.sender.username,"color":jsonDataSub.sender.identity.color})
+
+
+      jsonBadges = jsonDataSub.sender.identity.badges;
+      jsonBadges.forEach(element => {
+        if(element.type == 'moderator'){
+          badges.push('/kickmod.svg');
+        } else if (element.type === 'subscriber'){
+          badges.push('/kicksub.svg');
+        }
+      });
+      sendChat({
+        "badges":badges,
+        "text": parseEmotes(message),
+        "sender": jsonDataSub.sender.username,
+        "color":jsonDataSub.sender.identity.color
+      })
 
       // Log the message in console for tracker purposes.
       console.log(

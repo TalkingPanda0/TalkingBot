@@ -1,7 +1,6 @@
 
 const { RefreshingAuthProvider } = require('@twurple/auth');
 const { Bot, createBotCommand } = require('@twurple/easy-bot');
-const { PubSubClient, PubSubRedemptionMessage, PubSubModActionMessage } = require('@twurple/pubsub');
 const { ApiClient } = require('@twurple/api')
 
 // Get the tokens from ../tokens.json
@@ -34,27 +33,27 @@ class Twitch {
     channelName = "";
     bot;
     apiClient;
+    channelID = "";
+    channelBadges;
 
     constructor(sendMessage, sendTTS, channelName) {
         this.sendTTS = sendTTS;
         this.channelName = channelName;
         this.sendMessage = sendMessage;
     }
-
+    
     async sendToChatList(message)  {
-        let color = await apiClient.chat.getColorForUser(message.userId);
-            // User not found
-            if(color == undefined){
-                console.error("User not found: " + message.userDisplayName);
-                return;
-            }
+            let color = await this.apiClient.chat.getColorForUser(message.userId);
+            let badges = ["https://twitch.tv/favicon.ico"];
+            
             // User hasn't set a color get a "random" color
-            if(color == null){
+            if(color == null || color == undefined){
                 color = userColors.at(parseInt(message.userId) % userColors.length)
             }
-            
+        
+          //  console.log( await (await message.getUser()).hasSubscriber((await message.getBroadcaster()).id));
             this.sendMessage({
-                icon: "https://twitch.tv/favicon.ico",
+                badges: badges,
                 text: message.text,
                 sender: message.userDisplayName,
                 color: color,
@@ -72,6 +71,9 @@ class Twitch {
         authProvider.onRefresh(async (userId, newTokenData) => await fs.writeFile(`./tokens.json`, JSON.stringify(newTokenData, null, 4), 'UTF-8'));
 
         let apiClient = new ApiClient({ authProvider });
+        this.channelID = (await apiClient.users.getUserByName(this.channelName)).id;
+        this.channelBadges = await apiClient.chat.getChannelBadges(this.channelID);
+
         this.apiClient = apiClient;
 
         const bot = new Bot(
@@ -133,10 +135,13 @@ class Twitch {
         bot.onMessage(async (MessageEvent) => {
             console.log("\x1b[35m%s\x1b[0m", `Twitch - ${MessageEvent.userDisplayName}: ${MessageEvent.text}`);
             this.sendToChatList(MessageEvent);
+
+          
         })
         this.bot = bot;
     }
     sendMessage(message) {
+        
         this.bot.say(this.channelName, message);
     }
   

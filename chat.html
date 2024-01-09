@@ -10,15 +10,28 @@
 
 
     function addToMessageList(message) {
+        let messageElement = document.createElement("span");
+        messageElement.style = "display: flex";
+        let badges = document.createElement("div");
+        badges.classList.add("badges");
+        message.badges.forEach(badge => {
+            let badgeElement = document.createElement("img");
+            badgeElement.src = badge;
+            badgeElement.classList.add("badge")
+            badges.appendChild(badgeElement);
+        });
         let element = document.createElement("div");
         element.style = "padding: 4px;";
-        element.innerHTML = `<img class="badge" src=${message.icon} /><span class="sender" style="color:${message.color}">${message.sender}</span><span class="text">: ${message.text}</span>`
-        messageList.appendChild(element);
+                                                                                                                              
+        element.innerHTML = `<span class="sender" style="color:${message.color}">${message.sender}</span><span class="text">: ${message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")5}</span>`
+        messageElement.appendChild(badges);
+        messageElement.appendChild(element);
+        messageList.appendChild(messageElement);
         messageList.scrollTop = messageList.scrollHeight;
+        
     }
 
     var socket = io('/', { path: "/chat/" });
-
 
     socket.on('message', (message) => {
         console.log("GOT MESSAGE:", message);
@@ -62,8 +75,11 @@
         
         display: inline-table;
         vertical-align: middle;
-        padding-right: 4px;
+        margin: 4px;
         filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000) drop-shadow(0 0 0 #000);
+    }
+    .badges {
+        padding: 4px;
     }
 </style>
 
