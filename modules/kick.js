@@ -22,7 +22,8 @@ function cleanMessage(message){
 // Open websocket to streamer.
 
 // Pusher is the service used for chatting.
-function initBot(sendMessage,sendTTS,channelID){
+function initBot(sendChat,sendMessage,sendTTS,channelID){
+  
   let chatroomNumber = [channelID];
   const chat = new WebSocket(
     "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false"
@@ -37,6 +38,7 @@ function initBot(sendMessage,sendTTS,channelID){
     );
 
     console.log("\x1b[32m%s\x1b[0m","Kick Setup Complete")
+    sendChat({"text":"message","sender": "jsonDataSub.sender.username","color":"#ffffff"})
   });
 
   chat.on("error", console.error);
@@ -46,6 +48,7 @@ function initBot(sendMessage,sendTTS,channelID){
   });
 
   chat.on("message", function message(data) {
+    //sendChat({"text":"message","sender": "jsonDataSub.sender.username","color":"#ffffff"})
     try {
       // Order to get things.
       // decode message to get components needed.
@@ -55,6 +58,8 @@ function initBot(sendMessage,sendTTS,channelID){
       
       let message = jsonDataSub.content;
 
+      sendChat({"icon":"https://kick.com/favicon.ico","text":message,"sender": jsonDataSub.sender.username,"color":jsonDataSub.sender.identity.color})
+
       // Log the message in console for tracker purposes.
       console.log(
         "\x1b[32m%s\x1b[0m",
@@ -63,10 +68,13 @@ function initBot(sendMessage,sendTTS,channelID){
         ": " +
         message
       );
+
+      
       if(isCommand(message,"bsr")){
         sendMessage(cleanMessage(message));
         return;
       }
+      
       if(isCommand(message,"tts")){
         ttsMessage = {
           text: cleanMessage(message),
@@ -87,7 +95,7 @@ function initBot(sendMessage,sendTTS,channelID){
         }
       }
     } catch (error) {
-      //console.log(error);
+     // console.log(error);
     }
   });
 }

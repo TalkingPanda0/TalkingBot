@@ -6,9 +6,10 @@ const messageList = document.getElementById("message-list");
 const emoteSoundEffects = {
     "HapBoo": "/static/yippe.mp3",
     "HapFlat": "/static/squish.mp3",
+    "HabPoo": "/static/habpoo.mp3",
     "aids": "/static/aids.mp3",
     "HNNNGH": "/static/hnhg.mp3",
-    "Skrunk": "/static/huh.mp3"
+    "Skrunk": "/static/huh.mp3",
 }
 
 var queue = [];
