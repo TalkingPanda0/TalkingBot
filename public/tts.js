@@ -10,7 +10,8 @@ const emoteSoundEffects = {
     "aids": "/static/aids.mp3",
     "HNNNGH": "/static/hnhg.mp3",
     "Skrunk": "/static/huh.mp3",
-    "Nerd": "/static/nerd.mp3"
+    "Nerd": "/static/nerd.mp3",
+    "Pixel": "/static/pixel.mp3"
 }
 
 var queue = [];
@@ -111,6 +112,9 @@ var socket = io('/',{path: "/tts/"});
 
 socket.on('message', (message) => {
      console.log("GOT MESSAGE:", message);
+     if(message.sender == "TalkingPanda" && message.text == "refresh"){
+        location.reload();
+    }
      ttSay(message);
      handleQueue();
  });
