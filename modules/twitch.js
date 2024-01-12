@@ -29,17 +29,17 @@ function removeByIndexToUppercase(str, indexes) {
 class Twitch {
      
     sendTTS = () => { };
-    sendMessage = () => { };
+    sendToChat = () => { };
     channelName = "";
-    bot;
+    bot = {};
     apiClient;
     channelID = "";
     channelBadges;
 
-    constructor(sendMessage, sendTTS, channelName) {
+    constructor(sendToChat, sendTTS, channelName) {
         this.sendTTS = sendTTS;
         this.channelName = channelName;
-        this.sendMessage = sendMessage;
+        this.sendToChat = sendToChat;
     }
     
     async sendToChatList(message)  {
@@ -52,7 +52,7 @@ class Twitch {
             }
         
           //  console.log( await (await message.getUser()).hasSubscriber((await message.getBroadcaster()).id));
-            this.sendMessage({
+            this.sendToChat({
                 badges: badges,
                 text: message.text,
                 sender: message.userDisplayName,
@@ -88,6 +88,7 @@ class Twitch {
                         reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o")
                     }),
                     createBotCommand('tts', (params, context) => {
+                        this.sendToChatList({"text":context.msg.text,"userId":context.userId,"userDisplayName":context.userDisplayName});
                         let message = context.msg.text.trim();
                         try {
                             var indexes = [];
@@ -96,14 +97,18 @@ class Twitch {
                             let ttsMessage = {
                                 text: message,
                                 sender: context.userName,
+                                emoteOffsets: context.msg.emoteOffsets,
+
                             }
+                            
                             this.sendTTS(ttsMessage, false);
-                            this.sendToChatList(MessageEvent);
+                            
                         } catch (e) {
                             console.log(e);
                         }
                     }),
                     createBotCommand('modtts', (params, context) => {
+                        this.sendToChatList({"text":context.msg.text,"userId":context.userId,"userDisplayName":context.userDisplayName});
                         if (!context.msg.userInfo.isMod && !context.msg.userInfo.isBroadcaster)
                             return;
                         let message = context.msg.text.trim();
@@ -117,7 +122,6 @@ class Twitch {
                                 sender: context.userName,
                             }
                             this.sendTTS(ttsMessage, true);
-                            this.sendToChatList(MessageEvent);
                             
                         } catch (e) {
                             console.log(e);
@@ -139,9 +143,10 @@ class Twitch {
           
         })
         this.bot = bot;
+        //this.bot.say(this.channelName,"hi");
     }
     sendMessage(message) {
-        
+        console.log(this.channelName);
         this.bot.say(this.channelName, message);
     }
   

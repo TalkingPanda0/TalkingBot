@@ -17,13 +17,15 @@
         message.badges.forEach(badge => {
             let badgeElement = document.createElement("img");
             badgeElement.src = badge;
+            badgeElement.width = "16";
+            badgeElement.height = "16";
             badgeElement.classList.add("badge")
             badges.appendChild(badgeElement);
         });
         let element = document.createElement("div");
-        element.style = "padding: 4px;";
+        element.style = "padding: 2px;";
                                                                                                                               
-        element.innerHTML = `<span class="sender" style="color:${message.color}">${message.sender}</span><span class="text">: ${message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")5}</span>`
+        element.innerHTML = `<span class="sender" style="color:${message.color}">${message.sender}</span><span class="text">: ${message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`
         messageElement.appendChild(badges);
         messageElement.appendChild(element);
         messageList.appendChild(messageElement);
@@ -36,6 +38,9 @@
     socket.on('message', (message) => {
         console.log("GOT MESSAGE:", message);
         addToMessageList(message);
+        if(message.sender == "TalkingPanda" && message.text == "refresh"){
+            location.reload();
+        }
     });
    
 
@@ -45,6 +50,7 @@
 <style>
     #message-list {
         max-height: 300px;
+        max-width: 520px;
         overflow-y: scroll;
         background-color: rgba(0, 0, 0, 0.25);
         padding: 10px;
@@ -61,25 +67,25 @@
 
     .text {
         
-        font-size: 30px;
+        font-size: 16px;
         color: white;
         font-family: Arial, Helvetica, sans-serif;
         vertical-align: middle;
     }
     .sender {
         vertical-align: middle;
-        font-size: 32px;
+        font-size: 16px;
         font-family: Arial, Helvetica, sans-serif;
     }
     .badge {
         
         display: inline-table;
         vertical-align: middle;
-        margin: 4px;
+        margin: 2px;
         filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000) drop-shadow(0 0 0 #000);
     }
     .badges {
-        padding: 4px;
+        padding: 2px;
     }
 </style>
 

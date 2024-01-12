@@ -64,9 +64,9 @@ function initBot(sendChat,sendMessage,sendTTS,channelID){
       jsonBadges = jsonDataSub.sender.identity.badges;
       jsonBadges.forEach(element => {
         if(element.type == 'moderator'){
-          badges.push('/kickmod.svg');
+          badges.push('/static/kickmod.svg');
         } else if (element.type === 'subscriber'){
-          badges.push('/kicksub.svg');
+          badges.push('/static/kicksub.svg');
         }
       });
       sendChat({
@@ -87,7 +87,8 @@ function initBot(sendChat,sendMessage,sendTTS,channelID){
 
       
       if(isCommand(message,"bsr")){
-        sendMessage(cleanMessage(message));
+        console.log(message);
+        sendMessage(message);
         return;
       }
       
@@ -111,7 +112,7 @@ function initBot(sendChat,sendMessage,sendTTS,channelID){
         }
       }
     } catch (error) {
-     // console.log(error);
+     console.log(error);
     }
   });
 }
