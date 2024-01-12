@@ -74,7 +74,6 @@ function initBot(
       );
 
       if (isCommand(chatMessage, "bsr")) {
-        console.log(chatMessage);
         sendMessage(chatMessage);
         return;
       }
@@ -99,7 +98,7 @@ function initBot(
         }
       }
     } catch (error) {
-      console.log(error);
+      //console.log(error);
     }
   });
 }

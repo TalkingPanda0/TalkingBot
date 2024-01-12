@@ -63,6 +63,7 @@ function handleQueue() {
             tempqueue.forEach( (audio,index) => {
                 audio.onerror = (err) => {
                     console.log("Got error: " + err);
+                    isPlaying = false;
                     removePopup();
                 }
                 audio.onended = () => {
@@ -105,9 +106,6 @@ function ttSay(message) {
 }
 
 
-/*var socket = io("https://talkingpanda.dev/",{
-	path: "/tts/"
-});*/
 var socket = io('/',{path: "/tts/"});
 
 

@@ -32,7 +32,6 @@ function sendTTS(message: any, isMod: boolean) {
   if ((!enabled && !isMod) || !message.text || !message.sender) {
     return;
   }
-
   if (isMod) {
     if (message.text === "enable") {
       enabled = true;
