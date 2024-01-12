@@ -63,7 +63,6 @@ function initBot(sendChat, sendMessage, sendTTS, channelID) {
                     text: cleanMessage(chatMessage),
                     sender: jsonDataSub.sender.username,
                 };
-                console.log("got tts" + ttsMessage);
                 sendTTS(ttsMessage, false);
                 return;
             }
@@ -79,7 +78,7 @@ function initBot(sendChat, sendMessage, sendTTS, channelID) {
             }
         }
         catch (error) {
-            //console.log(error);
+            console.log(error);
         }
     });
 }

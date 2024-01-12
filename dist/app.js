@@ -29,7 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const http = __importStar(require("http"));
 const socket_io_1 = require("socket.io");
-//import { Twitch } from './twitch';
+const twitch_1 = require("./twitch");
 const kick_1 = require("./kick");
 const app = (0, express_1.default)();
 const server = http.createServer(app);
@@ -80,6 +80,9 @@ iochat.of('/chat').on('connection', (socket) => {
 server.listen(3000, () => {
     console.log('listening on *:3000');
 });
-/*let twitch = new Twitch(sendChat, sendTTS, "SweetbabooO_o");
-twitch.initBot();*/
-(0, kick_1.initBot)(sendChat, () => { }, sendTTS, "17587561");
+let twitch = new twitch_1.Twitch(sendChat, sendTTS, "SweetbabooO_o");
+twitch.initBot().then(() => {
+    (0, kick_1.initBot)(sendChat, (message) => {
+        twitch.sendMessage(message);
+    }, sendTTS, "17587561");
+});

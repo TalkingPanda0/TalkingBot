@@ -79,7 +79,10 @@ class Twitch {
             color: color,
         });
     }
-
+    public sendMessage (message: string): void {
+        console.log(this.channelName);
+        this.bot.say(this.channelName, message);
+    }
     async initBot(): Promise<void> {
         await authProvider.addUserForToken(
             {
@@ -97,7 +100,7 @@ class Twitch {
 
         this.apiClient = apiClient;
 
-        const bot = new Bot({
+        this.bot = new Bot({
             authProvider, channel: this.channelName,
             commands: [
                 createBotCommand('dice', (params, { reply }) => {
@@ -149,7 +152,7 @@ class Twitch {
             ]
         });
 
-        bot.onAuthenticationSuccess(() => {
+        this.bot.onAuthenticationSuccess(() => {
             console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
             // bot.say(this.channelName,"Talkingbot initiated!");
         });
@@ -157,14 +160,11 @@ class Twitch {
             console.log("\x1b[35m%s\x1b[0m", `Twitch - ${MessageEvent.userDisplayName}: ${MessageEvent.text}`);
             //this.sendToChatList(MessageEvent);
         });*/
-        this.bot = bot;
         // this.bot.say(this.channelName,"hi");
+        
     }
 
-    sendMessage(message: string): void {
-        console.log(this.channelName);
-        this.bot.say(this.channelName, message);
-    }
+     
 }
 
 export { Twitch };

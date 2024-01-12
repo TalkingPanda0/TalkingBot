@@ -55,6 +55,10 @@ class Twitch {
             });
         });
     }
+    sendMessage(message) {
+        console.log(this.channelName);
+        this.bot.say(this.channelName, message);
+    }
     initBot() {
         var _a;
         return __awaiter(this, void 0, void 0, function* () {
@@ -69,7 +73,7 @@ class Twitch {
             this.channelID = ((_a = yield apiClient.users.getUserByName(this.channelName)) !== null && _a !== void 0 ? _a : { id: "0" }).id;
             this.channelBadges = yield apiClient.chat.getChannelBadges(this.channelID);
             this.apiClient = apiClient;
-            const bot = new easy_bot_1.Bot({
+            this.bot = new easy_bot_1.Bot({
                 authProvider, channel: this.channelName,
                 commands: [
                     (0, easy_bot_1.createBotCommand)('dice', (params, { reply }) => {
@@ -118,20 +122,11 @@ class Twitch {
                     }),
                 ]
             });
-            bot.onAuthenticationSuccess(() => {
+            this.bot.onAuthenticationSuccess(() => {
                 console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
                 // bot.say(this.channelName,"Talkingbot initiated!");
             });
-            /*bot.onMessage(async (messageEvent: BotCommandContext) => {
-                console.log("\x1b[35m%s\x1b[0m", `Twitch - ${MessageEvent.userDisplayName}: ${MessageEvent.text}`);
-                //this.sendToChatList(MessageEvent);
-            });*/
-            this.bot = bot;
         });
-    }
-    sendMessage(message) {
-        console.log(this.channelName);
-        this.bot.say(this.channelName, message);
     }
 }
 exports.Twitch = Twitch;

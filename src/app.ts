@@ -2,7 +2,7 @@ import express, { Express, Request, Response } from "express";
 import * as http from 'http';
 
 import { Server } from 'socket.io';
-//import { Twitch } from './twitch';
+import { Twitch } from './twitch';
 import { initBot } from './kick';
 
 const app : Express = express();
@@ -66,7 +66,9 @@ server.listen(3000, () => {
   console.log('listening on *:3000');
 });
 
-/*let twitch = new Twitch(sendChat, sendTTS, "SweetbabooO_o");
-twitch.initBot();*/
-
-initBot(sendChat, () => {}, sendTTS, "17587561");
+let twitch = new Twitch(sendChat, sendTTS, "SweetbabooO_o");
+twitch.initBot().then(() => {
+  initBot(sendChat, (message: string) => {
+    twitch.sendMessage(message);
+  }, sendTTS, "17587561");
+});
