@@ -2,8 +2,7 @@ import express, { Express, Request, Response } from "express";
 import * as http from 'http';
 
 import { Server } from 'socket.io';
-import { Twitch } from './twitch';
-import { initBot } from './kick';
+import { TalkingBot, TTSMessage } from "./talkingbot";
 
 const app : Express = express();
 const server = http.createServer(app);
@@ -28,7 +27,7 @@ app.get('/chat', (req : Request ,res: Response) => {
   res.sendFile(__dirname + "/chat.html");
 });
 
-function sendTTS(message: any, isMod: boolean) {
+function sendTTS(message: TTSMessage, isMod: boolean) {
   if ((!enabled && !isMod) || !message.text || !message.sender) {
     return;
   }
@@ -47,12 +46,12 @@ function sendTTS(message: any, isMod: boolean) {
   iotts.emit('message', message);
 }
 
-function sendChat(message: any) {
+/*function sendChat(message: any) {
   if (message.color == null || message.color == undefined) {
     message.color = "#048ac7";
   }
   iochat.emit('message', message);
-}
+}*/
 
 iotts.of('/tts').on('connection', (socket) => {
   console.log('a user connected');
@@ -66,9 +65,11 @@ server.listen(3000, () => {
   console.log('listening on *:3000');
 });
 
-let twitch = new Twitch(sendChat, sendTTS, "SweetbabooO_o");
+let bot: TalkingBot = new TalkingBot("SweetBabooO_o","17587561",sendTTS);
+
+/*let twitch = new Twitch(sendTTS, "SweetBabooO_o");
 twitch.initBot().then(() => {
   initBot(sendChat, (message: string) => {
     twitch.sendMessage(message);
   }, sendTTS, "17587561");
-});
+});*/

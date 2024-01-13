@@ -29,8 +29,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const http = __importStar(require("http"));
 const socket_io_1 = require("socket.io");
-const twitch_1 = require("./twitch");
-const kick_1 = require("./kick");
+const talkingbot_1 = require("./talkingbot");
 const app = (0, express_1.default)();
 const server = http.createServer(app);
 const iotts = new socket_io_1.Server(server, {
@@ -65,12 +64,12 @@ function sendTTS(message, isMod) {
     }
     iotts.emit('message', message);
 }
-function sendChat(message) {
-    if (message.color == null || message.color == undefined) {
-        message.color = "#048ac7";
-    }
-    iochat.emit('message', message);
-}
+/*function sendChat(message: any) {
+  if (message.color == null || message.color == undefined) {
+    message.color = "#048ac7";
+  }
+  iochat.emit('message', message);
+}*/
 iotts.of('/tts').on('connection', (socket) => {
     console.log('a user connected');
 });
@@ -80,9 +79,10 @@ iochat.of('/chat').on('connection', (socket) => {
 server.listen(3000, () => {
     console.log('listening on *:3000');
 });
-let twitch = new twitch_1.Twitch(sendChat, sendTTS, "SweetbabooO_o");
+let bot = new talkingbot_1.TalkingBot("SweetBabooO_o", "17587561", sendTTS);
+/*let twitch = new Twitch(sendTTS, "SweetBabooO_o");
 twitch.initBot().then(() => {
-    (0, kick_1.initBot)(sendChat, (message) => {
-        twitch.sendMessage(message);
-    }, sendTTS, "17587561");
-});
+  initBot(sendChat, (message: string) => {
+    twitch.sendMessage(message);
+  }, sendTTS, "17587561");
+});*/ 
