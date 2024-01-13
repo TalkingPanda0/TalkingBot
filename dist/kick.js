@@ -21,12 +21,14 @@ class Kick {
         chat.on("close", function close() {
             console.log("Connection closed for chatroom: " + channelId);
         });
-        chat.on("message", function message(data) {
+        chat.on("message", (data) => {
             // TODO handle other message types
             try {
                 const badges = ["https://kick.com/favicon.ico"];
                 const dataString = data.toString();
                 const jsonData = JSON.parse(dataString);
+                if (jsonData.event != "App\\Events\\ChatMessageEvent")
+                    return;
                 const jsonDataSub = JSON.parse(jsonData.data);
                 const text = jsonDataSub.content;
                 const user = jsonDataSub.sender.username;
