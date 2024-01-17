@@ -5,18 +5,21 @@ export class Kick {
   private channelId: string;
   private commandList: Command[];
 
-  constructor(channelId: string,commandList: Command[]) {
+  constructor(channelId: string, commandList: Command[]) {
 
     this.channelId = channelId;
+
+  }
+
+  public initBot() {
     const chat = new WebSocket(
       "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false"
     );
-
-    chat.on("open", function open() {
+    chat.on("open", () => {
       chat.send(
         JSON.stringify({
           event: "pusher:subscribe",
-          data: { auth: "", channel: `chatrooms.${channelId}.v2` },
+          data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
         })
       );
 
@@ -25,14 +28,13 @@ export class Kick {
 
     chat.on("error", console.error);
 
-    chat.on("close", function close() {
-      console.log("Connection closed for chatroom: " + channelId);
+    chat.on("close", () => {
+      console.log("Connection closed for chatroom: " + this.channelId);
     });
 
     chat.on("message", (data: WebSocket.Data) => {
-      // TODO handle other message types
       try {
-        
+
         const badges = ["https://kick.com/favicon.ico"];
         const dataString = data.toString();
         const jsonData = JSON.parse(dataString);
@@ -59,16 +61,16 @@ export class Kick {
           "\x1b[32m%s\x1b[0m",
           `Kick - ${jsonDataSub.sender.username}: ${text}`
         );
-          
-        commandList.forEach((command) => {
+
+        this.commandList.forEach((command) => {
 
           if (!text.startsWith(command.command)) return;
 
           command.commandFunction(user, firstBadgeType === "moderator" || firstBadgeType === "broadcaster", text.substr(text.indexOf(" ") + 1), (message) => {
-              // Can't reply on kick yet
+            // Can't reply on kick yet
           }, Platform.kick);
 
-      });
+        });
 
       } catch (error) {
         console.log(error);

@@ -1,6 +1,8 @@
 import { ChatMessage } from "@twurple/chat";
 import { Twitch } from "./twitch";
 import { Kick } from "./kick";
+import fs from 'node:fs';
+
 
 export enum Platform {
     twitch,
@@ -15,6 +17,11 @@ export interface TTSMessage {
     text: string;
     sender: string;
     emoteOffsets?: Map<String, String[]>;
+}
+export interface AuthSetup {
+    twitchClientId: string;
+    twitchClientSecret: string;
+
 }
 
 function removeByIndex(str: string, index: number): string {
@@ -37,23 +44,63 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
 
 function parseEmotes(message: string): string {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
-    return message.replace(regex, (match, id, name) => name).replace("sweetbabooo-o","");
+    return message.replace(regex, (match, id, name) => name).replace("sweetbabooo-o", "");
 }
 
-
-
 export class TalkingBot {
+    public twitch: Twitch;
+    public kick: Kick;
     private channelName: string;
     private kickId: string;
     private commandList: Command[] = [];
-    private twitch: Twitch;
-    private kick: Kick;
+    
 
     constructor(channelName: string, kickId: string, sendTTS: (message: TTSMessage, isMod: boolean) => void) {
         this.channelName = channelName;
         this.kickId = kickId;
         this.commandList = [
-            
+            {
+                command: "!fsog",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    fs.readFile("/var/www/html/fsog", 'utf8', (err, data) => {
+                        if (err) {
+                            reply("Failed reading file!");
+                            return;
+                        }
+                        reply(`SweetbabooO_o currently has ${data} on furry shades of gay`);
+                    });
+                },
+            },
+            {
+                command: "!adopt",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply(`${message} has been adopted by @${user}!`);
+                },
+            },
+            {
+                command: "!socials",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o");
+                },
+            },
+            {
+                command: "!yt",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ");
+                },
+            },
+            {
+                command: "!twitch",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o");
+                },
+            },
+            {
+                command: "!kick",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/");
+                },
+            },
             {
                 command: "!bsr",
                 commandFunction: (user: string, isUserMod: boolean, message: string, reply: Function, platform: Platform, context?: ChatMessage): void | Promise<void> => {
@@ -90,7 +137,7 @@ export class TalkingBot {
             {
                 command: '!modtts',
                 commandFunction: (user: string, isUserMod: boolean, message: string, reply: Function, platform: Platform, context?: ChatMessage): void | Promise<void> => {
-                    if(!isUserMod) return;
+                    if (!isUserMod) return;
                     if (platform == Platform.twitch && context != null) {
                         let msg = message.trim();
 
@@ -116,12 +163,13 @@ export class TalkingBot {
             },
 
         ];
-        this.twitch = new Twitch(this.channelName, this.commandList);
-        this.twitch.initBot().then(() => {
-            
-            this.kick = new Kick(this.kickId, this.commandList);
-        });
-        
 
+        this.twitch = new Twitch(this.channelName, this.commandList);
+        this.kick = new Kick(this.kickId, this.commandList);
+    }
+    public initBot() {
+        this.twitch.initBot().then(() => {
+            this.kick.initBot();
+        });
     }
 }

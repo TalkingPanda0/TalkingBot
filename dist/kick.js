@@ -9,24 +9,26 @@ const talkingbot_1 = require("./talkingbot");
 class Kick {
     constructor(channelId, commandList) {
         this.channelId = channelId;
+    }
+    initBot() {
         const chat = new ws_1.default("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false");
-        chat.on("open", function open() {
+        chat.on("open", () => {
             chat.send(JSON.stringify({
                 event: "pusher:subscribe",
-                data: { auth: "", channel: `chatrooms.${channelId}.v2` },
+                data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
             }));
             console.log("\x1b[32m%s\x1b[0m", "Kick Setup Complete");
         });
         chat.on("error", console.error);
-        chat.on("close", function close() {
-            console.log("Connection closed for chatroom: " + channelId);
+        chat.on("close", () => {
+            console.log("Connection closed for chatroom: " + this.channelId);
         });
         chat.on("message", (data) => {
-            // TODO handle other message types
             try {
                 const badges = ["https://kick.com/favicon.ico"];
                 const dataString = data.toString();
                 const jsonData = JSON.parse(dataString);
+                // Not a message event, ignore
                 if (jsonData.event != "App\\Events\\ChatMessageEvent")
                     return;
                 const jsonDataSub = JSON.parse(jsonData.data);
@@ -43,7 +45,7 @@ class Kick {
                     }
                 });
                 console.log("\x1b[32m%s\x1b[0m", `Kick - ${jsonDataSub.sender.username}: ${text}`);
-                commandList.forEach((command) => {
+                this.commandList.forEach((command) => {
                     if (!text.startsWith(command.command))
                         return;
                     command.commandFunction(user, firstBadgeType === "moderator" || firstBadgeType === "broadcaster", text.substr(text.indexOf(" ") + 1), (message) => {

@@ -1,8 +1,12 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TalkingBot = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
 const kick_1 = require("./kick");
+const node_fs_1 = __importDefault(require("node:fs"));
 var Platform;
 (function (Platform) {
     Platform[Platform["twitch"] = 0] = "twitch";
@@ -34,6 +38,48 @@ class TalkingBot {
         this.channelName = channelName;
         this.kickId = kickId;
         this.commandList = [
+            {
+                command: "!fsog",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    node_fs_1.default.readFile("/var/www/html/fsog", 'utf8', (err, data) => {
+                        if (err) {
+                            reply("Failed reading file!");
+                            return;
+                        }
+                        reply(`SweetbabooO_o currently has ${data} on furry shades of gay`);
+                    });
+                },
+            },
+            {
+                command: "!adopt",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply(`${message} has been adopted by @${user}!`);
+                },
+            },
+            {
+                command: "!socials",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o");
+                },
+            },
+            {
+                command: "!yt",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ");
+                },
+            },
+            {
+                command: "!twitch",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o");
+                },
+            },
+            {
+                command: "!kick",
+                commandFunction(user, isUserMod, message, reply, platform, context) {
+                    reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/");
+                },
+            },
             {
                 command: "!bsr",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
@@ -94,9 +140,14 @@ class TalkingBot {
             },
         ];
         this.twitch = new twitch_1.Twitch(this.channelName, this.commandList);
+        this.kick = new kick_1.Kick(this.kickId, this.commandList);
+    }
+    initBot() {
         this.twitch.initBot().then(() => {
-            this.kick = new kick_1.Kick(this.kickId, this.commandList);
         });
+    }
+    authSetup(auth) {
+        this.twitch;
     }
 }
 exports.TalkingBot = TalkingBot;

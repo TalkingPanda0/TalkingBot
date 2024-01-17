@@ -14,8 +14,6 @@ const auth_1 = require("@twurple/auth");
 const chat_1 = require("@twurple/chat");
 const talkingbot_1 = require("./talkingbot");
 // Get the tokens from ../tokens.json
-const { clientId, accessToken, refreshToken, clientSecret } = require('../tokens.json');
-const authProvider = new auth_1.RefreshingAuthProvider({ clientId, clientSecret });
 class Twitch {
     constructor(channelName, commandList) {
         this.commandList = [];
@@ -27,6 +25,8 @@ class Twitch {
     }
     initBot() {
         return __awaiter(this, void 0, void 0, function* () {
+            const { clientId, accessToken, refreshToken, clientSecret } = require('../tokens.json');
+            const authProvider = new auth_1.RefreshingAuthProvider({ clientId, clientSecret });
             yield authProvider.addUserForToken({
                 accessToken,
                 refreshToken,
@@ -53,6 +53,8 @@ class Twitch {
             });
             this.chatClient.connect();
         });
+    }
+    setupAuth(auth) {
     }
 }
 exports.Twitch = Twitch;

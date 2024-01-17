@@ -12,7 +12,8 @@ const emoteSoundEffects = {
     "Skrunk": "/static/huh.mp3",
     "Nerd": "/static/nerd.mp3",
     "Pixel": "/static/pixel.mp3",
-    "TeeHee": "/static/hehe.mp3"
+    "TeeHee": "/static/hehe.mp3",
+    "Silly": "/static/silly.mp3"
 }
 
 var queue = [];
@@ -30,7 +31,7 @@ function createPopup(message) {
     var popupElement = `<span class="sender">${message.sender} says:</span><br/><span class="text">${message.text}</span class="text"></span><div></div>`; 
     messageList.innerHTML = popupElement;
     messageList.style.opacity = 1;
-    if(Math.floor(Math.random() * 4 ) == 0){
+    if(Math.floor(Math.random() * 2 ) == 0){
         messageList.appendChild(HAPBOO());
     }
 }

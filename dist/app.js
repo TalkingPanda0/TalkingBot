@@ -30,6 +30,7 @@ const express_1 = __importDefault(require("express"));
 const http = __importStar(require("http"));
 const socket_io_1 = require("socket.io");
 const talkingbot_1 = require("./talkingbot");
+const node_fs_1 = __importDefault(require("node:fs"));
 const app = (0, express_1.default)();
 const server = http.createServer(app);
 const iotts = new socket_io_1.Server(server, {
@@ -45,6 +46,9 @@ app.get('/tts', (req, res) => {
 });
 app.get('/chat', (req, res) => {
     res.sendFile(__dirname + "/chat.html");
+});
+app.get('/setup', (req, res) => {
+    res.sendFile(__dirname + "/setup.html");
 });
 function sendTTS(message, isMod) {
     if ((!enabled && !isMod) || !message.text || !message.sender) {
@@ -80,9 +84,21 @@ server.listen(3000, () => {
     console.log('listening on *:3000');
 });
 let bot = new talkingbot_1.TalkingBot("SweetBabooO_o", "17587561", sendTTS);
-/*let twitch = new Twitch(sendTTS, "SweetBabooO_o");
-twitch.initBot().then(() => {
-  initBot(sendChat, (message: string) => {
-    twitch.sendMessage(message);
-  }, sendTTS, "17587561");
-});*/ 
+// Check if auth.json exists
+if (!node_fs_1.default.existsSync("./auth.json")) {
+    const iosetup = new socket_io_1.Server(server, {
+        path: "/setup/"
+    });
+    iosetup.of('/setup').on('message', (message) => {
+    });
+    // Get client id from user
+    console.log("\x1b[31m%s\x1b[0m", "Auth not found,please go to localhost:3000/setup to create it");
+    app.get('/oauth', (req, res) => {
+        console.log(req.query.code);
+        console.log(req.query.scope);
+        res.send("Success!");
+    });
+}
+else {
+    bot.initBot();
+}

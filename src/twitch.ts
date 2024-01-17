@@ -1,15 +1,12 @@
 import { RefreshingAuthProvider } from '@twurple/auth';
 import { ChatClient, ChatMessage } from '@twurple/chat';
 import { ApiClient, HelixChatBadgeSet } from '@twurple/api';
-import { Command, Platform, TTSMessage } from './talkingbot';
+import { AuthSetup, Command, Platform, TTSMessage } from './talkingbot';
 
 
 // Get the tokens from ../tokens.json
-const { clientId, accessToken, refreshToken, clientSecret } = require('../tokens.json');
-const authProvider = new RefreshingAuthProvider({ clientId, clientSecret });
 
-
-class Twitch {
+export class Twitch {
 
     private channelName: string;
     private chatClient: ChatClient;
@@ -26,6 +23,9 @@ class Twitch {
     }
 
     async initBot(): Promise<void> {
+
+        const { clientId, accessToken, refreshToken, clientSecret } = require('../tokens.json');
+        const authProvider = new RefreshingAuthProvider({ clientId, clientSecret });
         await authProvider.addUserForToken(
             {
                 accessToken,
@@ -63,6 +63,7 @@ class Twitch {
         this.chatClient.connect();
 
     }
-}
+    public setupAuth(auth: AuthSetup){
 
-export { Twitch };
+    }
+}
