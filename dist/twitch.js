@@ -38,6 +38,7 @@ const chat_1 = require("@twurple/chat");
 const api_1 = require("@twurple/api");
 const talkingbot_1 = require("./talkingbot");
 const fs = __importStar(require("fs"));
+const pubsub_1 = require("@twurple/pubsub");
 // Get the tokens from ../tokens.json
 const oauthPath = 'oauth.json';
 const botPath = 'token-bot.json';
@@ -67,6 +68,18 @@ class Twitch {
             yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, 'utf-8')), [""]);
             this.apiClient = new api_1.ApiClient({ authProvider: this.authProvider });
             this.channel = yield this.apiClient.users.getUserByName(this.channelName);
+            this.pubsub = new pubsub_1.PubSubClient({ authProvider: this.authProvider });
+            this.pubsub.onRedemption(this.channel.id, (message) => {
+                console.log(`Got redemption ${message.userDisplayName} - ${message.rewardTitle}: ${message.message}`);
+                switch (message.rewardTitle) {
+                    case "Self Timeout":
+                        this.apiClient.moderation.banUser(this.channel.id, { duration: 300, reason: "Self Timeout Request", user: message.userId });
+                        break;
+                    case "Timeout Somebody Else":
+                        this.apiClient.moderation.banUser(this.channel.id, { duration: 60, reason: `Timeout request by ${message.userDisplayName}`, user: message.message });
+                        break;
+                }
+            });
             this.chatClient = new chat_1.ChatClient({ authProvider: this.authProvider, channels: [this.channelName] });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user}: ${text}`);

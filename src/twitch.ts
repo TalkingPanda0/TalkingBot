@@ -3,6 +3,7 @@ import { ChatClient, ChatMessage } from '@twurple/chat';
 import { ApiClient, HelixChatBadgeSet, HelixUser } from '@twurple/api';
 import { AuthSetup, Command, Platform, TTSMessage } from './talkingbot';
 import * as fs from 'fs';
+import { PubSubClient, PubSubRedemptionMessage } from '@twurple/pubsub';
 
 // Get the tokens from ../tokens.json
 const oauthPath = 'oauth.json';
@@ -14,6 +15,7 @@ export class Twitch {
     public clientSecret: string = "";
     public apiClient: ApiClient;
     public channel: HelixUser;
+    public pubsub: PubSubClient;
 
     private channelName: string;
     private chatClient: ChatClient;
@@ -42,11 +44,25 @@ export class Twitch {
             fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(newTokenData, null, 4), 'utf-8');
         });
 
-        await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath,'utf-8')),["chat"]);
-        await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath,'utf-8')),[""]);
-        
-        this.apiClient = new ApiClient({authProvider: this.authProvider});
+        await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath, 'utf-8')), ["chat"]);
+        await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, 'utf-8')), [""]);
+
+        this.apiClient = new ApiClient({ authProvider: this.authProvider });
         this.channel = await this.apiClient.users.getUserByName(this.channelName);
+
+        this.pubsub = new PubSubClient({ authProvider: this.authProvider });
+        this.pubsub.onRedemption(this.channel.id, (message: PubSubRedemptionMessage) => {
+            console.log(`Got redemption ${message.userDisplayName} - ${message.rewardTitle}: ${message.message}`);
+            switch(message.rewardTitle){
+                case "Self Timeout":
+                    this.apiClient.moderation.banUser(this.channel.id, { duration: 300, reason: "Self Timeout Request", user: message.userId });
+                    break;
+                case "Timeout Somebody Else":
+                    this.apiClient.moderation.banUser(this.channel.id, { duration: 60, reason: `Timeout request by ${message.userDisplayName}`, user: message.message });
+                    break;
+            }
+        });
+        
 
         this.chatClient = new ChatClient({ authProvider: this.authProvider, channels: [this.channelName] });
 
@@ -61,7 +77,7 @@ export class Twitch {
 
                 if (!text.startsWith(command.command)) return;
 
-                command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command,"").trim(), (message) => {
+                command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message) => {
                     this.chatClient.say(channel, message, { replyTo: msg.id })
                 }, Platform.twitch, msg);
 

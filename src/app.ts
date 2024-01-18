@@ -69,7 +69,7 @@ iochat.of('/chat').on('connection', (socket) => {
 
 
 
-let bot: TalkingBot = new TalkingBot("SweetbabooO_o", "17587561", sendTTS);
+let bot: TalkingBot = new TalkingBot("SweetBabooO_o", "17587561", sendTTS);
 
 
 // Check if oauth.json exists
