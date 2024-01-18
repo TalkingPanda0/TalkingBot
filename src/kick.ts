@@ -66,7 +66,7 @@ export class Kick {
 
           if (!text.startsWith(command.command)) return;
 
-          command.commandFunction(user, firstBadgeType === "moderator" || firstBadgeType === "broadcaster", text.substr(text.indexOf(" ") + 1), (message) => {
+          command.commandFunction(user, firstBadgeType === "moderator" || firstBadgeType === "broadcaster", text.replace(command.command,"").trim(), (message) => {
             // Can't reply on kick yet
           }, Platform.kick);
 

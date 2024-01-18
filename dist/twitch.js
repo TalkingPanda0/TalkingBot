@@ -76,7 +76,7 @@ class Twitch {
                 this.commandList.forEach((command) => {
                     if (!text.startsWith(command.command))
                         return;
-                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, ""), (message) => {
+                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message) => {
                         this.chatClient.say(channel, message, { replyTo: msg.id });
                     }, talkingbot_1.Platform.twitch, msg);
                 });

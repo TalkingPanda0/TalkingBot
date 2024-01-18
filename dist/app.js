@@ -80,7 +80,7 @@ iotts.of('/tts').on('connection', (socket) => {
 iochat.of('/chat').on('connection', (socket) => {
     console.log('a chat connected');
 });
-let bot = new talkingbot_1.TalkingBot("TalkingPanda", "17587561", sendTTS);
+let bot = new talkingbot_1.TalkingBot("SweetbabooO_o", "17587561", sendTTS);
 // Check if oauth.json exists
 if (!node_fs_1.default.existsSync("./oauth.json")) {
     console.log("\x1b[31m%s\x1b[0m", "Auth not found, please go to localhost:3000/setup to create it");
