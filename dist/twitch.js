@@ -35,6 +35,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Twitch = void 0;
 const auth_1 = require("@twurple/auth");
 const chat_1 = require("@twurple/chat");
+const api_1 = require("@twurple/api");
 const talkingbot_1 = require("./talkingbot");
 const fs = __importStar(require("fs"));
 // Get the tokens from ../tokens.json
@@ -64,6 +65,8 @@ class Twitch {
             }));
             yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath, 'utf-8')), ["chat"]);
             yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, 'utf-8')), [""]);
+            this.apiClient = new api_1.ApiClient({ authProvider: this.authProvider });
+            this.channel = yield this.apiClient.users.getUserByName(this.channelName);
             this.chatClient = new chat_1.ChatClient({ authProvider: this.authProvider, channels: [this.channelName] });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user}: ${text}`);
@@ -73,7 +76,7 @@ class Twitch {
                 this.commandList.forEach((command) => {
                     if (!text.startsWith(command.command))
                         return;
-                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.substr(text.indexOf(" ") + 1), (message) => {
+                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, ""), (message) => {
                         this.chatClient.say(channel, message, { replyTo: msg.id });
                     }, talkingbot_1.Platform.twitch, msg);
                 });

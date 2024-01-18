@@ -8,7 +8,7 @@ export class Kick {
   constructor(channelId: string, commandList: Command[]) {
 
     this.channelId = channelId;
-
+    this.commandList = commandList;
   }
 
   public initBot() {

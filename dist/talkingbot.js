@@ -1,12 +1,17 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TalkingBot = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
 const kick_1 = require("./kick");
-const node_fs_1 = __importDefault(require("node:fs"));
 var Platform;
 (function (Platform) {
     Platform[Platform["twitch"] = 0] = "twitch";
@@ -41,14 +46,41 @@ class TalkingBot {
             {
                 command: "!fsog",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
-                    node_fs_1.default.readFile("/var/www/html/fsog", 'utf8', (err, data) => {
-                        if (err) {
-                            reply("Failed reading file!");
-                            return;
+                    return __awaiter(this, void 0, void 0, function* () {
+                        try {
+                            let data = yield fetch("https://talkingpanda.dev/fsog");
+                            reply(`SweetbabooO_o currently has ${yield data.text()} on furry shades of gay`);
                         }
-                        reply(`SweetbabooO_o currently has ${data} on furry shades of gay`);
+                        catch (_a) {
+                            reply('Failed getting data');
+                        }
                     });
                 },
+            },
+            {
+                command: "!settitle",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (!isUserMod || message.length == 0)
+                        return;
+                    yield this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { title: message });
+                    // TODO change title in kick
+                    reply(`Title has been changed to "${message}"`);
+                }),
+            },
+            {
+                command: "!setgame",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (!isUserMod || message.length == 0)
+                        return;
+                    const game = yield this.twitch.apiClient.games.getGameByName(message);
+                    if (game == null) {
+                        reply(`Can't find game "${message}"`);
+                        return;
+                    }
+                    yield this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { gameId: game.id });
+                    // TODO change game in kick
+                    reply(`Game has been changed to "${game.name}"`);
+                }),
             },
             {
                 command: "!adopt",

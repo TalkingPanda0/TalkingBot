@@ -1,6 +1,6 @@
 import { RefreshingAuthProvider, exchangeCode } from '@twurple/auth';
 import { ChatClient, ChatMessage } from '@twurple/chat';
-import { ApiClient, HelixChatBadgeSet } from '@twurple/api';
+import { ApiClient, HelixChatBadgeSet, HelixUser } from '@twurple/api';
 import { AuthSetup, Command, Platform, TTSMessage } from './talkingbot';
 import * as fs from 'fs';
 
@@ -12,6 +12,8 @@ export class Twitch {
 
     public clientId: string = "";
     public clientSecret: string = "";
+    public apiClient: ApiClient;
+    public channel: HelixUser;
 
     private channelName: string;
     private chatClient: ChatClient;
@@ -43,6 +45,9 @@ export class Twitch {
         await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath,'utf-8')),["chat"]);
         await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath,'utf-8')),[""]);
         
+        this.apiClient = new ApiClient({authProvider: this.authProvider});
+        this.channel = await this.apiClient.users.getUserByName(this.channelName);
+
         this.chatClient = new ChatClient({ authProvider: this.authProvider, channels: [this.channelName] });
 
         this.chatClient.onMessage(async (channel: string, user: string, text: string, msg: ChatMessage) => {
@@ -56,7 +61,7 @@ export class Twitch {
 
                 if (!text.startsWith(command.command)) return;
 
-                command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.substr(text.indexOf(" ") + 1), (message) => {
+                command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command,""), (message) => {
                     this.chatClient.say(channel, message, { replyTo: msg.id })
                 }, Platform.twitch, msg);
 

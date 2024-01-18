@@ -2,6 +2,7 @@ import { ChatMessage } from "@twurple/chat";
 import { Twitch } from "./twitch";
 import { Kick } from "./kick";
 import fs from 'node:fs';
+import { HelixGame } from "@twurple/api";
 
 
 export enum Platform {
@@ -61,18 +62,50 @@ export class TalkingBot {
         this.commandList = [
             {
                 command: "!fsog",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    fs.readFile("/var/www/html/fsog", 'utf8', (err, data) => {
-                        if (err) {
-                            reply("Failed reading file!");
-                            return;
-                        }
-                        reply(`SweetbabooO_o currently has ${data} on furry shades of gay`);
-                    });
+                async commandFunction(user, isUserMod, message, reply, platform, context)  {
+                    try {
+
+                        let data = await fetch("https://talkingpanda.dev/fsog");
+                        reply(`SweetbabooO_o currently has ${await data.text()} on furry shades of gay`);
+                    } catch {
+
+                        reply('Failed getting data');
+                    }
+                    
+                   
+                },
+            },
+            {
+                command: "!settitle",
+                
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
+                    if(!isUserMod || message.length == 0) return;
+                    await this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id,{title: message});  
+                    // TODO change title in kick
+                    
+                    reply(`Title has been changed to "${message}"`);
+
+                },
+            },
+            {
+                command: "!setgame",
+                
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
+                    if(!isUserMod ||message.length == 0) return;
+                    const game: HelixGame =  await this.twitch.apiClient.games.getGameByName(message);
+                    if(game == null){
+                        reply(`Can't find game "${message}"`);
+                        return;
+                    }
+                    await this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id,{gameId:game.id});  
+                    // TODO change game in kick
+                    
+                    reply(`Game has been changed to "${game.name}"`);
                 },
             },
             {
                 command: "!adopt",
+                
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     reply(`${message} has been adopted by @${user}!`);
                 },

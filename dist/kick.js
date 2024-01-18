@@ -9,6 +9,7 @@ const talkingbot_1 = require("./talkingbot");
 class Kick {
     constructor(channelId, commandList) {
         this.channelId = channelId;
+        this.commandList = commandList;
     }
     initBot() {
         const chat = new ws_1.default("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false");
