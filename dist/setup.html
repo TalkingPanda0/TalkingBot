@@ -48,19 +48,22 @@
 
     </main>
     <main class="form-signin" id="setup2" style="display: none;">
-        <button class="btn btn-primary w-100 py-2" id="broadcaster">Connect broadcaster accoutn</button>
-        <button class="btn btn-primary w-100 py-2" id="bot">Connect bot accoutn</button>
+        <button class="btn btn-primary w-100 py-4" id="broadcaster">Connect broadcaster accoutn</button>
+        <button class="btn btn-primary w-100 py-4" id="bot">Connect bot accoutn</button>
     </main>
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
         crossorigin="anonymous"></script>
     <script>
+
+        const botscopes = "chat:edit+chat:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+user:manage:whispers+whispers:read";
+        const broadcasterscopes = "bits:read+channel:manage:broadcast+channel:edit:commercial+channel:manage:polls+channel:manage:predictions+channel:manage:raids+channel:manage:redemptions+channel:moderate+channel:read:hype_train+channel:read:polls+channel:read:predictions+channel:read:redemptions+channel:read:subscriptions+moderation:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+moderator:manage:shield_mode+moderator:manage:shoutouts+moderator:read:chatters+moderator:read:followers";
+
         let clientId = "";
         let clientSecret = "";
 
-        const botscopes = "chat:edit+chat:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_message+moderator:manage:chat_settings+user:manage:whispers+whispers:read+";
-        const broadcasterscopes = "bits:read+channel:manage:broadcast+channel:edit:commercial+channel:manage:polls+channel:manage:predictions+channel:manage:raids+channel:manage:redemptions+channel:moderate+channel:read:hype_train+channel:read:polls+channel:read:predictions+channel:read:redemptions+channel:read:subscriptions+moderation:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+moderator:manage:shield_mode+moderator:manage:shoutouts+moderator:read:chatters+moderator:read:followers";
 
         const button = document.getElementById("continue");
         const input = document.getElementById("floatingInput");
@@ -70,11 +73,27 @@
         const setup1 = document.getElementById("setup1");
         const setup2 = document.getElementById("setup2");
 
+        var socket = io('/', { path: "/setup/" });
+
+        socket.on('connect', () => {
+            console.log("Connected to socket server");
+        });
+
+        socket.on('setup_message', (message) => {
+            console.log("GOT MESSAGE:", message);
+            clientId = message.twitchClientId;
+            clientSecret = message.twitchClientSecret;
+
+            setup1.style = "display: none";
+            setup2.style = "display: block";
+        });
+
+
         button.onclick = () => {
             clientId = input.value;
             clientSecret = secret.value;
 
-            // TODO Send to backend
+            socket.emit('setup_message', { twitchClientId: clientId, twitchClientSecret: clientSecret });
 
             setup1.style = "display: none";
             setup2.style = "display: block";

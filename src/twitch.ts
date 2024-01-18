@@ -1,16 +1,22 @@
-import { RefreshingAuthProvider } from '@twurple/auth';
+import { RefreshingAuthProvider, exchangeCode } from '@twurple/auth';
 import { ChatClient, ChatMessage } from '@twurple/chat';
 import { ApiClient, HelixChatBadgeSet } from '@twurple/api';
 import { AuthSetup, Command, Platform, TTSMessage } from './talkingbot';
-
+import * as fs from 'fs';
 
 // Get the tokens from ../tokens.json
-
+const oauthPath = 'oauth.json';
+const botPath = 'token-bot.json';
+const broadcasterPath = 'token-broadcaster.json';
 export class Twitch {
+
+    public clientId: string = "";
+    public clientSecret: string = "";
 
     private channelName: string;
     private chatClient: ChatClient;
     private commandList: Command[] = [];
+    private authProvider: RefreshingAuthProvider;
 
     constructor(channelName: string, commandList: Command[]) {
 
@@ -23,20 +29,21 @@ export class Twitch {
     }
 
     async initBot(): Promise<void> {
+        const fileContent = JSON.parse(fs.readFileSync(oauthPath, 'utf-8'));
+        this.clientId = fileContent.clientId;
+        this.clientSecret = fileContent.clientSecret;
 
-        const { clientId, accessToken, refreshToken, clientSecret } = require('../tokens.json');
-        const authProvider = new RefreshingAuthProvider({ clientId, clientSecret });
-        await authProvider.addUserForToken(
-            {
-                accessToken,
-                refreshToken,
-                expiresIn: null,
-                obtainmentTimestamp: 0
-            }, ['chat']);
+        this.authProvider = new RefreshingAuthProvider({ clientId: this.clientId, clientSecret: this.clientSecret, redirectUri: "http://localhost:3000/oauth" });
 
-        //authProvider.onRefresh(async (userId, newTokenData) => await fs.writeFile(`./tokens.json`, JSON.stringify(newTokenData, null, 4), 'UTF-8'));
+        this.authProvider.onRefresh(async (userId, newTokenData) => {
+            let isBroadcaster: Boolean = newTokenData.scope[0].startsWith("bits:read");
+            fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(newTokenData, null, 4), 'utf-8');
+        });
 
-        this.chatClient = new ChatClient({ authProvider, channels: [this.channelName] });
+        await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath,'utf-8')),["chat"]);
+        await this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath,'utf-8')),[""]);
+        
+        this.chatClient = new ChatClient({ authProvider: this.authProvider, channels: [this.channelName] });
 
         this.chatClient.onMessage(async (channel: string, user: string, text: string, msg: ChatMessage) => {
 
@@ -63,7 +70,18 @@ export class Twitch {
         this.chatClient.connect();
 
     }
-    public setupAuth(auth: AuthSetup){
 
+    public setupAuth(auth: AuthSetup) {
+        this.clientId = auth.twitchClientId;
+        this.clientSecret = auth.twitchClientSecret;
+
+        fs.writeFileSync(oauthPath, JSON.stringify({ "clientId": this.clientId, "clientSecret": this.clientSecret }), 'utf-8');
+
+        this.authProvider = new RefreshingAuthProvider({ clientId: this.clientId, clientSecret: this.clientSecret, redirectUri: "http://localhost:3000/oauth" });
+    }
+    public async addUser(code: string, scope: string) {
+        let isBroadcaster: Boolean = scope.startsWith("bits:read");
+        const tokenData = await exchangeCode(this.clientId, this.clientSecret, code, "http://localhost:3000/oauth");
+        fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(tokenData, null, 4), 'utf-8');
     }
 }

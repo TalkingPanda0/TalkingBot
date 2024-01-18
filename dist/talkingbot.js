@@ -144,10 +144,8 @@ class TalkingBot {
     }
     initBot() {
         this.twitch.initBot().then(() => {
+            this.kick.initBot();
         });
-    }
-    authSetup(auth) {
-        this.twitch;
     }
 }
 exports.TalkingBot = TalkingBot;

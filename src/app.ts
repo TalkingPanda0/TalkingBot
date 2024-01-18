@@ -67,33 +67,55 @@ iochat.of('/chat').on('connection', (socket) => {
   console.log('a chat connected');
 });
 
-server.listen(3000, () => {
-  console.log('listening on *:3000');
-});
 
-let bot: TalkingBot = new TalkingBot("SweetBabooO_o", "17587561", sendTTS);
-// Check if auth.json exists
-if (!fs.existsSync("./auth.json")) {
-  console.log("\x1b[31m%s\x1b[0m", "Auth not found,please go to localhost:3000/setup to create it");
-  const iosetup = new Server(server, {
-    path: "/setup/"
+
+let bot: TalkingBot = new TalkingBot("TalkingPanda", "17587561", sendTTS);
+
+
+// Check if oauth.json exists
+if (!fs.existsSync("./oauth.json")) {
+  console.log("\x1b[31m%s\x1b[0m", "Auth not found, please go to localhost:3000/setup to create it");
+
+  const iosetup = new Server(server, { path: "/setup/" });
+
+  iosetup.on('connection', (socket) => {
+    console.log("got chat connection");
+
+    let twitchClientId = bot.twitch.clientId;
+    let twitchClientSecret = bot.twitch.clientSecret;
+
+    if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
+      socket.emit('setup_message', { twitchClientId: twitchClientId, twitchClientSecret: twitchClientSecret });
+
+    socket.on('setup_message', (message: AuthSetup) => {
+      console.log(`Got ${message.twitchClientId} ${message.twitchClientSecret}`)
+      bot.twitch.setupAuth(message);
+    });
+
   });
-  iosetup.of('/setup').on('message', (message: AuthSetup) => {
-    bot.twitch.setupAuth(message);
-  })
+
+
   app.get('/oauth', (req: Request, res: Response) => {
-    let code: any = req.query.code;
-    let scope: any = req.query.scope;
+    let code: string = req.query.code as string;
+    let scope: string = req.query.scope as string;
+    if(code == "initBot"){
+      res.send("initing bot");
+      bot.initBot();
+      return;
+    }
     if (code.length == 0 || scope.length == 0) {
       res.send("Something went wrong!");
     } else {
-      bot.twitch.addUser(code,scope);
-      res.send("Success!");
+
+      bot.twitch.addUser(code, scope);
+      res.send(`Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`);
     }
 
   });
 } else {
-
   bot.initBot();
 }
 
+server.listen(3000, () => {
+  console.log('listening on *:3000');
+});
