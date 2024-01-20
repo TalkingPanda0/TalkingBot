@@ -44,7 +44,9 @@ export class Kick {
 
         const jsonDataSub = JSON.parse(jsonData.data);
 
-        const text = jsonDataSub.content;
+        const text = jsonDataSub.content
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
         const user = jsonDataSub.sender.username;
         const firstBadgeType = jsonDataSub.sender.identity.badges[0].type;
         const jsonBadges = jsonDataSub.sender.identity.badges;
@@ -57,7 +59,7 @@ export class Kick {
           }
         });
         this.bot.sendToChat({
-          text: text,
+          text: this.parseEmotes(text),
           sender: jsonDataSub.sender.username,
           badges: badges,
           color: jsonDataSub.sender.identity.color,
@@ -85,5 +87,13 @@ export class Kick {
         console.log(error);
       }
     });
+  }
+  private parseEmotes(message: string) {
+    const regex = /\[emote:(\d+):([^\]]+)\]/g;
+    return message.replace(
+      regex,
+      (match, id, name) =>
+        `<img src="https://files.kick.com/emotes/${id}/fullsize" height=20 />`,
+    );
   }
 }

@@ -60,7 +60,11 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
 function parseEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
-    .replace(regex, (match, id, name) => name)
+    .replace(regex, (match, id, name) => {
+      console.log(match);
+      console.log(id);
+      return name;
+    })
     .replace("sweetbabooo-o", "");
 }
 

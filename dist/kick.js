@@ -47,7 +47,7 @@ class Kick {
                     }
                 });
                 this.bot.sendToChat({
-                    text: text,
+                    text: this.parseEmotes(text),
                     sender: jsonDataSub.sender.username,
                     badges: badges,
                     color: jsonDataSub.sender.identity.color,
@@ -65,6 +65,12 @@ class Kick {
                 console.log(error);
             }
         });
+    }
+    parseEmotes(message) {
+        const regex = /\[emote:(\d+):([^\]]+)\]/g;
+        return message
+            .replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" height=20 />`)
+            .replace("sweetbabooo-o", "");
     }
 }
 exports.Kick = Kick;
