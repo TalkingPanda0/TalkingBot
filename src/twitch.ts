@@ -1,7 +1,7 @@
 import { RefreshingAuthProvider, exchangeCode } from "@twurple/auth";
 import { ChatClient, ChatMessage } from "@twurple/chat";
 import { ApiClient, HelixUser } from "@twurple/api";
-import { AuthSetup, Command, Platform } from "./talkingbot";
+import { AuthSetup, Command, Platform, TalkingBot } from "./talkingbot";
 import * as fs from "fs";
 import { PubSubClient, PubSubRedemptionMessage } from "@twurple/pubsub";
 
@@ -10,6 +10,22 @@ const oauthPath = "oauth.json";
 const botPath = "token-bot.json";
 const broadcasterPath = "token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
+const userColors = [
+  "#ff0000",
+  "#0000ff",
+  "#b22222",
+  "#ff7f50",
+  "#9acd32",
+  "#ff4500",
+  "#2e8b57",
+  "#daa520",
+  "#d2691e",
+  "#5f9ea0",
+  "#1e90ff",
+  "#ff69b4",
+  "#8a2be2",
+  "#00ff7f",
+];
 
 export class Twitch {
   public clientId: string = "";
@@ -19,18 +35,47 @@ export class Twitch {
   public pubsub: PubSubClient;
 
   private channelName: string;
+  private bot: TalkingBot;
   private chatClient: ChatClient;
   private commandList: Command[] = [];
   private authProvider: RefreshingAuthProvider;
+  private channelbadges: Map<string, string> = new Map<string, string>();
 
-  constructor(commandList: Command[]) {
+  constructor(commandList: Command[], bot: TalkingBot) {
     this.commandList = commandList;
+    this.bot = bot;
   }
 
   public sendMessage(message: string) {
     this.chatClient.say(this.channelName, message);
   }
 
+  async sendToChatList(message: ChatMessage): Promise<void> {
+    let color = await this.apiClient.chat.getColorForUser(
+      message.userInfo.displayName,
+    );
+    let badges = ["https://twitch.tv/favicon.ico"];
+
+    const badge = message.userInfo.badges.get("subscriber");
+    if (badge != undefined) {
+      badges.push(this.channelbadges.get(badge));
+    }
+    if (message.userInfo.isMod) {
+      badges.push(this.channelbadges.get("mod"));
+    }
+
+    // User hasn't set a color get a "random" color
+    if (color == null || color == undefined) {
+      color = userColors[parseInt(message.userInfo.userId) % userColors.length];
+    }
+
+    this.bot.sendToChat({
+      badges: badges,
+      text: message.text,
+      sender: message.userInfo.userId,
+      color: color,
+    });
+  }
   async initBot(): Promise<void> {
     const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
     this.clientId = fileContent.clientId;
@@ -64,6 +109,20 @@ export class Twitch {
 
     this.apiClient = new ApiClient({ authProvider: this.authProvider });
     this.channel = await this.apiClient.users.getUserByName(this.channelName);
+    const cbadges = await this.apiClient.chat.getChannelBadges(this.channel.id);
+    cbadges.forEach((badge) => {
+      if (badge.id !== "subscriber") return;
+      badge.versions.forEach((element) => {
+        this.channelbadges.set(element.id, element.getImageUrl(4));
+      });
+    });
+    const gbadges = await this.apiClient.chat.getGlobalBadges();
+    gbadges.forEach((badge) => {
+      if (badge.id != "moderator") return;
+      badge.versions.forEach((element) => {
+        this.channelbadges.set("mod", element.getImageUrl(4));
+      });
+    });
 
     this.pubsub = new PubSubClient({ authProvider: this.authProvider });
     this.pubsub.onRedemption(
@@ -125,12 +184,14 @@ export class Twitch {
 
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
-      channels: [this.channelName],
+      channels: [this.channelName, "sweetbabooO_o"],
     });
 
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user}: ${text}`);
+
+        this.sendToChatList(msg);
 
         // not a command
         if (!text.startsWith("!")) return;
@@ -151,6 +212,7 @@ export class Twitch {
         });
       },
     );
+
     this.chatClient.onConnect(() => {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
     });

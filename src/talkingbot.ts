@@ -3,6 +3,9 @@ import { Twitch } from "./twitch";
 import { Kick } from "./kick";
 import { HelixGame } from "@twurple/api";
 
+import { Server } from "socket.io";
+import * as http from "http";
+
 export enum Platform {
   twitch,
   kick,
@@ -22,12 +25,17 @@ export interface Command {
 export interface TTSMessage {
   text: string;
   sender: string;
-  emoteOffsets?: Map<String, String[]>;
 }
 export interface AuthSetup {
   twitchClientId: string;
   twitchClientSecret: string;
   channelName: string;
+}
+export interface chatMsg {
+  text: string;
+  sender: string;
+  badges: string[];
+  color: string;
 }
 
 function removeByIndex(str: string, index: number): string {
@@ -46,8 +54,6 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
       deletedChars++;
     }
   });
-  // remove chars before the first space in str before returning it
-  str = str.split(" ").slice(1).join(" ");
   return str;
 }
 
@@ -61,14 +67,27 @@ function parseEmotes(message: string): string {
 export class TalkingBot {
   public twitch: Twitch;
   public kick: Kick;
+
   private kickId: string;
   private commandList: Command[] = [];
+  private server: http.Server;
+  private iotts: Server;
+  private iochat: Server;
+  private ttsEnabled: Boolean = false;
 
-  constructor(
-    kickId: string,
-    sendTTS: (message: TTSMessage, isMod: boolean) => void,
-  ) {
+  constructor(kickId: string, server: http.Server) {
+    this.server = server;
+
+    this.iotts = new Server(this.server, {
+      path: "/tts/",
+    });
+
+    this.iochat = new Server(this.server, {
+      path: "/chat/",
+    });
+
     this.kickId = kickId;
+
     this.commandList = [
       {
         command: "!fsog",
@@ -205,23 +224,22 @@ export class TalkingBot {
             var indexes: number[] = [];
             context.emoteOffsets.forEach((emote) => {
               emote.forEach((index) => {
-                indexes.push(parseInt(index));
+                indexes.push(parseInt(index) - "!tts ".length);
               });
             });
-            message = removeByIndexToUppercase(message, indexes);
+            msg = removeByIndexToUppercase(msg, indexes);
             let ttsMessage: TTSMessage = {
-              text: message,
+              text: msg,
               sender: user,
-              emoteOffsets: context.emoteOffsets,
             };
 
-            sendTTS(ttsMessage, false);
+            this.sendTTS(ttsMessage, false);
           } else if (platform == Platform.kick) {
             const ttsMessage = {
               text: parseEmotes(message),
               sender: user,
             };
-            sendTTS(ttsMessage, false);
+            this.sendTTS(ttsMessage, false);
           }
         },
       },
@@ -242,34 +260,55 @@ export class TalkingBot {
             var indexes: number[] = [];
             context.emoteOffsets.forEach((emote) => {
               emote.forEach((index) => {
-                indexes.push(parseInt(index));
+                indexes.push(parseInt(index) - "!modtts ".length);
               });
             });
-            message = removeByIndexToUppercase(message, indexes);
+            msg = removeByIndexToUppercase(msg, indexes);
             let ttsMessage: TTSMessage = {
-              text: message,
+              text: msg,
               sender: user,
-              emoteOffsets: context.emoteOffsets,
             };
 
-            sendTTS(ttsMessage, true);
+            this.sendTTS(ttsMessage, true);
           } else if (platform == Platform.kick) {
             const ttsMessage = {
               text: parseEmotes(message),
               sender: user,
             };
-            sendTTS(ttsMessage, true);
+            this.sendTTS(ttsMessage, true);
           }
         },
       },
     ];
 
-    this.twitch = new Twitch(this.commandList);
-    this.kick = new Kick(this.kickId, this.commandList);
+    this.twitch = new Twitch(this.commandList, this);
+    this.kick = new Kick(this.kickId, this.commandList, this);
   }
   public initBot() {
     this.twitch.initBot().then(() => {
       this.kick.initBot();
     });
+  }
+  public sendTTS(message: TTSMessage, isMod: boolean) {
+    if ((!this.ttsEnabled && !isMod) || !message.text || !message.sender) {
+      return;
+    }
+    if (isMod) {
+      if (message.text === "enable") {
+        this.ttsEnabled = true;
+        this.sendTTS({ text: "Enabled TTS command!", sender: "Brian" }, true);
+        return;
+      } else if (message.text === "disable") {
+        this.ttsEnabled = false;
+        this.sendTTS({ text: "disabled TTS command!", sender: "Brian" }, true);
+        return;
+      }
+    }
+
+    this.iotts.emit("message", message);
+  }
+
+  public sendToChat(message: chatMsg) {
+    this.iochat.emit("message", message);
   }
 }

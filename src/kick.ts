@@ -1,26 +1,27 @@
 import WebSocket from "ws";
-import { Command, Platform } from "./talkingbot";
+import { Command, Platform, TalkingBot, chatMsg } from "./talkingbot";
 
 export class Kick {
   private channelId: string;
   private commandList: Command[];
+  private bot: TalkingBot;
 
-  constructor(channelId: string, commandList: Command[]) {
-
+  constructor(channelId: string, commandList: Command[], bot: TalkingBot) {
     this.channelId = channelId;
     this.commandList = commandList;
+    this.bot = bot;
   }
 
   public initBot() {
     const chat = new WebSocket(
-      "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false"
+      "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false",
     );
     chat.on("open", () => {
       chat.send(
         JSON.stringify({
           event: "pusher:subscribe",
           data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
-        })
+        }),
       );
 
       console.log("\x1b[32m%s\x1b[0m", "Kick Setup Complete");
@@ -34,7 +35,6 @@ export class Kick {
 
     chat.on("message", (data: WebSocket.Data) => {
       try {
-
         const badges = ["https://kick.com/favicon.ico"];
         const dataString = data.toString();
         const jsonData = JSON.parse(dataString);
@@ -51,33 +51,39 @@ export class Kick {
 
         jsonBadges.forEach((element: { type: string }) => {
           if (element.type === "moderator") {
-            badges.push("/static/kickmod.svg");
+            badges.push("/kickmod.svg");
           } else if (element.type === "subscriber") {
-            badges.push("/static/kicksub.svg");
+            badges.push("/kicksub.svg");
           }
+        });
+        this.bot.sendToChat({
+          text: text,
+          sender: jsonDataSub.sender.username,
+          badges: badges,
+          color: jsonDataSub.sender.identity.color,
         });
 
         console.log(
           "\x1b[32m%s\x1b[0m",
-          `Kick - ${jsonDataSub.sender.username}: ${text}`
+          `Kick - ${jsonDataSub.sender.username}: ${text}`,
         );
 
         this.commandList.forEach((command) => {
-
           if (!text.startsWith(command.command)) return;
 
-          command.commandFunction(user, firstBadgeType === "moderator" || firstBadgeType === "broadcaster", text.replace(command.command,"").trim(), (message) => {
-            // Can't reply on kick yet
-          }, Platform.kick);
-
+          command.commandFunction(
+            user,
+            firstBadgeType === "moderator" || firstBadgeType === "broadcaster",
+            text.replace(command.command, "").trim(),
+            (message) => {
+              // Can't reply on kick yet
+            },
+            Platform.kick,
+          );
         });
-
       } catch (error) {
         console.log(error);
       }
     });
   }
-
 }
-
-

@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TalkingBot = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
 const kick_1 = require("./kick");
+const socket_io_1 = require("socket.io");
 var Platform;
 (function (Platform) {
     Platform[Platform["twitch"] = 0] = "twitch";
@@ -30,8 +31,6 @@ function removeByIndexToUppercase(str, indexes) {
             deletedChars++;
         }
     });
-    // remove chars before the first space in str before returning it
-    str = str.split(" ").slice(1).join(" ");
     return str;
 }
 function parseEmotes(message) {
@@ -41,8 +40,16 @@ function parseEmotes(message) {
         .replace("sweetbabooo-o", "");
 }
 class TalkingBot {
-    constructor(kickId, sendTTS) {
+    constructor(kickId, server) {
         this.commandList = [];
+        this.ttsEnabled = false;
+        this.server = server;
+        this.iotts = new socket_io_1.Server(this.server, {
+            path: "/tts/",
+        });
+        this.iochat = new socket_io_1.Server(this.server, {
+            path: "/chat/",
+        });
         this.kickId = kickId;
         this.commandList = [
             {
@@ -130,23 +137,22 @@ class TalkingBot {
                         var indexes = [];
                         context.emoteOffsets.forEach((emote) => {
                             emote.forEach((index) => {
-                                indexes.push(parseInt(index));
+                                indexes.push(parseInt(index) - "!tts ".length);
                             });
                         });
-                        message = removeByIndexToUppercase(message, indexes);
+                        msg = removeByIndexToUppercase(msg, indexes);
                         let ttsMessage = {
-                            text: message,
+                            text: msg,
                             sender: user,
-                            emoteOffsets: context.emoteOffsets,
                         };
-                        sendTTS(ttsMessage, false);
+                        this.sendTTS(ttsMessage, false);
                     }
                     else if (platform == Platform.kick) {
                         const ttsMessage = {
                             text: parseEmotes(message),
                             sender: user,
                         };
-                        sendTTS(ttsMessage, false);
+                        this.sendTTS(ttsMessage, false);
                     }
                 },
             },
@@ -160,34 +166,54 @@ class TalkingBot {
                         var indexes = [];
                         context.emoteOffsets.forEach((emote) => {
                             emote.forEach((index) => {
-                                indexes.push(parseInt(index));
+                                indexes.push(parseInt(index) - "!modtts ".length);
                             });
                         });
-                        message = removeByIndexToUppercase(message, indexes);
+                        msg = removeByIndexToUppercase(msg, indexes);
                         let ttsMessage = {
-                            text: message,
+                            text: msg,
                             sender: user,
-                            emoteOffsets: context.emoteOffsets,
                         };
-                        sendTTS(ttsMessage, true);
+                        this.sendTTS(ttsMessage, true);
                     }
                     else if (platform == Platform.kick) {
                         const ttsMessage = {
                             text: parseEmotes(message),
                             sender: user,
                         };
-                        sendTTS(ttsMessage, true);
+                        this.sendTTS(ttsMessage, true);
                     }
                 },
             },
         ];
-        this.twitch = new twitch_1.Twitch(this.commandList);
-        this.kick = new kick_1.Kick(this.kickId, this.commandList);
+        this.twitch = new twitch_1.Twitch(this.commandList, this);
+        this.kick = new kick_1.Kick(this.kickId, this.commandList, this);
     }
     initBot() {
         this.twitch.initBot().then(() => {
             this.kick.initBot();
         });
+    }
+    sendTTS(message, isMod) {
+        if ((!this.ttsEnabled && !isMod) || !message.text || !message.sender) {
+            return;
+        }
+        if (isMod) {
+            if (message.text === "enable") {
+                this.ttsEnabled = true;
+                this.sendTTS({ text: "Enabled TTS command!", sender: "Brian" }, true);
+                return;
+            }
+            else if (message.text === "disable") {
+                this.ttsEnabled = false;
+                this.sendTTS({ text: "disabled TTS command!", sender: "Brian" }, true);
+                return;
+            }
+        }
+        this.iotts.emit("message", message);
+    }
+    sendToChat(message) {
+        this.iochat.emit("message", message);
     }
 }
 exports.TalkingBot = TalkingBot;

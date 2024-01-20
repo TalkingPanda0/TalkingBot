@@ -44,15 +44,56 @@ const oauthPath = "oauth.json";
 const botPath = "token-bot.json";
 const broadcasterPath = "token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
+const userColors = [
+    "#ff0000",
+    "#0000ff",
+    "#b22222",
+    "#ff7f50",
+    "#9acd32",
+    "#ff4500",
+    "#2e8b57",
+    "#daa520",
+    "#d2691e",
+    "#5f9ea0",
+    "#1e90ff",
+    "#ff69b4",
+    "#8a2be2",
+    "#00ff7f",
+];
 class Twitch {
-    constructor(commandList) {
+    constructor(commandList, bot) {
         this.clientId = "";
         this.clientSecret = "";
         this.commandList = [];
+        this.channelbadges = new Map();
         this.commandList = commandList;
+        this.bot = bot;
     }
     sendMessage(message) {
         this.chatClient.say(this.channelName, message);
+    }
+    sendToChatList(message) {
+        return __awaiter(this, void 0, void 0, function* () {
+            let color = yield this.apiClient.chat.getColorForUser(message.userInfo.displayName);
+            let badges = ["https://twitch.tv/favicon.ico"];
+            const badge = message.userInfo.badges.get("subscriber");
+            if (badge != undefined) {
+                badges.push(this.channelbadges.get(badge));
+            }
+            if (message.userInfo.isMod) {
+                badges.push(this.channelbadges.get("mod"));
+            }
+            // User hasn't set a color get a "random" color
+            if (color == null || color == undefined) {
+                color = userColors[parseInt(message.userInfo.userId) % userColors.length];
+            }
+            this.bot.sendToChat({
+                badges: badges,
+                text: message.text,
+                sender: message.userInfo.userId,
+                color: color,
+            });
+        });
     }
     initBot() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -73,6 +114,22 @@ class Twitch {
             yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, "utf-8")), [""]);
             this.apiClient = new api_1.ApiClient({ authProvider: this.authProvider });
             this.channel = yield this.apiClient.users.getUserByName(this.channelName);
+            const cbadges = yield this.apiClient.chat.getChannelBadges(this.channel.id);
+            cbadges.forEach((badge) => {
+                if (badge.id !== "subscriber")
+                    return;
+                badge.versions.forEach((element) => {
+                    this.channelbadges.set(element.id, element.getImageUrl(4));
+                });
+            });
+            const gbadges = yield this.apiClient.chat.getGlobalBadges();
+            gbadges.forEach((badge) => {
+                if (badge.id != "moderator")
+                    return;
+                badge.versions.forEach((element) => {
+                    this.channelbadges.set("mod", element.getImageUrl(4));
+                });
+            });
             this.pubsub = new pubsub_1.PubSubClient({ authProvider: this.authProvider });
             this.pubsub.onRedemption(this.channel.id, (message) => {
                 console.log(`Got redemption ${message.userDisplayName} - ${message.rewardTitle}: ${message.message}`);
@@ -114,10 +171,11 @@ class Twitch {
             });
             this.chatClient = new chat_1.ChatClient({
                 authProvider: this.authProvider,
-                channels: [this.channelName],
+                channels: [this.channelName, "sweetbabooO_o"],
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user}: ${text}`);
+                this.sendToChatList(msg);
                 // not a command
                 if (!text.startsWith("!"))
                     return;

@@ -7,9 +7,10 @@ exports.Kick = void 0;
 const ws_1 = __importDefault(require("ws"));
 const talkingbot_1 = require("./talkingbot");
 class Kick {
-    constructor(channelId, commandList) {
+    constructor(channelId, commandList, bot) {
         this.channelId = channelId;
         this.commandList = commandList;
+        this.bot = bot;
     }
     initBot() {
         const chat = new ws_1.default("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false");
@@ -39,11 +40,17 @@ class Kick {
                 const jsonBadges = jsonDataSub.sender.identity.badges;
                 jsonBadges.forEach((element) => {
                     if (element.type === "moderator") {
-                        badges.push("/static/kickmod.svg");
+                        badges.push("/kickmod.svg");
                     }
                     else if (element.type === "subscriber") {
-                        badges.push("/static/kicksub.svg");
+                        badges.push("/kicksub.svg");
                     }
+                });
+                this.bot.sendToChat({
+                    text: text,
+                    sender: jsonDataSub.sender.username,
+                    badges: badges,
+                    color: jsonDataSub.sender.identity.color,
                 });
                 console.log("\x1b[32m%s\x1b[0m", `Kick - ${jsonDataSub.sender.username}: ${text}`);
                 this.commandList.forEach((command) => {

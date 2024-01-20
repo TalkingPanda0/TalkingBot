@@ -8,14 +8,6 @@ import fs from "node:fs";
 const app: Express = express();
 const server = http.createServer(app);
 
-const iotts = new Server(server, {
-  path: "/tts/",
-});
-
-const iochat = new Server(server, {
-  path: "/chat/",
-});
-
 let enabled = true;
 
 app.use(express.static("public"));
@@ -31,41 +23,7 @@ app.get("/setup", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/setup.html");
 });
 
-function sendTTS(message: TTSMessage, isMod: boolean) {
-  if ((!enabled && !isMod) || !message.text || !message.sender) {
-    return;
-  }
-  if (isMod) {
-    if (message.text === "enable") {
-      enabled = true;
-      sendTTS({ text: "Enabled TTS command!", sender: "Brian" }, true);
-      return;
-    } else if (message.text === "disable") {
-      enabled = false;
-      sendTTS({ text: "disabled TTS command!", sender: "Brian" }, true);
-      return;
-    }
-  }
-
-  iotts.emit("message", message);
-}
-
-/*function sendChat(message: any) {
-  if (message.color == null || message.color == undefined) {
-    message.color = "#048ac7";
-  }
-  iochat.emit('message', message);
-}*/
-
-iotts.of("/tts").on("connection", (socket) => {
-  console.log("a user connected");
-});
-
-iochat.of("/chat").on("connection", (socket) => {
-  console.log("a chat connected");
-});
-
-let bot: TalkingBot = new TalkingBot("17587561", sendTTS);
+let bot: TalkingBot = new TalkingBot("17587561", server);
 
 // Check if oauth.json exists
 if (!fs.existsSync("./oauth.json")) {
