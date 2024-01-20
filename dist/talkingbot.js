@@ -24,7 +24,8 @@ function removeByIndexToUppercase(str, indexes) {
     let deletedChars = 0;
     indexes.forEach((index) => {
         let i = index - deletedChars;
-        while (!isNaN(parseInt(str.charAt(i), 10)) || str.charAt(i) !== str.charAt(i).toUpperCase()) {
+        while (!isNaN(parseInt(str.charAt(i), 10)) ||
+            str.charAt(i) !== str.charAt(i).toUpperCase()) {
             str = removeByIndex(str, i);
             deletedChars++;
         }
@@ -35,12 +36,13 @@ function removeByIndexToUppercase(str, indexes) {
 }
 function parseEmotes(message) {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
-    return message.replace(regex, (match, id, name) => name).replace("sweetbabooo-o", "");
+    return message
+        .replace(regex, (match, id, name) => name)
+        .replace("sweetbabooo-o", "");
 }
 class TalkingBot {
-    constructor(channelName, kickId, sendTTS) {
+    constructor(kickId, sendTTS) {
         this.commandList = [];
-        this.channelName = channelName;
         this.kickId = kickId;
         this.commandList = [
             {
@@ -52,7 +54,7 @@ class TalkingBot {
                             reply(`SweetbabooO_o currently has ${yield response.text()} on furry shades of gay`);
                         }
                         catch (_a) {
-                            reply('Failed getting data');
+                            reply("Failed getting data");
                         }
                     });
                 },
@@ -118,15 +120,19 @@ class TalkingBot {
                     if (platform == Platform.twitch)
                         return;
                     this.twitch.sendMessage(`!bsr ${message}`);
-                }
+                },
             },
             {
-                command: '!tts',
+                command: "!tts",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (platform == Platform.twitch && context != null) {
                         let msg = message.trim();
                         var indexes = [];
-                        context.emoteOffsets.forEach((emote) => { emote.forEach((index) => { indexes.push(parseInt(index)); }); });
+                        context.emoteOffsets.forEach((emote) => {
+                            emote.forEach((index) => {
+                                indexes.push(parseInt(index));
+                            });
+                        });
                         message = removeByIndexToUppercase(message, indexes);
                         let ttsMessage = {
                             text: message,
@@ -142,17 +148,21 @@ class TalkingBot {
                         };
                         sendTTS(ttsMessage, false);
                     }
-                }
+                },
             },
             {
-                command: '!modtts',
+                command: "!modtts",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
                     if (platform == Platform.twitch && context != null) {
                         let msg = message.trim();
                         var indexes = [];
-                        context.emoteOffsets.forEach((emote) => { emote.forEach((index) => { indexes.push(parseInt(index)); }); });
+                        context.emoteOffsets.forEach((emote) => {
+                            emote.forEach((index) => {
+                                indexes.push(parseInt(index));
+                            });
+                        });
                         message = removeByIndexToUppercase(message, indexes);
                         let ttsMessage = {
                             text: message,
@@ -168,10 +178,10 @@ class TalkingBot {
                         };
                         sendTTS(ttsMessage, true);
                     }
-                }
+                },
             },
         ];
-        this.twitch = new twitch_1.Twitch(this.channelName, this.commandList);
+        this.twitch = new twitch_1.Twitch(this.commandList);
         this.kick = new kick_1.Kick(this.kickId, this.commandList);
     }
     initBot() {

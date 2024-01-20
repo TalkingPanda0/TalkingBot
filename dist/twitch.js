@@ -45,11 +45,10 @@ const botPath = "token-bot.json";
 const broadcasterPath = "token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
 class Twitch {
-    constructor(channelName, commandList) {
+    constructor(commandList) {
         this.clientId = "";
         this.clientSecret = "";
         this.commandList = [];
-        this.channelName = channelName;
         this.commandList = commandList;
     }
     sendMessage(message) {
@@ -60,6 +59,7 @@ class Twitch {
             const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
             this.clientId = fileContent.clientId;
             this.clientSecret = fileContent.clientSecret;
+            this.channelName = fileContent.channelName;
             this.authProvider = new auth_1.RefreshingAuthProvider({
                 clientId: this.clientId,
                 clientSecret: this.clientSecret,
@@ -138,9 +138,11 @@ class Twitch {
     setupAuth(auth) {
         this.clientId = auth.twitchClientId;
         this.clientSecret = auth.twitchClientSecret;
+        this.channelName = auth.channelName;
         fs.writeFileSync(oauthPath, JSON.stringify({
             clientId: this.clientId,
             clientSecret: this.clientSecret,
+            channelName: this.channelName,
         }), "utf-8");
         this.authProvider = new auth_1.RefreshingAuthProvider({
             clientId: this.clientId,

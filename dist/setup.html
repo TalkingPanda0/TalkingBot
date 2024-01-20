@@ -1,116 +1,156 @@
 <!doctype html>
 <html lang="en" data-bs-theme="auto">
-
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Talkingbot Setup</title>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@docsearch/css@3"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
     <style>
-        html,
-        body {
-            height: 100%;
-        }
+      html,
+      body {
+        height: 100%;
+      }
 
-        .form-signin {
-            padding: 1rem;
-        }
+      .form-signin {
+        padding: 1rem;
+      }
 
-        .form-control {
-            margin-bottom: 1rem;
-        }
+      .form-control {
+        margin-bottom: 1rem;
+      }
 
-        p {
-            font-size: larger;
-        }
-        .login-button {
-            margin-bottom: 1rem;
-           
-        }
+      p {
+        font-size: larger;
+      }
+      .login-button {
+        margin-bottom: 1rem;
+      }
     </style>
+  </head>
 
-</head>
-
-<body class="py-4 bg-body-tertiary">
-
+  <body class="py-4 bg-body-tertiary">
     <main class="form-signin" id="setup1">
-        <p class="py-2">Please create an application in <a href="https://dev.twitch.tv/console/apps">twitch dev</a>
-            console with redirect uri set to "localhost:3000/oauth" and enter your client ID and client secret then
-            click continue</p>
-        <div class="form-floating">
-            <input type="text" class="form-control" id="floatingInput" placeholder="Client ID">
-            <label for="floatingInput">Client id</label>
-        </div>
-        <div class="form-floating">
-            <input type="text" class="form-control w-100" id="floatingSecret" placeholder="Client Secret">
-            <label for="floatingSecret">Client secret</label>
-        </div>
-        <button class="btn btn-primary w-100 py-2" id="continue">Continue</button>
+      <p class="py-2">
+        Please create an application in
+        <a href="https://dev.twitch.tv/console/apps">twitch dev</a> console with
+        redirect uri set to "localhost:3000/oauth" and enter your client ID and
+        client secret then click continue
+      </p>
+      <div class="form-floating">
+        <input
+          type="text"
+          class="form-control w-100"
+          id="floatingName"
+          placeholder="Channel Name"
+        />
+        <label for="floatingName">Channel Name</label>
+      </div>
 
+      <div class="form-floating">
+        <input
+          type="text"
+          class="form-control"
+          id="floatingInput"
+          placeholder="Client ID"
+        />
+        <label for="floatingInput">Client id</label>
+      </div>
+      <div class="form-floating">
+        <input
+          type="text"
+          class="form-control w-100"
+          id="floatingSecret"
+          placeholder="Client Secret"
+        />
+        <label for="floatingSecret">Client secret</label>
+      </div>
+
+      <button class="btn btn-primary w-100 py-2" id="continue">Continue</button>
     </main>
-    <main class="form-signin py-4" id="setup2" style="display: none;">
-        <p class="py-2">After connecting both accounts restart the bot.</p>
-        <button class="btn btn-primary w-100 py-2 login-button" id="broadcaster">Connect broadcaster account</button>
-        <button class="btn btn-primary w-100 py-2 login-button" id="bot">Connect bot account</button>
+    <main class="form-signin py-4" id="setup2" style="display: none">
+      <p class="py-2">After connecting both accounts restart the bot.</p>
+      <button class="btn btn-primary w-100 py-2 login-button" id="broadcaster">
+        Connect broadcaster account
+      </button>
+      <button class="btn btn-primary w-100 py-2 login-button" id="bot">
+        Connect bot account
+      </button>
     </main>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-        crossorigin="anonymous"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+      crossorigin="anonymous"
+    ></script>
     <script>
-        
-        const botscopes = "chat:edit+chat:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+user:manage:whispers+whispers:read";
-        const broadcasterscopes = "bits:read+channel:manage:broadcast+channel:edit:commercial+channel:manage:polls+channel:manage:predictions+channel:manage:raids+channel:manage:redemptions+channel:moderate+channel:read:hype_train+channel:read:polls+channel:read:predictions+channel:read:redemptions+channel:read:subscriptions+moderation:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+moderator:manage:shield_mode+moderator:manage:shoutouts+moderator:read:chatters+moderator:read:followers";
+      const botscopes =
+        "chat:edit+chat:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+user:manage:whispers+whispers:read";
+      const broadcasterscopes =
+        "bits:read+channel:manage:broadcast+channel:edit:commercial+channel:manage:polls+channel:manage:predictions+channel:manage:raids+channel:manage:redemptions+channel:moderate+channel:read:hype_train+channel:read:polls+channel:read:predictions+channel:read:redemptions+channel:read:subscriptions+moderation:read+moderator:manage:announcements+moderator:manage:banned_users+moderator:manage:chat_messages+moderator:manage:chat_settings+moderator:manage:shield_mode+moderator:manage:shoutouts+moderator:read:chatters+moderator:read:followers";
 
-        let clientId = "";
-        let clientSecret = "";
+      let clientId = "";
+      let clientSecret = "";
 
+      const button = document.getElementById("continue");
+      const input = document.getElementById("floatingInput");
+      const secret = document.getElementById("floatingSecret");
+      const name = document.getElementById("floatingName");
+      const bot = document.getElementById("bot");
+      const broadcaster = document.getElementById("broadcaster");
+      const setup1 = document.getElementById("setup1");
+      const setup2 = document.getElementById("setup2");
+      var socket = io("/", { path: "/setup/" });
 
-        const button = document.getElementById("continue");
-        const input = document.getElementById("floatingInput");
-        const secret = document.getElementById("floatingSecret");
-        const bot = document.getElementById("bot");
-        const broadcaster = document.getElementById("broadcaster");
-        const setup1 = document.getElementById("setup1");
-        const setup2 = document.getElementById("setup2");
-        var socket = io('/', { path: "/setup/" });
+      socket.on("connect", () => {
+        console.log("Connected to socket server");
+      });
 
-        socket.on('connect', () => {
-            console.log("Connected to socket server");
+      socket.on("setup_message", (message) => {
+        console.log("GOT MESSAGE:", message);
+        clientId = message.twitchClientId;
+        clientSecret = message.twitchClientSecret;
+
+        setup1.style = "display: none";
+        setup2.style = "display: block";
+      });
+
+      button.onclick = () => {
+        clientId = input.value;
+        clientSecret = secret.value;
+
+        socket.emit("setup_message", {
+          twitchClientId: clientId,
+          twitchClientSecret: clientSecret,
+          channelName: name.value,
         });
 
-        socket.on('setup_message', (message) => {
-            console.log("GOT MESSAGE:", message);
-            clientId = message.twitchClientId;
-            clientSecret = message.twitchClientSecret;
-
-            setup1.style = "display: none";
-            setup2.style = "display: block";
-        });
-
-
-        button.onclick = () => {
-            clientId = input.value;
-            clientSecret = secret.value;
-
-            socket.emit('setup_message', { twitchClientId: clientId, twitchClientSecret: clientSecret });
-
-            setup1.style = "display: none";
-            setup2.style = "display: block";
-        }
-        bot.onclick = () => {
-            window.open(`https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=http://localhost:3000/oauth&response_type=code&scope=${botscopes}`, "_blank");
-        }
-        broadcaster.onclick = () => {
-            window.open(`https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=http://localhost:3000/oauth&response_type=code&scope=${broadcasterscopes}`, "_blank");
-        }
-
-
+        setup1.style = "display: none";
+        setup2.style = "display: block";
+      };
+      bot.onclick = () => {
+        window.open(
+          `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=http://localhost:3000/oauth&response_type=code&scope=${botscopes}`,
+          "_blank",
+        );
+      };
+      broadcaster.onclick = () => {
+        window.open(
+          `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=http://localhost:3000/oauth&response_type=code&scope=${broadcasterscopes}`,
+          "_blank",
+        );
+      };
     </script>
-</body>
-
+  </body>
 </html>
+

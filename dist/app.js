@@ -34,20 +34,20 @@ const node_fs_1 = __importDefault(require("node:fs"));
 const app = (0, express_1.default)();
 const server = http.createServer(app);
 const iotts = new socket_io_1.Server(server, {
-    path: "/tts/"
+    path: "/tts/",
 });
 const iochat = new socket_io_1.Server(server, {
-    path: "/chat/"
+    path: "/chat/",
 });
 let enabled = true;
-app.use(express_1.default.static('public'));
-app.get('/tts', (req, res) => {
-    res.sendFile(__dirname + '/tts.html');
+app.use(express_1.default.static("public"));
+app.get("/tts", (req, res) => {
+    res.sendFile(__dirname + "/tts.html");
 });
-app.get('/chat', (req, res) => {
+app.get("/chat", (req, res) => {
     res.sendFile(__dirname + "/chat.html");
 });
-app.get('/setup', (req, res) => {
+app.get("/setup", (req, res) => {
     res.sendFile(__dirname + "/setup.html");
 });
 function sendTTS(message, isMod) {
@@ -66,7 +66,7 @@ function sendTTS(message, isMod) {
             return;
         }
     }
-    iotts.emit('message', message);
+    iotts.emit("message", message);
 }
 /*function sendChat(message: any) {
   if (message.color == null || message.color == undefined) {
@@ -74,29 +74,32 @@ function sendTTS(message, isMod) {
   }
   iochat.emit('message', message);
 }*/
-iotts.of('/tts').on('connection', (socket) => {
-    console.log('a user connected');
+iotts.of("/tts").on("connection", (socket) => {
+    console.log("a user connected");
 });
-iochat.of('/chat').on('connection', (socket) => {
-    console.log('a chat connected');
+iochat.of("/chat").on("connection", (socket) => {
+    console.log("a chat connected");
 });
-let bot = new talkingbot_1.TalkingBot("SweetBabooO_o", "17587561", sendTTS);
+let bot = new talkingbot_1.TalkingBot("17587561", sendTTS);
 // Check if oauth.json exists
 if (!node_fs_1.default.existsSync("./oauth.json")) {
     console.log("\x1b[31m%s\x1b[0m", "Auth not found, please go to localhost:3000/setup to create it");
     const iosetup = new socket_io_1.Server(server, { path: "/setup/" });
-    iosetup.on('connection', (socket) => {
+    iosetup.on("connection", (socket) => {
         console.log("got chat connection");
         let twitchClientId = bot.twitch.clientId;
         let twitchClientSecret = bot.twitch.clientSecret;
         if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
-            socket.emit('setup_message', { twitchClientId: twitchClientId, twitchClientSecret: twitchClientSecret });
-        socket.on('setup_message', (message) => {
-            console.log(`Got ${message.twitchClientId} ${message.twitchClientSecret}`);
+            socket.emit("setup_message", {
+                twitchClientId: twitchClientId,
+                twitchClientSecret: twitchClientSecret,
+            });
+        socket.on("setup_message", (message) => {
+            console.log(`Got ${message.twitchClientId} ${message.twitchClientSecret} ${message.channelName}`);
             bot.twitch.setupAuth(message);
         });
     });
-    app.get('/oauth', (req, res) => {
+    app.get("/oauth", (req, res) => {
         let code = req.query.code;
         let scope = req.query.scope;
         if (code == "initBot") {
@@ -117,5 +120,5 @@ else {
     bot.initBot();
 }
 server.listen(3000, () => {
-    console.log('listening on *:3000');
+    console.log("listening on *:3000");
 });

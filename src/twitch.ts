@@ -23,8 +23,7 @@ export class Twitch {
   private commandList: Command[] = [];
   private authProvider: RefreshingAuthProvider;
 
-  constructor(channelName: string, commandList: Command[]) {
-    this.channelName = channelName;
+  constructor(commandList: Command[]) {
     this.commandList = commandList;
   }
 
@@ -36,6 +35,7 @@ export class Twitch {
     const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
     this.clientId = fileContent.clientId;
     this.clientSecret = fileContent.clientSecret;
+    this.channelName = fileContent.channelName;
 
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
@@ -161,12 +161,14 @@ export class Twitch {
   public setupAuth(auth: AuthSetup) {
     this.clientId = auth.twitchClientId;
     this.clientSecret = auth.twitchClientSecret;
+    this.channelName = auth.channelName;
 
     fs.writeFileSync(
       oauthPath,
       JSON.stringify({
         clientId: this.clientId,
         clientSecret: this.clientSecret,
+        channelName: this.channelName,
       }),
       "utf-8",
     );
