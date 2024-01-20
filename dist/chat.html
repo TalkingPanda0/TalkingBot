@@ -1,92 +1,86 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<div id="message-list"></div>
-<div id="container"></div>
+  <div id="message-list"></div>
 
-<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
-<script>
+  <script>
     const messageList = document.getElementById("message-list");
 
-
     function addToMessageList(message) {
-        let messageElement = document.createElement("span");
-        messageElement.style = "display: flex";
-        let badges = document.createElement("div");
-        badges.classList.add("badges");
-        message.badges.forEach(badge => {
-            let badgeElement = document.createElement("img");
-            badgeElement.src = badge;
-            badgeElement.width = "16";
-            badgeElement.height = "16";
-            badgeElement.classList.add("badge")
-            badges.appendChild(badgeElement);
-        });
-        let element = document.createElement("div");
-        element.style = "padding: 2px;";
-                                                                                                                              
-        element.innerHTML = `<span class="sender" style="color:${message.color}">${message.sender}</span><span class="text">: ${message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>`
-        messageElement.appendChild(badges);
-        messageElement.appendChild(element);
-        messageList.appendChild(messageElement);
-        messageList.scrollTop = messageList.scrollHeight;
-        
+      let messageElement = document.createElement("span");
+      let badges = document.createElement("div");
+      messageElement.style = "display: flex;";
+      badges.classList.add("badges");
+      message.badges.forEach((badge) => {
+        let badgeElement = document.createElement("img");
+        badgeElement.src = badge;
+        badgeElement.width = "16";
+        badgeElement.height = "16";
+        badgeElement.classList.add("badge");
+        badges.appendChild(badgeElement);
+      });
+      let element = document.createElement("span");
+      element.classList.add("sender");
+      element.style = `color:${message.color}`;
+
+      element.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
+      messageElement.appendChild(badges);
+      messageElement.appendChild(element);
+      messageList.appendChild(messageElement);
+      messageList.scrollTop = messageList.scrollHeight;
     }
 
-    var socket = io('/', { path: "/chat/" });
+    var socket = io("/", { path: "/chat/" });
 
-    socket.on('message', (message) => {
-        console.log("GOT MESSAGE:", message);
-        addToMessageList(message);
-        if(message.sender == "TalkingPanda" && message.text == "refresh"){
-            location.reload();
-        }
+    socket.on("message", (message) => {
+      console.log("GOT MESSAGE:", message);
+      addToMessageList(message);
+      if (message.sender == "TalkingPanda" && message.text == "refresh") {
+        location.reload();
+      }
     });
-   
-
-
-</script>
-</body>
-<style>
+  </script>
+  <style>
     #message-list {
-        max-height: 300px;
-        max-width: 520px;
-        overflow-y: scroll;
-        background-color: rgba(0, 0, 0, 0.25);
-        padding: 10px;
-        scrollbar-width: none;
-        /* Firefox */
-        -ms-overflow-style: none;
-        /* Internet Explorer */
+      display: table;
+      bottom: 0;
+      width: 100%;
+      left: 0;
+      position: absolute;
+      table-layout: fixed;
+      width: 100%;
     }
 
     #message-list::-webkit-scrollbar {
-        width: 0;
-        /* WebKit (Safari, Chrome) */
+      width: 0;
+      /* WebKit (Safari, Chrome) */
     }
 
     .text {
-        
-        font-size: 16px;
-        color: white;
-        font-family: Arial, Helvetica, sans-serif;
-        vertical-align: middle;
+      font-size: 16px;
+      color: white;
+      font-family: Arial, Helvetica, sans-serif;
+      vertical-align: middle;
+      overflow-wrap: break-word;
     }
     .sender {
-        vertical-align: middle;
-        font-size: 16px;
-        font-family: Arial, Helvetica, sans-serif;
+      vertical-align: middle;
+      font-size: 16px;
+      font-family: Arial, Helvetica, sans-serif;
     }
     .badge {
-        
-        display: inline-table;
-        vertical-align: middle;
-        margin: 2px;
-        filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000) drop-shadow(0 0 0 #000);
+      display: inline-table;
+      vertical-align: middle;
+      margin: 2px;
+      filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+        drop-shadow(0 0 0 #000);
     }
     .badges {
-        padding: 2px;
+      display: inline-table;
+      padding: 2px;
+      vertical-align: middle;
     }
-</style>
-
+  </style>
 </html>
+

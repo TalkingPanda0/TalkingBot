@@ -4,6 +4,7 @@ import { ApiClient, HelixUser } from "@twurple/api";
 import { AuthSetup, Command, Platform, TalkingBot } from "./talkingbot";
 import * as fs from "fs";
 import { PubSubClient, PubSubRedemptionMessage } from "@twurple/pubsub";
+import { start } from "repl";
 
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
@@ -39,8 +40,7 @@ export class Twitch {
   private chatClient: ChatClient;
   private commandList: Command[] = [];
   private authProvider: RefreshingAuthProvider;
-  private channelbadges: Map<string, string> = new Map<string, string>();
-
+  private badges: Map<string, string> = new Map<string, string>();
   constructor(commandList: Command[], bot: TalkingBot) {
     this.commandList = commandList;
     this.bot = bot;
@@ -52,27 +52,46 @@ export class Twitch {
 
   async sendToChatList(message: ChatMessage): Promise<void> {
     let color = await this.apiClient.chat.getColorForUser(
-      message.userInfo.displayName,
+      message.userInfo.userId,
     );
     let badges = ["https://twitch.tv/favicon.ico"];
 
     const badge = message.userInfo.badges.get("subscriber");
     if (badge != undefined) {
-      badges.push(this.channelbadges.get(badge));
+      badges.push(this.badges.get(badge));
     }
     if (message.userInfo.isMod) {
-      badges.push(this.channelbadges.get("mod"));
+      badges.push(this.badges.get("moderator"));
+    } else if (message.userInfo.isBroadcaster) {
+      badges.push(this.badges.get("broadcaster"));
     }
 
     // User hasn't set a color get a "random" color
     if (color == null || color == undefined) {
       color = userColors[parseInt(message.userInfo.userId) % userColors.length];
     }
+    let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    let emotes: Map<string, string> = new Map<string, string>();
+    message.emoteOffsets.forEach((offsets: string[], emote: string) => {
+      let startIndex = parseInt(offsets[0]);
+      let endIndex =
+        parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
+      console.log(`${startIndex} ${endIndex}`);
+      let emoteString = text.slice(startIndex, endIndex);
+      emotes.set(
+        emoteString,
+        `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`,
+      );
+    });
+    emotes.forEach((emoteUrl: string, emote: string) => {
+      console.log(`${emoteUrl} ${emote}`);
+      text = text.replace(emote, `<img src=${emoteUrl} height="20" />`);
+    });
 
     this.bot.sendToChat({
       badges: badges,
-      text: message.text,
-      sender: message.userInfo.userId,
+      text: text,
+      sender: message.userInfo.displayName,
       color: color,
     });
   }
@@ -113,14 +132,14 @@ export class Twitch {
     cbadges.forEach((badge) => {
       if (badge.id !== "subscriber") return;
       badge.versions.forEach((element) => {
-        this.channelbadges.set(element.id, element.getImageUrl(4));
+        this.badges.set(element.id, element.getImageUrl(4));
       });
     });
     const gbadges = await this.apiClient.chat.getGlobalBadges();
     gbadges.forEach((badge) => {
-      if (badge.id != "moderator") return;
+      if (badge.id != "moderator" && badge.id != "broadcaster") return;
       badge.versions.forEach((element) => {
-        this.channelbadges.set("mod", element.getImageUrl(4));
+        this.badges.set(badge.id, element.getImageUrl(4));
       });
     });
 
@@ -189,7 +208,10 @@ export class Twitch {
 
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
-        console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user}: ${text}`);
+        console.log(
+          "\x1b[35m%s\x1b[0m",
+          `Twitch - ${msg.userInfo.displayName}: ${text}`,
+        );
 
         this.sendToChatList(msg);
 
