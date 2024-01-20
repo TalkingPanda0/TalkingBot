@@ -40,9 +40,10 @@ const talkingbot_1 = require("./talkingbot");
 const fs = __importStar(require("fs"));
 const pubsub_1 = require("@twurple/pubsub");
 // Get the tokens from ../tokens.json
-const oauthPath = 'oauth.json';
-const botPath = 'token-bot.json';
-const broadcasterPath = 'token-broadcaster.json';
+const oauthPath = "oauth.json";
+const botPath = "token-bot.json";
+const broadcasterPath = "token-broadcaster.json";
+const pollRegex = /^(.*?):\s*(.*)$/;
 class Twitch {
     constructor(channelName, commandList) {
         this.clientId = "";
@@ -56,16 +57,20 @@ class Twitch {
     }
     initBot() {
         return __awaiter(this, void 0, void 0, function* () {
-            const fileContent = JSON.parse(fs.readFileSync(oauthPath, 'utf-8'));
+            const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
             this.clientId = fileContent.clientId;
             this.clientSecret = fileContent.clientSecret;
-            this.authProvider = new auth_1.RefreshingAuthProvider({ clientId: this.clientId, clientSecret: this.clientSecret, redirectUri: "http://localhost:3000/oauth" });
+            this.authProvider = new auth_1.RefreshingAuthProvider({
+                clientId: this.clientId,
+                clientSecret: this.clientSecret,
+                redirectUri: "http://localhost:3000/oauth",
+            });
             this.authProvider.onRefresh((userId, newTokenData) => __awaiter(this, void 0, void 0, function* () {
                 let isBroadcaster = newTokenData.scope[0].startsWith("bits:read");
-                fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(newTokenData, null, 4), 'utf-8');
+                fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(newTokenData, null, 4), "utf-8");
             }));
-            yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath, 'utf-8')), ["chat"]);
-            yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, 'utf-8')), [""]);
+            yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(botPath, "utf-8")), ["chat"]);
+            yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, "utf-8")), [""]);
             this.apiClient = new api_1.ApiClient({ authProvider: this.authProvider });
             this.channel = yield this.apiClient.users.getUserByName(this.channelName);
             this.pubsub = new pubsub_1.PubSubClient({ authProvider: this.authProvider });
@@ -73,14 +78,44 @@ class Twitch {
                 console.log(`Got redemption ${message.userDisplayName} - ${message.rewardTitle}: ${message.message}`);
                 switch (message.rewardTitle) {
                     case "Self Timeout":
-                        this.apiClient.moderation.banUser(this.channel.id, { duration: 300, reason: "Self Timeout Request", user: message.userId });
+                        this.apiClient.moderation.banUser(this.channel.id, {
+                            duration: 300,
+                            reason: "Self Timeout Request",
+                            user: message.userId,
+                        });
                         break;
                     case "Timeout Somebody Else":
-                        this.apiClient.moderation.banUser(this.channel.id, { duration: 60, reason: `Timeout request by ${message.userDisplayName}`, user: message.message });
+                        this.apiClient.moderation.banUser(this.channel.id, {
+                            duration: 60,
+                            reason: `Timeout request by ${message.userDisplayName}`,
+                            user: message.message,
+                        });
+                        break;
+                    case "Poll":
+                        // message like Which is better?: hapboo, realboo, habpoo, hapflat
+                        const matches = message.message.match(pollRegex);
+                        if (matches) {
+                            const question = matches[1];
+                            const options = matches[2].split(",").map((word) => word.trim());
+                            this.apiClient.polls.createPoll(this.channel.id, {
+                                title: question,
+                                duration: 60,
+                                choices: options,
+                            });
+                        }
+                        else {
+                            this.chatClient.say(this.channelName, `Couldn't parse poll: ${message.message}`);
+                            this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, message.rewardId, [message.id], "CANCELED");
+                            return;
+                        }
                         break;
                 }
+                this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, message.rewardId, [message.id], "FULFILLED");
             });
-            this.chatClient = new chat_1.ChatClient({ authProvider: this.authProvider, channels: [this.channelName] });
+            this.chatClient = new chat_1.ChatClient({
+                authProvider: this.authProvider,
+                channels: [this.channelName],
+            });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user}: ${text}`);
                 // not a command
@@ -103,14 +138,21 @@ class Twitch {
     setupAuth(auth) {
         this.clientId = auth.twitchClientId;
         this.clientSecret = auth.twitchClientSecret;
-        fs.writeFileSync(oauthPath, JSON.stringify({ "clientId": this.clientId, "clientSecret": this.clientSecret }), 'utf-8');
-        this.authProvider = new auth_1.RefreshingAuthProvider({ clientId: this.clientId, clientSecret: this.clientSecret, redirectUri: "http://localhost:3000/oauth" });
+        fs.writeFileSync(oauthPath, JSON.stringify({
+            clientId: this.clientId,
+            clientSecret: this.clientSecret,
+        }), "utf-8");
+        this.authProvider = new auth_1.RefreshingAuthProvider({
+            clientId: this.clientId,
+            clientSecret: this.clientSecret,
+            redirectUri: "http://localhost:3000/oauth",
+        });
     }
     addUser(code, scope) {
         return __awaiter(this, void 0, void 0, function* () {
             let isBroadcaster = scope.startsWith("bits:read");
             const tokenData = yield (0, auth_1.exchangeCode)(this.clientId, this.clientSecret, code, "http://localhost:3000/oauth");
-            fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(tokenData, null, 4), 'utf-8');
+            fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(tokenData, null, 4), "utf-8");
         });
     }
 }

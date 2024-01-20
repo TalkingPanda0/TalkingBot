@@ -48,8 +48,8 @@ class TalkingBot {
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     return __awaiter(this, void 0, void 0, function* () {
                         try {
-                            let data = yield fetch("https://talkingpanda.dev/fsog");
-                            reply(`SweetbabooO_o currently has ${yield data.text()} on furry shades of gay`);
+                            let response = yield fetch("https://talkingpanda.dev/fsog");
+                            reply(`SweetbabooO_o currently has ${yield response.text()} on furry shades of gay`);
                         }
                         catch (_a) {
                             reply('Failed getting data');

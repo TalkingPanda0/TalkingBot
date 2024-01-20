@@ -1,7 +1,6 @@
 import { ChatMessage } from "@twurple/chat";
 import { Twitch } from "./twitch";
 import { Kick } from "./kick";
-import fs from 'node:fs';
 import { HelixGame } from "@twurple/api";
 
 
@@ -64,9 +63,8 @@ export class TalkingBot {
                 command: "!fsog",
                 async commandFunction(user, isUserMod, message, reply, platform, context)  {
                     try {
-
-                        let data = await fetch("https://talkingpanda.dev/fsog");
-                        reply(`SweetbabooO_o currently has ${await data.text()} on furry shades of gay`);
+                        let response = await fetch("https://talkingpanda.dev/fsog");
+                        reply(`SweetbabooO_o currently has ${await response.text()} on furry shades of gay`);
                     } catch {
 
                         reply('Failed getting data');
