@@ -10,7 +10,6 @@
     function addToMessageList(message) {
       let messageElement = document.createElement("span");
       let badges = document.createElement("div");
-      messageElement.style = "display: flex;";
       badges.classList.add("badges");
       message.badges.forEach((badge) => {
         let badgeElement = document.createElement("img");
@@ -28,6 +27,7 @@
       messageElement.appendChild(badges);
       messageElement.appendChild(element);
       messageList.appendChild(messageElement);
+      messageList.appendChild(document.createElement("br"));
       messageList.scrollTop = messageList.scrollHeight;
     }
 
