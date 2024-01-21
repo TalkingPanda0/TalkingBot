@@ -211,7 +211,7 @@ export class Twitch {
 
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
-      channels: [this.channelName, "sweetbabooO_o"],
+      channels: [this.channelName],
     });
 
     this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
