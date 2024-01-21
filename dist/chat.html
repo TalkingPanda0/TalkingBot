@@ -9,6 +9,9 @@
 
     function addToMessageList(message) {
       let messageElement = document.createElement("span");
+      messageElement.id = message.id;
+      messageElement.classList.add(message.platform);
+      messageElement.classList.add(message.senderId);
       let badges = document.createElement("div");
       badges.classList.add("badges");
       message.badges.forEach((badge) => {
@@ -26,8 +29,8 @@
       element.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
       messageElement.appendChild(badges);
       messageElement.appendChild(element);
+      messageElement.appendChild(document.createElement("br"));
       messageList.appendChild(messageElement);
-      messageList.appendChild(document.createElement("br"));
       messageList.scrollTop = messageList.scrollHeight;
     }
 
@@ -39,6 +42,27 @@
       if (message.sender == "TalkingPanda" && message.text == "refresh") {
         location.reload();
       }
+    });
+
+    socket.on("deleteMessage", (messageId) => {
+      const messageElement = document.getElementById(messageId);
+      if (messageElement) {
+        messageElement.remove();
+      } else {
+        console.error(`Couldn't find message: ${messageId}`);
+      }
+    });
+    socket.on("clearChat", (platform) => {
+      Array.from(document.getElementsByClassName(platform)).forEach(
+        (message) => {
+          message.remove();
+        },
+      );
+    });
+    socket.on("banUser", (user) => {
+      Array.from(document.getElementsByClassName(user)).forEach((message) => {
+        message.remove();
+      });
     });
   </script>
   <style>
@@ -83,4 +107,3 @@
     }
   </style>
 </html>
-

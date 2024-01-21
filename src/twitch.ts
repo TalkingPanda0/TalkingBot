@@ -1,10 +1,11 @@
 import { RefreshingAuthProvider, exchangeCode } from "@twurple/auth";
-import { ChatClient, ChatMessage } from "@twurple/chat";
+import { ChatClient, ChatMessage, ClearChat, ClearMsg } from "@twurple/chat";
 import { ApiClient, HelixUser } from "@twurple/api";
 import { AuthSetup, Command, Platform, TalkingBot } from "./talkingbot";
 import * as fs from "fs";
 import { PubSubClient, PubSubRedemptionMessage } from "@twurple/pubsub";
 import { start } from "repl";
+import { channel } from "diagnostics_channel";
 
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
@@ -86,14 +87,20 @@ export class Twitch {
       );
     });
     emotes.forEach((emoteUrl: string, emote: string) => {
-      text = text.replace(new RegExp(emote,"g"), `<img src=${emoteUrl} height="20" />`);
+      text = text.replace(
+        new RegExp(emote, "g"),
+        `<img src=${emoteUrl} height="20" />`,
+      );
     });
 
-    this.bot.sendToChat({
+    this.bot.iochat.emit("message", {
       badges: badges,
       text: text,
       sender: message.userInfo.displayName,
+      senderId: message.userInfo.userId,
       color: color,
+      id: "twitch-" + message.id,
+      platform: "twitch",
     });
   }
   async initBot(): Promise<void> {
@@ -207,6 +214,22 @@ export class Twitch {
       channels: [this.channelName, "sweetbabooO_o"],
     });
 
+    this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
+      this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+    });
+    this.chatClient.onTimeout(
+      (channel: string, user: string, duration: number, msg: ClearChat) => {
+        this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+      },
+    );
+    this.chatClient.onMessageRemove(
+      (channel: string, messageId: string, msg: ClearMsg) => {
+        this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
+      },
+    );
+    this.chatClient.onChatClear((channel: string, msg: ClearChat) => {
+      this.bot.iochat.emit("clearChat", "twitch");
+    });
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         console.log(

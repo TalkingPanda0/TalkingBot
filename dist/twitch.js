@@ -101,11 +101,14 @@ class Twitch {
             emotes.forEach((emoteUrl, emote) => {
                 text = text.replace(new RegExp(emote, "g"), `<img src=${emoteUrl} height="20" />`);
             });
-            this.bot.sendToChat({
+            this.bot.iochat.emit("message", {
                 badges: badges,
                 text: text,
                 sender: message.userInfo.displayName,
+                senderId: message.userInfo.userId,
                 color: color,
+                id: "twitch-" + message.id,
+                platform: "twitch",
             });
         });
     }
@@ -186,6 +189,18 @@ class Twitch {
             this.chatClient = new chat_1.ChatClient({
                 authProvider: this.authProvider,
                 channels: [this.channelName, "sweetbabooO_o"],
+            });
+            this.chatClient.onBan((channel, user, msg) => {
+                this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+            });
+            this.chatClient.onTimeout((channel, user, duration, msg) => {
+                this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+            });
+            this.chatClient.onMessageRemove((channel, messageId, msg) => {
+                this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
+            });
+            this.chatClient.onChatClear((channel, msg) => {
+                this.bot.iochat.emit("clearChat", "twitch");
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);

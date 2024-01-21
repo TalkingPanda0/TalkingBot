@@ -33,7 +33,7 @@ function removeByIndexToUppercase(str, indexes) {
     });
     return str;
 }
-function parseEmotes(message) {
+function removeKickEmotes(message) {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
     return message
         .replace(regex, (match, id, name) => {
@@ -153,7 +153,7 @@ class TalkingBot {
                     }
                     else if (platform == Platform.kick) {
                         const ttsMessage = {
-                            text: parseEmotes(message),
+                            text: removeKickEmotes(message),
                             sender: user,
                         };
                         this.sendTTS(ttsMessage, false);
@@ -182,7 +182,7 @@ class TalkingBot {
                     }
                     else if (platform == Platform.kick) {
                         const ttsMessage = {
-                            text: parseEmotes(message),
+                            text: removeKickEmotes(message),
                             sender: user,
                         };
                         this.sendTTS(ttsMessage, true);
@@ -215,9 +215,6 @@ class TalkingBot {
             }
         }
         this.iotts.emit("message", message);
-    }
-    sendToChat(message) {
-        this.iochat.emit("message", message);
     }
 }
 exports.TalkingBot = TalkingBot;

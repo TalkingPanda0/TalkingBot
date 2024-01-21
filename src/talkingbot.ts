@@ -36,6 +36,8 @@ export interface chatMsg {
   sender: string;
   badges: string[];
   color: string;
+  id: string;
+  platform: string;
 }
 
 function removeByIndex(str: string, index: number): string {
@@ -57,7 +59,7 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
   return str;
 }
 
-function parseEmotes(message: string): string {
+function removeKickEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
     .replace(regex, (match, id, name) => {
@@ -71,12 +73,12 @@ function parseEmotes(message: string): string {
 export class TalkingBot {
   public twitch: Twitch;
   public kick: Kick;
+  public iochat: Server;
 
   private kickId: string;
   private commandList: Command[] = [];
   private server: http.Server;
   private iotts: Server;
-  private iochat: Server;
   private ttsEnabled: Boolean = false;
 
   constructor(kickId: string, server: http.Server) {
@@ -240,7 +242,7 @@ export class TalkingBot {
             this.sendTTS(ttsMessage, false);
           } else if (platform == Platform.kick) {
             const ttsMessage = {
-              text: parseEmotes(message),
+              text: removeKickEmotes(message),
               sender: user,
             };
             this.sendTTS(ttsMessage, false);
@@ -276,7 +278,7 @@ export class TalkingBot {
             this.sendTTS(ttsMessage, true);
           } else if (platform == Platform.kick) {
             const ttsMessage = {
-              text: parseEmotes(message),
+              text: removeKickEmotes(message),
               sender: user,
             };
             this.sendTTS(ttsMessage, true);
@@ -310,9 +312,5 @@ export class TalkingBot {
     }
 
     this.iotts.emit("message", message);
-  }
-
-  public sendToChat(message: chatMsg) {
-    this.iochat.emit("message", message);
   }
 }
