@@ -95,13 +95,11 @@ class Twitch {
             message.emoteOffsets.forEach((offsets, emote) => {
                 let startIndex = parseInt(offsets[0]);
                 let endIndex = parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
-                console.log(`${startIndex} ${endIndex}`);
                 let emoteString = text.slice(startIndex, endIndex);
                 emotes.set(emoteString, `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`);
             });
             emotes.forEach((emoteUrl, emote) => {
-                console.log(`${emoteUrl} ${emote}`);
-                text = text.replace(emote, `<img src=${emoteUrl} height="20" />`);
+                text = text.replace(new RegExp(emote, "g"), `<img src=${emoteUrl} height="20" />`);
             });
             this.bot.sendToChat({
                 badges: badges,

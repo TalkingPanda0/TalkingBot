@@ -70,13 +70,15 @@ export class Twitch {
     if (color == null || color == undefined) {
       color = userColors[parseInt(message.userInfo.userId) % userColors.length];
     }
+
     let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
     let emotes: Map<string, string> = new Map<string, string>();
+
     message.emoteOffsets.forEach((offsets: string[], emote: string) => {
       let startIndex = parseInt(offsets[0]);
       let endIndex =
         parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
-      console.log(`${startIndex} ${endIndex}`);
       let emoteString = text.slice(startIndex, endIndex);
       emotes.set(
         emoteString,
@@ -84,8 +86,7 @@ export class Twitch {
       );
     });
     emotes.forEach((emoteUrl: string, emote: string) => {
-      console.log(`${emoteUrl} ${emote}`);
-      text = text.replace(emote, `<img src=${emoteUrl} height="20" />`);
+      text = text.replace(new RegExp(emote,"g"), `<img src=${emoteUrl} height="20" />`);
     });
 
     this.bot.sendToChat({

@@ -34,7 +34,9 @@ class Kick {
                 if (jsonData.event != "App\\Events\\ChatMessageEvent")
                     return;
                 const jsonDataSub = JSON.parse(jsonData.data);
-                const text = jsonDataSub.content;
+                const text = jsonDataSub.content
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
                 const user = jsonDataSub.sender.username;
                 const firstBadgeType = jsonDataSub.sender.identity.badges[0].type;
                 const jsonBadges = jsonDataSub.sender.identity.badges;
@@ -68,9 +70,7 @@ class Kick {
     }
     parseEmotes(message) {
         const regex = /\[emote:(\d+):([^\]]+)\]/g;
-        return message
-            .replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" height=20 />`)
-            .replace("sweetbabooo-o", "");
+        return message.replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" height=20 />`);
     }
 }
 exports.Kick = Kick;
