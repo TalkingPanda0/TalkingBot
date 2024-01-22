@@ -31,7 +31,6 @@ class Kick {
                 const dataString = data.toString();
                 const jsonData = JSON.parse(dataString);
                 const jsonDataSub = JSON.parse(jsonData.data);
-                console.log(jsonData);
                 switch (jsonData.event) {
                     case "App\\Events\\ChatMessageEvent":
                         const text = jsonDataSub.content
