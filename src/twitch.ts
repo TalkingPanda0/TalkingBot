@@ -3,9 +3,11 @@ import { ChatClient, ChatMessage, ClearChat, ClearMsg } from "@twurple/chat";
 import { ApiClient, HelixUser } from "@twurple/api";
 import { AuthSetup, Command, Platform, TalkingBot } from "./talkingbot";
 import * as fs from "fs";
-import { PubSubClient, PubSubRedemptionMessage } from "@twurple/pubsub";
-import { start } from "repl";
-import { channel } from "diagnostics_channel";
+import { EventSubWsListener } from "@twurple/eventsub-ws";
+import {
+  EventSubChannelRedemptionAddEvent,
+  EventSubChannelBanEvent,
+} from "@twurple/eventsub-base";
 
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
@@ -34,7 +36,7 @@ export class Twitch {
   public clientSecret: string = "";
   public apiClient: ApiClient;
   public channel: HelixUser;
-  public pubsub: PubSubClient;
+  public eventListener: EventSubWsListener;
 
   private channelName: string;
   private bot: TalkingBot;
@@ -42,6 +44,7 @@ export class Twitch {
   private commandList: Command[] = [];
   private authProvider: RefreshingAuthProvider;
   private badges: Map<string, string> = new Map<string, string>();
+
   constructor(commandList: Command[], bot: TalkingBot) {
     this.commandList = commandList;
     this.bot = bot;
@@ -151,60 +154,62 @@ export class Twitch {
       });
     });
 
-    this.pubsub = new PubSubClient({ authProvider: this.authProvider });
-    this.pubsub.onRedemption(
+    this.eventListener = new EventSubWsListener({ apiClient: this.apiClient });
+    this.eventListener.onChannelRedemptionAdd(
       this.channel.id,
-      (message: PubSubRedemptionMessage) => {
+      async (data: EventSubChannelRedemptionAddEvent) => {
         console.log(
-          `Got redemption ${message.userDisplayName} - ${message.rewardTitle}: ${message.message}`,
+          `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`,
         );
-        switch (message.rewardTitle) {
+        let completed: Boolean = false;
+        switch (data.rewardTitle) {
           case "Self Timeout":
             this.apiClient.moderation.banUser(this.channel.id, {
               duration: 300,
               reason: "Self Timeout Request",
-              user: message.userId,
+              user: data.userId,
             });
+            completed = true;
             break;
           case "Timeout Somebody Else":
+            const user: HelixUser = await this.apiClient.users.getUserByName(
+              data.input.split(" ")[0],
+            );
             this.apiClient.moderation.banUser(this.channel.id, {
               duration: 60,
-              reason: `Timeout request by ${message.userDisplayName}`,
-              user: message.message,
+              reason: `Timeout request by ${data.userDisplayName}`,
+              user: data.input,
             });
+            completed = true;
             break;
           case "Poll":
             // message like Which is better?: hapboo, realboo, habpoo, hapflat
-            const matches = message.message.match(pollRegex);
+            const matches = data.input.match(pollRegex);
             if (matches) {
               const question = matches[1];
-              const options = matches[2].split(",").map((word) => word.trim());
+              const options = matches[2]
+                .split(",")
+                .map((word: string) => word.trim());
               this.apiClient.polls.createPoll(this.channel.id, {
                 title: question,
                 duration: 60,
                 choices: options,
               });
+              completed = true;
             } else {
               this.chatClient.say(
                 this.channelName,
-                `Couldn't parse poll: ${message.message}`,
+                `Couldn't parse poll: ${data.input}`,
               );
-              this.apiClient.channelPoints.updateRedemptionStatusByIds(
-                this.channel.id,
-                message.rewardId,
-                [message.id],
-                "CANCELED",
-              );
-
-              return;
+              completed = false;
             }
             break;
         }
         this.apiClient.channelPoints.updateRedemptionStatusByIds(
           this.channel.id,
-          message.rewardId,
-          [message.id],
-          "FULFILLED",
+          data.rewardId,
+          [data.id],
+          completed ? "FULFILLED" : "CANCELED",
         );
       },
     );
@@ -264,6 +269,7 @@ export class Twitch {
     });
 
     this.chatClient.connect();
+    this.eventListener.start();
   }
 
   public setupAuth(auth: AuthSetup) {
