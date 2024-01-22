@@ -161,7 +161,7 @@ export class Twitch {
         console.log(
           `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`,
         );
-        let completed: Boolean = false;
+        let completed: Boolean;
         switch (data.rewardTitle) {
           case "Self Timeout":
             this.apiClient.moderation.banUser(this.channel.id, {
@@ -175,6 +175,13 @@ export class Twitch {
             const user: HelixUser = await this.apiClient.users.getUserByName(
               data.input.split(" ")[0],
             );
+            if (user == null) {
+              completed = false;
+              this.chatClient.say(
+                this.channelName,
+                `@${data.userDisplayName} Couldn't find user: ${data.input}`,
+              );
+            }
             this.apiClient.moderation.banUser(this.channel.id, {
               duration: 60,
               reason: `Timeout request by ${data.userDisplayName}`,
@@ -199,12 +206,15 @@ export class Twitch {
             } else {
               this.chatClient.say(
                 this.channelName,
-                `Couldn't parse poll: ${data.input}`,
+                `@${data.userDisplayName} Couldn't parse poll: ${data.input}`,
               );
               completed = false;
             }
             break;
+          default:
+            return;
         }
+        if (completed == null) return;
         this.apiClient.channelPoints.updateRedemptionStatusByIds(
           this.channel.id,
           data.rewardId,
