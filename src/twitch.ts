@@ -138,7 +138,9 @@ export class Twitch {
     );
 
     this.apiClient = new ApiClient({ authProvider: this.authProvider });
+
     this.channel = await this.apiClient.users.getUserByName(this.channelName);
+
     const cbadges = await this.apiClient.chat.getChannelBadges(this.channel.id);
     cbadges.forEach((badge) => {
       if (badge.id !== "subscriber") return;
@@ -154,7 +156,9 @@ export class Twitch {
       });
     });
 
-    this.eventListener = new EventSubWsListener({ apiClient: this.apiClient });
+    this.eventListener = new EventSubWsListener({
+      apiClient: this.apiClient,
+    });
     this.eventListener.onChannelRedemptionAdd(
       this.channel.id,
       async (data: EventSubChannelRedemptionAddEvent) => {
@@ -175,7 +179,7 @@ export class Twitch {
             const user: HelixUser = await this.apiClient.users.getUserByName(
               data.input.split(" ")[0],
             );
-            if (user == null) {
+            if (user == null || user.id == data.broadcasterId) {
               completed = false;
               this.chatClient.say(
                 this.channelName,
@@ -185,7 +189,7 @@ export class Twitch {
             this.apiClient.moderation.banUser(this.channel.id, {
               duration: 60,
               reason: `Timeout request by ${data.userDisplayName}`,
-              user: data.input,
+              user: user.id,
             });
             completed = true;
             break;

@@ -147,10 +147,12 @@ class Twitch {
                     this.badges.set(badge.id, element.getImageUrl(4));
                 });
             });
-            this.eventListener = new eventsub_ws_1.EventSubWsListener({ apiClient: this.apiClient });
+            this.eventListener = new eventsub_ws_1.EventSubWsListener({
+                apiClient: this.apiClient,
+            });
             this.eventListener.onChannelRedemptionAdd(this.channel.id, (data) => __awaiter(this, void 0, void 0, function* () {
                 console.log(`Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`);
-                let completed = false;
+                let completed;
                 switch (data.rewardTitle) {
                     case "Self Timeout":
                         this.apiClient.moderation.banUser(this.channel.id, {
@@ -162,10 +164,14 @@ class Twitch {
                         break;
                     case "Timeout Somebody Else":
                         const user = yield this.apiClient.users.getUserByName(data.input.split(" ")[0]);
+                        if (user == null) {
+                            completed = false;
+                            this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't find user: ${data.input}`);
+                        }
                         this.apiClient.moderation.banUser(this.channel.id, {
                             duration: 60,
                             reason: `Timeout request by ${data.userDisplayName}`,
-                            user: data.input,
+                            user: user.id,
                         });
                         completed = true;
                         break;
@@ -185,20 +191,17 @@ class Twitch {
                             completed = true;
                         }
                         else {
-                            this.chatClient.say(this.channelName, `Couldn't parse poll: ${data.input}`);
+                            this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't parse poll: ${data.input}`);
                             completed = false;
                         }
                         break;
+                    default:
+                        return;
                 }
+                if (completed == null)
+                    return;
                 this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, data.rewardId, [data.id], completed ? "FULFILLED" : "CANCELED");
             }));
-            this.eventListener.onChannelBan(this.channel.id, (event) => {
-                console.log(event.reason);
-                console.log(event.userDisplayName);
-                console.log(event.moderatorDisplayName);
-                console.log(event.isPermanent);
-                console.log(event.endDate);
-            });
             this.chatClient = new chat_1.ChatClient({
                 authProvider: this.authProvider,
                 channels: [this.channelName],
@@ -216,6 +219,11 @@ class Twitch {
                 this.bot.iochat.emit("clearChat", "twitch");
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
+                let a = yield this.apiClient.moderation.banUser(this.channel.id, {
+                    duration: 60,
+                    reason: `Timeout request by `,
+                    user: msg.userInfo.userId,
+                });
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);
                 this.sendToChatList(msg);
                 // not a command
