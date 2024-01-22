@@ -31,6 +31,7 @@ class Kick {
                 const dataString = data.toString();
                 const jsonData = JSON.parse(dataString);
                 const jsonDataSub = JSON.parse(jsonData.data);
+                console.log(jsonData);
                 switch (jsonData.event) {
                     case "App\\Events\\ChatMessageEvent":
                         const text = jsonDataSub.content
@@ -78,6 +79,16 @@ class Kick {
                         break;
                     case "App\\Events\\UserBannedEvent":
                         this.bot.iochat.emit("banUser", jsonDataSub.user.id);
+                        break;
+                    case "App\\Events\\PollUpdateEvent":
+                        if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining)
+                            return;
+                        const options = jsonDataSub.poll.options.map((item) => item.label);
+                        this.bot.twitch.apiClient.polls.createPoll(this.bot.twitch.channel.id, {
+                            title: jsonDataSub.poll.title,
+                            duration: jsonDataSub.poll.duration,
+                            choices: options,
+                        });
                         break;
                 }
             }

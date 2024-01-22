@@ -164,7 +164,7 @@ class Twitch {
                         break;
                     case "Timeout Somebody Else":
                         const user = yield this.apiClient.users.getUserByName(data.input.split(" ")[0]);
-                        if (user == null) {
+                        if (user == null || user.id == data.broadcasterId) {
                             completed = false;
                             this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't find user: ${data.input}`);
                         }
@@ -219,11 +219,6 @@ class Twitch {
                 this.bot.iochat.emit("clearChat", "twitch");
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
-                let a = yield this.apiClient.moderation.banUser(this.channel.id, {
-                    duration: 60,
-                    reason: `Timeout request by `,
-                    user: msg.userInfo.userId,
-                });
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);
                 this.sendToChatList(msg);
                 // not a command

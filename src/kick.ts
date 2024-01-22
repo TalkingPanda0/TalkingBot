@@ -102,6 +102,20 @@ export class Kick {
           case "App\\Events\\UserBannedEvent":
             this.bot.iochat.emit("banUser", jsonDataSub.user.id);
             break;
+          case "App\\Events\\PollUpdateEvent":
+            if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining) return;
+            const options: string[] = jsonDataSub.poll.options.map(
+              (item: { label: string }) => item.label,
+            );
+            this.bot.twitch.apiClient.polls.createPoll(
+              this.bot.twitch.channel.id,
+              {
+                title: jsonDataSub.poll.title,
+                duration: jsonDataSub.poll.duration,
+                choices: options,
+              },
+            );
+            break;
         }
       } catch (error) {
         console.log(error);
