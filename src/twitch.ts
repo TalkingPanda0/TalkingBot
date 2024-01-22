@@ -179,12 +179,14 @@ export class Twitch {
             const user: HelixUser = await this.apiClient.users.getUserByName(
               data.input.split(" ")[0],
             );
-            if (user == null || user.id == data.broadcasterId) {
+            const mods = await this.apiClient.moderation.getModerators(this.channel.id,{ userId: user.id });
+            if (user == null || user.id == data.broadcasterId || mods.data.length == 1) {
               completed = false;
               this.chatClient.say(
                 this.channelName,
-                `@${data.userDisplayName} Couldn't find user: ${data.input}`,
+                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
               );
+              break;
             }
             this.apiClient.moderation.banUser(this.channel.id, {
               duration: 60,
