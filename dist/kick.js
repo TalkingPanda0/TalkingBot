@@ -80,14 +80,24 @@ class Kick {
                         this.bot.iochat.emit("banUser", jsonDataSub.user.id);
                         break;
                     case "App\\Events\\PollUpdateEvent":
-                        if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining)
-                            return;
+                        this.currentPoll = jsonDataSub.poll;
+                        if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining) {
+                            this.bot.updatePoll();
+                            break;
+                        }
+                        setTimeout(() => {
+                            this.currentPoll = null;
+                        }, jsonDataSub.poll.duration * 1000);
                         const options = jsonDataSub.poll.options.map((item) => item.label);
-                        this.bot.twitch.apiClient.polls.createPoll(this.bot.twitch.channel.id, {
+                        /*this.bot.twitch.apiClient.polls.createPoll(
+                          this.bot.twitch.channel.id,
+                          {
                             title: jsonDataSub.poll.title,
                             duration: jsonDataSub.poll.duration,
                             choices: options,
-                        });
+                          },
+                        );*/
+                        this.bot.iopoll.emit("createPoll", jsonDataSub.poll);
                         break;
                 }
             }

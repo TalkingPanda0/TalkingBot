@@ -31,13 +31,22 @@ export interface AuthSetup {
   twitchClientSecret: string;
   channelName: string;
 }
-export interface chatMsg {
+export interface ChatMsg {
   text: string;
   sender: string;
   badges: string[];
   color: string;
   id: string;
   platform: string;
+}
+export interface pollOption {
+  id: string;
+  label: string;
+  votes: number;
+}
+export interface Poll {
+  title: string;
+  options: pollOption[];
 }
 
 function removeByIndex(str: string, index: number): string {
@@ -74,6 +83,7 @@ export class TalkingBot {
   public twitch: Twitch;
   public kick: Kick;
   public iochat: Server;
+  public iopoll: Server;
 
   private kickId: string;
   private commandList: Command[] = [];
@@ -90,6 +100,9 @@ export class TalkingBot {
 
     this.iochat = new Server(this.server, {
       path: "/chat/",
+    });
+    this.iopoll = new Server(this.server, {
+      path: "/poll/",
     });
 
     this.kickId = kickId;
@@ -294,6 +307,42 @@ export class TalkingBot {
     this.twitch.initBot().then(() => {
       this.kick.initBot();
     });
+  }
+  public updatePoll() {
+    const combinedOptions = {};
+
+    // Add options from poll1 to the combinedOptions
+    if (this.kick.currentPoll != null) {
+      this.kick.currentPoll.options.forEach((option) => {
+        combinedOptions[option.id] = {
+          label: option.label,
+          votes: option.votes,
+        };
+      });
+    }
+
+    // Add or update options from poll2 to the combinedOptions
+    //
+    if (this.twitch.currentPoll != null) {
+      this.twitch.currentPoll.options.forEach((option) => {
+        if (combinedOptions.hasOwnProperty(option.id)) {
+          combinedOptions[option.id].votes += option.votes;
+        } else {
+          combinedOptions[option.id] = {
+            label: option.label,
+            votes: option.votes,
+          };
+        }
+      });
+    }
+
+    // Convert combinedOptions back to an array of options
+    const combinedOptionsArray = Object.keys(combinedOptions).map((id) => ({
+      id: parseInt(id),
+      label: combinedOptions[id].label,
+      votes: combinedOptions[id].votes,
+    }));
+    this.iopoll.emit("updatePoll", combinedOptionsArray);
   }
   public sendTTS(message: TTSMessage, isMod: boolean) {
     if ((!this.ttsEnabled && !isMod) || !message.text || !message.sender) {

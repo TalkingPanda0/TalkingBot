@@ -1,7 +1,9 @@
 import WebSocket from "ws";
-import { Command, Platform, TalkingBot, chatMsg } from "./talkingbot";
+import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
+import { json } from "stream/consumers";
 
 export class Kick {
+  public currentPoll: Poll;
   private channelId: string;
   private commandList: Command[];
   private bot: TalkingBot;
@@ -103,18 +105,28 @@ export class Kick {
             this.bot.iochat.emit("banUser", jsonDataSub.user.id);
             break;
           case "App\\Events\\PollUpdateEvent":
-            if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining) return;
+            this.currentPoll = jsonDataSub.poll;
+            if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining) {
+              this.bot.updatePoll();
+              break;
+            }
+
+            setTimeout(() => {
+              this.currentPoll = null;
+            }, jsonDataSub.poll.duration * 1000);
             const options: string[] = jsonDataSub.poll.options.map(
               (item: { label: string }) => item.label,
             );
-            this.bot.twitch.apiClient.polls.createPoll(
+
+            /*this.bot.twitch.apiClient.polls.createPoll(
               this.bot.twitch.channel.id,
               {
                 title: jsonDataSub.poll.title,
                 duration: jsonDataSub.poll.duration,
                 choices: options,
               },
-            );
+            );*/
+            this.bot.iopoll.emit("createPoll", jsonDataSub.poll);
             break;
         }
       } catch (error) {

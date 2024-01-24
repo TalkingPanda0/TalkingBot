@@ -1,12 +1,21 @@
 import { RefreshingAuthProvider, exchangeCode } from "@twurple/auth";
 import { ChatClient, ChatMessage, ClearChat, ClearMsg } from "@twurple/chat";
 import { ApiClient, HelixUser } from "@twurple/api";
-import { AuthSetup, Command, Platform, TalkingBot } from "./talkingbot";
+import {
+  AuthSetup,
+  Command,
+  Platform,
+  Poll,
+  TalkingBot,
+  pollOption,
+} from "./talkingbot";
 import * as fs from "fs";
 import { EventSubWsListener } from "@twurple/eventsub-ws";
 import {
   EventSubChannelRedemptionAddEvent,
   EventSubChannelBanEvent,
+  EventSubChannelPollProgressEvent,
+  EventSubChannelPollEndEvent,
 } from "@twurple/eventsub-base";
 
 // Get the tokens from ../tokens.json
@@ -37,6 +46,7 @@ export class Twitch {
   public apiClient: ApiClient;
   public channel: HelixUser;
   public eventListener: EventSubWsListener;
+  public currentPoll: Poll;
 
   private channelName: string;
   private bot: TalkingBot;
@@ -159,6 +169,27 @@ export class Twitch {
     this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
+    this.eventListener.onChannelPollProgress(
+      this.channel.id,
+      (data: EventSubChannelPollProgressEvent) => {
+        let options: pollOption[];
+        data.choices.forEach((choice) => {
+          options.push({
+            label: choice.title,
+            id: choice.id,
+            votes: choice.totalVotes,
+          });
+        });
+        this.currentPoll = { title: data.title, options: options };
+        this.bot.updatePoll();
+      },
+    );
+    this.eventListener.onChannelPollEnd(
+      this.channel.id,
+      (data: EventSubChannelPollEndEvent) => {
+        this.currentPoll = null;
+      },
+    );
     this.eventListener.onChannelRedemptionAdd(
       this.channel.id,
       async (data: EventSubChannelRedemptionAddEvent) => {
@@ -179,8 +210,15 @@ export class Twitch {
             const user: HelixUser = await this.apiClient.users.getUserByName(
               data.input.split(" ")[0],
             );
-            const mods = await this.apiClient.moderation.getModerators(this.channel.id,{ userId: user.id });
-            if (user == null || user.id == data.broadcasterId || mods.data.length == 1) {
+            const mods = await this.apiClient.moderation.getModerators(
+              this.channel.id,
+              { userId: user.id },
+            );
+            if (
+              user == null ||
+              user.id == data.broadcasterId ||
+              mods.data.length == 1
+            ) {
               completed = false;
               this.chatClient.say(
                 this.channelName,

@@ -39,9 +39,10 @@
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
       const pollElement = document.getElementById("poll");
-      let interval;
+      let currentPoll = {};
 
       function updatePoll(options) {
+        currentPoll.options = options;
         const totalVotes = options.reduce(
           (total, option) => total + option.votes,
           0,
@@ -59,6 +60,7 @@
       }
 
       function createPoll(poll) {
+        currentPoll = poll;
         const totalVotes = poll.options.reduce(
           (total, option) => total + option.votes,
           0,
@@ -92,29 +94,40 @@
         pollElement.innerHTML = html;
         pollElement.style = "display: block;";
         setTimeout(() => {
-          clearInterval(interval);
-          const winningOption = poll.options.reduce(
-            (maxVotesOption, currentOption) => {
-              return currentOption.votes > maxVotesOption.votes
-                ? currentOption
-                : maxVotesOption;
+          let highestVotes = currentPoll.options.reduce(
+            (maxVotes, currentOption) => {
+              if (currentOption.votes > maxVotes[0].votes) {
+                return [currentOption];
+              } else if (currentOption.votes === maxVotes[0].votes) {
+                return [...maxVotes, currentOption];
+              } else {
+                return maxVotes;
+              }
             },
-            poll.options[0],
+            [currentPoll.options[0]],
           );
           for (let i = 1; i < pollElement.children[0].childElementCount; i++) {
             let optionElement = pollElement.children[0].children[i];
-            if (optionElement.id == winningOption.id) continue;
             optionElement.style = "opacity: 0.2";
           }
+          highestVotes.forEach((option) => {
+            let element = document.getElementById(option.id);
+            element.style = "opacity: 1;";
+          });
+
           setTimeout(() => {
             pollElement.innerHtml = "";
             pollElement.style = "display: none;";
           }, 5000);
-        }, poll.duration);
+        }, poll.duration * 1000);
       }
       var socket = io("/", { path: "/poll/" });
-      socket.on("createPoll", (poll) => createPoll);
-      socket.on("updatePoll", (options) => updatePoll);
+      socket.on("createPoll", (poll) => {
+        createPoll(poll);
+      });
+      socket.on("updatePoll", (options) => {
+        updatePoll(options);
+      });
     </script>
   </body>
 </html>

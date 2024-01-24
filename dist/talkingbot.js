@@ -54,6 +54,9 @@ class TalkingBot {
         this.iochat = new socket_io_1.Server(this.server, {
             path: "/chat/",
         });
+        this.iopoll = new socket_io_1.Server(this.server, {
+            path: "/poll/",
+        });
         this.kickId = kickId;
         this.commandList = [
             {
@@ -197,6 +200,40 @@ class TalkingBot {
         this.twitch.initBot().then(() => {
             this.kick.initBot();
         });
+    }
+    updatePoll() {
+        const combinedOptions = {};
+        // Add options from poll1 to the combinedOptions
+        if (this.kick.currentPoll != null) {
+            this.kick.currentPoll.options.forEach((option) => {
+                combinedOptions[option.id] = {
+                    label: option.label,
+                    votes: option.votes,
+                };
+            });
+        }
+        // Add or update options from poll2 to the combinedOptions
+        //
+        if (this.twitch.currentPoll != null) {
+            this.twitch.currentPoll.options.forEach((option) => {
+                if (combinedOptions.hasOwnProperty(option.id)) {
+                    combinedOptions[option.id].votes += option.votes;
+                }
+                else {
+                    combinedOptions[option.id] = {
+                        label: option.label,
+                        votes: option.votes,
+                    };
+                }
+            });
+        }
+        // Convert combinedOptions back to an array of options
+        const combinedOptionsArray = Object.keys(combinedOptions).map((id) => ({
+            id: parseInt(id),
+            label: combinedOptions[id].label,
+            votes: combinedOptions[id].votes,
+        }));
+        this.iopoll.emit("updatePoll", combinedOptionsArray);
     }
     sendTTS(message, isMod) {
         if ((!this.ttsEnabled && !isMod) || !message.text || !message.sender) {

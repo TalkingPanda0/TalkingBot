@@ -150,6 +150,21 @@ class Twitch {
             this.eventListener = new eventsub_ws_1.EventSubWsListener({
                 apiClient: this.apiClient,
             });
+            this.eventListener.onChannelPollProgress(this.channel.id, (data) => {
+                let options;
+                data.choices.forEach((choice) => {
+                    options.push({
+                        label: choice.title,
+                        id: choice.id,
+                        votes: choice.totalVotes,
+                    });
+                });
+                this.currentPoll = { title: data.title, options: options };
+                this.bot.updatePoll();
+            });
+            this.eventListener.onChannelPollEnd(this.channel.id, (data) => {
+                this.currentPoll = null;
+            });
             this.eventListener.onChannelRedemptionAdd(this.channel.id, (data) => __awaiter(this, void 0, void 0, function* () {
                 console.log(`Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`);
                 let completed;
@@ -165,7 +180,9 @@ class Twitch {
                     case "Timeout Somebody Else":
                         const user = yield this.apiClient.users.getUserByName(data.input.split(" ")[0]);
                         const mods = yield this.apiClient.moderation.getModerators(this.channel.id, { userId: user.id });
-                        if (user == null || user.id == data.broadcasterId || mods.data.length == 1) {
+                        if (user == null ||
+                            user.id == data.broadcasterId ||
+                            mods.data.length == 1) {
                             completed = false;
                             this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't timeout user: ${data.input}`);
                             break;
