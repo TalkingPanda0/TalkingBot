@@ -129,6 +129,15 @@
         clientId = input.value;
         clientSecret = secret.value;
 
+        if (
+          clientId.length == 0 ||
+          clientSecret.length == 0 ||
+          name.value.length == 0
+        ) {
+          alert("Can't be empty!");
+          return;
+        }
+
         socket.emit("setup_message", {
           twitchClientId: clientId,
           twitchClientSecret: clientSecret,
@@ -153,4 +162,3 @@
     </script>
   </body>
 </html>
-

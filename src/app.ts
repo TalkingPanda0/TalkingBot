@@ -20,7 +20,6 @@ app.get("/poll", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/poll.html");
 });
 
-
 app.get("/chat", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/chat.html");
 });
@@ -40,7 +39,7 @@ if (!fs.existsSync("./oauth.json")) {
   const iosetup = new Server(server, { path: "/setup/" });
 
   iosetup.on("connection", (socket) => {
-    console.log("got chat connection");
+    console.log("got setup connection");
 
     let twitchClientId = bot.twitch.clientId;
     let twitchClientSecret = bot.twitch.clientSecret;
