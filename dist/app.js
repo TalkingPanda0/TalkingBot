@@ -38,6 +38,9 @@ app.use(express_1.default.static("public"));
 app.get("/tts", (req, res) => {
     res.sendFile(__dirname + "/tts.html");
 });
+app.get("/poll", (req, res) => {
+    res.sendFile(__dirname + "/poll.html");
+});
 app.get("/chat", (req, res) => {
     res.sendFile(__dirname + "/chat.html");
 });

@@ -164,11 +164,10 @@ class Twitch {
                         break;
                     case "Timeout Somebody Else":
                         const user = yield this.apiClient.users.getUserByName(data.input.split(" ")[0]);
-                        //const mods = await this.apiClient.moderation.getModerators(this.channel.id,{ userId: user.id });
-                        //if(mods.data.length)
-                        if (user == null || user.id == data.broadcasterId) {
+                        const mods = yield this.apiClient.moderation.getModerators(this.channel.id, { userId: user.id });
+                        if (user == null || user.id == data.broadcasterId || mods.data.length == 1) {
                             completed = false;
-                            this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't find user: ${data.input}`);
+                            this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't timeout user: ${data.input}`);
                             break;
                         }
                         this.apiClient.moderation.banUser(this.channel.id, {
@@ -222,11 +221,6 @@ class Twitch {
                 this.bot.iochat.emit("clearChat", "twitch");
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
-                const mods = yield this.apiClient.moderation.getModerators(this.channel.id, { userId: msg.userInfo.userId });
-                console.log(mods);
-                console.log(mods.data);
-                console.log(mods.cursor);
-                console.log(mods.data.length);
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);
                 this.sendToChatList(msg);
                 // not a command

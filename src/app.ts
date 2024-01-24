@@ -16,6 +16,11 @@ app.get("/tts", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/tts.html");
 });
 
+app.get("/poll", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/poll.html");
+});
+
+
 app.get("/chat", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/chat.html");
 });
