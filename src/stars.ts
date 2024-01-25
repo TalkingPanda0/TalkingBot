@@ -7,26 +7,26 @@ export interface Star {
 
 const stars: Star[] = JSON.parse(fs.readFileSync("./stars.json", "utf-8"));
 
-function findClosestStar(distance: number):  Star{
+export function findClosestStar(distance: number): Star {
   let foundStar: Star;
-  for(const star of stars ){
-      // multiply by 2 to find the diameter
-      if((star.radius*2) > distance){
-        foundStar = star;      
-        break;
-      }
+  for (const star of stars) {
+    // multiply by 2 to find the diameter
+    if (star.radius * 2 > distance) {
+      foundStar = star;
+      break;
+    }
   }
   return foundStar;
 }
-function metersToSolarRadii(meters: number) {
+export function metersToSolarRadii(meters: number) {
   const solarRadiusInMeters = 695700000;
 
   const solarRadii = meters / solarRadiusInMeters;
 
   return solarRadii;
 }
-function solarRadiiToMeter(solarRadii: number) {
-  const solarRadiusInMeters = 695700000; 
+export function solarRadiiToMeter(solarRadii: number) {
+  const solarRadiusInMeters = 695700000;
 
   const meters = solarRadii * solarRadiusInMeters;
 

@@ -8,10 +8,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TalkingBot = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
 const kick_1 = require("./kick");
+const stars_1 = require("./stars");
+const node_fs_1 = __importDefault(require("node:fs"));
 const socket_io_1 = require("socket.io");
 var Platform;
 (function (Platform) {
@@ -59,6 +64,22 @@ class TalkingBot {
         });
         this.kickId = kickId;
         this.commandList = [
+            {
+                command: "!distance",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    const playerData = JSON.parse(node_fs_1.default.readFileSync(this.twitch.dataPath, "utf-8"));
+                    const distance = playerData.localPlayers[0].playerAllOverallStatsData
+                        .soloFreePlayOverallStatsData.handDistanceTravelled;
+                    const distanceinkm = Math.round(distance / 10) / 100;
+                    const distanceinSolar = (0, stars_1.metersToSolarRadii)(distance);
+                    const star = (0, stars_1.findClosestStar)((0, stars_1.metersToSolarRadii)(distance));
+                    const diameter = (0, stars_1.solarRadiiToMeter)(star.radius * 2);
+                    const diameterinkm = Math.round(diameter / 10) / 100;
+                    const percent = Math.round((distanceinkm / diameterinkm) * 10000) / 100;
+                    console.log(`${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`);
+                    reply(`${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `);
+                },
+            },
             {
                 command: "!fsog",
                 commandFunction(user, isUserMod, message, reply, platform, context) {

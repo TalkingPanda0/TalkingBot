@@ -78,7 +78,7 @@ if (!node_fs_1.default.existsSync("./oauth.json")) {
                 twitchClientSecret: twitchClientSecret,
             });
         socket.on("setup_message", (message) => {
-            console.log(`Got ${message.twitchClientId} ${message.twitchClientSecret} ${message.channelName}`);
+            console.log(`Got setup message!`);
             bot.twitch.setupAuth(message);
         });
     });

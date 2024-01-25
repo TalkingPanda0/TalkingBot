@@ -47,6 +47,7 @@ export class Twitch {
   public channel: HelixUser;
   public eventListener: EventSubWsListener;
   public currentPoll: Poll;
+  public dataPath: string;
 
   private channelName: string;
   private bot: TalkingBot;
@@ -121,6 +122,7 @@ export class Twitch {
     this.clientId = fileContent.clientId;
     this.clientSecret = fileContent.clientSecret;
     this.channelName = fileContent.channelName;
+    this.dataPath = fileContent.dataPath;
   }
   async initBot(): Promise<void> {
     this.authProvider = new RefreshingAuthProvider({
@@ -331,6 +333,7 @@ export class Twitch {
     this.clientId = auth.twitchClientId;
     this.clientSecret = auth.twitchClientSecret;
     this.channelName = auth.channelName;
+    this.dataPath = auth.playerdatapath;
 
     fs.writeFileSync(
       oauthPath,
@@ -338,6 +341,7 @@ export class Twitch {
         clientId: this.clientId,
         clientSecret: this.clientSecret,
         channelName: this.channelName,
+        dataPath: this.dataPath,
       }),
       "utf-8",
     );

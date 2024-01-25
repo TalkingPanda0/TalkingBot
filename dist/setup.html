@@ -74,6 +74,15 @@
         />
         <label for="floatingSecret">Client secret</label>
       </div>
+      <div class="form-floating">
+        <input
+          type="text"
+          class="form-control w-100"
+          id="datapath"
+          placeholder="path to BeatSaber PlayerData.dat"
+        />
+        <label for="datapath">path to BeatSaber PlayerData.dat</label>
+      </div>
 
       <button class="btn btn-primary w-100 py-2" id="continue">Continue</button>
     </main>
@@ -106,6 +115,7 @@
       const input = document.getElementById("floatingInput");
       const secret = document.getElementById("floatingSecret");
       const name = document.getElementById("floatingName");
+      const datapath = document.getElementById("datapath");
       const bot = document.getElementById("bot");
       const broadcaster = document.getElementById("broadcaster");
       const setup1 = document.getElementById("setup1");
@@ -142,6 +152,7 @@
           twitchClientId: clientId,
           twitchClientSecret: clientSecret,
           channelName: name.value,
+          playerdatapath: datapath.value,
         });
 
         setup1.style = "display: none";

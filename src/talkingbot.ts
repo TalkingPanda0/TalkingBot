@@ -2,6 +2,13 @@ import { ChatMessage } from "@twurple/chat";
 import { Twitch } from "./twitch";
 import { Kick } from "./kick";
 import { HelixGame } from "@twurple/api";
+import {
+  Star,
+  findClosestStar,
+  metersToSolarRadii,
+  solarRadiiToMeter,
+} from "./stars";
+import fs from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
@@ -30,6 +37,7 @@ export interface AuthSetup {
   twitchClientId: string;
   twitchClientSecret: string;
   channelName: string;
+  playerdatapath: string;
 }
 export interface ChatMsg {
   text: string;
@@ -108,6 +116,35 @@ export class TalkingBot {
     this.kickId = kickId;
 
     this.commandList = [
+      {
+        command: "!distance",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          const playerData = JSON.parse(
+            fs.readFileSync(this.twitch.dataPath, "utf-8"),
+          );
+
+          const distance =
+            playerData.localPlayers[0].playerAllOverallStatsData
+              .soloFreePlayOverallStatsData.handDistanceTravelled;
+          const distanceinkm = Math.round(distance / 10) / 100;
+          const distanceinSolar = metersToSolarRadii(distance);
+          const star: Star = findClosestStar(metersToSolarRadii(distance));
+          const diameter = solarRadiiToMeter(star.radius * 2);
+          const diameterinkm = Math.round(diameter / 10) / 100;
+          const percent = Math.round((distanceinkm / diameterinkm) * 10000) / 100;
+          console.log(`${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`);
+          reply(
+            `${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `,
+          );
+        },
+      },
       {
         command: "!fsog",
         async commandFunction(
