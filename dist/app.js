@@ -53,7 +53,7 @@ if (!node_fs_1.default.existsSync("./oauth.json")) {
     console.log("\x1b[31m%s\x1b[0m", "Auth not found, please go to localhost:3000/setup to create it");
     const iosetup = new socket_io_1.Server(server, { path: "/setup/" });
     iosetup.on("connection", (socket) => {
-        console.log("got chat connection");
+        console.log("got setup connection");
         let twitchClientId = bot.twitch.clientId;
         let twitchClientSecret = bot.twitch.clientSecret;
         if (twitchClientId.length != 0 && twitchClientSecret.length != 0)

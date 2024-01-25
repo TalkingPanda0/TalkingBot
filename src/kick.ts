@@ -1,12 +1,11 @@
 import WebSocket from "ws";
 import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
-import { json } from "stream/consumers";
 
 export class Kick {
   public currentPoll: Poll;
   private channelId: string;
   private commandList: Command[];
-  private bot: TalkingBot;
+private bot: TalkingBot;
 
   constructor(channelId: string, commandList: Command[], bot: TalkingBot) {
     this.channelId = channelId;
