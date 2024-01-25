@@ -26,6 +26,3 @@ function solarRadiiToMeter(solarRadii) {
     const meters = solarRadii * solarRadiusInMeters;
     return meters;
 }
-let distance = metersToSolarRadii(1782615000);
-let star = findClosestStar(distance);
-console.log(`${star.name} ${solarRadiiToMeter((star.radius * 2) - distance)}`);

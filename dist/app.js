@@ -48,10 +48,26 @@ app.get("/setup", (req, res) => {
     res.sendFile(__dirname + "/setup.html");
 });
 let bot = new talkingbot_1.TalkingBot("17587561", server);
+const iosetup = new socket_io_1.Server(server, { path: "/setup/" });
 // Check if oauth.json exists
+app.get("/oauth", (req, res) => {
+    let code = req.query.code;
+    let scope = req.query.scope;
+    if (code == "initBot") {
+        res.send("initing bot");
+        bot.initBot();
+        return;
+    }
+    if (code.length == 0 || scope.length == 0) {
+        res.send("Something went wrong!");
+    }
+    else {
+        bot.twitch.addUser(code, scope);
+        res.send(`Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`);
+    }
+});
 if (!node_fs_1.default.existsSync("./oauth.json")) {
     console.log("\x1b[31m%s\x1b[0m", "Auth not found, please go to localhost:3000/setup to create it");
-    const iosetup = new socket_io_1.Server(server, { path: "/setup/" });
     iosetup.on("connection", (socket) => {
         console.log("got setup connection");
         let twitchClientId = bot.twitch.clientId;
@@ -66,25 +82,22 @@ if (!node_fs_1.default.existsSync("./oauth.json")) {
             bot.twitch.setupAuth(message);
         });
     });
-    app.get("/oauth", (req, res) => {
-        let code = req.query.code;
-        let scope = req.query.scope;
-        if (code == "initBot") {
-            res.send("initing bot");
-            bot.initBot();
-            return;
-        }
-        if (code.length == 0 || scope.length == 0) {
-            res.send("Something went wrong!");
-        }
-        else {
-            bot.twitch.addUser(code, scope);
-            res.send(`Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`);
-        }
-    });
 }
 else {
-    bot.initBot();
+    bot.twitch.readAuth();
+    if (!node_fs_1.default.existsSync("./token-bot.json") ||
+        !node_fs_1.default.existsSync("./token-broadcaster.json")) {
+        console.log("\x1b[31m%s\x1b[0m", "tokens not found, please go to localhost:3000/setup to create it");
+        iosetup.on("connection", (socket) => {
+            socket.emit("setup_message", {
+                twitchClientId: bot.twitch.clientId,
+                twitchClientSecret: bot.twitch.clientSecret,
+            });
+        });
+    }
+    else {
+        bot.initBot();
+    }
 }
 server.listen(3000, () => {
     console.log("listening on *:3000");

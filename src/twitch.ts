@@ -116,12 +116,13 @@ export class Twitch {
       platform: "twitch",
     });
   }
-  async initBot(): Promise<void> {
+  public readAuth() {
     const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
     this.clientId = fileContent.clientId;
     this.clientSecret = fileContent.clientSecret;
     this.channelName = fileContent.channelName;
-
+  }
+  async initBot(): Promise<void> {
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
       clientSecret: this.clientSecret,

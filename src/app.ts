@@ -29,14 +29,31 @@ app.get("/setup", (req: Request, res: Response) => {
 
 let bot: TalkingBot = new TalkingBot("17587561", server);
 
+const iosetup = new Server(server, { path: "/setup/" });
 // Check if oauth.json exists
+app.get("/oauth", (req: Request, res: Response) => {
+  let code: string = req.query.code as string;
+  let scope: string = req.query.scope as string;
+  if (code == "initBot") {
+    res.send("initing bot");
+    bot.initBot();
+    return;
+  }
+  if (code.length == 0 || scope.length == 0) {
+    res.send("Something went wrong!");
+  } else {
+    bot.twitch.addUser(code, scope);
+    res.send(
+      `Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`,
+    );
+  }
+});
+
 if (!fs.existsSync("./oauth.json")) {
   console.log(
     "\x1b[31m%s\x1b[0m",
     "Auth not found, please go to localhost:3000/setup to create it",
   );
-
-  const iosetup = new Server(server, { path: "/setup/" });
 
   iosetup.on("connection", (socket) => {
     console.log("got setup connection");
@@ -57,26 +74,26 @@ if (!fs.existsSync("./oauth.json")) {
       bot.twitch.setupAuth(message);
     });
   });
-
-  app.get("/oauth", (req: Request, res: Response) => {
-    let code: string = req.query.code as string;
-    let scope: string = req.query.scope as string;
-    if (code == "initBot") {
-      res.send("initing bot");
-      bot.initBot();
-      return;
-    }
-    if (code.length == 0 || scope.length == 0) {
-      res.send("Something went wrong!");
-    } else {
-      bot.twitch.addUser(code, scope);
-      res.send(
-        `Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`,
-      );
-    }
-  });
 } else {
-  bot.initBot();
+  bot.twitch.readAuth();
+  if (
+    !fs.existsSync("./token-bot.json") ||
+    !fs.existsSync("./token-broadcaster.json")
+  ) {
+    console.log(
+      "\x1b[31m%s\x1b[0m",
+      "tokens not found, please go to localhost:3000/setup to create it",
+    );
+
+    iosetup.on("connection", (socket) => {
+      socket.emit("setup_message", {
+        twitchClientId: bot.twitch.clientId,
+        twitchClientSecret: bot.twitch.clientSecret,
+      });
+    });
+  } else {
+    bot.initBot();
+  }
 }
 
 server.listen(3000, () => {

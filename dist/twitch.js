@@ -112,12 +112,14 @@ class Twitch {
             });
         });
     }
+    readAuth() {
+        const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
+        this.clientId = fileContent.clientId;
+        this.clientSecret = fileContent.clientSecret;
+        this.channelName = fileContent.channelName;
+    }
     initBot() {
         return __awaiter(this, void 0, void 0, function* () {
-            const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
-            this.clientId = fileContent.clientId;
-            this.clientSecret = fileContent.clientSecret;
-            this.channelName = fileContent.channelName;
             this.authProvider = new auth_1.RefreshingAuthProvider({
                 clientId: this.clientId,
                 clientSecret: this.clientSecret,
