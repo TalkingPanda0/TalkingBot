@@ -15,5 +15,5 @@ for star in oec.findall(".//star"):
 
 stars = sorted(stars, key=lambda x: float(x['radius']))
 print(stars)
-with open("dist/stars.json", 'w') as json_file:
+with open("./stars.json", 'w') as json_file:
     json.dump(stars, json_file, indent=2)
