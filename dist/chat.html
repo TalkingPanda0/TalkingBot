@@ -8,28 +8,28 @@
     const messageList = document.getElementById("message-list");
 
     function addToMessageList(message) {
-      let messageElement = document.createElement("span");
+      const messageElement = document.createElement("div");
       messageElement.id = message.id;
+      messageElement.classList.add("message");
       messageElement.classList.add(message.platform);
       messageElement.classList.add(message.senderId);
-      let badges = document.createElement("div");
+      const badges = document.createElement("span");
       badges.classList.add("badges");
       message.badges.forEach((badge) => {
-        let badgeElement = document.createElement("img");
+        const badgeElement = document.createElement("img");
         badgeElement.src = badge;
-        badgeElement.width = "16";
-        badgeElement.height = "16";
+        badgeElement.width = "21";
+        badgeElement.height = "21";
         badgeElement.classList.add("badge");
         badges.appendChild(badgeElement);
       });
-      let element = document.createElement("span");
+      const element = document.createElement("span");
       element.classList.add("sender");
       element.style = `color:${message.color}`;
 
       element.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
       messageElement.appendChild(badges);
       messageElement.appendChild(element);
-      messageElement.appendChild(document.createElement("br"));
       messageList.appendChild(messageElement);
       messageList.scrollTop = messageList.scrollHeight;
     }
@@ -79,17 +79,22 @@
       width: 0;
       /* WebKit (Safari, Chrome) */
     }
+    .message {
+      padding-left: 4px;
+      border-radius: 2px;
+      margin: 2px;
+      padding-bottom: 2px;
+      padding-top: 2px;
+      overflow-wrap: break-word;
+    }
 
     .text {
-      font-size: 16px;
       color: white;
       font-family: Arial, Helvetica, sans-serif;
       vertical-align: middle;
-      overflow-wrap: break-word;
     }
     .sender {
       vertical-align: middle;
-      font-size: 16px;
       font-family: Arial, Helvetica, sans-serif;
     }
     .badge {
@@ -103,6 +108,17 @@
       display: inline-table;
       padding: 2px;
       vertical-align: middle;
+      margin-right: 4px;
+    }
+    * {
+      color: #fff;
+      font-family: Roboto, sans-serif;
+      font-size: 21px;
+      font-weight: 700;
+      line-height: 1.5em;
+      text-shadow:
+        0 0 3px #000,
+        1px 1px 3px #000;
     }
   </style>
 </html>
