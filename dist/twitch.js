@@ -99,7 +99,7 @@ class Twitch {
                 emotes.set(emoteString, `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`);
             });
             emotes.forEach((emoteUrl, emote) => {
-                text = text.replace(new RegExp(emote, "g"), `<img src=${emoteUrl} height="20" />`);
+                text = text.replace(new RegExp((emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')), "g"), `<img src=${emoteUrl} height="20" />`);
             });
             this.bot.iochat.emit("message", {
                 badges: badges,

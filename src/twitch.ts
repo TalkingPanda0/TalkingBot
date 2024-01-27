@@ -102,7 +102,7 @@ export class Twitch {
     });
     emotes.forEach((emoteUrl: string, emote: string) => {
       text = text.replace(
-        new RegExp(emote, "g"),
+        new RegExp( (emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')  ), "g"),
         `<img src=${emoteUrl} height="20" />`,
       );
     });
