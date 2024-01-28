@@ -102,8 +102,8 @@ export class Twitch {
     });
     emotes.forEach((emoteUrl: string, emote: string) => {
       text = text.replace(
-        new RegExp( (emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&')  ), "g"),
-        `<img src=${emoteUrl} height="20" />`,
+        new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"),
+        `<img src=${emoteUrl} class="emote" />`,
       );
     });
 
@@ -169,7 +169,7 @@ export class Twitch {
       });
     });
 
-    this.eventListener = new EventSubWsListener({
+    /*    this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
     this.eventListener.onChannelPollProgress(
@@ -269,7 +269,7 @@ export class Twitch {
           completed ? "FULFILLED" : "CANCELED",
         );
       },
-    );
+    );*/
 
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
@@ -299,13 +299,14 @@ export class Twitch {
           `Twitch - ${msg.userInfo.displayName}: ${text}`,
         );
 
-        this.sendToChatList(msg);
-
         // not a command
-        if (!text.startsWith("!")) return;
-
-        this.commandList.forEach((command) => {
-          if (!text.startsWith(command.command)) return;
+        if (!text.startsWith("!")) {
+          this.sendToChatList(msg);
+          return;
+        }
+        for (let i = 0; i < this.commandList.length; i++) {
+          let command = this.commandList[i];
+          if (!text.startsWith(command.command)) continue;
 
           command.commandFunction(
             user,
@@ -317,7 +318,11 @@ export class Twitch {
             Platform.twitch,
             msg,
           );
-        });
+          if (command.showOnChat) break;
+          return;
+        }
+
+        this.sendToChatList(msg);
       },
     );
 
@@ -326,7 +331,7 @@ export class Twitch {
     });
 
     this.chatClient.connect();
-    this.eventListener.start();
+    //this.eventListener.start();
   }
 
   public setupAuth(auth: AuthSetup) {

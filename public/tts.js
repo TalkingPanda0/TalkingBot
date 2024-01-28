@@ -6,16 +6,16 @@ const voicesRegex =
 const messageList = document.getElementById("message-list");
 
 const emoteSoundEffects = {
-  HapBoo: "/yippe.mp3",
-  HapFlat: "/squish.mp3",
-  HabPoo: "/habpoo.mp3",
-  aids: "/aids.mp3",
-  HNNNGH: "/hnhg.mp3",
-  Skrunk: "/huh.mp3",
-  Nerd: "/nerd.mp3",
-  Pixel: "/pixel.mp3",
-  TeeHee: "/hehe.mp3",
-  Silly: "/silly.mp3",
+  HapBoo: "/static/yippe.mp3",
+  HapFlat: "/static/squish.mp3",
+  HabPoo: "/static/habpoo.mp3",
+  aids: "/static/aids.mp3",
+  HNNNGH: "/static/hnhg.mp3",
+  Skrunk: "/static/huh.mp3",
+  Nerd: "/static/nerd.mp3",
+  Pixel: "/static/pixel.mp3",
+  TeeHee: "/static/hehe.mp3",
+  Silly: "/static/silly.mp3",
 };
 
 var queue = [];
@@ -76,6 +76,8 @@ function handleQueue() {
           console.log("Got error: " + err);
           isPlaying = false;
           removePopup();
+          createPopup({ sender: "Brian himself", text: err });
+          setTimeout(removePopup, 10000);
         };
         audio.onended = () => {
           if (tempqueue.length == 0) {
@@ -83,11 +85,27 @@ function handleQueue() {
             setTimeout(removePopup, 10e2);
             return;
           }
-          tempqueue.shift().play();
+          tempqueue
+            .shift()
+            .play()
+            .catch((err) => {
+              isPlaying = false;
+              console.log(err);
+              createPopup({ sender: "Brian himself", text: err });
+              setTimeout(removePopup, 10000);
+            });
         };
       });
-      console.log(tempqueue);
-      tempqueue.shift().play();
+
+      tempqueue
+        .shift()
+        .play()
+        .catch((err) => {
+          isPlaying = false;
+          console.log(err);
+          createPopup({ sender: "Brian himself", text: err });
+          setTimeout(removePopup, 10000);
+        });
       return;
     }
   }
@@ -97,13 +115,14 @@ function handleQueue() {
 
   audio.onended = () => {
     isPlaying = false;
-    setTimeout(removePopup, 10e2);
+    setTimeout(removePopup, 2500);
   };
-  audio.onerror = (err) => {
-    console.log("Got error: " + err);
-    removePopup();
-  };
-  audio.play();
+  audio.play().catch((err) => {
+    isPlaying = false;
+    console.log(err);
+    createPopup({ sender: "Brian himself", text: err });
+    setTimeout(removePopup, 10000);
+  });
 }
 
 function ttSay(message) {

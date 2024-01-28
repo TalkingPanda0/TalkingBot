@@ -9,6 +9,7 @@
 
     function addToMessageList(message) {
       const messageElement = document.createElement("div");
+      const spanElement = document.createElement("span");
       messageElement.id = message.id;
       messageElement.classList.add("message");
       messageElement.classList.add(message.platform);
@@ -18,8 +19,7 @@
       message.badges.forEach((badge) => {
         const badgeElement = document.createElement("img");
         badgeElement.src = badge;
-        badgeElement.width = "21";
-        badgeElement.height = "21";
+        badgeElement.height = "25";
         badgeElement.classList.add("badge");
         badges.appendChild(badgeElement);
       });
@@ -28,8 +28,9 @@
       element.style = `color:${message.color}`;
 
       element.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
-      messageElement.appendChild(badges);
-      messageElement.appendChild(element);
+      spanElement.appendChild(badges);
+      spanElement.appendChild(element);
+      messageElement.appendChild(spanElement);
       messageList.appendChild(messageElement);
       messageList.scrollTop = messageList.scrollHeight;
     }
@@ -92,7 +93,6 @@
     .text {
       color: white;
       font-family: Arial, Helvetica, sans-serif;
-      vertical-align: middle;
     }
     .sender {
       vertical-align: middle;
@@ -114,9 +114,12 @@
     * {
       color: #fff;
       font-family: Roboto, sans-serif;
-      font-size: 21px;
+      font-size: 25px;
       font-weight: 700;
       line-height: 1.5em;
+    }
+    .emote {
+      height: 28px;
     }
   </style>
 </html>

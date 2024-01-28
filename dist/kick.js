@@ -44,31 +44,46 @@ class Kick {
                             const jsonBadges = jsonDataSub.sender.identity.badges;
                             jsonBadges.forEach((element) => {
                                 if (element.type === "moderator") {
-                                    badges.push("/kickmod.svg");
+                                    badges.push("/static/kickmod.svg");
                                 }
                                 else if (element.type === "subscriber") {
-                                    badges.push("/kicksub.svg");
+                                    badges.push("/static/kicksub.svg");
                                 }
                             });
                         }
-                        this.bot.iochat.emit("message", {
-                            text: this.parseEmotes(text),
-                            sender: jsonDataSub.sender.username,
-                            senderId: jsonDataSub.sender.id,
-                            badges: badges,
-                            color: jsonDataSub.sender.identity.color,
-                            id: "kick-" + jsonDataSub.id,
-                            platform: "kick",
-                        });
                         console.log("\x1b[32m%s\x1b[0m", `Kick - ${jsonDataSub.sender.username}: ${text}`);
-                        this.commandList.forEach((command) => {
+                        if (!text.startsWith("!")) {
+                            this.bot.iochat.emit("message", {
+                                text: this.parseEmotes(text),
+                                sender: jsonDataSub.sender.username,
+                                senderId: jsonDataSub.sender.id,
+                                badges: badges,
+                                color: jsonDataSub.sender.identity.color,
+                                id: "kick-" + jsonDataSub.id,
+                                platform: "kick",
+                            });
+                            return;
+                        }
+                        for (let i = 0; i < this.commandList.length; i++) {
+                            let command = this.commandList[i];
                             if (!text.startsWith(command.command))
-                                return;
+                                continue;
                             command.commandFunction(user, firstBadgeType === "moderator" ||
                                 firstBadgeType === "broadcaster", text.replace(command.command, "").trim(), (message) => {
                                 // Can't reply on kick yet
                             }, talkingbot_1.Platform.kick);
-                        });
+                            if (!command.showOnChat)
+                                return;
+                            this.bot.iochat.emit("message", {
+                                text: this.parseEmotes(text),
+                                sender: jsonDataSub.sender.username,
+                                senderId: jsonDataSub.sender.id,
+                                badges: badges,
+                                color: jsonDataSub.sender.identity.color,
+                                id: "kick-" + jsonDataSub.id,
+                                platform: "kick",
+                            });
+                        }
                         break;
                     case "App\\Events\\MessageDeletedEvent":
                         this.bot.iochat.emit("messageDelete", "kick-" + jsonDataSub.message.id);
@@ -108,7 +123,7 @@ class Kick {
     }
     parseEmotes(message) {
         const regex = /\[emote:(\d+):([^\]]+)\]/g;
-        return message.replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" height=20 />`);
+        return message.replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`);
     }
 }
 exports.Kick = Kick;

@@ -33,7 +33,6 @@ const talkingbot_1 = require("./talkingbot");
 const node_fs_1 = __importDefault(require("node:fs"));
 const app = (0, express_1.default)();
 const server = http.createServer(app);
-let enabled = true;
 app.use(express_1.default.static("public"));
 app.get("/tts", (req, res) => {
     res.sendFile(__dirname + "/tts.html");

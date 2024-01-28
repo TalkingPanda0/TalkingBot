@@ -51,7 +51,7 @@ function removeKickEmotes(message) {
 class TalkingBot {
     constructor(kickId, server) {
         this.commandList = [];
-        this.ttsEnabled = false;
+        this.ttsEnabled = true;
         this.server = server;
         this.iotts = new socket_io_1.Server(this.server, {
             path: "/tts/",
@@ -65,6 +65,7 @@ class TalkingBot {
         this.kickId = kickId;
         this.commandList = [
             {
+                showOnChat: false,
                 command: "!distance",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     const playerData = JSON.parse(node_fs_1.default.readFileSync(this.twitch.dataPath, "utf-8"));
@@ -81,6 +82,7 @@ class TalkingBot {
                 },
             },
             {
+                showOnChat: false,
                 command: "!fsog",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     return __awaiter(this, void 0, void 0, function* () {
@@ -95,6 +97,7 @@ class TalkingBot {
                 },
             },
             {
+                showOnChat: false,
                 command: "!settitle",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
                     if (!isUserMod || message.length == 0)
@@ -105,6 +108,7 @@ class TalkingBot {
                 }),
             },
             {
+                showOnChat: false,
                 command: "!setgame",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
                     if (!isUserMod || message.length == 0)
@@ -120,36 +124,42 @@ class TalkingBot {
                 }),
             },
             {
+                showOnChat: false,
                 command: "!adopt",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     reply(`${message} has been adopted by @${user}!`);
                 },
             },
             {
+                showOnChat: false,
                 command: "!socials",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o");
                 },
             },
             {
+                showOnChat: false,
                 command: "!yt",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     reply("SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ");
                 },
             },
             {
+                showOnChat: false,
                 command: "!twitch",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     reply("SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o");
                 },
             },
             {
+                showOnChat: false,
                 command: "!kick",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
                     reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/");
                 },
             },
             {
+                showOnChat: false,
                 command: "!bsr",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (platform == Platform.twitch)
@@ -158,6 +168,7 @@ class TalkingBot {
                 },
             },
             {
+                showOnChat: true,
                 command: "!tts",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (platform == Platform.twitch && context != null) {
@@ -185,6 +196,7 @@ class TalkingBot {
                 },
             },
             {
+                showOnChat: true,
                 command: "!modtts",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)

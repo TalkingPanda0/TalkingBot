@@ -8,8 +8,6 @@ import fs from "node:fs";
 const app: Express = express();
 const server = http.createServer(app);
 
-let enabled = true;
-
 app.use(express.static("public"));
 
 app.get("/tts", (req: Request, res: Response) => {
@@ -68,9 +66,7 @@ if (!fs.existsSync("./oauth.json")) {
       });
 
     socket.on("setup_message", (message: AuthSetup) => {
-      console.log(
-        `Got setup message!`,
-      );
+      console.log(`Got setup message!`);
       bot.twitch.setupAuth(message);
     });
   });

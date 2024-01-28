@@ -5,7 +5,7 @@ export class Kick {
   public currentPoll: Poll;
   private channelId: string;
   private commandList: Command[];
-private bot: TalkingBot;
+  private bot: TalkingBot;
 
   constructor(channelId: string, commandList: Command[], bot: TalkingBot) {
     this.channelId = channelId;
@@ -55,29 +55,32 @@ private bot: TalkingBot;
 
               jsonBadges.forEach((element: { type: string }) => {
                 if (element.type === "moderator") {
-                  badges.push("/kickmod.svg");
+                  badges.push("/static/kickmod.svg");
                 } else if (element.type === "subscriber") {
-                  badges.push("/kicksub.svg");
+                  badges.push("/static/kicksub.svg");
                 }
               });
             }
-            this.bot.iochat.emit("message", {
-              text: this.parseEmotes(text),
-              sender: jsonDataSub.sender.username,
-              senderId: jsonDataSub.sender.id,
-              badges: badges,
-              color: jsonDataSub.sender.identity.color,
-              id: "kick-" + jsonDataSub.id,
-              platform: "kick",
-            });
-
             console.log(
               "\x1b[32m%s\x1b[0m",
               `Kick - ${jsonDataSub.sender.username}: ${text}`,
             );
+            if (!text.startsWith("!")) {
+              this.bot.iochat.emit("message", {
+                text: this.parseEmotes(text),
+                sender: jsonDataSub.sender.username,
+                senderId: jsonDataSub.sender.id,
+                badges: badges,
+                color: jsonDataSub.sender.identity.color,
+                id: "kick-" + jsonDataSub.id,
+                platform: "kick",
+              });
+              return;
+            }
 
-            this.commandList.forEach((command) => {
-              if (!text.startsWith(command.command)) return;
+            for (let i = 0; i < this.commandList.length; i++) {
+              let command = this.commandList[i];
+              if (!text.startsWith(command.command)) continue;
 
               command.commandFunction(
                 user,
@@ -89,7 +92,17 @@ private bot: TalkingBot;
                 },
                 Platform.kick,
               );
-            });
+              if (!command.showOnChat) return;
+              this.bot.iochat.emit("message", {
+                text: this.parseEmotes(text),
+                sender: jsonDataSub.sender.username,
+                senderId: jsonDataSub.sender.id,
+                badges: badges,
+                color: jsonDataSub.sender.identity.color,
+                id: "kick-" + jsonDataSub.id,
+                platform: "kick",
+              });
+            }
             break;
           case "App\\Events\\MessageDeletedEvent":
             this.bot.iochat.emit(
@@ -138,7 +151,7 @@ private bot: TalkingBot;
     return message.replace(
       regex,
       (match, id, name) =>
-        `<img src="https://files.kick.com/emotes/${id}/fullsize" height=20 />`,
+        `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
     );
   }
 }

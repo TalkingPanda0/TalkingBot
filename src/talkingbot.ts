@@ -19,6 +19,7 @@ export enum Platform {
 }
 export interface Command {
   command: string;
+  showOnChat: boolean;
   commandFunction: (
     user: string,
     isUserMod: boolean,
@@ -97,7 +98,7 @@ export class TalkingBot {
   private commandList: Command[] = [];
   private server: http.Server;
   private iotts: Server;
-  private ttsEnabled: Boolean = false;
+  private ttsEnabled: Boolean = true;
 
   constructor(kickId: string, server: http.Server) {
     this.server = server;
@@ -117,6 +118,7 @@ export class TalkingBot {
 
     this.commandList = [
       {
+        showOnChat: false,
         command: "!distance",
         commandFunction: (
           user,
@@ -138,14 +140,18 @@ export class TalkingBot {
           const star: Star = findClosestStar(metersToSolarRadii(distance));
           const diameter = solarRadiiToMeter(star.radius * 2);
           const diameterinkm = Math.round(diameter / 10) / 100;
-          const percent = Math.round((distanceinkm / diameterinkm) * 10000) / 100;
-          console.log(`${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`);
+          const percent =
+            Math.round((distanceinkm / diameterinkm) * 10000) / 100;
+          console.log(
+            `${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`,
+          );
           reply(
             `${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `,
           );
         },
       },
       {
+        showOnChat: false,
         command: "!fsog",
         async commandFunction(
           user,
@@ -166,6 +172,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!settitle",
 
         commandFunction: async (
@@ -187,6 +194,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!setgame",
 
         commandFunction: async (
@@ -214,6 +222,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!adopt",
 
         commandFunction(user, isUserMod, message, reply, platform, context) {
@@ -221,12 +230,14 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!socials",
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o");
         },
       },
       {
+        showOnChat: false,
         command: "!yt",
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply(
@@ -235,6 +246,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!twitch",
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply(
@@ -243,6 +255,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!kick",
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply(
@@ -251,6 +264,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: false,
         command: "!bsr",
         commandFunction: (
           user: string,
@@ -265,6 +279,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: true,
         command: "!tts",
         commandFunction: (
           user: string,
@@ -300,6 +315,7 @@ export class TalkingBot {
         },
       },
       {
+        showOnChat: true,
         command: "!modtts",
         commandFunction: (
           user: string,
