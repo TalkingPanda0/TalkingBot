@@ -119,6 +119,20 @@ export class TalkingBot {
     this.commandList = [
       {
         showOnChat: false,
+        command: "!lurk",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          reply("is now lurking at the bottom of the fish tank");
+        },
+      },
+      {
+        showOnChat: false,
         command: "!distance",
         commandFunction: (
           user,
