@@ -16,6 +16,7 @@ const emoteSoundEffects = {
   Pixel: "/static/pixel.mp3",
   TeeHee: "/static/hehe.mp3",
   Silly: "/static/silly.mp3",
+  realBoo: "/static/realboo.mp3",
 };
 
 var queue = [];

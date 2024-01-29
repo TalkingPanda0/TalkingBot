@@ -298,7 +298,6 @@ export class Twitch {
           "\x1b[35m%s\x1b[0m",
           `Twitch - ${msg.userInfo.displayName}: ${text}`,
         );
-
         // not a command
         if (!text.startsWith("!")) {
           this.sendToChatList(msg);
