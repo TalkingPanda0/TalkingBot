@@ -68,7 +68,7 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!lurk",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
-                    reply("is now lurking at the bottom of the fish tank");
+                    reply(`@${user} is now lurking at the bottom of the fish tank`, false);
                 },
             },
             {
@@ -85,7 +85,7 @@ class TalkingBot {
                     const diameterinkm = Math.round(diameter / 10) / 100;
                     const percent = Math.round((distanceinkm / diameterinkm) * 10000) / 100;
                     console.log(`${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`);
-                    reply(`${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `);
+                    reply(`${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `, true);
                 },
             },
             {
@@ -95,10 +95,10 @@ class TalkingBot {
                     return __awaiter(this, void 0, void 0, function* () {
                         try {
                             let response = yield fetch("https://talkingpanda.dev/fsog");
-                            reply(`SweetbabooO_o currently has ${yield response.text()} on furry shades of gay`);
+                            reply(`SweetbabooO_o currently has ${yield response.text()} on furry shades of gay`, true);
                         }
                         catch (_a) {
-                            reply("Failed getting data");
+                            reply("Failed getting data", true);
                         }
                     });
                 },
@@ -111,7 +111,7 @@ class TalkingBot {
                         return;
                     yield this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { title: message });
                     // TODO change title in kick
-                    reply(`Title has been changed to "${message}"`);
+                    reply(`Title has been changed to "${message}"`, true);
                 }),
             },
             {
@@ -122,47 +122,47 @@ class TalkingBot {
                         return;
                     const game = yield this.twitch.apiClient.games.getGameByName(message);
                     if (game == null) {
-                        reply(`Can't find game "${message}"`);
+                        reply(`Can't find game "${message}"`, true);
                         return;
                     }
                     yield this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { gameId: game.id });
                     // TODO change game in kick
-                    reply(`Game has been changed to "${game.name}"`);
+                    reply(`Game has been changed to "${game.name}"`, true);
                 }),
             },
             {
                 showOnChat: false,
                 command: "!adopt",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply(`${message} has been adopted by @${user}!`);
+                    reply(`${message} has been adopted by @${user}!`, true);
                 },
             },
             {
                 showOnChat: false,
                 command: "!socials",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o");
+                    reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o", true);
                 },
             },
             {
                 showOnChat: false,
                 command: "!yt",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ");
+                    reply("SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ", true);
                 },
             },
             {
                 showOnChat: false,
                 command: "!twitch",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o");
+                    reply("SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o", true);
                 },
             },
             {
                 showOnChat: false,
                 command: "!kick",
                 commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/");
+                    reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/", true);
                 },
             },
             {

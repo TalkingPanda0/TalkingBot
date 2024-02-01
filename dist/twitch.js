@@ -300,8 +300,10 @@ class Twitch {
                     let command = this.commandList[i];
                     if (!text.startsWith(command.command))
                         continue;
-                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message) => {
-                        this.chatClient.say(channel, message, { replyTo: msg.id });
+                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message, replyToUser) => {
+                        this.chatClient.say(channel, message, {
+                            replyTo: replyToUser ? msg.id : null,
+                        });
                     }, talkingbot_1.Platform.twitch, msg);
                     if (command.showOnChat)
                         this.sendToChatList(msg);

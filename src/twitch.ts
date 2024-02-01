@@ -354,8 +354,10 @@ export class Twitch {
             user,
             msg.userInfo.isMod || msg.userInfo.isBroadcaster,
             text.replace(command.command, "").trim(),
-            (message: string) => {
-              this.chatClient.say(channel, message, { replyTo: msg.id });
+            (message: string, replyToUser: boolean) => {
+              this.chatClient.say(channel, message, {
+                replyTo: replyToUser ? msg.id : null,
+              });
             },
             Platform.twitch,
             msg,

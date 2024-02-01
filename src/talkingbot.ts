@@ -24,7 +24,7 @@ export interface Command {
     user: string,
     isUserMod: boolean,
     message: string,
-    reply: Function,
+    reply: (message: string, replyToUser: boolean) => void | Promise<void>,
     platform: Platform,
     context?: any,
   ) => void | Promise<void>;
@@ -128,7 +128,10 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          reply("is now lurking at the bottom of the fish tank");
+          reply(
+            `@${user} is now lurking at the bottom of the fish tank`,
+            false,
+          );
         },
       },
       {
@@ -161,6 +164,7 @@ export class TalkingBot {
           );
           reply(
             `${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `,
+            true,
           );
         },
       },
@@ -179,9 +183,10 @@ export class TalkingBot {
             let response = await fetch("https://talkingpanda.dev/fsog");
             reply(
               `SweetbabooO_o currently has ${await response.text()} on furry shades of gay`,
+              true,
             );
           } catch {
-            reply("Failed getting data");
+            reply("Failed getting data", true);
           }
         },
       },
@@ -204,7 +209,7 @@ export class TalkingBot {
           );
           // TODO change title in kick
 
-          reply(`Title has been changed to "${message}"`);
+          reply(`Title has been changed to "${message}"`, true);
         },
       },
       {
@@ -223,7 +228,7 @@ export class TalkingBot {
           const game: HelixGame =
             await this.twitch.apiClient.games.getGameByName(message);
           if (game == null) {
-            reply(`Can't find game "${message}"`);
+            reply(`Can't find game "${message}"`, true);
             return;
           }
           await this.twitch.apiClient.channels.updateChannelInfo(
@@ -232,7 +237,7 @@ export class TalkingBot {
           );
           // TODO change game in kick
 
-          reply(`Game has been changed to "${game.name}"`);
+          reply(`Game has been changed to "${game.name}"`, true);
         },
       },
       {
@@ -240,14 +245,17 @@ export class TalkingBot {
         command: "!adopt",
 
         commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply(`${message} has been adopted by @${user}!`);
+          reply(`${message} has been adopted by @${user}!`, true);
         },
       },
       {
         showOnChat: false,
         command: "!socials",
         commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o");
+          reply(
+            "SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o",
+            true,
+          );
         },
       },
       {
@@ -256,6 +264,7 @@ export class TalkingBot {
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply(
             "SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ",
+            true,
           );
         },
       },
@@ -265,6 +274,7 @@ export class TalkingBot {
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply(
             "SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o",
+            true,
           );
         },
       },
@@ -274,6 +284,7 @@ export class TalkingBot {
         commandFunction(user, isUserMod, message, reply, platform, context) {
           reply(
             "SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/",
+            true,
           );
         },
       },

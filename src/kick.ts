@@ -92,7 +92,7 @@ export class Kick {
                 firstBadgeType === "moderator" ||
                   firstBadgeType === "broadcaster",
                 text.replace(command.command, "").trim(),
-                (message) => {
+                (message: string, replyToUser: boolean) => {
                   // Can't reply on kick yet
                 },
                 Platform.kick,
