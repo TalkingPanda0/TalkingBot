@@ -48,7 +48,6 @@ app.get("/setup", (req, res) => {
 });
 let bot = new talkingbot_1.TalkingBot("17587561", server);
 const iosetup = new socket_io_1.Server(server, { path: "/setup/" });
-// Check if oauth.json exists
 app.get("/oauth", (req, res) => {
     let code = req.query.code;
     let scope = req.query.scope;
@@ -65,12 +64,16 @@ app.get("/oauth", (req, res) => {
         res.send(`Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`);
     }
 });
-if (!node_fs_1.default.existsSync("./oauth.json")) {
+if (!node_fs_1.default.existsSync("./token-bot.json") ||
+    !node_fs_1.default.existsSync("./token-broadcaster.json")) {
     console.log("\x1b[31m%s\x1b[0m", "Auth not found, please go to localhost:3000/setup to create it");
+    if (node_fs_1.default.existsSync("./oauth.json"))
+        bot.twitch.readAuth();
     iosetup.on("connection", (socket) => {
         console.log("got setup connection");
         let twitchClientId = bot.twitch.clientId;
         let twitchClientSecret = bot.twitch.clientSecret;
+        // Send the client id and client secret if they have been given already
         if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
             socket.emit("setup_message", {
                 twitchClientId: twitchClientId,
@@ -84,19 +87,7 @@ if (!node_fs_1.default.existsSync("./oauth.json")) {
 }
 else {
     bot.twitch.readAuth();
-    if (!node_fs_1.default.existsSync("./token-bot.json") ||
-        !node_fs_1.default.existsSync("./token-broadcaster.json")) {
-        console.log("\x1b[31m%s\x1b[0m", "tokens not found, please go to localhost:3000/setup to create it");
-        iosetup.on("connection", (socket) => {
-            socket.emit("setup_message", {
-                twitchClientId: bot.twitch.clientId,
-                twitchClientSecret: bot.twitch.clientSecret,
-            });
-        });
-    }
-    else {
-        bot.initBot();
-    }
+    bot.initBot();
 }
 server.listen(3000, () => {
     console.log("listening on *:3000");

@@ -28,7 +28,7 @@ app.get("/setup", (req: Request, res: Response) => {
 let bot: TalkingBot = new TalkingBot("17587561", server);
 
 const iosetup = new Server(server, { path: "/setup/" });
-// Check if oauth.json exists
+
 app.get("/oauth", (req: Request, res: Response) => {
   let code: string = req.query.code as string;
   let scope: string = req.query.scope as string;
@@ -47,11 +47,15 @@ app.get("/oauth", (req: Request, res: Response) => {
   }
 });
 
-if (!fs.existsSync("./oauth.json")) {
+if (
+  !fs.existsSync("./token-bot.json") ||
+  !fs.existsSync("./token-broadcaster.json")
+) {
   console.log(
     "\x1b[31m%s\x1b[0m",
     "Auth not found, please go to localhost:3000/setup to create it",
   );
+  if (fs.existsSync("./oauth.json")) bot.twitch.readAuth();
 
   iosetup.on("connection", (socket) => {
     console.log("got setup connection");
@@ -59,6 +63,7 @@ if (!fs.existsSync("./oauth.json")) {
     let twitchClientId = bot.twitch.clientId;
     let twitchClientSecret = bot.twitch.clientSecret;
 
+    // Send the client id and client secret if they have been given already
     if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
       socket.emit("setup_message", {
         twitchClientId: twitchClientId,
@@ -72,24 +77,7 @@ if (!fs.existsSync("./oauth.json")) {
   });
 } else {
   bot.twitch.readAuth();
-  if (
-    !fs.existsSync("./token-bot.json") ||
-    !fs.existsSync("./token-broadcaster.json")
-  ) {
-    console.log(
-      "\x1b[31m%s\x1b[0m",
-      "tokens not found, please go to localhost:3000/setup to create it",
-    );
-
-    iosetup.on("connection", (socket) => {
-      socket.emit("setup_message", {
-        twitchClientId: bot.twitch.clientId,
-        twitchClientSecret: bot.twitch.clientSecret,
-      });
-    });
-  } else {
-    bot.initBot();
-  }
+  bot.initBot();
 }
 
 server.listen(3000, () => {

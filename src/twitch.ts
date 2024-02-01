@@ -48,10 +48,10 @@ export class Twitch {
   public eventListener: EventSubWsListener;
   public currentPoll: Poll;
   public dataPath: string;
+  public chatClient: ChatClient;
 
   private channelName: string;
   private bot: TalkingBot;
-  private chatClient: ChatClient;
   private commandList: Command[] = [];
   private authProvider: RefreshingAuthProvider;
   private badges: Map<string, string> = new Map<string, string>();
@@ -59,10 +59,6 @@ export class Twitch {
   constructor(commandList: Command[], bot: TalkingBot) {
     this.commandList = commandList;
     this.bot = bot;
-  }
-
-  public sendMessage(message: string) {
-    this.chatClient.say(this.channelName, message);
   }
 
   async sendToChatList(message: ChatMessage): Promise<void> {
@@ -117,6 +113,46 @@ export class Twitch {
       platform: "twitch",
     });
   }
+
+  public setupAuth(auth: AuthSetup) {
+    this.clientId = auth.twitchClientId;
+    this.clientSecret = auth.twitchClientSecret;
+    this.channelName = auth.channelName;
+    this.dataPath = auth.playerdatapath;
+
+    fs.writeFileSync(
+      oauthPath,
+      JSON.stringify({
+        clientId: this.clientId,
+        clientSecret: this.clientSecret,
+        channelName: this.channelName,
+        dataPath: this.dataPath,
+      }),
+      "utf-8",
+    );
+
+    this.authProvider = new RefreshingAuthProvider({
+      clientId: this.clientId,
+      clientSecret: this.clientSecret,
+      redirectUri: "http://localhost:3000/oauth",
+    });
+  }
+
+  public async addUser(code: string, scope: string) {
+    const isBroadcaster: Boolean = scope.startsWith("bits:read");
+    const tokenData = await exchangeCode(
+      this.clientId,
+      this.clientSecret,
+      code,
+      "http://localhost:3000/oauth",
+    );
+    fs.writeFileSync(
+      isBroadcaster ? broadcasterPath : botPath,
+      JSON.stringify(tokenData, null, 4),
+      "utf-8",
+    );
+  }
+
   public readAuth() {
     const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
     this.clientId = fileContent.clientId;
@@ -124,6 +160,7 @@ export class Twitch {
     this.channelName = fileContent.channelName;
     this.dataPath = fileContent.dataPath;
   }
+
   async initBot(): Promise<void> {
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
@@ -154,15 +191,17 @@ export class Twitch {
 
     this.channel = await this.apiClient.users.getUserByName(this.channelName);
 
-    const cbadges = await this.apiClient.chat.getChannelBadges(this.channel.id);
-    cbadges.forEach((badge) => {
+    const channelBadges = await this.apiClient.chat.getChannelBadges(
+      this.channel.id,
+    );
+    channelBadges.forEach((badge) => {
       if (badge.id !== "subscriber") return;
       badge.versions.forEach((element) => {
         this.badges.set(element.id, element.getImageUrl(4));
       });
     });
-    const gbadges = await this.apiClient.chat.getGlobalBadges();
-    gbadges.forEach((badge) => {
+    const globalBadges = await this.apiClient.chat.getGlobalBadges();
+    globalBadges.forEach((badge) => {
       if (badge.id != "moderator" && badge.id != "broadcaster") return;
       badge.versions.forEach((element) => {
         this.badges.set(badge.id, element.getImageUrl(4));
@@ -294,15 +333,19 @@ export class Twitch {
     });
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
+        if (user === "botrixoficial") return;
+
         console.log(
           "\x1b[35m%s\x1b[0m",
           `Twitch - ${msg.userInfo.displayName}: ${text}`,
         );
+
         // not a command
         if (!text.startsWith("!")) {
           this.sendToChatList(msg);
           return;
         }
+
         for (let i = 0; i < this.commandList.length; i++) {
           let command = this.commandList[i];
           if (!text.startsWith(command.command)) continue;
@@ -317,11 +360,9 @@ export class Twitch {
             Platform.twitch,
             msg,
           );
-          if (command.showOnChat) break;
+          if (command.showOnChat) this.sendToChatList(msg);
           return;
         }
-
-        this.sendToChatList(msg);
       },
     );
 
@@ -331,43 +372,5 @@ export class Twitch {
 
     this.chatClient.connect();
     //this.eventListener.start();
-  }
-
-  public setupAuth(auth: AuthSetup) {
-    this.clientId = auth.twitchClientId;
-    this.clientSecret = auth.twitchClientSecret;
-    this.channelName = auth.channelName;
-    this.dataPath = auth.playerdatapath;
-
-    fs.writeFileSync(
-      oauthPath,
-      JSON.stringify({
-        clientId: this.clientId,
-        clientSecret: this.clientSecret,
-        channelName: this.channelName,
-        dataPath: this.dataPath,
-      }),
-      "utf-8",
-    );
-
-    this.authProvider = new RefreshingAuthProvider({
-      clientId: this.clientId,
-      clientSecret: this.clientSecret,
-      redirectUri: "http://localhost:3000/oauth",
-    });
-  }
-  public async addUser(code: string, scope: string) {
-    let isBroadcaster: Boolean = scope.startsWith("bits:read");
-    const tokenData = await exchangeCode(
-      this.clientId,
-      this.clientSecret,
-      code,
-      "http://localhost:3000/oauth",
-    );
-    fs.writeFileSync(
-      isBroadcaster ? broadcasterPath : botPath,
-      JSON.stringify(tokenData, null, 4),
-      "utf-8",
-    );
   }
 }

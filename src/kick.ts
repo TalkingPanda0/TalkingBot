@@ -47,7 +47,11 @@ export class Kick {
               .replace(/</g, "&lt;")
               .replace(/>/g, "&gt;");
             const user = jsonDataSub.sender.username;
+
             const userBadges = jsonDataSub.sender.identity.badges;
+
+            if (user === "BotRix") return;
+
             let firstBadgeType = "";
             if (userBadges.length != 0) {
               firstBadgeType = userBadges[0].type;
@@ -61,6 +65,7 @@ export class Kick {
                 }
               });
             }
+
             console.log(
               "\x1b[32m%s\x1b[0m",
               `Kick - ${jsonDataSub.sender.username}: ${text}`,

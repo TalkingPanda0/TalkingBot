@@ -289,7 +289,10 @@ export class TalkingBot {
           context?: ChatMessage,
         ): void | Promise<void> => {
           if (platform == Platform.twitch) return;
-          this.twitch.sendMessage(`!bsr ${message}`);
+          this.twitch.chatClient.say(
+            this.twitch.channel.name,
+            `!bsr ${message}`,
+          );
         },
       },
       {

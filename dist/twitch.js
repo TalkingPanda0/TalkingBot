@@ -68,9 +68,6 @@ class Twitch {
         this.commandList = commandList;
         this.bot = bot;
     }
-    sendMessage(message) {
-        this.chatClient.say(this.channelName, message);
-    }
     sendToChatList(message) {
         return __awaiter(this, void 0, void 0, function* () {
             let color = yield this.apiClient.chat.getColorForUser(message.userInfo.userId);
@@ -111,6 +108,30 @@ class Twitch {
             });
         });
     }
+    setupAuth(auth) {
+        this.clientId = auth.twitchClientId;
+        this.clientSecret = auth.twitchClientSecret;
+        this.channelName = auth.channelName;
+        this.dataPath = auth.playerdatapath;
+        fs.writeFileSync(oauthPath, JSON.stringify({
+            clientId: this.clientId,
+            clientSecret: this.clientSecret,
+            channelName: this.channelName,
+            dataPath: this.dataPath,
+        }), "utf-8");
+        this.authProvider = new auth_1.RefreshingAuthProvider({
+            clientId: this.clientId,
+            clientSecret: this.clientSecret,
+            redirectUri: "http://localhost:3000/oauth",
+        });
+    }
+    addUser(code, scope) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const isBroadcaster = scope.startsWith("bits:read");
+            const tokenData = yield (0, auth_1.exchangeCode)(this.clientId, this.clientSecret, code, "http://localhost:3000/oauth");
+            fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(tokenData, null, 4), "utf-8");
+        });
+    }
     readAuth() {
         const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
         this.clientId = fileContent.clientId;
@@ -133,16 +154,16 @@ class Twitch {
             yield this.authProvider.addUserForToken(JSON.parse(fs.readFileSync(broadcasterPath, "utf-8")), [""]);
             this.apiClient = new api_1.ApiClient({ authProvider: this.authProvider });
             this.channel = yield this.apiClient.users.getUserByName(this.channelName);
-            const cbadges = yield this.apiClient.chat.getChannelBadges(this.channel.id);
-            cbadges.forEach((badge) => {
+            const channelBadges = yield this.apiClient.chat.getChannelBadges(this.channel.id);
+            channelBadges.forEach((badge) => {
                 if (badge.id !== "subscriber")
                     return;
                 badge.versions.forEach((element) => {
                     this.badges.set(element.id, element.getImageUrl(4));
                 });
             });
-            const gbadges = yield this.apiClient.chat.getGlobalBadges();
-            gbadges.forEach((badge) => {
+            const globalBadges = yield this.apiClient.chat.getGlobalBadges();
+            globalBadges.forEach((badge) => {
                 if (badge.id != "moderator" && badge.id != "broadcaster")
                     return;
                 badge.versions.forEach((element) => {
@@ -267,6 +288,8 @@ class Twitch {
                 this.bot.iochat.emit("clearChat", "twitch");
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
+                if (user === "botrixoficial")
+                    return;
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);
                 // not a command
                 if (!text.startsWith("!")) {
@@ -281,40 +304,15 @@ class Twitch {
                         this.chatClient.say(channel, message, { replyTo: msg.id });
                     }, talkingbot_1.Platform.twitch, msg);
                     if (command.showOnChat)
-                        break;
+                        this.sendToChatList(msg);
                     return;
                 }
-                this.sendToChatList(msg);
             }));
             this.chatClient.onConnect(() => {
                 console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
             });
             this.chatClient.connect();
             //this.eventListener.start();
-        });
-    }
-    setupAuth(auth) {
-        this.clientId = auth.twitchClientId;
-        this.clientSecret = auth.twitchClientSecret;
-        this.channelName = auth.channelName;
-        this.dataPath = auth.playerdatapath;
-        fs.writeFileSync(oauthPath, JSON.stringify({
-            clientId: this.clientId,
-            clientSecret: this.clientSecret,
-            channelName: this.channelName,
-            dataPath: this.dataPath,
-        }), "utf-8");
-        this.authProvider = new auth_1.RefreshingAuthProvider({
-            clientId: this.clientId,
-            clientSecret: this.clientSecret,
-            redirectUri: "http://localhost:3000/oauth",
-        });
-    }
-    addUser(code, scope) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let isBroadcaster = scope.startsWith("bits:read");
-            const tokenData = yield (0, auth_1.exchangeCode)(this.clientId, this.clientSecret, code, "http://localhost:3000/oauth");
-            fs.writeFileSync(isBroadcaster ? broadcasterPath : botPath, JSON.stringify(tokenData, null, 4), "utf-8");
         });
     }
 }

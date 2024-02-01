@@ -38,6 +38,8 @@ class Kick {
                             .replace(/>/g, "&gt;");
                         const user = jsonDataSub.sender.username;
                         const userBadges = jsonDataSub.sender.identity.badges;
+                        if (user === "BotRix")
+                            return;
                         let firstBadgeType = "";
                         if (userBadges.length != 0) {
                             firstBadgeType = userBadges[0].type;
