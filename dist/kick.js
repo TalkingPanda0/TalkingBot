@@ -71,7 +71,7 @@ class Kick {
                             if (!text.startsWith(command.command))
                                 continue;
                             command.commandFunction(user, firstBadgeType === "moderator" ||
-                                firstBadgeType === "broadcaster", text.replace(command.command, "").trim(), (message) => {
+                                firstBadgeType === "broadcaster", text.replace(command.command, "").trim(), (message, replyToUser) => {
                                 // Can't reply on kick yet
                             }, talkingbot_1.Platform.kick);
                             if (!command.showOnChat)

@@ -23,6 +23,25 @@ var Platform;
     Platform[Platform["twitch"] = 0] = "twitch";
     Platform[Platform["kick"] = 1] = "kick";
 })(Platform || (exports.Platform = Platform = {}));
+function getTimeDifference(startDate, endDate) {
+    const timeDifference = endDate.getTime() - startDate.getTime();
+    const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365.25));
+    const remainingTime = timeDifference % (1000 * 60 * 60 * 24 * 365.25);
+    const months = Math.floor(remainingTime / (1000 * 60 * 60 * 24 * 30.44));
+    const remainingTime2 = remainingTime % (1000 * 60 * 60 * 24 * 30.44);
+    const days = Math.floor(remainingTime2 / (1000 * 60 * 60 * 24));
+    const remainingTime3 = remainingTime2 % (1000 * 60 * 60 * 24);
+    const hours = Math.floor(remainingTime3 / (1000 * 60 * 60));
+    const remainingTime4 = remainingTime3 % (1000 * 60 * 60);
+    const minutes = Math.floor(remainingTime4 / (1000 * 60));
+    return {
+        years,
+        months,
+        days,
+        hours,
+        minutes,
+    };
+}
 function removeByIndex(str, index) {
     return str.slice(0, index) + str.slice(index + 1);
 }
@@ -64,6 +83,33 @@ class TalkingBot {
         });
         this.kickId = kickId;
         this.commandList = [
+            {
+                showOnChat: false,
+                command: "!followage",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (platform == Platform.kick)
+                        return;
+                    const followed = yield this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
+                    // User is not following
+                    if (followed.data.length == 0) {
+                        console.log("a");
+                        reply(`You are not following ${this.twitch.channel.displayName}`, true);
+                    }
+                    else {
+                        const time = getTimeDifference(followed.data[0].followDate, new Date());
+                        let timeString = "";
+                        if (time.years != 0)
+                            timeString += `${time.years} years`;
+                        if (time.months != 0)
+                            timeString += `${time.months} months`;
+                        if (time.days != 0)
+                            timeString += `${time.days} days`;
+                        if (time.minutes != 0)
+                            timeString += `${time.minutes} minutes`;
+                        reply(`@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`, false);
+                    }
+                }),
+            },
             {
                 showOnChat: false,
                 command: "!lurk",

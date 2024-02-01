@@ -70,7 +70,7 @@ class Twitch {
     }
     sendToChatList(message) {
         return __awaiter(this, void 0, void 0, function* () {
-            let color = yield this.apiClient.chat.getColorForUser(message.userInfo.userId);
+            let color = message.userInfo.color;
             let badges = ["https://twitch.tv/favicon.ico"];
             const badge = message.userInfo.badges.get("subscriber");
             if (badge != undefined) {
@@ -83,7 +83,7 @@ class Twitch {
                 badges.push(this.badges.get("broadcaster"));
             }
             // User hasn't set a color get a "random" color
-            if (color == null || color == undefined) {
+            if (color === null || color === undefined) {
                 color = userColors[parseInt(message.userInfo.userId) % userColors.length];
             }
             let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");

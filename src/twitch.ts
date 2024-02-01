@@ -62,9 +62,7 @@ export class Twitch {
   }
 
   async sendToChatList(message: ChatMessage): Promise<void> {
-    let color = await this.apiClient.chat.getColorForUser(
-      message.userInfo.userId,
-    );
+    let color = message.userInfo.color;
     let badges = ["https://twitch.tv/favicon.ico"];
 
     const badge = message.userInfo.badges.get("subscriber");
@@ -78,7 +76,7 @@ export class Twitch {
     }
 
     // User hasn't set a color get a "random" color
-    if (color == null || color == undefined) {
+    if (color === null || color === undefined) {
       color = userColors[parseInt(message.userInfo.userId) % userColors.length];
     }
 
