@@ -349,7 +349,7 @@ export class Twitch {
           if (!text.startsWith(command.command)) continue;
 
           command.commandFunction(
-            user,
+            msg.userInfo.displayName,
             msg.userInfo.isMod || msg.userInfo.isBroadcaster,
             text.replace(command.command, "").trim(),
             (message: string, replyToUser: boolean) => {

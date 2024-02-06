@@ -300,7 +300,7 @@ class Twitch {
                     let command = this.commandList[i];
                     if (!text.startsWith(command.command))
                         continue;
-                    command.commandFunction(user, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message, replyToUser) => {
+                    command.commandFunction(msg.userInfo.displayName, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message, replyToUser) => {
                         this.chatClient.say(channel, message, {
                             replyTo: replyToUser ? msg.id : null,
                         });

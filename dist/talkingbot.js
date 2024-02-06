@@ -18,6 +18,7 @@ const kick_1 = require("./kick");
 const stars_1 = require("./stars");
 const node_fs_1 = __importDefault(require("node:fs"));
 const socket_io_1 = require("socket.io");
+const kickEmotePrefix = /sweetbabooo-o/g;
 var Platform;
 (function (Platform) {
     Platform[Platform["twitch"] = 0] = "twitch";
@@ -65,7 +66,7 @@ function removeKickEmotes(message) {
         console.log(id);
         return name;
     })
-        .replace("sweetbabooo-o", "");
+        .replace(kickEmotePrefix, "");
 }
 class TalkingBot {
     constructor(kickId, server) {
@@ -83,33 +84,49 @@ class TalkingBot {
         });
         this.kickId = kickId;
         this.commandList = [
-            {
-                showOnChat: false,
-                command: "!followage",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (platform == Platform.kick)
-                        return;
-                    const followed = yield this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
-                    // User is not following
-                    if (followed.data.length == 0) {
-                        console.log("a");
-                        reply(`You are not following ${this.twitch.channel.displayName}`, true);
-                    }
-                    else {
-                        const time = getTimeDifference(followed.data[0].followDate, new Date());
-                        let timeString = "";
-                        if (time.years != 0)
-                            timeString += `${time.years} years`;
-                        if (time.months != 0)
-                            timeString += `${time.months} months`;
-                        if (time.days != 0)
-                            timeString += `${time.days} days`;
-                        if (time.minutes != 0)
-                            timeString += `${time.minutes} minutes`;
-                        reply(`@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`, false);
-                    }
-                }),
-            },
+            /*{
+              showOnChat: false,
+              command: "!followage",
+              commandFunction: async (
+                user,
+                isUserMod,
+                message,
+                reply,
+                platform,
+                context,
+              ) => {
+                if (platform == Platform.kick) return;
+                const followed =
+                  await this.twitch.apiClient.channels.getChannelFollowers(
+                    this.twitch.channel.id,
+                    context.userInfo.userId,
+                  );
+      
+                // User is not following
+                if (followed.data.length == 0) {
+                  console.log("a");
+                  reply(
+                    `You are not following ${this.twitch.channel.displayName}`,
+                    true,
+                  );
+                } else {
+                  const time = getTimeDifference(
+                    followed.data[0].followDate,
+                    new Date(),
+                  );
+                  let timeString = "";
+                  if (time.years != 0) timeString += `${time.years} years`;
+                  if (time.months != 0) timeString += `${time.months} months`;
+                  if (time.days != 0) timeString += `${time.days} days`;
+                  if (time.minutes != 0) timeString += `${time.minutes} minutes`;
+      
+                  reply(
+                    `@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`,
+                    false,
+                  );
+                }
+              },
+            },*/
             {
                 showOnChat: false,
                 command: "!lurk",

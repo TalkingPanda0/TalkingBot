@@ -12,11 +12,11 @@ const emoteSoundEffects = {
   aids: "/static/aids.mp3",
   HNNNGH: "/static/hnhg.mp3",
   Skrunk: "/static/huh.mp3",
-  Nerd: "/static/nerd.mp3",
   Pixel: "/static/pixel.mp3",
   TeeHee: "/static/hehe.mp3",
   Silly: "/static/silly.mp3",
   realBoo: "/static/realboo.mp3",
+  Shy: "/static/uwu.mp3",
 };
 
 var queue = [];
@@ -143,6 +143,7 @@ socket.on("message", (message) => {
   console.log("GOT MESSAGE:", message);
   if (message.sender == "TalkingPanda" && message.text == "refresh") {
     location.reload();
+    return;
   }
   ttSay(message);
   handleQueue();

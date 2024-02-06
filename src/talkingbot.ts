@@ -12,6 +12,8 @@ import fs from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
+const kickEmotePrefix = /sweetbabooo-o/g;
+
 
 export enum Platform {
   twitch,
@@ -112,7 +114,7 @@ function removeKickEmotes(message: string): string {
       console.log(id);
       return name;
     })
-    .replace("sweetbabooo-o", "");
+    .replace(kickEmotePrefix, "");
 }
 
 export class TalkingBot {
