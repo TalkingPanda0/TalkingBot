@@ -54,6 +54,9 @@
       .text {
         top: 150px;
       }
+      .message {
+        top: 150px;
+      }
     </style>
   </head>
   <body>
@@ -104,9 +107,9 @@
 
         alertElement.id = "alert";
         if (!subInfo.gift)
-          alertElement.innerHTML = ` <img class="bab" height="150" src="/bab.png" /><img class="exp" id="exp0" height="150" /><img class="exp" id="exp1" height="150" /><img class="exp" id="exp2" height="150"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
+          alertElement.innerHTML = ` <img class="bab" height="150" src="/static/bab.png" /><img class="exp" id="exp0" height="150" /><img class="exp" id="exp1" height="150" /><img class="exp" id="exp2" height="150"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
         else
-          alertElement.innerHTML = ` <img class="bab" height="150" src="/bab.png" /><img class="exp" id="exp0" height="150" /><img class="exp" id="exp1" height="150" /><img class="exp" id="exp2" height="150"  /><br /><span class="text"><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML = ` <img class="bab" height="150" src="/static/bab.png" /><img class="exp" id="exp0" height="150" /><img class="exp" id="exp1" height="150" /><img class="exp" id="exp2" height="150"  /><br /><span class="text"><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
 
         const imgElement = document.getElementById("image");
         const exp = new Audio("/static/explosions.mp3");
