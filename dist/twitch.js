@@ -276,7 +276,7 @@ class Twitch {
                 channels: [this.channelName],
             });
             this.chatClient.onSub((channel, user, subInfo, msg) => {
-                this.bot.ioalert.emit("sub", {
+                this.bot.ioalert.emit("alert", {
                     name: subInfo.displayName,
                     message: subInfo.message,
                     plan: subInfo.plan,
@@ -284,19 +284,20 @@ class Twitch {
                     gift: false,
                 });
             });
-            this.chatClient.onRaid((channel, user, raidInfo, msg) => {
-                this.bot.ioalert.emit("raid", {
-                    raider: raidInfo.displayName,
-                    viewers: raidInfo.viewerCount,
-                });
-            });
             this.chatClient.onSubGift((channel, user, subInfo, msg) => {
-                this.bot.ioalert.emit("sub", {
+                this.bot.ioalert.emit("alert", {
+                    gifter: subInfo.gifter,
                     name: subInfo.displayName,
                     message: subInfo.message,
                     plan: subInfo.plan,
                     months: subInfo.months,
                     gift: true,
+                });
+            });
+            this.chatClient.onRaid((channel, user, raidInfo, msg) => {
+                this.bot.ioalert.emit("alert", {
+                    raider: raidInfo.displayName,
+                    viewers: raidInfo.viewerCount,
                 });
             });
             this.chatClient.onBan((channel, user, msg) => {
