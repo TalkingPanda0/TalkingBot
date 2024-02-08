@@ -53,7 +53,7 @@ audio.play().catch(function (err) {
 function HAPBOO() {
   var img = document.createElement("img");
   img.src = "https://talkingpanda.dev/hapboo.gif";
-  img.width = 25;
+  img.width = 50;
   return img;
 }
 
@@ -61,7 +61,7 @@ function createPopup(message) {
   var popupElement = `<span class="sender">${message.sender} says:</span><br/><span class="text">${message.text}</span class="text"></span><div></div>`;
   messageList.innerHTML = popupElement;
   messageList.style.opacity = 1;
-  if (Math.floor(Math.random() * 2) == 0) {
+  if (Math.floor(Math.random() * 20) == 0) {
     messageList.appendChild(HAPBOO());
   }
 }
@@ -94,7 +94,7 @@ function handleQueue() {
         message.text = text.slice(0, index);
         tempqueue.push(getTTSAudio(message));
       }
-      tempqueue.push(new Audio("" + emoteSoundEffects[key]));
+      tempqueue.push(new Audio("/static" + emoteSoundEffects[key]));
       if (index + key.length != text.length) {
         message.text = text.slice(index + key.length, text.length);
         tempqueue.push(getTTSAudio(message));

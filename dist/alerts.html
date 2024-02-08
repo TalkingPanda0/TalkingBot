@@ -25,7 +25,7 @@
     <div id="container" />
 
     <div id="alert">
-      <img id="image" height="150" src="/baboex.gif" />
+      <img id="image" height="150" src="/static/baboex.gif" />
       <br />
       <span>
         <span class="sender">BallMaster5</span>
@@ -70,26 +70,30 @@
             break;
         }
         if (!subInfo.message) subInfo.message = "";
+        else
+          subInfo.message = subInfo.message
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
 
         alertElement.id = "alert";
         if (subInfo.gifted)
-          alertElement.innerHTML = ` <img id="image" height="150" src="/baboex.gif" /><br /><span><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML = ` <img id="image" height="150" src="/static/baboex.gif" /><br /><span><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span>`;
         else
-          alertElement.innerHTML = ` <img id="image" height="150" src="/baboex.gif" /><br /><span><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML = ` <img id="image" height="150" src="/static/baboex.gif" /><br /><span><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
 
         const imgElement = document.getElementById("image");
-        const exp = new Audio("/explosions.mp3");
+        const exp = new Audio("/static/explosions.mp3");
         const usera = getTTSAudio({ voice: "Brian", text: subInfo.name });
-        const sub = new Audio("/sub.mp3");
+        const sub = new Audio("/static/sub.mp3");
 
         exp.onended = () => {
           usera.play();
-          imgElement.src = "/bab.png";
+          imgElement.src = "/static/bab.png";
         };
         usera.onended = () => {
           sub.play();
           setTimeout(() => {
-            imgElement.src = "/baboex1.gif";
+            imgElement.src = "/static/baboex1.gif";
           }, 2005);
         };
         sub.onended = () => {
@@ -113,7 +117,7 @@
         };
 
         exp.play();
-        imgElement.src = "/baboex.gif";
+        imgElement.src = "/static/baboex.gif";
         alertElement.style = "opacity: 100%";
       }
 
