@@ -6,21 +6,49 @@ const voicesRegex =
 const messageList = document.getElementById("message-list");
 
 const emoteSoundEffects = {
-  HapBoo: "/static/yippe.mp3",
-  HapFlat: "/static/squish.mp3",
-  HabPoo: "/static/habpoo.mp3",
-  aids: "/static/aids.mp3",
-  HNNNGH: "/static/hnhg.mp3",
-  Skrunk: "/static/huh.mp3",
-  Pixel: "/static/pixel.mp3",
-  TeeHee: "/static/hehe.mp3",
-  Silly: "/static/silly.mp3",
-  realBoo: "/static/realboo.mp3",
-  Shy: "/static/uwu.mp3",
+  HapBoo: "yippe.mp3",
+  HapFlat: "squish.mp3",
+  HabPoo: "habpoo.mp3",
+  aids: "aids.mp3",
+  HNNNGH: "hnhg.mp3",
+  Skrunk: "huh.mp3",
+  Pixel: "pixel.mp3",
+  TeeHee: "hehe.mp3",
+  Silly: "silly.mp3",
+  realBoo: "realboo.mp3",
+  Shy: "uwu.mp3",
 };
 
-var queue = [];
-var isPlaying = false;
+let queue = [];
+let isPlaying = false;
+
+const audio = new Audio();
+
+// Try to play to see if we can interact.
+audio.play().catch(function (err) {
+  // User need to interact with the page.
+
+  if (err.toString().startsWith("NotAllowedError")) {
+    var button = document.createElement("button");
+    button.style =
+      "top: 50%; position: absolute; font-size: 30px; font-weight: 30; cursor: pointer;";
+
+    button.onclick = function () {
+      this.remove();
+    };
+
+    button.innerHTML = "Click me to activate audio hooks.";
+    button.id = "myButton";
+
+    var container = document.getElementById("container");
+
+    if (container) {
+      container.appendChild(button);
+    } else {
+      console.error("Container element not found.");
+    }
+  }
+});
 
 function HAPBOO() {
   var img = document.createElement("img");
@@ -44,6 +72,11 @@ function removePopup() {
     messageList.innerHTML = "";
   }, 1e3);
 }
+function getTTSAudio(message) {
+  return new Audio(
+    `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(message.text)}`,
+  );
+}
 
 function handleQueue() {
   if (queue.length === 0 || isPlaying || messageList.childElementCount != 0)
@@ -58,19 +91,13 @@ function handleQueue() {
       let tempqueue = [];
       console.log("GOT " + index);
       if (index != 0) {
-        tempqueue.push(
-          new Audio(
-            `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(text.slice(0, index))}`,
-          ),
-        );
+        message.text = text.slice(0, index);
+        tempqueue.push(getTTSAudio(message));
       }
-      tempqueue.push(new Audio(emoteSoundEffects[key]));
+      tempqueue.push(new Audio("" + emoteSoundEffects[key]));
       if (index + key.length != text.length) {
-        tempqueue.push(
-          new Audio(
-            `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(text.slice(index + key.length, text.length))}`,
-          ),
-        );
+        message.text = text.slice(index + key.length, text.length);
+        tempqueue.push(getTTSAudio(message));
       }
       tempqueue.forEach((audio, index) => {
         audio.onerror = (err) => {
@@ -110,9 +137,8 @@ function handleQueue() {
       return;
     }
   }
-  var audio = new Audio(
-    `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(text)}`,
-  );
+  message.text = text;
+  const audio = getTTSAudio(message);
 
   audio.onended = () => {
     isPlaying = false;
@@ -137,15 +163,17 @@ function ttSay(message) {
   queue.push(message);
 }
 
-var socket = io("/", { path: "/tts/" });
+function listen() {
+  const socket = io("/", { path: "/tts/" });
 
-socket.on("message", (message) => {
-  console.log("GOT MESSAGE:", message);
-  if (message.sender == "TalkingPanda" && message.text == "refresh") {
-    location.reload();
-    return;
-  }
-  ttSay(message);
-  handleQueue();
-});
-setInterval(handleQueue, 1e3);
+  socket.on("message", (message) => {
+    console.log("GOT MESSAGE:", message);
+    if (message.sender == "TalkingPanda" && message.text == "refresh") {
+      location.reload();
+      return;
+    }
+    ttSay(message);
+    handleQueue();
+  });
+  setInterval(handleQueue, 1e3);
+}

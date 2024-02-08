@@ -275,6 +275,30 @@ class Twitch {
                 authProvider: this.authProvider,
                 channels: [this.channelName],
             });
+            this.chatClient.onSub((channel, user, subInfo, msg) => {
+                this.bot.ioalert.emit("sub", {
+                    name: subInfo.displayName,
+                    message: subInfo.message,
+                    plan: subInfo.plan,
+                    months: subInfo.months,
+                    gift: false,
+                });
+            });
+            this.chatClient.onRaid((channel, user, raidInfo, msg) => {
+                this.bot.ioalert.emit("raid", {
+                    raider: raidInfo.displayName,
+                    viewers: raidInfo.viewerCount,
+                });
+            });
+            this.chatClient.onSubGift((channel, user, subInfo, msg) => {
+                this.bot.ioalert.emit("sub", {
+                    name: subInfo.displayName,
+                    message: subInfo.message,
+                    plan: subInfo.plan,
+                    months: subInfo.months,
+                    gift: true,
+                });
+            });
             this.chatClient.onBan((channel, user, msg) => {
                 this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
             });

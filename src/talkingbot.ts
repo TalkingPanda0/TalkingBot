@@ -122,6 +122,7 @@ export class TalkingBot {
   public kick: Kick;
   public iochat: Server;
   public iopoll: Server;
+  public ioalert: Server;
 
   private kickId: string;
   private commandList: Command[] = [];
@@ -142,6 +143,9 @@ export class TalkingBot {
     this.iopoll = new Server(this.server, {
       path: "/poll/",
     });
+    this.ioalert = new Server(this.server, {
+      path: "/alerts/"
+    })
 
     this.kickId = kickId;
 

@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="description" content="" />
+    <style>
+      .sender {
+        color: #048ac7;
+      }
+      #alert {
+        opacity: 0%;
+        transition: opacity 1s ease-in-out;
+        text-align: center;
+      }
+      .message {
+        font-size: 13px;
+      }
+      * {
+        font-family: Arial, Helvetica, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="container" />
+
+    <div id="alert">
+      <img id="image" height="150" src="/baboex.gif" />
+      <br />
+      <span>
+        <span class="sender">BallMaster5</span>
+        Just Subscribed</span
+      >
+      <br />
+      <span class="message">Ball</span>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="/tts.js"></script>
+
+    <script>
+      let isPlaying = false;
+      const alertQueue = [];
+      const alertElement = document.getElementById("alert");
+      function handleQueue() {
+        if (isPlaying || alertQueue.length == 0) return;
+        const alert = alertQueue.shift();
+        if (alert.viewers !== undefined) raidAlert(alert);
+        else subAlert(alert);
+      }
+      function raidAlert(raidInfo) {
+        isPlaying = true;
+        isPlaying = false;
+      }
+      function subAlert(subInfo) {
+        isPlaying = true;
+        let tier = "";
+
+        switch (subInfo.plan) {
+          case "Prime":
+            tier = "with Prime";
+            break;
+          case "1000":
+            tier = "at Tier 1";
+            break;
+          case "2000":
+            tier = "at Tier 2";
+            break;
+          case "3000":
+            tier = "at Tier 3";
+            break;
+        }
+        if (!subInfo.message) subInfo.message = "";
+
+        alertElement.id = "alert";
+        if (subInfo.gifted)
+          alertElement.innerHTML = ` <img id="image" height="150" src="/baboex.gif" /><br /><span><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span>`;
+        else
+          alertElement.innerHTML = ` <img id="image" height="150" src="/baboex.gif" /><br /><span><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
+
+        const imgElement = document.getElementById("image");
+        const exp = new Audio("/explosions.mp3");
+        const usera = getTTSAudio({ voice: "Brian", text: subInfo.name });
+        const sub = new Audio("/sub.mp3");
+
+        exp.onended = () => {
+          usera.play();
+          imgElement.src = "/bab.png";
+        };
+        usera.onended = () => {
+          sub.play();
+          setTimeout(() => {
+            imgElement.src = "/baboex1.gif";
+          }, 2005);
+        };
+        sub.onended = () => {
+          if (subInfo.message == null) {
+            alertElement.style = "opacity: 0%";
+            alertElement.innerHTML = "";
+            isPlaying = false;
+            return;
+          }
+          const message = getTTSAudio({
+            voice: "Brian",
+            text: subInfo.message,
+          });
+          message.onended = () => {
+            alertElement.style = "opacity: 0%";
+            alertElement.innerHTML = "";
+            isPlaying = false;
+          };
+
+          message.play();
+        };
+
+        exp.play();
+        imgElement.src = "/baboex.gif";
+        alertElement.style = "opacity: 100%";
+      }
+
+      var socket = io("/", { path: "/alerts/" });
+      socket.on("alert", (alertInfo) => {
+        alertQueue.push(alertInfo);
+      });
+    </script>
+  </body>
+</html>

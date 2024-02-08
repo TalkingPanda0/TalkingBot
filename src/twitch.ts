@@ -1,5 +1,14 @@
 import { RefreshingAuthProvider, exchangeCode } from "@twurple/auth";
-import { ChatClient, ChatMessage, ClearChat, ClearMsg } from "@twurple/chat";
+import {
+  ChatClient,
+  ChatMessage,
+  ChatSubInfo,
+  ChatRaidInfo,
+  ClearChat,
+  ClearMsg,
+  UserNotice,
+  ChatSubGiftInfo,
+} from "@twurple/chat";
 import { ApiClient, HelixUser } from "@twurple/api";
 import {
   AuthSetup,
@@ -17,6 +26,7 @@ import {
   EventSubChannelPollProgressEvent,
   EventSubChannelPollEndEvent,
 } from "@twurple/eventsub-base";
+import { channel } from "diagnostics_channel";
 
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
@@ -312,7 +322,53 @@ export class Twitch {
       authProvider: this.authProvider,
       channels: [this.channelName],
     });
+    this.chatClient.onSub(
+      (
+        channel: string,
+        user: string,
+        subInfo: ChatSubInfo,
+        msg: UserNotice,
+      ) => {
+        this.bot.ioalert.emit("alert", {
+          name: subInfo.displayName,
+          message: subInfo.message,
+          plan: subInfo.plan,
+          months: subInfo.months,
+          gift: false,
+        });
+      },
+    );
+    this.chatClient.onSubGift(
+      (
+        channel: string,
+        user: string,
+        subInfo: ChatSubGiftInfo,
+        msg: UserNotice,
+      ) => {
+        this.bot.ioalert.emit("alert", {
+          gifter: subInfo.gifter,
+          name: subInfo.displayName,
+          message: subInfo.message,
+          plan: subInfo.plan,
+          months: subInfo.months,
+          gift: true,
+        });
+      },
+    );
 
+    this.chatClient.onRaid(
+      (
+        channel: string,
+        user: string,
+        raidInfo: ChatRaidInfo,
+        msg: UserNotice,
+      ) => {
+        this.bot.ioalert.emit("alert", {
+          raider: raidInfo.displayName,
+          viewers: raidInfo.viewerCount,
+        });
+      },
+    );
     this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
       this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
     });

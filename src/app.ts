@@ -13,6 +13,9 @@ app.use(express.static("public"));
 app.get("/tts", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/tts.html");
 });
+app.get("/alerts", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/alerts.html")
+});
 
 app.get("/poll", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/poll.html");

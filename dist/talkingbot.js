@@ -82,6 +82,9 @@ class TalkingBot {
         this.iopoll = new socket_io_1.Server(this.server, {
             path: "/poll/",
         });
+        this.ioalert = new socket_io_1.Server(this.server, {
+            path: "/alerts/"
+        });
         this.kickId = kickId;
         this.commandList = [
             /*{
