@@ -9,15 +9,50 @@
         color: #048ac7;
       }
       #alert {
-        opacity: 0%;
+        position: relative;
+        opacity: 100%;
         transition: opacity 1s ease-in-out;
         text-align: center;
+        margin: auto;
+      }
+      img {
+        position: absolute;
       }
       .message {
+        padding-top: 150px;
         font-size: 13px;
       }
       * {
+        position: relative;
         font-family: Arial, Helvetica, sans-serif;
+      }
+      .bab {
+        z-index: 1;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -25%);
+      }
+      #exp0 {
+        z-index: 2;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -25%);
+      }
+      #exp1 {
+        z-index: 3;
+        top: 50%;
+        left: 50%;
+        transform: translate(-100%, -25%);
+      }
+      #exp2 {
+        z-index: 3;
+        top: 50%;
+        left: 50%;
+        transform: translate(0%, -25%);
+      }
+
+      .text {
+        top: 150px;
       }
     </style>
   </head>
@@ -25,9 +60,7 @@
     <div id="container" />
 
     <div id="alert">
-      <img id="image" height="150" src="/static/baboex.gif" />
-      <br />
-      <span>
+      <span class="text">
         <span class="sender">BallMaster5</span>
         Just Subscribed</span
       >
@@ -41,6 +74,7 @@
     <script>
       const alertQueue = [];
       const alertElement = document.getElementById("alert");
+
       function handleQueue() {
         if (isPlaying || alertQueue.length == 0) return;
         const alert = alertQueue.shift();
@@ -76,27 +110,48 @@
             .replace(/>/g, "&gt;");
 
         alertElement.id = "alert";
-        if (subInfo.gifted)
-          alertElement.innerHTML = ` <img id="image" height="150" src="/static/baboex.gif" /><br /><span><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span>`;
+        if (!subInfo.gift)
+          alertElement.innerHTML = ` <img class="bab" height="150" src="/bab.png" /><img class="exp" id="exp0" height="150" /><img class="exp" id="exp1" height="150" /><img class="exp" id="exp2" height="150"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
         else
-          alertElement.innerHTML = ` <img id="image" height="150" src="/static/baboex.gif" /><br /><span><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML = ` <img class="bab" height="150" src="/bab.png" /><img class="exp" id="exp0" height="150" /><img class="exp" id="exp1" height="150" /><img class="exp" id="exp2" height="150"  /><br /><span class="text"><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
 
         const imgElement = document.getElementById("image");
         const exp = new Audio("/static/explosions.mp3");
         const usera = getTTSAudio({ voice: "Brian", text: subInfo.name });
         const sub = new Audio("/static/sub.mp3");
+        const exp0 = document.getElementById("exp0");
+        const exp1 = document.getElementById("exp1");
+        const exp2 = document.getElementById("exp2");
+        exp0.src = "/static/explosion0.gif";
+        setTimeout(() => {
+          exp1.src = "/static/explosion1.gif";
+        }, 733);
+        setTimeout(() => {
+          exp2.src = "/static/explosion2.gif";
+        }, 1553);
+
+        setTimeout(() => {
+          exp0.src = "";
+        }, 2550);
+
+        setTimeout(() => {
+          exp1.src = "";
+        }, 733 + 2550);
+        setTimeout(() => {
+          exp2.src = "";
+        }, 1553 + 2550);
 
         exp.onended = () => {
           usera.play();
-          imgElement.src = "/static/bab.png";
         };
         usera.onended = () => {
           sub.play();
           setTimeout(() => {
-            imgElement.src = "/static/baboex1.gif";
+            exp0.src = "/static/explosion1.gif";
           }, 2005);
         };
         sub.onended = () => {
+          exp0.style.display = "none";
           if (subInfo.message == null) {
             alertElement.style = "opacity: 0%";
             alertElement.innerHTML = "";
@@ -117,7 +172,6 @@
         };
 
         exp.play();
-        imgElement.src = "/static/baboex.gif";
         alertElement.style = "opacity: 100%";
       }
 
