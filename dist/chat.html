@@ -10,6 +10,7 @@
     function addToMessageList(message) {
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
+      if(message.isFirst) messageElement.style = "background: rgba(176, 11, 105, 0.75)";
       messageElement.id = message.id;
       messageElement.classList.add("message");
       messageElement.classList.add(message.platform);

@@ -63,6 +63,7 @@ class Kick {
                                 color: jsonDataSub.sender.identity.color,
                                 id: "kick-" + jsonDataSub.id,
                                 platform: "kick",
+                                isFirst: false,
                             });
                             return;
                         }
@@ -84,6 +85,7 @@ class Kick {
                                 color: jsonDataSub.sender.identity.color,
                                 id: "kick-" + jsonDataSub.id,
                                 platform: "kick",
+                                isFirst: false,
                             });
                         }
                         break;

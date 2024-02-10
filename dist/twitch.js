@@ -105,6 +105,7 @@ class Twitch {
                 color: color,
                 id: "twitch-" + message.id,
                 platform: "twitch",
+                isFirst: message.isFirst,
             });
         });
     }

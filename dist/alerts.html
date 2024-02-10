@@ -127,7 +127,7 @@
         alertElement.innerHTML = `<canvas height=1000 width=1000 id="raiders"></canvas><br><span class="raider" ><span class="sender">${raidInfo.raider} </span>just raided with ${raidInfo.viewers} viewers</span>`;
 
         isPlaying = true;
-        raidInfo.viewers = Math.min(raidInfo.viewers, 100);
+        //raidInfo.viewers = Math.min(raidInfo.viewers, 100);
 
         for (let i = 0; i < raidInfo.viewers; i++) {
           let raider = {};
