@@ -1,4 +1,27 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,15 +31,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TalkingBot = exports.Platform = void 0;
+exports.TalkingBot = exports.replaceAsync = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
 const kick_1 = require("./kick");
 const stars_1 = require("./stars");
-const node_fs_1 = __importDefault(require("node:fs"));
+const node_fs_1 = __importStar(require("node:fs"));
 const socket_io_1 = require("socket.io");
 const kickEmotePrefix = /sweetbabooo-o/g;
 var Platform;
@@ -46,6 +66,18 @@ function getTimeDifference(startDate, endDate) {
 function removeByIndex(str, index) {
     return str.slice(0, index) + str.slice(index + 1);
 }
+function replaceAsync(str, regex, asyncFn) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const promises = [];
+        str.replace(regex, (full, ...args) => {
+            promises.push(asyncFn(full, ...args));
+            return full;
+        });
+        const data = yield Promise.all(promises);
+        return str.replace(regex, () => data.shift());
+    });
+}
+exports.replaceAsync = replaceAsync;
 function removeByIndexToUppercase(str, indexes) {
     let deletedChars = 0;
     indexes.forEach((index) => {
@@ -58,6 +90,31 @@ function removeByIndexToUppercase(str, indexes) {
     });
     return str;
 }
+function parseCustomCommand(command) {
+    return {
+        showOnChat: false,
+        command: command.command,
+        commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+            const modonly = command.response.includes("(modonly)");
+            const doReply = command.response.includes("(reply)");
+            let response = command.response
+                .replace(/\$user/g, user)
+                .replace(/\$args/g, message)
+                .replace(/\(modonly\)/g, "")
+                .replace(/\(reply\)/g, "");
+            response = yield replaceAsync(response, /(!?fetch)\[([^]+)\]/g, (message, command, url) => __awaiter(this, void 0, void 0, function* () {
+                const req = yield fetch(url);
+                const text = yield req.text();
+                if (command.startsWith("!"))
+                    return "";
+                return text;
+            }));
+            if (modonly && !isUserMod)
+                return;
+            reply(response, doReply);
+        }),
+    };
+}
 function removeKickEmotes(message) {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
     return message
@@ -69,8 +126,26 @@ function removeKickEmotes(message) {
         .replace(kickEmotePrefix, "");
 }
 class TalkingBot {
+    readCustomCommands() {
+        if (!(0, node_fs_1.existsSync)("./commands.json"))
+            return;
+        this.customCommands = JSON.parse(node_fs_1.default.readFileSync("./commands.json", "utf-8"));
+    }
+    writeCustomCommands() {
+        node_fs_1.default.writeFileSync("./commands.json", JSON.stringify(this.customCommands), "utf-8");
+    }
     constructor(kickId, server) {
         this.commandList = [];
+        this.customCommands = [
+            {
+                command: "!test",
+                response: "(reply) this is a test, $user, $args, fetch[https://talkingpanda.dev/fsog], $user, $args",
+            },
+            {
+                command: "!modtest",
+                response: "(modonly) this is a modonly test, $user, $args, !fetch[https://talkingpanda.dev/fsog]",
+            },
+        ];
         this.ttsEnabled = true;
         this.server = server;
         this.iotts = new socket_io_1.Server(this.server, {
@@ -83,9 +158,10 @@ class TalkingBot {
             path: "/poll/",
         });
         this.ioalert = new socket_io_1.Server(this.server, {
-            path: "/alerts/"
+            path: "/alerts/",
         });
         this.kickId = kickId;
+        this.readCustomCommands();
         this.commandList = [
             /*{
               showOnChat: false,
@@ -130,6 +206,101 @@ class TalkingBot {
                 }
               },
             },*/
+            {
+                showOnChat: false,
+                command: "!addcom",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    const splitMessage = message.split(" ");
+                    let commandName = splitMessage[0];
+                    const response = message.substring(message.indexOf(" ") + 1, message.length);
+                    console.log(response);
+                    if (!commandName.startsWith("!"))
+                        commandName = `!${commandName}`;
+                    const customCom = {
+                        command: commandName,
+                        response: response,
+                    };
+                    if (this.customCommands.some((element) => element.command == commandName)) {
+                        reply(`Command ${commandName} already exists!`, true);
+                        return;
+                    }
+                    if (splitMessage.length <= 1) {
+                        reply("No command response given", true);
+                        return;
+                    }
+                    this.customCommands.push(customCom);
+                    reply(`Command ${commandName} has been added`, true);
+                    this.writeCustomCommands();
+                },
+            },
+            {
+                showOnChat: false,
+                command: "!delcom",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    const oldLen = this.customCommands.length;
+                    const commandName = message.split(" ")[0];
+                    this.customCommands = this.customCommands.filter((element) => element.command != commandName);
+                    if (oldLen != this.customCommands.length) {
+                        reply(`${commandName} has been removed`, true);
+                        this.writeCustomCommands();
+                    }
+                    else {
+                        reply(`${commandName} is not a command`, true);
+                    }
+                },
+            },
+            {
+                showOnChat: false,
+                command: "!editcom",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    const commandName = message.split(" ")[0];
+                    const response = message.substring(message.lastIndexOf(" ") + 1);
+                    for (let i = 0; i < this.customCommands.length; i++) {
+                        const command = this.customCommands[i];
+                        if (command.command == commandName) {
+                            command.response = response;
+                            reply(`command ${commandName} has been edited`, true);
+                            this.writeCustomCommands();
+                            return;
+                        }
+                    }
+                    reply(`${commandName} is not a command`, true);
+                },
+            },
+            {
+                showOnChat: false,
+                command: "!aliascom",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    const splitMessage = message.split(" ");
+                    const commandName = splitMessage[1];
+                    const newCommand = splitMessage[0];
+                    if (this.customCommands.some((element) => element.command == newCommand)) {
+                        reply(`${newCommand} already exists`, true);
+                        return;
+                    }
+                    for (let i = 0; i < this.customCommands.length; i++) {
+                        const command = this.customCommands[i];
+                        if (command.command == commandName) {
+                            this.customCommands.push({
+                                command: newCommand,
+                                response: command.response,
+                            });
+                            reply(`command ${newCommand} has been aliased to ${command.command}`, true);
+                            this.writeCustomCommands();
+                            return;
+                        }
+                    }
+                    reply(`${commandName} is not a command`, true);
+                },
+            },
             {
                 showOnChat: false,
                 command: "!lurk",
@@ -299,8 +470,8 @@ class TalkingBot {
                 },
             },
         ];
-        this.twitch = new twitch_1.Twitch(this.commandList, this);
-        this.kick = new kick_1.Kick(this.kickId, this.commandList, this);
+        this.twitch = new twitch_1.Twitch(this);
+        this.kick = new kick_1.Kick(this.kickId, this);
     }
     initBot() {
         this.twitch.initBot().then(() => {

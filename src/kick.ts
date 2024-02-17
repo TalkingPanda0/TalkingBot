@@ -4,12 +4,10 @@ import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
 export class Kick {
   public currentPoll: Poll;
   private channelId: string;
-  private commandList: Command[];
   private bot: TalkingBot;
 
-  constructor(channelId: string, commandList: Command[], bot: TalkingBot) {
+  constructor(channelId: string, bot: TalkingBot) {
     this.channelId = channelId;
-    this.commandList = commandList;
     this.bot = bot;
   }
 
@@ -84,8 +82,8 @@ export class Kick {
               return;
             }
 
-            for (let i = 0; i < this.commandList.length; i++) {
-              let command = this.commandList[i];
+            for (let i = 0; i < this.bot.commandList.length; i++) {
+              let command = this.bot.commandList[i];
               if (!text.startsWith(command.command)) continue;
 
               command.commandFunction(

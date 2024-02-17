@@ -8,12 +8,11 @@ import {
   metersToSolarRadii,
   solarRadiiToMeter,
 } from "./stars";
-import fs from "node:fs";
+import fs, { existsSync } from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
 const kickEmotePrefix = /sweetbabooo-o/g;
-
 
 export enum Platform {
   twitch,
@@ -30,6 +29,10 @@ export interface Command {
     platform: Platform,
     context?: ChatMessage,
   ) => void | Promise<void>;
+}
+export interface CustomCommand {
+  command: string;
+  response: string;
 }
 
 export interface TTSMessage {
@@ -90,7 +93,19 @@ function getTimeDifference(startDate: Date, endDate: Date): TimeDifference {
 function removeByIndex(str: string, index: number): string {
   return str.slice(0, index) + str.slice(index + 1);
 }
-
+export async function replaceAsync(
+  str: string,
+  regex: RegExp,
+  asyncFn: Function,
+) {
+  const promises = [];
+  str.replace(regex, (full, ...args) => {
+    promises.push(asyncFn(full, ...args));
+    return full;
+  });
+  const data = await Promise.all(promises);
+  return str.replace(regex, () => data.shift());
+}
 function removeByIndexToUppercase(str: string, indexes: number[]): string {
   let deletedChars = 0;
   indexes.forEach((index) => {
@@ -106,6 +121,43 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
   return str;
 }
 
+function parseCustomCommand(command: CustomCommand): Command {
+  return {
+    showOnChat: false,
+    command: command.command,
+    commandFunction: async (
+      user: string,
+      isUserMod: boolean,
+      message: string,
+      reply: Function,
+      platform: Platform,
+      context?: ChatMessage,
+    ) => {
+      const modonly = command.response.includes("(modonly)");
+      const doReply = command.response.includes("(reply)");
+      let response = command.response
+        .replace(/\$user/g, user)
+        .replace(/\$args/g, message)
+        .replace(/\(modonly\)/g, "")
+        .replace(/\(reply\)/g, "");
+
+      response = await replaceAsync(
+        response,
+        /(!?fetch)\[([^]+)\]/g,
+        async (message: string, command: string, url: string) => {
+          const req = await fetch(url);
+          const text = await req.text();
+          if (command.startsWith("!")) return "";
+
+          return text;
+        },
+      );
+
+      if (modonly && !isUserMod) return;
+      reply(response, doReply);
+    },
+  };
+}
 function removeKickEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
@@ -123,12 +175,37 @@ export class TalkingBot {
   public iochat: Server;
   public iopoll: Server;
   public ioalert: Server;
+  public commandList: Command[] = [];
+  public customCommands: CustomCommand[] = [
+    {
+      command: "!test",
+      response:
+        "(reply) this is a test, $user, $args, fetch[https://talkingpanda.dev/fsog], $user, $args",
+    },
+    {
+      command: "!modtest",
+      response:
+        "(modonly) this is a modonly test, $user, $args, !fetch[https://talkingpanda.dev/fsog]",
+    },
+  ];
 
   private kickId: string;
-  private commandList: Command[] = [];
   private server: http.Server;
   private iotts: Server;
   private ttsEnabled: Boolean = true;
+  private readCustomCommands(): void {
+    if (!existsSync("./commands.json")) return;
+    this.customCommands = JSON.parse(
+      fs.readFileSync("./commands.json", "utf-8"),
+    );
+  }
+  private writeCustomCommands(): void {
+    fs.writeFileSync(
+      "./commands.json",
+      JSON.stringify(this.customCommands),
+      "utf-8",
+    );
+  }
 
   constructor(kickId: string, server: http.Server) {
     this.server = server;
@@ -144,11 +221,11 @@ export class TalkingBot {
       path: "/poll/",
     });
     this.ioalert = new Server(this.server, {
-      path: "/alerts/"
-    })
-
+      path: "/alerts/",
+    });
     this.kickId = kickId;
 
+    this.readCustomCommands();
     this.commandList = [
       /*{
         showOnChat: false,
@@ -193,6 +270,142 @@ export class TalkingBot {
           }
         },
       },*/
+      {
+        showOnChat: false,
+        command: "!addcom",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          const splitMessage = message.split(" ");
+          let commandName = splitMessage[0];
+          const response = message.substring(
+            message.indexOf(" ") + 1,
+            message.length,
+          );
+          console.log(response);
+
+          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
+          const customCom: CustomCommand = {
+            command: commandName,
+            response: response,
+          };
+          if (
+            this.customCommands.some(
+              (element) => element.command == commandName,
+            )
+          ) {
+            reply(`Command ${commandName} already exists!`, true);
+            return;
+          }
+          if (splitMessage.length <= 1) {
+            reply("No command response given", true);
+            return;
+          }
+
+          this.customCommands.push(customCom);
+
+          reply(`Command ${commandName} has been added`, true);
+          this.writeCustomCommands();
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!delcom",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          const oldLen = this.customCommands.length;
+          const commandName = message.split(" ")[0];
+          this.customCommands = this.customCommands.filter(
+            (element) => element.command != commandName,
+          );
+          if (oldLen != this.customCommands.length) {
+            reply(`${commandName} has been removed`, true);
+            this.writeCustomCommands();
+          } else {
+            reply(`${commandName} is not a command`, true);
+          }
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!editcom",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          const commandName = message.split(" ")[0];
+          const response = message.substring(message.lastIndexOf(" ") + 1);
+          for (let i = 0; i < this.customCommands.length; i++) {
+            const command = this.customCommands[i];
+            if (command.command == commandName) {
+              command.response = response;
+              reply(`command ${commandName} has been edited`, true);
+              this.writeCustomCommands();
+              return;
+            }
+          }
+          reply(`${commandName} is not a command`, true);
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!aliascom",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          const splitMessage = message.split(" ");
+          const commandName = splitMessage[1];
+          const newCommand = splitMessage[0];
+          if (
+            this.customCommands.some((element) => element.command == newCommand)
+          ) {
+            reply(`${newCommand} already exists`, true);
+            return;
+          }
+
+          for (let i = 0; i < this.customCommands.length; i++) {
+            const command = this.customCommands[i];
+            if (command.command == commandName) {
+              this.customCommands.push({
+                command: newCommand,
+                response: command.response,
+              });
+              reply(
+                `command ${newCommand} has been aliased to ${command.command}`,
+                true,
+              );
+
+              this.writeCustomCommands();
+              return;
+            }
+          }
+          reply(`${commandName} is not a command`, true);
+        },
+      },
       {
         showOnChat: false,
         command: "!lurk",
@@ -457,8 +670,8 @@ export class TalkingBot {
       },
     ];
 
-    this.twitch = new Twitch(this.commandList, this);
-    this.kick = new Kick(this.kickId, this.commandList, this);
+    this.twitch = new Twitch(this);
+    this.kick = new Kick(this.kickId, this);
   }
   public initBot() {
     this.twitch.initBot().then(() => {

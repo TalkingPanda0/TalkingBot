@@ -60,12 +60,10 @@ const userColors = [
     "#00ff7f",
 ];
 class Twitch {
-    constructor(commandList, bot) {
+    constructor(bot) {
         this.clientId = "";
         this.clientSecret = "";
-        this.commandList = [];
         this.badges = new Map();
-        this.commandList = commandList;
         this.bot = bot;
     }
     sendToChatList(message) {
@@ -322,11 +320,13 @@ class Twitch {
                     this.sendToChatList(msg);
                     return;
                 }
-                for (let i = 0; i < this.commandList.length; i++) {
-                    let command = this.commandList[i];
-                    if (!text.startsWith(command.command))
+                const name = msg.userInfo.displayName;
+                const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
+                for (let i = 0; i < this.bot.commandList.length; i++) {
+                    const command = this.bot.commandList[i];
+                    if (text.split(" ")[0] != command.command)
                         continue;
-                    command.commandFunction(msg.userInfo.displayName, msg.userInfo.isMod || msg.userInfo.isBroadcaster, text.replace(command.command, "").trim(), (message, replyToUser) => {
+                    command.commandFunction(name, isMod, text.replace(command.command, "").trim(), (message, replyToUser) => {
                         this.chatClient.say(channel, message, {
                             replyTo: replyToUser ? msg.id : null,
                         });
@@ -334,6 +334,31 @@ class Twitch {
                     if (command.showOnChat)
                         this.sendToChatList(msg);
                     return;
+                }
+                for (let i = 0; i < this.bot.customCommands.length; i++) {
+                    const command = this.bot.customCommands[i];
+                    console.log(command.command);
+                    if (text.split(" ")[0] != command.command)
+                        continue;
+                    const message = text.replace(command.command, "").trim();
+                    const modonly = command.response.includes("(modonly)");
+                    const doReply = command.response.includes("(reply)");
+                    let response = (yield (0, talkingbot_1.replaceAsync)(command.response, /(!?fetch)\[([^]+)\]/g, (message, command, url) => __awaiter(this, void 0, void 0, function* () {
+                        const req = yield fetch(url);
+                        const text = yield req.text();
+                        if (command.startsWith("!"))
+                            return "";
+                        return text;
+                    })))
+                        .replace(/\$user/g, name)
+                        .replace(/\$args/g, message)
+                        .replace(/\(modonly\)/g, "")
+                        .replace(/\(reply\)/g, "");
+                    if (modonly && !isMod)
+                        return;
+                    this.chatClient.say(channel, response, {
+                        replyTo: doReply ? msg.id : null,
+                    });
                 }
             }));
             this.chatClient.onConnect(() => {

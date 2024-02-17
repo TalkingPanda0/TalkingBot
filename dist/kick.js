@@ -7,9 +7,8 @@ exports.Kick = void 0;
 const ws_1 = __importDefault(require("ws"));
 const talkingbot_1 = require("./talkingbot");
 class Kick {
-    constructor(channelId, commandList, bot) {
+    constructor(channelId, bot) {
         this.channelId = channelId;
-        this.commandList = commandList;
         this.bot = bot;
     }
     initBot() {
@@ -67,8 +66,8 @@ class Kick {
                             });
                             return;
                         }
-                        for (let i = 0; i < this.commandList.length; i++) {
-                            let command = this.commandList[i];
+                        for (let i = 0; i < this.bot.commandList.length; i++) {
+                            let command = this.bot.commandList[i];
                             if (!text.startsWith(command.command))
                                 continue;
                             command.commandFunction(user, firstBadgeType === "moderator" ||
