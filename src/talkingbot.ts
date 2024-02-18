@@ -176,18 +176,7 @@ export class TalkingBot {
   public iopoll: Server;
   public ioalert: Server;
   public commandList: Command[] = [];
-  public customCommands: CustomCommand[] = [
-    {
-      command: "!test",
-      response:
-        "(reply) this is a test, $user, $args, fetch[https://talkingpanda.dev/fsog], $user, $args",
-    },
-    {
-      command: "!modtest",
-      response:
-        "(modonly) this is a modonly test, $user, $args, !fetch[https://talkingpanda.dev/fsog]",
-    },
-  ];
+  public customCommands: CustomCommand[] = [];
 
   private kickId: string;
   private server: http.Server;
@@ -272,7 +261,7 @@ export class TalkingBot {
       },*/
       {
         showOnChat: false,
-        command: "!addcom",
+        command: "!addcmd",
         commandFunction: (
           user,
           isUserMod,
@@ -288,7 +277,6 @@ export class TalkingBot {
             message.indexOf(" ") + 1,
             message.length,
           );
-          console.log(response);
 
           if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           const customCom: CustomCommand = {
@@ -316,7 +304,7 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
-        command: "!delcom",
+        command: "!delcmd",
         commandFunction: (
           user,
           isUserMod,
@@ -341,7 +329,7 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
-        command: "!editcom",
+        command: "!editcmd",
         commandFunction: (
           user,
           isUserMod,
@@ -352,7 +340,11 @@ export class TalkingBot {
         ) => {
           if (!isUserMod) return;
           const commandName = message.split(" ")[0];
-          const response = message.substring(message.lastIndexOf(" ") + 1);
+          const response = message.substring(
+            message.indexOf(" ") + 1,
+            message.length,
+          );
+
           for (let i = 0; i < this.customCommands.length; i++) {
             const command = this.customCommands[i];
             if (command.command == commandName) {
@@ -367,7 +359,7 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
-        command: "!aliascom",
+        command: "!aliascmd",
         commandFunction: (
           user,
           isUserMod,

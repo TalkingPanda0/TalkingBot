@@ -136,16 +136,7 @@ class TalkingBot {
     }
     constructor(kickId, server) {
         this.commandList = [];
-        this.customCommands = [
-            {
-                command: "!test",
-                response: "(reply) this is a test, $user, $args, fetch[https://talkingpanda.dev/fsog], $user, $args",
-            },
-            {
-                command: "!modtest",
-                response: "(modonly) this is a modonly test, $user, $args, !fetch[https://talkingpanda.dev/fsog]",
-            },
-        ];
+        this.customCommands = [];
         this.ttsEnabled = true;
         this.server = server;
         this.iotts = new socket_io_1.Server(this.server, {
@@ -208,14 +199,13 @@ class TalkingBot {
             },*/
             {
                 showOnChat: false,
-                command: "!addcom",
+                command: "!addcmd",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
                     const splitMessage = message.split(" ");
                     let commandName = splitMessage[0];
                     const response = message.substring(message.indexOf(" ") + 1, message.length);
-                    console.log(response);
                     if (!commandName.startsWith("!"))
                         commandName = `!${commandName}`;
                     const customCom = {
@@ -237,7 +227,7 @@ class TalkingBot {
             },
             {
                 showOnChat: false,
-                command: "!delcom",
+                command: "!delcmd",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
@@ -255,12 +245,12 @@ class TalkingBot {
             },
             {
                 showOnChat: false,
-                command: "!editcom",
+                command: "!editcmd",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
                     const commandName = message.split(" ")[0];
-                    const response = message.substring(message.lastIndexOf(" ") + 1);
+                    const response = message.substring(message.indexOf(" ") + 1, message.length);
                     for (let i = 0; i < this.customCommands.length; i++) {
                         const command = this.customCommands[i];
                         if (command.command == commandName) {
@@ -275,7 +265,7 @@ class TalkingBot {
             },
             {
                 showOnChat: false,
-                command: "!aliascom",
+                command: "!aliascmd",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
