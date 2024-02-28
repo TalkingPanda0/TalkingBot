@@ -121,43 +121,6 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
   return str;
 }
 
-function parseCustomCommand(command: CustomCommand): Command {
-  return {
-    showOnChat: false,
-    command: command.command,
-    commandFunction: async (
-      user: string,
-      isUserMod: boolean,
-      message: string,
-      reply: Function,
-      platform: Platform,
-      context?: ChatMessage,
-    ) => {
-      const modonly = command.response.includes("(modonly)");
-      const doReply = command.response.includes("(reply)");
-      let response = command.response
-        .replace(/\$user/g, user)
-        .replace(/\$args/g, message)
-        .replace(/\(modonly\)/g, "")
-        .replace(/\(reply\)/g, "");
-
-      response = await replaceAsync(
-        response,
-        /(!?fetch)\[([^]+)\]/g,
-        async (message: string, command: string, url: string) => {
-          const req = await fetch(url);
-          const text = await req.text();
-          if (command.startsWith("!")) return "";
-
-          return text;
-        },
-      );
-
-      if (modonly && !isUserMod) return;
-      reply(response, doReply);
-    },
-  };
-}
 function removeKickEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
@@ -677,6 +640,7 @@ export class TalkingBot {
           platform: Platform,
           context?: ChatMessage,
         ): void | Promise<void> => {
+          if (!isUserMod && !this.ttsEnabled) return;
           if (platform == Platform.twitch && context != null) {
             let msg = message.trim();
 
@@ -692,50 +656,37 @@ export class TalkingBot {
               sender: user,
             };
 
-            this.sendTTS(ttsMessage, false);
+            this.sendTTS(ttsMessage);
           } else if (platform == Platform.kick) {
             const ttsMessage = {
               text: removeKickEmotes(message),
               sender: user,
             };
-            this.sendTTS(ttsMessage, false);
+            this.sendTTS(ttsMessage);
           }
         },
       },
       {
-        showOnChat: true,
+        showOnChat: false,
         command: "!modtts",
         commandFunction: (
-          user: string,
-          isUserMod: boolean,
-          message: string,
-          reply: Function,
-          platform: Platform,
-          context?: ChatMessage,
-        ): void | Promise<void> => {
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
           if (!isUserMod) return;
-          if (platform == Platform.twitch && context != null) {
-            let msg = message.trim();
-
-            var indexes: number[] = [];
-            context.emoteOffsets.forEach((emote) => {
-              emote.forEach((index) => {
-                indexes.push(parseInt(index) - "!modtts ".length);
-              });
-            });
-            msg = removeByIndexToUppercase(msg, indexes);
-            let ttsMessage: TTSMessage = {
-              text: msg,
-              sender: user,
-            };
-
-            this.sendTTS(ttsMessage, true);
-          } else if (platform == Platform.kick) {
-            const ttsMessage = {
-              text: removeKickEmotes(message),
-              sender: user,
-            };
-            this.sendTTS(ttsMessage, true);
+          if (message == "enable") {
+            this.sendTTS({ text: "Enabled TTS command!", sender: "Brian" });
+            this.ttsEnabled = true;
+            return;
+          }
+          if (message == "disable") {
+            this.sendTTS({ text: "disabled TTS command!", sender: "Brian" });
+            this.ttsEnabled = false;
+            return;
           }
         },
       },
@@ -785,22 +736,7 @@ export class TalkingBot {
     }));
     this.iopoll.emit("updatePoll", combinedOptionsArray);
   }
-  public sendTTS(message: TTSMessage, isMod: boolean) {
-    if ((!this.ttsEnabled && !isMod) || !message.text || !message.sender) {
-      return;
-    }
-    if (isMod) {
-      if (message.text === "enable") {
-        this.ttsEnabled = true;
-        this.sendTTS({ text: "Enabled TTS command!", sender: "Brian" }, true);
-        return;
-      } else if (message.text === "disable") {
-        this.ttsEnabled = false;
-        this.sendTTS({ text: "disabled TTS command!", sender: "Brian" }, true);
-        return;
-      }
-    }
-
+  public sendTTS(message: TTSMessage) {
     this.iotts.emit("message", message);
   }
 }
