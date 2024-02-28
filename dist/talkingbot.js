@@ -112,7 +112,7 @@ class TalkingBot {
     constructor(kickId, server) {
         this.commandList = [];
         this.customCommands = [];
-        this.ttsEnabled = true;
+        this.ttsEnabled = false;
         this.server = server;
         this.iotts = new socket_io_1.Server(this.server, {
             path: "/tts/",

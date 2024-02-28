@@ -143,9 +143,9 @@ export class TalkingBot {
   public isRegistering: boolean;
 
   private kickId: string;
+  private ttsEnabled: Boolean = false;
   private server: http.Server;
   private iotts: Server;
-  private ttsEnabled: Boolean = true;
   private readCustomCommands(): void {
     if (!existsSync("./commands.json")) return;
     this.customCommands = JSON.parse(

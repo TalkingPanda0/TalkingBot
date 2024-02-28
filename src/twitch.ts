@@ -28,6 +28,7 @@ import { EventSubWsListener } from "@twurple/eventsub-ws";
 import {
   EventSubChannelRedemptionAddEvent,
   EventSubChannelBanEvent,
+  EventSubChannelFollowEvent,
   EventSubChannelPollProgressEvent,
   EventSubChannelPollEndEvent,
 } from "@twurple/eventsub-base";
@@ -225,6 +226,15 @@ export class Twitch {
     this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
+    this.eventListener.onChannelFollow(
+      this.channel.id,
+      this.channel.id,
+      (event: EventSubChannelFollowEvent) => {
+        this.bot.ioalert.emit("alert", {
+          follower: event.userDisplayName,
+        });
+      },
+    );
     this.eventListener.onChannelPollProgress(
       this.channel.id,
       (data: EventSubChannelPollProgressEvent) => {
@@ -391,8 +401,8 @@ export class Twitch {
         msg: UserNotice,
       ) => {
         this.bot.ioalert.emit("alert", {
-          gifter: subInfo.gifter,
-          name: subInfo.displayName,
+          name: subInfo.gifter,
+          gifted: subInfo.displayName,
           message: subInfo.message,
           plan: subInfo.plan,
           months: subInfo.months,

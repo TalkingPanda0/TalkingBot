@@ -173,6 +173,11 @@ class Twitch {
             this.eventListener = new eventsub_ws_1.EventSubWsListener({
                 apiClient: this.apiClient,
             });
+            this.eventListener.onChannelFollow(this.channel.id, this.channel.id, (event) => {
+                this.bot.ioalert.emit("alert", {
+                    follower: event.userDisplayName,
+                });
+            });
             this.eventListener.onChannelPollProgress(this.channel.id, (data) => {
                 let options = [];
                 data.choices.forEach((choice, i) => {
@@ -295,8 +300,8 @@ class Twitch {
             });
             this.chatClient.onSubGift((channel, user, subInfo, msg) => {
                 this.bot.ioalert.emit("alert", {
-                    gifter: subInfo.gifter,
-                    name: subInfo.displayName,
+                    name: subInfo.gifter,
+                    gifted: subInfo.displayName,
                     message: subInfo.message,
                     plan: subInfo.plan,
                     months: subInfo.months,

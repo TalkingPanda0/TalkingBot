@@ -32,6 +32,9 @@
         left: 50%;
         transform: translate(-50%, -25%);
       }
+      .follow {
+        padding-bottom: 10px;
+      }
       #exp0 {
         z-index: 2;
         top: 100%;
@@ -52,10 +55,10 @@
       }
 
       .text {
-        top: 1000px;
+        top: 1050px;
       }
       .message {
-        top: 1000px;
+        top: 1050px;
       }
     </style>
   </head>
@@ -71,7 +74,6 @@
       <img id="hapboo4" src="/static/hapboo4.png" />
       <img id="hapboo5" src="/static/hapboo5.png" />
       <img id="hapboo6" src="/static/hapboo6.png" />
-      <img id="trollbab" src="/static/troll.png" />
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -101,6 +103,7 @@
         if (isPlaying || alertQueue.length == 0) return;
         const alert = alertQueue.shift();
         if (alert.viewers !== undefined) raidAlert(alert);
+        else if (alert.follower !== undefined) followAlert(alert);
         else subAlert(alert);
       }
       function drawRaiders(raiders, ctx) {
@@ -120,6 +123,23 @@
           }
         });
       }
+      function followAlert(followInfo) {
+        isPlaying = true;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
+        alertElement.style = "opacity: 100%;";
+        const name = getTTSAudio({
+          voice: "Brian",
+          text: `${followInfo.follower} just followed`,
+        });
+        name.onended = () => {
+          alertElement.style = "opacity: 0%";
+          setTimeout(() => {
+            alertElement.innerHTML = "";
+            isPlaying = false;
+          }, 1000);
+        };
+        name.play();
+      }
       function raidAlert(raidInfo) {
         let raiders = [];
 
@@ -127,7 +147,7 @@
         alertElement.innerHTML = `<canvas height=1000 width=1000 id="raiders"></canvas><br><span class="raider" ><span class="sender">${raidInfo.raider} </span>just raided with ${raidInfo.viewers} viewers</span>`;
 
         isPlaying = true;
-        //raidInfo.viewers = Math.min(raidInfo.viewers, 100);
+        raidInfo.viewers = Math.min(raidInfo.viewers, 100);
 
         for (let i = 0; i < raidInfo.viewers; i++) {
           let raider = {};
@@ -190,7 +210,7 @@
         if (!subInfo.gift)
           alertElement.innerHTML = ` <img class="bab" height="1000" src="/static/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
         else
-          alertElement.innerHTML = ` <img class="bab" height="1000" src="/static/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><br /><span class="text"><span class="sender">${subInfo.gifter} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.name}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML = ` <img class="bab" height="1000" src="/static/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><br /><span class="text"><span class="sender">${subInfo.name} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.gifted}</span></span><br /><span class="message">${subInfo.message}</span>`;
         alertElement.style = "opacity: 100%";
 
         const imgElement = document.getElementById("image");
@@ -234,8 +254,8 @@
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
+              isPlaying = false;
             }, 1000);
-            isPlaying = false;
             return;
           }
           const message = getTTSAudio({
@@ -246,8 +266,8 @@
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
+              isPlaying = false;
             }, 1000);
-            isPlaying = false;
           };
 
           message.play();
