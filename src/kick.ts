@@ -29,7 +29,8 @@ export class Kick {
     chat.on("error", console.error);
 
     chat.on("close", () => {
-      console.log("Connection closed for chatroom: " + this.channelId);
+      console.log("Connection closed for chatroom, trying to reconnect...");
+     setInterval(this.initBot,250);
     });
 
     chat.on("message", (data: WebSocket.Data) => {
@@ -135,14 +136,14 @@ export class Kick {
               (item: { label: string }) => item.label,
             );
 
-            /*this.bot.twitch.apiClient.polls.createPoll(
+            this.bot.twitch.apiClient.polls.createPoll(
               this.bot.twitch.channel.id,
               {
                 title: jsonDataSub.poll.title,
                 duration: jsonDataSub.poll.duration,
                 choices: options,
               },
-            );*/
+            );
             this.bot.iopoll.emit("createPoll", jsonDataSub.poll);
             break;
         }

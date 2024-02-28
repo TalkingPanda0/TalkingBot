@@ -177,6 +177,7 @@ export class TalkingBot {
   public ioalert: Server;
   public commandList: Command[] = [];
   public customCommands: CustomCommand[] = [];
+  public isRegistering: boolean;
 
   private kickId: string;
   private server: http.Server;
@@ -216,7 +217,63 @@ export class TalkingBot {
 
     this.readCustomCommands();
     this.commandList = [
-      /*{
+      {
+        showOnChat: false,
+        command: "!createredeem",
+        commandFunction: async (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          if (this.twitch.redeem == null) {
+            reply("No redeem found", true);
+            return;
+          }
+          await this.twitch.apiClient.channelPoints.createCustomReward(
+            this.twitch.channel.id,
+            this.twitch.redeem,
+          );
+          reply(`Created ${this.twitch.redeem.title}`, true);
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!register",
+        commandFunction: async (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          this.isRegistering = true;
+          reply("Started registering", true);
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!stopregister",
+        commandFunction: async (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          this.isRegistering = false;
+          reply("Stopped", true);
+        },
+      },
+
+      {
         showOnChat: false,
         command: "!followage",
         commandFunction: async (
@@ -247,9 +304,10 @@ export class TalkingBot {
               new Date(),
             );
             let timeString = "";
-            if (time.years != 0) timeString += `${time.years} years`;
-            if (time.months != 0) timeString += `${time.months} months`;
-            if (time.days != 0) timeString += `${time.days} days`;
+            if (time.years != 0) timeString += `${time.years} years `;
+            if (time.months != 0) timeString += `${time.months} months `;
+            if (time.days != 0) timeString += `${time.days} days `;
+            if (time.hours != 0) timeString += `${time.hours} hours `;
             if (time.minutes != 0) timeString += `${time.minutes} minutes`;
 
             reply(
@@ -258,7 +316,7 @@ export class TalkingBot {
             );
           }
         },
-      },*/
+      },
       {
         showOnChat: false,
         command: "!addcmd",
@@ -396,6 +454,27 @@ export class TalkingBot {
             }
           }
           reply(`${commandName} is not a command`, true);
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!listcmd",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          const custom = this.customCommands
+            .map((obj) => obj.command)
+            .join(", ");
+          const builtin = this.commandList.map((obj) => obj.command).join(", ");
+          reply(
+            `Builtin Commands: ${builtin}, Custom Commands: ${custom}`,
+            true,
+          );
         },
       },
       {

@@ -22,7 +22,8 @@ class Kick {
         });
         chat.on("error", console.error);
         chat.on("close", () => {
-            console.log("Connection closed for chatroom: " + this.channelId);
+            console.log("Connection closed for chatroom, trying to reconnect...");
+            setInterval(this.initBot, 250);
         });
         chat.on("message", (data) => {
             try {
@@ -107,14 +108,11 @@ class Kick {
                             this.currentPoll = null;
                         }, jsonDataSub.poll.duration * 1000);
                         const options = jsonDataSub.poll.options.map((item) => item.label);
-                        /*this.bot.twitch.apiClient.polls.createPoll(
-                          this.bot.twitch.channel.id,
-                          {
+                        this.bot.twitch.apiClient.polls.createPoll(this.bot.twitch.channel.id, {
                             title: jsonDataSub.poll.title,
                             duration: jsonDataSub.poll.duration,
                             choices: options,
-                          },
-                        );*/
+                        });
                         this.bot.iopoll.emit("createPoll", jsonDataSub.poll);
                         break;
                 }

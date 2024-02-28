@@ -9,7 +9,11 @@ import {
   UserNotice,
   ChatSubGiftInfo,
 } from "@twurple/chat";
-import { ApiClient, HelixUser } from "@twurple/api";
+import {
+  ApiClient,
+  HelixCreateCustomRewardData,
+  HelixUser,
+} from "@twurple/api";
 import {
   AuthSetup,
   Command,
@@ -61,6 +65,7 @@ export class Twitch {
   public currentPoll: Poll;
   public dataPath: string;
   public chatClient: ChatClient;
+  public redeem: HelixCreateCustomRewardData;
 
   private channelName: string;
   private bot: TalkingBot;
@@ -217,17 +222,17 @@ export class Twitch {
       });
     });
 
-    /*    this.eventListener = new EventSubWsListener({
+    this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
     this.eventListener.onChannelPollProgress(
       this.channel.id,
       (data: EventSubChannelPollProgressEvent) => {
-        let options: pollOption[];
-        data.choices.forEach((choice) => {
+        let options: pollOption[] = [];
+        data.choices.forEach((choice, i) => {
           options.push({
             label: choice.title,
-            id: choice.id,
+            id: i.toString(),
             votes: choice.totalVotes,
           });
         });
@@ -244,80 +249,119 @@ export class Twitch {
     this.eventListener.onChannelRedemptionAdd(
       this.channel.id,
       async (data: EventSubChannelRedemptionAddEvent) => {
-        console.log(
-          `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`,
-        );
-        let completed: Boolean;
-        switch (data.rewardTitle) {
-          case "Self Timeout":
-            this.apiClient.moderation.banUser(this.channel.id, {
-              duration: 300,
-              reason: "Self Timeout Request",
-              user: data.userId,
-            });
-            completed = true;
-            break;
-          case "Timeout Somebody Else":
-            const user: HelixUser = await this.apiClient.users.getUserByName(
-              data.input.split(" ")[0],
-            );
-            const mods = await this.apiClient.moderation.getModerators(
-              this.channel.id,
-              { userId: user.id },
-            );
-            if (
-              user == null ||
-              user.id == data.broadcasterId ||
-              mods.data.length == 1
-            ) {
-              completed = false;
-              this.chatClient.say(
-                this.channelName,
-                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
+        try {
+          console.log(
+            `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`,
+          );
+          if (this.bot.isRegistering) {
+            const reward =
+              await this.apiClient.channelPoints.getCustomRewardById(
+                this.channel.id,
+                data.rewardId,
               );
-              break;
-            }
-            this.apiClient.moderation.banUser(this.channel.id, {
-              duration: 60,
-              reason: `Timeout request by ${data.userDisplayName}`,
-              user: user.id,
-            });
-            completed = true;
-            break;
-          case "Poll":
-            // message like Which is better?: hapboo, realboo, habpoo, hapflat
-            const matches = data.input.match(pollRegex);
-            if (matches) {
-              const question = matches[1];
-              const options = matches[2]
-                .split(",")
-                .map((word: string) => word.trim());
-              this.apiClient.polls.createPoll(this.channel.id, {
-                title: question,
-                duration: 60,
-                choices: options,
+            this.redeem = {
+              autoFulfill: reward.autoFulfill,
+              backgroundColor: reward.backgroundColor,
+              cost: reward.cost,
+              globalCooldown: reward.globalCooldown,
+              isEnabled: reward.isEnabled,
+              maxRedemptionsPerStream: reward.maxRedemptionsPerStream,
+              maxRedemptionsPerUserPerStream:
+                reward.maxRedemptionsPerUserPerStream,
+              prompt: reward.prompt,
+              title: reward.title,
+              userInputRequired: reward.userInputRequired,
+            };
+            console.log(`copied reward ${reward.title}`);
+            /*await this.apiClient.channelPoints.deleteCustomReward(
+              this.channel.id,
+              data.rewardId,
+            );*/
+            this.chatClient.say(
+              this.channelName,
+              `Copied reward ${reward.title}`,
+            );
+            return;
+          }
+          let completed: Boolean;
+          switch (data.rewardTitle) {
+            case "Self Timeout":
+              this.apiClient.moderation.banUser(this.channel.id, {
+                duration: 300,
+                reason: "Self Timeout Request",
+                user: data.userId,
               });
               completed = true;
-            } else {
-              this.chatClient.say(
-                this.channelName,
-                `@${data.userDisplayName} Couldn't parse poll: ${data.input}`,
+              break;
+            case "Timeout Somebody Else":
+              const username = data.input.split(" ")[0].replace("@", "");
+              const user: HelixUser =
+                await this.apiClient.users.getUserByName(username);
+
+              if (user == null || user.id == data.broadcasterId) {
+                completed = false;
+                this.chatClient.say(
+                  this.channelName,
+                  `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
+                );
+                break;
+              }
+              const mods = await this.apiClient.moderation.getModerators(
+                this.channel.id,
+                { userId: user.id },
               );
-              completed = false;
-            }
-            break;
-          default:
-            return;
-        }
-        if (completed == null) return;
-        this.apiClient.channelPoints.updateRedemptionStatusByIds(
+              if (mods.data.length == 1) {
+                completed = false;
+                this.chatClient.say(
+                  this.channelName,
+                  `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
+                );
+                break;
+              }
+              this.apiClient.moderation.banUser(this.channel.id, {
+                duration: 60,
+                reason: `Timeout request by ${data.userDisplayName}`,
+                user: user.id,
+              });
+              completed = true;
+              break;
+            case "Poll":
+              // message like Which is better?: hapboo, realboo, habpoo, hapflat
+              const matches = data.input.match(pollRegex);
+              if (matches) {
+                const question = matches[1];
+                const options = matches[2]
+                  .split(",")
+                  .map((word: string) => word.trim());
+                this.apiClient.polls.createPoll(this.channel.id, {
+                  title: question,
+                  duration: 60,
+                  choices: options,
+                });
+                completed = true;
+              } else {
+                this.chatClient.say(
+                  this.channelName,
+                  `@${data.userDisplayName} Couldn't parse poll: ${data.input}`,
+                );
+                completed = false;
+              }
+              break;
+            default:
+              return;
+          }
+          if (completed == null) return;
+          /*this.apiClient.channelPoints.updateRedemptionStatusByIds(
           this.channel.id,
           data.rewardId,
           [data.id],
           completed ? "FULFILLED" : "CANCELED",
-        );
+        );*/
+        } catch (e) {
+          console.log(e);
+        }
       },
-    );*/
+    );
 
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
@@ -372,10 +416,18 @@ export class Twitch {
     );
     this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
       this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+      this.chatClient.say(
+        this.channelName,
+        `@${user} has been banished to the nut room.`,
+      );
     });
     this.chatClient.onTimeout(
       (channel: string, user: string, duration: number, msg: ClearChat) => {
         this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+        this.chatClient.say(
+          this.channelName,
+          `@${user} has been banished to the nut room.`,
+        );
       },
     );
     this.chatClient.onMessageRemove(
@@ -460,6 +512,6 @@ export class Twitch {
     });
 
     this.chatClient.connect();
-    //this.eventListener.start();
+    this.eventListener.start();
   }
 }

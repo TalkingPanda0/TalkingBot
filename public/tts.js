@@ -110,7 +110,7 @@ function handleQueue() {
         audio.onended = () => {
           if (tempqueue.length == 0) {
             isPlaying = false;
-            setTimeout(removePopup, 10e2);
+            setTimeout(removePopup, 10000);
             return;
           }
           tempqueue
@@ -142,7 +142,7 @@ function handleQueue() {
 
   audio.onended = () => {
     isPlaying = false;
-    setTimeout(removePopup, 2500);
+    setTimeout(removePopup, 10000);
   };
   audio.play().catch((err) => {
     isPlaying = false;

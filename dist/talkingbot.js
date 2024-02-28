@@ -154,49 +154,69 @@ class TalkingBot {
         this.kickId = kickId;
         this.readCustomCommands();
         this.commandList = [
-            /*{
-              showOnChat: false,
-              command: "!followage",
-              commandFunction: async (
-                user,
-                isUserMod,
-                message,
-                reply,
-                platform,
-                context,
-              ) => {
-                if (platform == Platform.kick) return;
-                const followed =
-                  await this.twitch.apiClient.channels.getChannelFollowers(
-                    this.twitch.channel.id,
-                    context.userInfo.userId,
-                  );
-      
-                // User is not following
-                if (followed.data.length == 0) {
-                  console.log("a");
-                  reply(
-                    `You are not following ${this.twitch.channel.displayName}`,
-                    true,
-                  );
-                } else {
-                  const time = getTimeDifference(
-                    followed.data[0].followDate,
-                    new Date(),
-                  );
-                  let timeString = "";
-                  if (time.years != 0) timeString += `${time.years} years`;
-                  if (time.months != 0) timeString += `${time.months} months`;
-                  if (time.days != 0) timeString += `${time.days} days`;
-                  if (time.minutes != 0) timeString += `${time.minutes} minutes`;
-      
-                  reply(
-                    `@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`,
-                    false,
-                  );
-                }
-              },
-            },*/
+            {
+                showOnChat: false,
+                command: "!createredeem",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (!isUserMod)
+                        return;
+                    if (this.twitch.redeem == null) {
+                        reply("No redeem found", true);
+                        return;
+                    }
+                    yield this.twitch.apiClient.channelPoints.createCustomReward(this.twitch.channel.id, this.twitch.redeem);
+                    reply(`Created ${this.twitch.redeem.title}`, true);
+                }),
+            },
+            {
+                showOnChat: false,
+                command: "!register",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (!isUserMod)
+                        return;
+                    this.isRegistering = true;
+                    reply("Started registering", true);
+                }),
+            },
+            {
+                showOnChat: false,
+                command: "!stopregister",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (!isUserMod)
+                        return;
+                    this.isRegistering = false;
+                    reply("Stopped", true);
+                }),
+            },
+            {
+                showOnChat: false,
+                command: "!followage",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                    if (platform == Platform.kick)
+                        return;
+                    const followed = yield this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
+                    // User is not following
+                    if (followed.data.length == 0) {
+                        console.log("a");
+                        reply(`You are not following ${this.twitch.channel.displayName}`, true);
+                    }
+                    else {
+                        const time = getTimeDifference(followed.data[0].followDate, new Date());
+                        let timeString = "";
+                        if (time.years != 0)
+                            timeString += `${time.years} years `;
+                        if (time.months != 0)
+                            timeString += `${time.months} months `;
+                        if (time.days != 0)
+                            timeString += `${time.days} days `;
+                        if (time.hours != 0)
+                            timeString += `${time.hours} hours `;
+                        if (time.minutes != 0)
+                            timeString += `${time.minutes} minutes`;
+                        reply(`@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`, false);
+                    }
+                }),
+            },
             {
                 showOnChat: false,
                 command: "!addcmd",
@@ -289,6 +309,17 @@ class TalkingBot {
                         }
                     }
                     reply(`${commandName} is not a command`, true);
+                },
+            },
+            {
+                showOnChat: false,
+                command: "!listcmd",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    const custom = this.customCommands
+                        .map((obj) => obj.command)
+                        .join(", ");
+                    const builtin = this.commandList.map((obj) => obj.command).join(", ");
+                    reply(`Builtin Commands: ${builtin}, Custom Commands: ${custom}`, true);
                 },
             },
             {
