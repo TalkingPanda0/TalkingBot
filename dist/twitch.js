@@ -64,6 +64,7 @@ class Twitch {
     constructor(bot) {
         this.clientId = "";
         this.clientSecret = "";
+        this.redeemQueue = [];
         this.badges = new Map();
         this.bot = bot;
     }
@@ -198,7 +199,7 @@ class Twitch {
                     console.log(`Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`);
                     if (this.bot.isRegistering) {
                         const reward = yield this.apiClient.channelPoints.getCustomRewardById(this.channel.id, data.rewardId);
-                        this.redeem = {
+                        this.rewardData = {
                             autoFulfill: reward.autoFulfill,
                             backgroundColor: reward.backgroundColor,
                             cost: reward.cost,
@@ -251,23 +252,9 @@ class Twitch {
                             break;
                         case "Poll":
                             // message like Which is better?: hapboo, realboo, habpoo, hapflat
-                            const matches = data.input.match(pollRegex);
-                            if (matches) {
-                                const question = matches[1];
-                                const options = matches[2]
-                                    .split(",")
-                                    .map((word) => word.trim());
-                                this.apiClient.polls.createPoll(this.channel.id, {
-                                    title: question,
-                                    duration: 60,
-                                    choices: options,
-                                });
-                                completed = true;
-                            }
-                            else {
-                                this.chatClient.say(this.channelName, `@${data.userDisplayName} Couldn't parse poll: ${data.input}`);
-                                completed = false;
-                            }
+                            this.redeemQueue.push(data);
+                        case "CHANGE TITLE FOR 15m":
+                            this.redeemQueue.push(data);
                             break;
                         default:
                             return;
@@ -383,6 +370,49 @@ class Twitch {
             });
             this.chatClient.connect();
             this.eventListener.start();
+        });
+    }
+    handleRedeemQueue(accept) {
+        return __awaiter(this, void 0, void 0, function* () {
+            const redeem = this.redeemQueue.shift();
+            if (accept != null) {
+                switch (redeem.rewardTitle) {
+                    case "Poll":
+                        const matches = redeem.input.match(pollRegex);
+                        if (matches) {
+                            const question = matches[1];
+                            const options = matches[2]
+                                .split(",")
+                                .map((word) => word.trim());
+                            this.apiClient.polls.createPoll(this.channel.id, {
+                                title: question,
+                                duration: 60,
+                                choices: options,
+                            });
+                        }
+                        else {
+                            this.chatClient.say(this.channelName, `@${redeem.userDisplayName} Couldn't parse poll: ${redeem.input}`);
+                            accept = false;
+                        }
+                        break;
+                    case "CHANGE TITLE FOR 15m":
+                        const currentInfo = yield this.apiClient.channels.getChannelInfoById(this.channel.id);
+                        yield this.apiClient.channels.updateChannelInfo(this.channel.id, {
+                            title: redeem.input,
+                        });
+                        setTimeout(() => {
+                            this.apiClient.channels.updateChannelInfo(this.channel.id, {
+                                title: currentInfo.title,
+                            });
+                        }, 15 * 60 * 1000);
+                        break;
+                }
+            }
+            else {
+                // scam
+                accept = true;
+            }
+            this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, redeem.rewardId, [redeem.id], accept ? "FULFILLED" : "CANCELED");
         });
     }
 }

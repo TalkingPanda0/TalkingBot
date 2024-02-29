@@ -11,7 +11,9 @@ import {
 } from "@twurple/chat";
 import {
   ApiClient,
+  HelixChannelUpdate,
   HelixCreateCustomRewardData,
+  HelixCustomRewardRedemption,
   HelixUser,
 } from "@twurple/api";
 import {
@@ -66,7 +68,8 @@ export class Twitch {
   public currentPoll: Poll;
   public dataPath: string;
   public chatClient: ChatClient;
-  public redeem: HelixCreateCustomRewardData;
+  public rewardData: HelixCreateCustomRewardData;
+  public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
 
   private channelName: string;
   private bot: TalkingBot;
@@ -269,7 +272,7 @@ export class Twitch {
                 this.channel.id,
                 data.rewardId,
               );
-            this.redeem = {
+            this.rewardData = {
               autoFulfill: reward.autoFulfill,
               backgroundColor: reward.backgroundColor,
               cost: reward.cost,
@@ -337,25 +340,10 @@ export class Twitch {
               break;
             case "Poll":
               // message like Which is better?: hapboo, realboo, habpoo, hapflat
-              const matches = data.input.match(pollRegex);
-              if (matches) {
-                const question = matches[1];
-                const options = matches[2]
-                  .split(",")
-                  .map((word: string) => word.trim());
-                this.apiClient.polls.createPoll(this.channel.id, {
-                  title: question,
-                  duration: 60,
-                  choices: options,
-                });
-                completed = true;
-              } else {
-                this.chatClient.say(
-                  this.channelName,
-                  `@${data.userDisplayName} Couldn't parse poll: ${data.input}`,
-                );
-                completed = false;
-              }
+              this.redeemQueue.push(data);
+
+            case "CHANGE TITLE FOR 15m":
+              this.redeemQueue.push(data);
               break;
             default:
               return;
@@ -523,5 +511,57 @@ export class Twitch {
 
     this.chatClient.connect();
     this.eventListener.start();
+  }
+  public async handleRedeemQueue(accept?: Boolean) {
+    const redeem = this.redeemQueue.shift();
+    if (accept != null) {
+      switch (redeem.rewardTitle) {
+        case "Poll":
+          const matches = redeem.input.match(pollRegex);
+          if (matches) {
+            const question = matches[1];
+            const options = matches[2]
+              .split(",")
+              .map((word: string) => word.trim());
+            this.apiClient.polls.createPoll(this.channel.id, {
+              title: question,
+              duration: 60,
+              choices: options,
+            });
+          } else {
+            this.chatClient.say(
+              this.channelName,
+              `@${redeem.userDisplayName} Couldn't parse poll: ${redeem.input}`,
+            );
+            accept = false;
+          }
+          break;
+        case "CHANGE TITLE FOR 15m":
+          const currentInfo = await this.apiClient.channels.getChannelInfoById(
+            this.channel.id,
+          );
+          await this.apiClient.channels.updateChannelInfo(this.channel.id, {
+            title: redeem.input,
+          });
+          setTimeout(
+            () => {
+              this.apiClient.channels.updateChannelInfo(this.channel.id, {
+                title: currentInfo.title,
+              });
+            },
+            15 * 60 * 1000,
+          );
+          break;
+      }
+    } else {
+      // scam
+      accept = true;
+    }
+    this.apiClient.channelPoints.updateRedemptionStatusByIds(
+      this.channel.id,
+      redeem.rewardId,
+      [redeem.id],
+      accept ? "FULFILLED" : "CANCELED",
+    );
   }
 }

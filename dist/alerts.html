@@ -125,7 +125,7 @@
       }
       function followAlert(followInfo) {
         isPlaying = true;
-        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/static/follow.gif" /><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
         alertElement.style = "opacity: 100%;";
         const name = getTTSAudio({
           voice: "Brian",

@@ -131,16 +131,42 @@ class TalkingBot {
         this.commandList = [
             {
                 showOnChat: false,
+                command: "!redeem",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    if (this.twitch.redeemQueue.length == 0) {
+                        reply("No redeem found", true);
+                        return;
+                    }
+                    switch (message) {
+                        case "accept":
+                            this.twitch.handleRedeemQueue(true);
+                            break;
+                        case "deny":
+                            this.twitch.handleRedeemQueue(false);
+                            break;
+                        case "scam":
+                            this.twitch.handleRedeemQueue(null);
+                            break;
+                        default:
+                            reply("Usage: !redeem accept/deny", true);
+                            break;
+                    }
+                },
+            },
+            {
+                showOnChat: false,
                 command: "!createredeem",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
                     if (!isUserMod)
                         return;
-                    if (this.twitch.redeem == null) {
+                    if (this.twitch.rewardData == null) {
                         reply("No redeem found", true);
                         return;
                     }
-                    yield this.twitch.apiClient.channelPoints.createCustomReward(this.twitch.channel.id, this.twitch.redeem);
-                    reply(`Created ${this.twitch.redeem.title}`, true);
+                    yield this.twitch.apiClient.channelPoints.createCustomReward(this.twitch.channel.id, this.twitch.rewardData);
+                    reply(`Created ${this.twitch.rewardData.title}`, true);
                 }),
             },
             {
