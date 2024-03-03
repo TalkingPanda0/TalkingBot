@@ -126,9 +126,21 @@ class TalkingBot {
         this.ioalert = new socket_io_1.Server(this.server, {
             path: "/alerts/",
         });
+        this.iowheel = new socket_io_1.Server(this.server, {
+            path: "/wheel/",
+        });
         this.kickId = kickId;
         this.readCustomCommands();
         this.commandList = [
+            {
+                showOnChat: false,
+                command: "!wheeltest",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    this.twitch.wheeltest();
+                },
+            },
             {
                 showOnChat: false,
                 command: "!redeem",
@@ -154,40 +166,6 @@ class TalkingBot {
                             break;
                     }
                 },
-            },
-            {
-                showOnChat: false,
-                command: "!createredeem",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (!isUserMod)
-                        return;
-                    if (this.twitch.rewardData == null) {
-                        reply("No redeem found", true);
-                        return;
-                    }
-                    yield this.twitch.apiClient.channelPoints.createCustomReward(this.twitch.channel.id, this.twitch.rewardData);
-                    reply(`Created ${this.twitch.rewardData.title}`, true);
-                }),
-            },
-            {
-                showOnChat: false,
-                command: "!register",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (!isUserMod)
-                        return;
-                    this.isRegistering = true;
-                    reply("Started registering", true);
-                }),
-            },
-            {
-                showOnChat: false,
-                command: "!stopregister",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (!isUserMod)
-                        return;
-                    this.isRegistering = false;
-                    reply("Stopped", true);
-                }),
             },
             {
                 showOnChat: false,

@@ -65,8 +65,42 @@ class Twitch {
         this.clientId = "";
         this.clientSecret = "";
         this.redeemQueue = [];
+        this.wheelOptions = [
+            {
+                title: "VIP",
+                color: "",
+                weight: 1,
+                function: (user) => {
+                    this.chatClient.say(this.channelName, `@${user.displayName} won VIP congratulations!`);
+                },
+            },
+            {
+                title: "Get sent to the nut room",
+                color: "",
+                weight: 10,
+                function: (user) => {
+                    this.apiClient.moderation.banUser(this.channel.id, {
+                        user: user.id,
+                        reason: "WHEEL",
+                        duration: 30,
+                    });
+                },
+            },
+        ];
         this.badges = new Map();
+        this.pollid = "10309d95-f819-4f8e-8605-3db808eff351";
+        this.titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
+        this.timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
+        this.wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
+        this.selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
         this.bot = bot;
+    }
+    wheeltest() {
+        this.bot.iowheel.emit("wheel", {
+            wheelOptions: this.wheelOptions,
+            user: "Ballmaster5",
+            winner: "Get sent to the nut room",
+        });
     }
     sendToChatList(message) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -196,32 +230,15 @@ class Twitch {
             });
             this.eventListener.onChannelRedemptionAdd(this.channel.id, (data) => __awaiter(this, void 0, void 0, function* () {
                 try {
-                    console.log(`Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input}`);
-                    if (this.bot.isRegistering) {
-                        const reward = yield this.apiClient.channelPoints.getCustomRewardById(this.channel.id, data.rewardId);
-                        this.rewardData = {
-                            autoFulfill: reward.autoFulfill,
-                            backgroundColor: reward.backgroundColor,
-                            cost: reward.cost,
-                            globalCooldown: reward.globalCooldown,
-                            isEnabled: reward.isEnabled,
-                            maxRedemptionsPerStream: reward.maxRedemptionsPerStream,
-                            maxRedemptionsPerUserPerStream: reward.maxRedemptionsPerUserPerStream,
-                            prompt: reward.prompt,
-                            title: reward.title,
-                            userInputRequired: reward.userInputRequired,
-                        };
-                        console.log(`copied reward ${reward.title}`);
-                        /*await this.apiClient.channelPoints.deleteCustomReward(
-                          this.channel.id,
-                          data.rewardId,
-                        );*/
-                        this.chatClient.say(this.channelName, `Copied reward ${reward.title}`);
-                        return;
-                    }
+                    console.log(`Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`);
                     let completed;
-                    switch (data.rewardTitle) {
-                        case "Self Timeout":
+                    switch (data.rewardId) {
+                        case this.selftimeoutid:
+                            const modlist = yield this.apiClient.moderation.getModerators(this.channel.id, { userId: data.userId });
+                            if (modlist.data.length == 1) {
+                                completed = false;
+                                break;
+                            }
                             this.apiClient.moderation.banUser(this.channel.id, {
                                 duration: 300,
                                 reason: "Self Timeout Request",
@@ -229,7 +246,7 @@ class Twitch {
                             });
                             completed = true;
                             break;
-                        case "Timeout Somebody Else":
+                        case this.timeoutid:
                             const username = data.input.split(" ")[0].replace("@", "");
                             const user = yield this.apiClient.users.getUserByName(username);
                             if (user == null || user.id == data.broadcasterId) {
@@ -250,10 +267,11 @@ class Twitch {
                             });
                             completed = true;
                             break;
-                        case "Poll":
+                        case this.pollid:
                             // message like Which is better?: hapboo, realboo, habpoo, hapflat
                             this.redeemQueue.push(data);
-                        case "CHANGE TITLE FOR 15m":
+                            break;
+                        case this.titleid:
                             this.redeemQueue.push(data);
                             break;
                         default:
@@ -261,12 +279,8 @@ class Twitch {
                     }
                     if (completed == null)
                         return;
-                    /*this.apiClient.channelPoints.updateRedemptionStatusByIds(
-                    this.channel.id,
-                    data.rewardId,
-                    [data.id],
-                    completed ? "FULFILLED" : "CANCELED",
-                  );*/
+                    console.log(completed);
+                    this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, data.rewardId, [data.id], completed ? "FULFILLED" : "CANCELED");
                 }
                 catch (e) {
                     console.log(e);
@@ -376,8 +390,8 @@ class Twitch {
         return __awaiter(this, void 0, void 0, function* () {
             const redeem = this.redeemQueue.shift();
             if (accept != null) {
-                switch (redeem.rewardTitle) {
-                    case "Poll":
+                switch (redeem.rewardId) {
+                    case this.pollid:
                         const matches = redeem.input.match(pollRegex);
                         if (matches) {
                             const question = matches[1];
@@ -395,7 +409,7 @@ class Twitch {
                             accept = false;
                         }
                         break;
-                    case "CHANGE TITLE FOR 15m":
+                    case this.titleid:
                         const currentInfo = yield this.apiClient.channels.getChannelInfoById(this.channel.id);
                         yield this.apiClient.channels.updateChannelInfo(this.channel.id, {
                             title: redeem.input,
