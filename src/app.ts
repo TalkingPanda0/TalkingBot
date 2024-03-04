@@ -16,9 +16,6 @@ app.get("/tts", (req: Request, res: Response) => {
 app.get("/alerts", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/alerts.html");
 });
-app.get("/wheel", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/wheel.html");
-});
 
 app.get("/poll", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/poll.html");

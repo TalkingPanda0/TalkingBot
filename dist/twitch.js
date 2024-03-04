@@ -65,28 +65,6 @@ class Twitch {
         this.clientId = "";
         this.clientSecret = "";
         this.redeemQueue = [];
-        this.wheelOptions = [
-            {
-                title: "VIP",
-                color: "",
-                weight: 1,
-                function: (user) => {
-                    this.chatClient.say(this.channelName, `@${user.displayName} won VIP congratulations!`);
-                },
-            },
-            {
-                title: "Get sent to the nut room",
-                color: "",
-                weight: 10,
-                function: (user) => {
-                    this.apiClient.moderation.banUser(this.channel.id, {
-                        user: user.id,
-                        reason: "WHEEL",
-                        duration: 30,
-                    });
-                },
-            },
-        ];
         this.badges = new Map();
         this.pollid = "10309d95-f819-4f8e-8605-3db808eff351";
         this.titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
@@ -94,13 +72,6 @@ class Twitch {
         this.wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
         this.selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
         this.bot = bot;
-    }
-    wheeltest() {
-        this.bot.iowheel.emit("wheel", {
-            wheelOptions: this.wheelOptions,
-            user: "Ballmaster5",
-            winner: "Get sent to the nut room",
-        });
     }
     sendToChatList(message) {
         return __awaiter(this, void 0, void 0, function* () {

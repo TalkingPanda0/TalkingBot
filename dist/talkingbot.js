@@ -126,21 +126,9 @@ class TalkingBot {
         this.ioalert = new socket_io_1.Server(this.server, {
             path: "/alerts/",
         });
-        this.iowheel = new socket_io_1.Server(this.server, {
-            path: "/wheel/",
-        });
         this.kickId = kickId;
         this.readCustomCommands();
         this.commandList = [
-            {
-                showOnChat: false,
-                command: "!wheeltest",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => {
-                    if (!isUserMod)
-                        return;
-                    this.twitch.wheeltest();
-                },
-            },
             {
                 showOnChat: false,
                 command: "!redeem",

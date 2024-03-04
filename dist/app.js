@@ -40,9 +40,6 @@ app.get("/tts", (req, res) => {
 app.get("/alerts", (req, res) => {
     res.sendFile(__dirname + "/alerts.html");
 });
-app.get("/wheel", (req, res) => {
-    res.sendFile(__dirname + "/wheel.html");
-});
 app.get("/poll", (req, res) => {
     res.sendFile(__dirname + "/poll.html");
 });

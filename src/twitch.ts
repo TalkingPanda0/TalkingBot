@@ -57,12 +57,6 @@ const userColors = [
   "#00ff7f",
 ];
 
-interface WheelOption {
-  title: string;
-  color: string;
-  weight: number;
-  function: (user: HelixUser) => void | Promise<void>;
-}
 export class Twitch {
   public clientId: string = "";
   public clientSecret: string = "";
@@ -74,32 +68,6 @@ export class Twitch {
   public chatClient: ChatClient;
   public rewardData: HelixCreateCustomRewardData;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
-
-  private wheelOptions: WheelOption[] = [
-    {
-      title: "VIP",
-      color: "",
-      weight: 1,
-      function: (user: HelixUser) => {
-        this.chatClient.say(
-          this.channelName,
-          `@${user.displayName} won VIP congratulations!`,
-        );
-      },
-    },
-    {
-      title: "Get sent to the nut room",
-      color: "",
-      weight: 10,
-      function: (user: HelixUser) => {
-        this.apiClient.moderation.banUser(this.channel.id, {
-          user: user.id,
-          reason: "WHEEL",
-          duration: 30,
-        });
-      },
-    },
-  ];
   private channelName: string;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
@@ -113,14 +81,6 @@ export class Twitch {
   constructor(bot: TalkingBot) {
     this.bot = bot;
   }
-  public wheeltest() {
-    this.bot.iowheel.emit("wheel", {
-      wheelOptions: this.wheelOptions,
-      user: "Ballmaster5",
-      winner: "Get sent to the nut room",
-    });
-  }
-
   async sendToChatList(message: ChatMessage): Promise<void> {
     let color = message.userInfo.color;
     let badges = ["https://twitch.tv/favicon.ico"];
