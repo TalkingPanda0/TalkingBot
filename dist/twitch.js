@@ -118,12 +118,10 @@ class Twitch {
         this.clientId = auth.twitchClientId;
         this.clientSecret = auth.twitchClientSecret;
         this.channelName = auth.channelName;
-        this.dataPath = auth.playerdatapath;
         fs.writeFileSync(oauthPath, JSON.stringify({
             clientId: this.clientId,
             clientSecret: this.clientSecret,
             channelName: this.channelName,
-            dataPath: this.dataPath,
         }), "utf-8");
         this.authProvider = new auth_1.RefreshingAuthProvider({
             clientId: this.clientId,
@@ -143,7 +141,6 @@ class Twitch {
         this.clientId = fileContent.clientId;
         this.clientSecret = fileContent.clientSecret;
         this.channelName = fileContent.channelName;
-        this.dataPath = fileContent.dataPath;
     }
     initBot() {
         return __awaiter(this, void 0, void 0, function* () {

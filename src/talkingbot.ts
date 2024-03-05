@@ -43,7 +43,6 @@ export interface AuthSetup {
   twitchClientId: string;
   twitchClientSecret: string;
   channelName: string;
-  playerdatapath: string;
 }
 export interface ChatMsg {
   text: string;
@@ -142,6 +141,7 @@ export class TalkingBot {
   public customCommands: CustomCommand[] = [];
 
   private kickId: string;
+  private counter: number = 0;
   private ttsEnabled: Boolean = false;
   private server: http.Server;
   private iotts: Server;
@@ -209,6 +209,30 @@ export class TalkingBot {
               reply("Usage: !redeem accept/deny", true);
               break;
           }
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!counter",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          const regex = /[+|-]/g;
+          if (isUserMod && message != "") {
+            if (regex.test(message)) {
+              this.counter += parseInt(message);
+            } else {
+              this.counter = parseInt(message);
+            }
+            reply(`The counter has been set to ${this.counter}`, true);
+            return;
+          }
+          reply(`The counter is at ${this.counter}`, true);
         },
       },
       {
@@ -503,23 +527,13 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          const playerData = JSON.parse(
-            fs.readFileSync(this.twitch.dataPath, "utf-8"),
-          );
-
-          const distance =
-            playerData.localPlayers[0].playerAllOverallStatsData
-              .soloFreePlayOverallStatsData.handDistanceTravelled;
+          const distance = parseInt(message);
           const distanceinkm = Math.round(distance / 10) / 100;
-          const distanceinSolar = metersToSolarRadii(distance);
           const star: Star = findClosestStar(metersToSolarRadii(distance));
           const diameter = solarRadiiToMeter(star.radius * 2);
           const diameterinkm = Math.round(diameter / 10) / 100;
           const percent =
             Math.round((distanceinkm / diameterinkm) * 10000) / 100;
-          console.log(
-            `${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`,
-          );
           reply(
             `${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `,
             true,

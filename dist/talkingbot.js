@@ -112,6 +112,7 @@ class TalkingBot {
     constructor(kickId, server) {
         this.commandList = [];
         this.customCommands = [];
+        this.counter = 0;
         this.ttsEnabled = false;
         this.server = server;
         this.iotts = new socket_io_1.Server(this.server, {
@@ -153,6 +154,24 @@ class TalkingBot {
                             reply("Usage: !redeem accept/deny", true);
                             break;
                     }
+                },
+            },
+            {
+                showOnChat: false,
+                command: "!counter",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    const regex = /[+|-]/g;
+                    if (isUserMod && message != "") {
+                        if (regex.test(message)) {
+                            this.counter += parseInt(message);
+                        }
+                        else {
+                            this.counter = parseInt(message);
+                        }
+                        reply(`The counter has been set to ${this.counter}`, true);
+                        return;
+                    }
+                    reply(`The counter is at ${this.counter}`, true);
                 },
             },
             {
@@ -340,16 +359,12 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!distance",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
-                    const playerData = JSON.parse(node_fs_1.default.readFileSync(this.twitch.dataPath, "utf-8"));
-                    const distance = playerData.localPlayers[0].playerAllOverallStatsData
-                        .soloFreePlayOverallStatsData.handDistanceTravelled;
+                    const distance = parseInt(message);
                     const distanceinkm = Math.round(distance / 10) / 100;
-                    const distanceinSolar = (0, stars_1.metersToSolarRadii)(distance);
                     const star = (0, stars_1.findClosestStar)((0, stars_1.metersToSolarRadii)(distance));
                     const diameter = (0, stars_1.solarRadiiToMeter)(star.radius * 2);
                     const diameterinkm = Math.round(diameter / 10) / 100;
                     const percent = Math.round((distanceinkm / diameterinkm) * 10000) / 100;
-                    console.log(`${distance},${distanceinkm},${distanceinSolar},${star},${diameter},${diameterinkm},${percent}`);
                     reply(`${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `, true);
                 },
             },
