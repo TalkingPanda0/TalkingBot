@@ -179,7 +179,7 @@ export class TalkingBot {
 
     this.readCustomCommands();
     this.commandList = [
-        {
+      {
         showOnChat: false,
         command: "!redeem",
         commandFunction: (
@@ -209,6 +209,66 @@ export class TalkingBot {
               reply("Usage: !redeem accept/deny", true);
               break;
           }
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!uptime",
+        commandFunction: async (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (platform == Platform.kick) return;
+          const stream = await this.twitch.apiClient.streams.getStreamByUserId(
+            this.twitch.channel.id,
+          );
+          if (stream == null) {
+            reply(
+              `${this.twitch.channel.displayName} is currently offline`,
+              true,
+            );
+            return;
+          }
+          const time = getTimeDifference(stream.startDate, new Date());
+          let timeString = "";
+          if (time.years != 0) timeString += `${time.years} years `;
+          if (time.months != 0) timeString += `${time.months} months `;
+          if (time.days != 0) timeString += `${time.days} days `;
+          if (time.hours != 0) timeString += `${time.hours} hours `;
+          if (time.minutes != 0) timeString += `${time.minutes} minutes`;
+          reply(
+            `${this.twitch.channel.displayName} has been live for ${timeString}`,
+            true,
+          );
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!status",
+        commandFunction: async (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (platform == Platform.kick) return;
+          const stream = await this.twitch.apiClient.streams.getStreamByUserId(
+            this.twitch.channel.id,
+          );
+          if (stream == null) {
+            reply(
+              `${this.twitch.channel.displayName} is currently offline`,
+              true,
+            );
+            return;
+          }
+          reply(`\"${stream.title}\" - \"${stream.gameName}\"`, true);
         },
       },
       {
