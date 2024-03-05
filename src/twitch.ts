@@ -22,6 +22,7 @@ import {
   Platform,
   Poll,
   TalkingBot,
+  getSuffix,
   pollOption,
   replaceAsync,
 } from "./talkingbot";
@@ -324,7 +325,6 @@ export class Twitch {
               return;
           }
           if (completed == null) return;
-          console.log(completed);
           this.apiClient.channelPoints.updateRedemptionStatusByIds(
             this.channel.id,
             data.rewardId,
@@ -414,69 +414,90 @@ export class Twitch {
     });
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
-        if (user === "botrixoficial") return;
+        try {
+          if (user === "botrixoficial") return;
 
-        console.log(
-          "\x1b[35m%s\x1b[0m",
-          `Twitch - ${msg.userInfo.displayName}: ${text}`,
-        );
-
-        // not a command
-        if (!text.startsWith("!")) {
-          this.sendToChatList(msg);
-          return;
-        }
-        const name = msg.userInfo.displayName;
-        const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
-
-        for (let i = 0; i < this.bot.commandList.length; i++) {
-          const command = this.bot.commandList[i];
-          if (text.split(" ")[0] != command.command) continue;
-
-          command.commandFunction(
-            name,
-            isMod,
-            text.replace(command.command, "").trim(),
-            (message: string, replyToUser: boolean) => {
-              this.chatClient.say(channel, message, {
-                replyTo: replyToUser ? msg.id : null,
-              });
-            },
-            Platform.twitch,
-            msg,
+          console.log(
+            "\x1b[35m%s\x1b[0m",
+            `Twitch - ${msg.userInfo.displayName}: ${text}`,
           );
-          if (command.showOnChat) this.sendToChatList(msg);
-          return;
-        }
-        for (let i = 0; i < this.bot.customCommands.length; i++) {
-          const command = this.bot.customCommands[i];
-          console.log(command.command);
-          if (text.split(" ")[0] != command.command) continue;
-          const message = text.replace(command.command, "").trim();
-          const modonly = command.response.includes("(modonly)");
-          const doReply = command.response.includes("(reply)");
-          let response = (
-            await replaceAsync(
-              command.response,
-              /(!?fetch)\[([^]+)\]/g,
-              async (message: string, command: string, url: string) => {
-                const req = await fetch(url);
-                const text = await req.text();
-                if (command.startsWith("!")) return "";
 
-                return text;
+          // not a command
+          if (!text.startsWith("!")) {
+            this.sendToChatList(msg);
+            return;
+          }
+          const name = msg.userInfo.displayName;
+          const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
+
+          for (let i = 0; i < this.bot.commandList.length; i++) {
+            const command = this.bot.commandList[i];
+            if (text.split(" ")[0] != command.command) continue;
+
+            command.commandFunction(
+              name,
+              isMod,
+              text.replace(command.command, "").trim(),
+              (message: string, replyToUser: boolean) => {
+                this.chatClient.say(channel, message, {
+                  replyTo: replyToUser ? msg.id : null,
+                });
               },
+              Platform.twitch,
+              msg,
+            );
+            if (command.showOnChat) this.sendToChatList(msg);
+            return;
+          }
+          for (let i = 0; i < this.bot.customCommands.length; i++) {
+            const command = this.bot.customCommands[i];
+            if (text.split(" ")[0] != command.command) continue;
+            const message = text.replace(command.command, "").trim();
+            const modonly = command.response.includes("(modonly)");
+            const doReply = command.response.includes("(reply)");
+            let response = (
+              await replaceAsync(
+                command.response,
+                /(!?fetch)\[([^]+)\]\{([^}]+)\}?/g,
+                async (
+                  message: string,
+                  command: string,
+                  url: string,
+                  key: string,
+                ) => {
+                  url = url
+                    .replace(/\$user/g, name)
+                    .replace(/\$args/g, message);
+                  const req = await fetch(url);
+                  if (command.startsWith("!")) return "";
+                  if (key === undefined) {
+                    return await req.text();
+                  } else {
+                    const json = await req.json();
+                    console.log(json);
+                    return json[key];
+                  }
+                },
+              )
             )
-          )
-            .replace(/\$user/g, name)
-            .replace(/\$args/g, message)
-            .replace(/\(modonly\)/g, "")
-            .replace(/\(reply\)/g, "");
+              .replace(
+                /suffix\((\d+)\)/g,
+                (message: string, number: string) => {
+                  return getSuffix(parseInt(number));
+                },
+              )
+              .replace(/\$user/g, name)
+              .replace(/\$args/g, message)
+              .replace(/\(modonly\)/g, "")
+              .replace(/\(reply\)/g, "");
 
-          if (modonly && !isMod) return;
-          this.chatClient.say(channel, response, {
-            replyTo: doReply ? msg.id : null,
-          });
+            if (modonly && !isMod) return;
+            this.chatClient.say(channel, response, {
+              replyTo: doReply ? msg.id : null,
+            });
+          }
+        } catch (e) {
+          console.log(e);
         }
       },
     );
