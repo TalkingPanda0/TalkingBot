@@ -328,7 +328,7 @@ class Twitch {
                         const message = text.replace(command.command, "").trim();
                         const modonly = command.response.includes("(modonly)");
                         const doReply = command.response.includes("(reply)");
-                        let response = (yield (0, talkingbot_1.replaceAsync)(command.response, /(!?fetch)\[([^]+)\]\{([^}]+)\}?/g, (message, command, url, key) => __awaiter(this, void 0, void 0, function* () {
+                        let response = (yield (0, talkingbot_1.replaceAsync)(command.response, /(!?fetch)\[([^]+)\]{?(\w+)?}?/g, (message, command, url, key) => __awaiter(this, void 0, void 0, function* () {
                             url = url
                                 .replace(/\$user/g, name)
                                 .replace(/\$args/g, message);

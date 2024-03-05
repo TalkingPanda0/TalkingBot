@@ -513,7 +513,7 @@ export class TalkingBot {
           );
         },
       },
-      {
+      /*{
         showOnChat: false,
         command: "!lurk",
         commandFunction: (
@@ -529,7 +529,7 @@ export class TalkingBot {
             false,
           );
         },
-      },
+      },*/
       {
         showOnChat: false,
         command: "!distance",
@@ -554,7 +554,7 @@ export class TalkingBot {
           );
         },
       },
-      {
+      /*{
         showOnChat: false,
         command: "!fsog",
         async commandFunction(
@@ -575,7 +575,7 @@ export class TalkingBot {
             reply("Failed getting data", true);
           }
         },
-      },
+      },*/
       {
         showOnChat: false,
         command: "!settitle",
@@ -626,7 +626,7 @@ export class TalkingBot {
           reply(`Game has been changed to "${game.name}"`, true);
         },
       },
-      {
+      /*{
         showOnChat: false,
         command: "!adopt",
 
@@ -673,7 +673,7 @@ export class TalkingBot {
             true,
           );
         },
-      },
+      },*/
       {
         showOnChat: false,
         command: "!bsr",

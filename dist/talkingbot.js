@@ -362,13 +362,23 @@ class TalkingBot {
                     reply(`Builtin Commands: ${builtin}, Custom Commands: ${custom}`, true);
                 },
             },
-            {
-                showOnChat: false,
-                command: "!lurk",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => {
-                    reply(`@${user} is now lurking at the bottom of the fish tank`, false);
-                },
-            },
+            /*{
+              showOnChat: false,
+              command: "!lurk",
+              commandFunction: (
+                user,
+                isUserMod,
+                message,
+                reply,
+                platform,
+                context,
+              ) => {
+                reply(
+                  `@${user} is now lurking at the bottom of the fish tank`,
+                  false,
+                );
+              },
+            },*/
             {
                 showOnChat: false,
                 command: "!distance",
@@ -382,21 +392,28 @@ class TalkingBot {
                     reply(`${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `, true);
                 },
             },
-            {
-                showOnChat: false,
-                command: "!fsog",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    return __awaiter(this, void 0, void 0, function* () {
-                        try {
-                            let response = yield fetch("https://talkingpanda.dev/fsog");
-                            reply(`SweetbabooO_o currently has ${yield response.text()} on furry shades of gay`, true);
-                        }
-                        catch (_a) {
-                            reply("Failed getting data", true);
-                        }
-                    });
-                },
-            },
+            /*{
+              showOnChat: false,
+              command: "!fsog",
+              async commandFunction(
+                user,
+                isUserMod,
+                message,
+                reply,
+                platform,
+                context,
+              ) {
+                try {
+                  let response = await fetch("https://talkingpanda.dev/fsog");
+                  reply(
+                    `SweetbabooO_o currently has ${await response.text()} on furry shades of gay`,
+                    true,
+                  );
+                } catch {
+                  reply("Failed getting data", true);
+                }
+              },
+            },*/
             {
                 showOnChat: false,
                 command: "!settitle",
@@ -424,41 +441,54 @@ class TalkingBot {
                     reply(`Game has been changed to "${game.name}"`, true);
                 }),
             },
-            {
-                showOnChat: false,
-                command: "!adopt",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply(`${message} has been adopted by @${user}!`, true);
-                },
+            /*{
+              showOnChat: false,
+              command: "!adopt",
+      
+              commandFunction(user, isUserMod, message, reply, platform, context) {
+                reply(`${message} has been adopted by @${user}!`, true);
+              },
             },
             {
-                showOnChat: false,
-                command: "!socials",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o", true);
-                },
+              showOnChat: false,
+              command: "!socials",
+              commandFunction(user, isUserMod, message, reply, platform, context) {
+                reply(
+                  "SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o",
+                  true,
+                );
+              },
             },
             {
-                showOnChat: false,
-                command: "!yt",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ", true);
-                },
+              showOnChat: false,
+              command: "!yt",
+              commandFunction(user, isUserMod, message, reply, platform, context) {
+                reply(
+                  "SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ",
+                  true,
+                );
+              },
             },
             {
-                showOnChat: false,
-                command: "!twitch",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o", true);
-                },
+              showOnChat: false,
+              command: "!twitch",
+              commandFunction(user, isUserMod, message, reply, platform, context) {
+                reply(
+                  "SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o",
+                  true,
+                );
+              },
             },
             {
-                showOnChat: false,
-                command: "!kick",
-                commandFunction(user, isUserMod, message, reply, platform, context) {
-                    reply("SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/", true);
-                },
-            },
+              showOnChat: false,
+              command: "!kick",
+              commandFunction(user, isUserMod, message, reply, platform, context) {
+                reply(
+                  "SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/",
+                  true,
+                );
+              },
+            },*/
             {
                 showOnChat: false,
                 command: "!bsr",

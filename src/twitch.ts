@@ -458,7 +458,8 @@ export class Twitch {
             let response = (
               await replaceAsync(
                 command.response,
-                /(!?fetch)\[([^]+)\]\{([^}]+)\}?/g,
+                /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
+
                 async (
                   message: string,
                   command: string,
