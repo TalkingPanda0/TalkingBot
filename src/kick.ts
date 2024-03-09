@@ -1,5 +1,6 @@
 import WebSocket from "ws";
 import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
+import { json } from "stream/consumers";
 
 export class Kick {
   public currentPoll: Poll;
@@ -30,7 +31,7 @@ export class Kick {
 
     chat.on("close", () => {
       console.log("Connection closed for chatroom, trying to reconnect...");
-     setInterval(this.initBot,250);
+      setInterval(this.initBot, 250);
     });
 
     chat.on("message", (data: WebSocket.Data) => {
@@ -39,7 +40,6 @@ export class Kick {
         const dataString = data.toString();
         const jsonData = JSON.parse(dataString);
         const jsonDataSub = JSON.parse(jsonData.data);
-
         switch (jsonData.event) {
           case "App\\Events\\ChatMessageEvent":
             const text = jsonDataSub.content
@@ -69,16 +69,25 @@ export class Kick {
               "\x1b[32m%s\x1b[0m",
               `Kick - ${jsonDataSub.sender.username}: ${text}`,
             );
+            let replyTo = "";
+            let replyId = "";
+            // is a reply
+            if (jsonDataSub.metadata != undefined) {
+              replyTo = jsonDataSub.metadata.original_sender.username;
+              replyId = jsonDataSub.metadata.original_sender.id;
+            }
             if (!text.startsWith("!")) {
               this.bot.iochat.emit("message", {
                 text: this.parseEmotes(text),
                 sender: jsonDataSub.sender.username,
-                senderId: jsonDataSub.sender.id,
+                senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,
                 color: jsonDataSub.sender.identity.color,
                 id: "kick-" + jsonDataSub.id,
                 platform: "kick",
                 isFirst: false,
+                replyTo: replyTo,
+                replyId: "kick-" + replyId,
               });
               return;
             }
@@ -101,12 +110,14 @@ export class Kick {
               this.bot.iochat.emit("message", {
                 text: this.parseEmotes(text),
                 sender: jsonDataSub.sender.username,
-                senderId: jsonDataSub.sender.id,
+                senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,
                 color: jsonDataSub.sender.identity.color,
                 id: "kick-" + jsonDataSub.id,
                 platform: "kick",
                 isFirst: false,
+                replyTo: replyTo,
+                replyId: "kick-" + replyId,
               });
             }
             break;

@@ -10,11 +10,31 @@
     function addToMessageList(message) {
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
-      if(message.isFirst) messageElement.style = "background: rgba(176, 11, 105, 0.75)";
+      if (message.isFirst)
+        messageElement.style = "background: rgba(176, 11, 105, 0.75)";
       messageElement.id = message.id;
       messageElement.classList.add("message");
       messageElement.classList.add(message.platform);
       messageElement.classList.add(message.senderId);
+      // message is a reply
+      if (message.replyTo != "") {
+        let replyColor = "#a5a5a5";
+        const messagesOfParentSender = document.querySelectorAll(
+          `.${message.replyId} .sender`,
+        );
+
+        if (messagesOfParentSender.length != 0)
+          replyColor =
+            messagesOfParentSender[messagesOfParentSender.length - 1].style
+              .color;
+        console.log(replyColor);
+
+        const replyElement = document.createElement("span");
+        replyElement.classList.add("reply");
+        replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}</span>`;
+        messageElement.appendChild(replyElement);
+        messageElement.appendChild(document.createElement("br"));
+      }
       const badges = document.createElement("span");
       badges.classList.add("badges");
       message.badges.forEach((badge) => {
@@ -29,6 +49,7 @@
       element.style = `color:${message.color}`;
 
       element.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
+
       spanElement.appendChild(badges);
       spanElement.appendChild(element);
       messageElement.appendChild(spanElement);
@@ -93,11 +114,9 @@
 
     .text {
       color: white;
-      font-family: Arial, Helvetica, sans-serif;
     }
     .sender {
       vertical-align: middle;
-      font-family: Arial, Helvetica, sans-serif;
     }
     .badge {
       display: inline-table;
@@ -113,13 +132,20 @@
     }
     * {
       color: #fff;
-      font-family: Roboto, sans-serif;
+      font-family: Arial, Helvetica, sans-serif;
       font-size: 25px;
       font-weight: 700;
-      line-height: 1.5em;
+      line-height: 1em;
     }
     .emote {
       height: 28px;
+    }
+    .reply {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
     }
   </style>
 </html>

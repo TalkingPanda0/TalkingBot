@@ -77,6 +77,8 @@ class Twitch {
         return __awaiter(this, void 0, void 0, function* () {
             let color = message.userInfo.color;
             let badges = ["https://twitch.tv/favicon.ico"];
+            let replyTo = "";
+            let replyId = "";
             const badge = message.userInfo.badges.get("subscriber");
             if (badge != undefined) {
                 badges.push(this.badges.get(badge));
@@ -92,6 +94,11 @@ class Twitch {
                 color = userColors[parseInt(message.userInfo.userId) % userColors.length];
             }
             let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            if (message.isReply) {
+                text = text.replace(new RegExp(`@${message.parentMessageUserDisplayName}`, "i"), "");
+                replyTo = message.parentMessageUserDisplayName;
+                replyId = message.parentMessageUserId;
+            }
             let emotes = new Map();
             message.emoteOffsets.forEach((offsets, emote) => {
                 let startIndex = parseInt(offsets[0]);
@@ -106,11 +113,13 @@ class Twitch {
                 badges: badges,
                 text: text,
                 sender: message.userInfo.displayName,
-                senderId: message.userInfo.userId,
+                senderId: "twitch-" + message.userInfo.userId,
                 color: color,
                 id: "twitch-" + message.id,
                 platform: "twitch",
                 isFirst: message.isFirst,
+                replyTo: replyTo,
+                replyId: "twitch-" + replyId,
             });
         });
     }

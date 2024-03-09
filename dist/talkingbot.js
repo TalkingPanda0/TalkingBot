@@ -146,6 +146,22 @@ class TalkingBot {
         this.commandList = [
             {
                 showOnChat: false,
+                command: "!dyntitle",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (message == "stop") {
+                        clearInterval(this.dynamicTitleInterval);
+                        reply("Stopped dynamic title", true);
+                    }
+                    else {
+                        this.dynamicTitle = message;
+                        this.setDynamicTitle();
+                        this.dynamicTitleInterval = setInterval(this.setDynamicTitle, 60 * 1000);
+                        reply("Started dynamic title", true);
+                    }
+                },
+            },
+            {
+                showOnChat: false,
                 command: "!redeem",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
@@ -362,23 +378,6 @@ class TalkingBot {
                     reply(`Builtin Commands: ${builtin}, Custom Commands: ${custom}`, true);
                 },
             },
-            /*{
-              showOnChat: false,
-              command: "!lurk",
-              commandFunction: (
-                user,
-                isUserMod,
-                message,
-                reply,
-                platform,
-                context,
-              ) => {
-                reply(
-                  `@${user} is now lurking at the bottom of the fish tank`,
-                  false,
-                );
-              },
-            },*/
             {
                 showOnChat: false,
                 command: "!distance",
@@ -392,28 +391,6 @@ class TalkingBot {
                     reply(`${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `, true);
                 },
             },
-            /*{
-              showOnChat: false,
-              command: "!fsog",
-              async commandFunction(
-                user,
-                isUserMod,
-                message,
-                reply,
-                platform,
-                context,
-              ) {
-                try {
-                  let response = await fetch("https://talkingpanda.dev/fsog");
-                  reply(
-                    `SweetbabooO_o currently has ${await response.text()} on furry shades of gay`,
-                    true,
-                  );
-                } catch {
-                  reply("Failed getting data", true);
-                }
-              },
-            },*/
             {
                 showOnChat: false,
                 command: "!settitle",
@@ -591,6 +568,28 @@ class TalkingBot {
     }
     sendTTS(message) {
         this.iotts.emit("message", message);
+    }
+    setDynamicTitle() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const title = (yield replaceAsync(this.dynamicTitle, /(!?fetch)\[([^]+)\]{?(\w+)?}?/g, (message, command, url, key) => __awaiter(this, void 0, void 0, function* () {
+                const req = yield fetch(url);
+                if (command.startsWith("!"))
+                    return "";
+                if (key === undefined) {
+                    return yield req.text();
+                }
+                else {
+                    const json = yield req.json();
+                    console.log(json);
+                    return json[key];
+                }
+            }))).replace(/suffix\((\d+)\)/g, (message, number) => {
+                return getSuffix(parseInt(number));
+            });
+            this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
+                title: title,
+            });
+        });
     }
 }
 exports.TalkingBot = TalkingBot;

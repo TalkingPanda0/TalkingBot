@@ -84,6 +84,8 @@ export class Twitch {
   async sendToChatList(message: ChatMessage): Promise<void> {
     let color = message.userInfo.color;
     let badges = ["https://twitch.tv/favicon.ico"];
+    let replyTo = "";
+    let replyId = "";
 
     const badge = message.userInfo.badges.get("subscriber");
     if (badge != undefined) {
@@ -101,6 +103,14 @@ export class Twitch {
     }
 
     let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    if (message.isReply) {
+      text = text.replace(
+        new RegExp(`@${message.parentMessageUserDisplayName}`, "i"),
+        "",
+      );
+      replyTo = message.parentMessageUserDisplayName;
+      replyId = message.parentMessageUserId;
+    }
 
     let emotes: Map<string, string> = new Map<string, string>();
 
@@ -125,11 +135,13 @@ export class Twitch {
       badges: badges,
       text: text,
       sender: message.userInfo.displayName,
-      senderId: message.userInfo.userId,
+      senderId: "twitch-" + message.userInfo.userId,
       color: color,
       id: "twitch-" + message.id,
       platform: "twitch",
       isFirst: message.isFirst,
+      replyTo: replyTo,
+      replyId: "twitch-" + replyId,
     });
   }
 
