@@ -12,6 +12,7 @@ import fs, { existsSync } from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
+import { warn } from "node:console";
 const kickEmotePrefix = /sweetbabooo-o/g;
 
 export enum Platform {
@@ -161,6 +162,7 @@ export class TalkingBot {
   private iotts: Server;
   private dynamicTitle: string;
   private dynamicTitleInterval: NodeJS.Timeout;
+  private lastDynamicTitle: string;
   private readCustomCommands(): void {
     if (!existsSync("./commands.json")) return;
     this.customCommands = JSON.parse(
@@ -206,6 +208,7 @@ export class TalkingBot {
           platform,
           context,
         ) => {
+          if (!isUserMod) return;
           if (message == "stop") {
             clearInterval(this.dynamicTitleInterval);
             reply("Stopped dynamic title", true);
@@ -213,10 +216,12 @@ export class TalkingBot {
             this.dynamicTitle = message;
             this.setDynamicTitle();
             this.dynamicTitleInterval = setInterval(
-              this.setDynamicTitle,
-              60 * 1000,
+              this.setDynamicTitle.bind(this),
+              1000 * 60,
             );
-            reply("Started dynamic title", true);
+            if (this.dynamicTitleInterval != null) {
+              reply("Started dynamic title", true);
+            }
           }
         },
       },
@@ -730,12 +735,10 @@ export class TalkingBot {
         ) => {
           if (!isUserMod) return;
           if (message == "enable") {
-            this.sendTTS({ text: "Enabled TTS command!", sender: "Brian" });
             this.ttsEnabled = true;
             return;
           }
           if (message == "disable") {
-            this.sendTTS({ text: "disabled TTS command!", sender: "Brian" });
             this.ttsEnabled = false;
             return;
           }
@@ -791,6 +794,7 @@ export class TalkingBot {
     this.iotts.emit("message", message);
   }
   private async setDynamicTitle() {
+    if (this.dynamicTitle == null) return;
     const title = (
       await replaceAsync(
         this.dynamicTitle,
@@ -798,7 +802,6 @@ export class TalkingBot {
 
         async (message: string, command: string, url: string, key: string) => {
           const req = await fetch(url);
-          if (command.startsWith("!")) return "";
           if (key === undefined) {
             return await req.text();
           } else {
@@ -811,8 +814,15 @@ export class TalkingBot {
     ).replace(/suffix\((\d+)\)/g, (message: string, number: string) => {
       return getSuffix(parseInt(number));
     });
-    this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
-      title: title,
-    });
+    if (title != this.lastDynamicTitle) {
+      this.twitch.chatClient.say(
+        this.twitch.channel.name,
+        `Title has been set to ${title}`,
+      );
+      this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
+        title: title,
+      });
+      this.lastDynamicTitle = title;
+    }
   }
 }

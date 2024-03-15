@@ -148,6 +148,8 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!dyntitle",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
                     if (message == "stop") {
                         clearInterval(this.dynamicTitleInterval);
                         reply("Stopped dynamic title", true);
@@ -155,8 +157,10 @@ class TalkingBot {
                     else {
                         this.dynamicTitle = message;
                         this.setDynamicTitle();
-                        this.dynamicTitleInterval = setInterval(this.setDynamicTitle, 60 * 1000);
-                        reply("Started dynamic title", true);
+                        this.dynamicTitleInterval = setInterval(this.setDynamicTitle.bind(this), 1000 * 60);
+                        if (this.dynamicTitleInterval != null) {
+                            reply("Started dynamic title", true);
+                        }
                     }
                 },
             },
@@ -512,12 +516,10 @@ class TalkingBot {
                     if (!isUserMod)
                         return;
                     if (message == "enable") {
-                        this.sendTTS({ text: "Enabled TTS command!", sender: "Brian" });
                         this.ttsEnabled = true;
                         return;
                     }
                     if (message == "disable") {
-                        this.sendTTS({ text: "disabled TTS command!", sender: "Brian" });
                         this.ttsEnabled = false;
                         return;
                     }
@@ -571,10 +573,10 @@ class TalkingBot {
     }
     setDynamicTitle() {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.dynamicTitle == null)
+                return;
             const title = (yield replaceAsync(this.dynamicTitle, /(!?fetch)\[([^]+)\]{?(\w+)?}?/g, (message, command, url, key) => __awaiter(this, void 0, void 0, function* () {
                 const req = yield fetch(url);
-                if (command.startsWith("!"))
-                    return "";
                 if (key === undefined) {
                     return yield req.text();
                 }
@@ -586,9 +588,13 @@ class TalkingBot {
             }))).replace(/suffix\((\d+)\)/g, (message, number) => {
                 return getSuffix(parseInt(number));
             });
-            this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
-                title: title,
-            });
+            if (title != this.lastDynamicTitle) {
+                this.twitch.chatClient.say(this.twitch.channel.name, `Title has been set to ${title}`);
+                this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
+                    title: title,
+                });
+                this.lastDynamicTitle = title;
+            }
         });
     }
 }
