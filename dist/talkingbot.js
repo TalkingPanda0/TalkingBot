@@ -94,8 +94,6 @@ function removeKickEmotes(message) {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
     return message
         .replace(regex, (match, id, name) => {
-        console.log(match);
-        console.log(id);
         return name;
     })
         .replace(kickEmotePrefix, "");
@@ -257,7 +255,6 @@ class TalkingBot {
                     const followed = yield this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
                     // User is not following
                     if (followed.data.length == 0) {
-                        console.log("a");
                         reply(`You are not following ${this.twitch.channel.displayName}`, true);
                     }
                     else {
@@ -582,7 +579,6 @@ class TalkingBot {
                 }
                 else {
                     const json = yield req.json();
-                    console.log(json);
                     return json[key];
                 }
             }))).replace(/suffix\((\d+)\)/g, (message, number) => {
