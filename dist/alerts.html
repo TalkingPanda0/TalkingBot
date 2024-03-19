@@ -104,6 +104,7 @@
         const alert = alertQueue.shift();
         if (alert.viewers !== undefined) raidAlert(alert);
         else if (alert.follower !== undefined) followAlert(alert);
+        else if (alert.bits !== undefined) bitsAlert(alert);
         else subAlert(alert);
       }
       function drawRaiders(raiders, ctx) {
@@ -140,6 +141,24 @@
         };
         name.play();
       }
+      function bitsAlert(cheerInfo) {
+        isPlaying = true;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${cheerInfo.name} </span>cheered ${cheerInfo.bits}</span> `;
+        alertElement.style = "opacity: 100%;";
+        const name = getTTSAudio({
+          voice: "Brian",
+          text: `${cheerInfo.name} cheered ${cheerInfo.bits} bits: ${cheerInfo.message},`,
+        });
+        name.onended = () => {
+          alertElement.style = "opacity: 0%";
+          setTimeout(() => {
+            alertElement.innerHTML = "";
+            isPlaying = false;
+          }, 1000);
+        };
+        name.play();
+      }
+
       function raidAlert(raidInfo) {
         let raiders = [];
 

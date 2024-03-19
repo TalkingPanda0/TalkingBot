@@ -34,6 +34,7 @@ import {
   EventSubChannelFollowEvent,
   EventSubChannelPollProgressEvent,
   EventSubChannelPollEndEvent,
+  EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
 
 // Get the tokens from ../tokens.json
@@ -349,6 +350,16 @@ export class Twitch {
       },
     );
 
+    this.eventListener.onChannelCheer(
+      this.channel.id,
+      (event: EventSubChannelCheerEvent) => {
+        this.bot.ioalert.emit("alert", {
+          bits: event.bits,
+          user: event.userDisplayName,
+          message: event.message,
+        });
+      },
+    );
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
       channels: [this.channelName],
@@ -487,7 +498,6 @@ export class Twitch {
                     return await req.text();
                   } else {
                     const json = await req.json();
-                    console.log(json);
                     return json[key];
                   }
                 },

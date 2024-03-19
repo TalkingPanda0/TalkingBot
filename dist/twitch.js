@@ -262,6 +262,13 @@ class Twitch {
                     console.log(e);
                 }
             }));
+            this.eventListener.onChannelCheer(this.channel.id, (event) => {
+                this.bot.ioalert.emit("alert", {
+                    bits: event.bits,
+                    user: event.userDisplayName,
+                    message: event.message,
+                });
+            });
             this.chatClient = new chat_1.ChatClient({
                 authProvider: this.authProvider,
                 channels: [this.channelName],
@@ -349,7 +356,6 @@ class Twitch {
                             }
                             else {
                                 const json = yield req.json();
-                                console.log(json);
                                 return json[key];
                             }
                         })))
