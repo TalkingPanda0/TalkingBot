@@ -425,6 +425,40 @@ export class TalkingBot {
           this.writeCustomCommands();
         },
       },
+{
+        showOnChat: false,
+        command: "!showcmd",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          const splitMessage = message.split(" ");
+          let commandName = splitMessage[0];
+          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
+          const command: CustomCommand[] = this.customCommands.filter(
+              (element) => element.command == commandName,
+            );
+          console.log(command.length);
+          console.log(commandName);
+          console.log(this.customCommands);
+
+          if (
+            command
+          ) {
+            reply(`${command[0].command}: ${command[0].response}`,true);
+            return;
+          } else {
+            reply(`Command ${commandName} doesn't exist!`, true);
+            return;
+          }
+        },
+      },
+
       {
         showOnChat: false,
         command: "!delcmd",
