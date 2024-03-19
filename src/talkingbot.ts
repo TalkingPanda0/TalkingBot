@@ -35,6 +35,10 @@ export interface CustomCommand {
   command: string;
   response: string;
 }
+export interface CommandAlias {
+  alias: string;
+  command: string;
+}
 
 export interface TTSMessage {
   text: string;
@@ -152,6 +156,7 @@ export class TalkingBot {
   public ioalert: Server;
   public commandList: Command[] = [];
   public customCommands: CustomCommand[] = [];
+  public aliasCommands: CommandAlias[] = [];
 
   private kickId: string;
   private counter: number = 0;
@@ -166,11 +171,18 @@ export class TalkingBot {
     this.customCommands = JSON.parse(
       fs.readFileSync("./commands.json", "utf-8"),
     );
+    if (!existsSync("./aliases.json")) return;
+    this.aliasCommands = JSON.parse(fs.readFileSync("./aliases.json", "utf-8"));
   }
   private writeCustomCommands(): void {
     fs.writeFileSync(
       "./commands.json",
       JSON.stringify(this.customCommands),
+      "utf-8",
+    );
+    fs.writeFileSync(
+      "./aliases.json",
+      JSON.stringify(this.aliasCommands),
       "utf-8",
     );
   }
@@ -425,7 +437,7 @@ export class TalkingBot {
           this.writeCustomCommands();
         },
       },
-{
+      {
         showOnChat: false,
         command: "!showcmd",
         commandFunction: (
@@ -441,16 +453,10 @@ export class TalkingBot {
           let commandName = splitMessage[0];
           if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           const command: CustomCommand[] = this.customCommands.filter(
-              (element) => element.command == commandName,
-            );
-          console.log(command.length);
-          console.log(commandName);
-          console.log(this.customCommands);
-
-          if (
-            command
-          ) {
-            reply(`${command[0].command}: ${command[0].response}`,true);
+            (element) => element.command == commandName,
+          );
+          if (command) {
+            reply(`${command[0].command}: ${command[0].response}`, true);
             return;
           } else {
             reply(`Command ${commandName} doesn't exist!`, true);
@@ -516,6 +522,32 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
+        command: "!delalias",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          const oldLen = this.aliasCommands.length;
+          const alias = message.split(" ")[0];
+          this.aliasCommands = this.aliasCommands.filter(
+            (element) => element.alias != alias,
+          );
+          if (oldLen != this.aliasCommands.length) {
+            reply(`${alias} has been removed`, true);
+            this.writeCustomCommands();
+          } else {
+            reply(`${alias} is not an alias`, true);
+          }
+        },
+      },
+
+      {
+        showOnChat: false,
         command: "!aliascmd",
         commandFunction: (
           user,
@@ -528,31 +560,17 @@ export class TalkingBot {
           if (!isUserMod) return;
           const splitMessage = message.split(" ");
           const commandName = splitMessage[1];
-          const newCommand = splitMessage[0];
-          if (
-            this.customCommands.some((element) => element.command == newCommand)
-          ) {
-            reply(`${newCommand} already exists`, true);
+          const alias = splitMessage[0];
+          if (this.customCommands.some((element) => element.command == alias)) {
+            reply(`${alias} already exists`, true);
             return;
           }
 
-          for (let i = 0; i < this.customCommands.length; i++) {
-            const command = this.customCommands[i];
-            if (command.command == commandName) {
-              this.customCommands.push({
-                command: newCommand,
-                response: command.response,
-              });
-              reply(
-                `command ${newCommand} has been aliased to ${command.command}`,
-                true,
-              );
+          this.aliasCommands.push({ command: commandName, alias: alias });
 
-              this.writeCustomCommands();
-              return;
-            }
-          }
-          reply(`${commandName} is not a command`, true);
+          reply(`command ${commandName} has been aliased to ${alias}`, true);
+          this.writeCustomCommands();
+          return;
         },
       },
       {

@@ -324,9 +324,17 @@ class Twitch {
                     }
                     const name = msg.userInfo.displayName;
                     const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
+                    let commandName = text.split(" ")[0];
+                    for (let i = 0; i < this.bot.aliasCommands.length; i++) {
+                        const alias = this.bot.aliasCommands[i];
+                        if (commandName != alias.alias)
+                            continue;
+                        text = text.replace(alias.alias, alias.command);
+                        commandName = alias.command;
+                    }
                     for (let i = 0; i < this.bot.commandList.length; i++) {
                         const command = this.bot.commandList[i];
-                        if (text.split(" ")[0] != command.command)
+                        if (commandName != command.command)
                             continue;
                         command.commandFunction(name, isMod, text.replace(command.command, "").trim(), (message, replyToUser) => {
                             this.chatClient.say(channel, message, {
@@ -339,7 +347,7 @@ class Twitch {
                     }
                     for (let i = 0; i < this.bot.customCommands.length; i++) {
                         const command = this.bot.customCommands[i];
-                        if (text.split(" ")[0] != command.command)
+                        if (commandName != command.command)
                             continue;
                         const message = text.replace(command.command, "").trim();
                         const modonly = command.response.includes("(modonly)");

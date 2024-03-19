@@ -117,13 +117,18 @@ class TalkingBot {
         if (!(0, node_fs_1.existsSync)("./commands.json"))
             return;
         this.customCommands = JSON.parse(node_fs_1.default.readFileSync("./commands.json", "utf-8"));
+        if (!(0, node_fs_1.existsSync)("./aliases.json"))
+            return;
+        this.aliasCommands = JSON.parse(node_fs_1.default.readFileSync("./aliases.json", "utf-8"));
     }
     writeCustomCommands() {
         node_fs_1.default.writeFileSync("./commands.json", JSON.stringify(this.customCommands), "utf-8");
+        node_fs_1.default.writeFileSync("./aliases.json", JSON.stringify(this.aliasCommands), "utf-8");
     }
     constructor(kickId, server) {
         this.commandList = [];
         this.customCommands = [];
+        this.aliasCommands = [];
         this.counter = 0;
         this.ttsEnabled = false;
         this.server = server;
@@ -313,9 +318,6 @@ class TalkingBot {
                     if (!commandName.startsWith("!"))
                         commandName = `!${commandName}`;
                     const command = this.customCommands.filter((element) => element.command == commandName);
-                    console.log(command.length);
-                    console.log(commandName);
-                    console.log(this.customCommands);
                     if (command) {
                         reply(`${command[0].command}: ${command[0].response}`, true);
                         return;
@@ -366,30 +368,39 @@ class TalkingBot {
             },
             {
                 showOnChat: false,
+                command: "!delalias",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    const oldLen = this.aliasCommands.length;
+                    const alias = message.split(" ")[0];
+                    this.aliasCommands = this.aliasCommands.filter((element) => element.alias != alias);
+                    if (oldLen != this.aliasCommands.length) {
+                        reply(`${alias} has been removed`, true);
+                        this.writeCustomCommands();
+                    }
+                    else {
+                        reply(`${alias} is not an alias`, true);
+                    }
+                },
+            },
+            {
+                showOnChat: false,
                 command: "!aliascmd",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
                     const splitMessage = message.split(" ");
                     const commandName = splitMessage[1];
-                    const newCommand = splitMessage[0];
-                    if (this.customCommands.some((element) => element.command == newCommand)) {
-                        reply(`${newCommand} already exists`, true);
+                    const alias = splitMessage[0];
+                    if (this.customCommands.some((element) => element.command == alias)) {
+                        reply(`${alias} already exists`, true);
                         return;
                     }
-                    for (let i = 0; i < this.customCommands.length; i++) {
-                        const command = this.customCommands[i];
-                        if (command.command == commandName) {
-                            this.customCommands.push({
-                                command: newCommand,
-                                response: command.response,
-                            });
-                            reply(`command ${newCommand} has been aliased to ${command.command}`, true);
-                            this.writeCustomCommands();
-                            return;
-                        }
-                    }
-                    reply(`${commandName} is not a command`, true);
+                    this.aliasCommands.push({ command: commandName, alias: alias });
+                    reply(`command ${commandName} has been aliased to ${alias}`, true);
+                    this.writeCustomCommands();
+                    return;
                 },
             },
             {
