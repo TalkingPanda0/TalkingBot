@@ -152,6 +152,7 @@ export class TalkingBot {
   public twitch: Twitch;
   public kick: Kick;
   public iochat: Server;
+  public iomodtext: Server;
   public iopoll: Server;
   public ioalert: Server;
   public commandList: Command[] = [];
@@ -159,6 +160,7 @@ export class TalkingBot {
   public aliasCommands: CommandAlias[] = [];
 
   private kickId: string;
+  private modtext: string;
   private counter: number = 0;
   private ttsEnabled: Boolean = false;
   private server: http.Server;
@@ -190,10 +192,17 @@ export class TalkingBot {
   constructor(kickId: string, server: http.Server) {
     this.server = server;
 
+    this.iomodtext = new Server(this.server, {
+      path: "/modtext/",
+    });
+
+    this.iomodtext.on("connection", (socket) => {
+      socket.emit("message", this.modtext);
+    });
+
     this.iotts = new Server(this.server, {
       path: "/tts/",
     });
-
     this.iochat = new Server(this.server, {
       path: "/chat/",
     });
@@ -207,6 +216,22 @@ export class TalkingBot {
 
     this.readCustomCommands();
     this.commandList = [
+      {
+        showOnChat: false,
+        command: "!modtext",
+        commandFunction: (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+          if (!isUserMod) return;
+          this.modtext = message;
+          this.iomodtext.emit("message", message);
+        },
+      },
       {
         showOnChat: false,
         command: "!dyntitle",

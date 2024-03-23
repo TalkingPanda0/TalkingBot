@@ -314,6 +314,7 @@ class Twitch {
             });
             this.chatClient.onMessage((channel, user, text, msg) => __awaiter(this, void 0, void 0, function* () {
                 try {
+                    text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                     if (user === "botrixoficial")
                         return;
                     console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);

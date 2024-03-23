@@ -13,6 +13,9 @@ app.use(express.static("public"));
 app.get("/tts", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/tts.html");
 });
+app.get("/modtext", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/modtext.html");
+});
 app.get("/alerts", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/alerts.html");
 });

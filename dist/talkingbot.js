@@ -132,6 +132,12 @@ class TalkingBot {
         this.counter = 0;
         this.ttsEnabled = false;
         this.server = server;
+        this.iomodtext = new socket_io_1.Server(this.server, {
+            path: "/modtext/",
+        });
+        this.iomodtext.on("connection", (socket) => {
+            socket.emit("message", this.modtext);
+        });
         this.iotts = new socket_io_1.Server(this.server, {
             path: "/tts/",
         });
@@ -147,6 +153,16 @@ class TalkingBot {
         this.kickId = kickId;
         this.readCustomCommands();
         this.commandList = [
+            {
+                showOnChat: false,
+                command: "!modtext",
+                commandFunction: (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    this.modtext = message;
+                    this.iomodtext.emit("message", message);
+                },
+            },
             {
                 showOnChat: false,
                 command: "!dyntitle",

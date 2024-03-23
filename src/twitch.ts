@@ -438,6 +438,7 @@ export class Twitch {
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
+          text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
           if (user === "botrixoficial") return;
 
           console.log(

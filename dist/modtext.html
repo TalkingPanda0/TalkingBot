@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <body>
+    <div id="text"></div>
+  </body>
+
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+
+  <script>
+    const text = document.getElementById("text");
+
+    var socket = io("/", { path: "/modtext/" });
+
+    socket.on("message", (message) => {
+      console.log("GOT MESSAGE:", message);
+      text.innerText = message;
+    });
+    </script>
+  <style>
+    * {
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1em;
+    }
+     </style>
+</html>
