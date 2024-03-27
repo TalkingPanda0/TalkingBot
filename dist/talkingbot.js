@@ -94,7 +94,8 @@ function removeKickEmotes(message) {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
     return message
         .replace(regex, (match, id, name) => {
-        return name;
+        console.log(`${match} ${id} ${name}`);
+        return name + " ";
     })
         .replace(kickEmotePrefix, "");
 }
