@@ -38,11 +38,13 @@ const kick_1 = require("./kick");
 const stars_1 = require("./stars");
 const node_fs_1 = __importStar(require("node:fs"));
 const socket_io_1 = require("socket.io");
+const youtube_1 = require("./youtube");
 const kickEmotePrefix = /sweetbabooo-o/g;
 var Platform;
 (function (Platform) {
     Platform[Platform["twitch"] = 0] = "twitch";
     Platform[Platform["kick"] = 1] = "kick";
+    Platform[Platform["youtube"] = 2] = "youtube";
 })(Platform || (exports.Platform = Platform = {}));
 function getTimeDifference(startDate, endDate) {
     const timeDifference = endDate.getTime() - startDate.getTime();
@@ -577,8 +579,10 @@ class TalkingBot {
         ];
         this.twitch = new twitch_1.Twitch(this);
         this.kick = new kick_1.Kick(this.kickId, this);
+        this.youTube = new youtube_1.YouTube("LofiGirl", this);
     }
     initBot() {
+        this.youTube.initBot();
         this.twitch.initBot().then(() => {
             this.kick.initBot();
         });

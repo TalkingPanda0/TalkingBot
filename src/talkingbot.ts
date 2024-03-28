@@ -12,12 +12,13 @@ import fs, { existsSync } from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
-import { warn } from "node:console";
+import { YouTube } from "./youtube";
 const kickEmotePrefix = /sweetbabooo-o/g;
 
 export enum Platform {
   twitch,
   kick,
+  youtube,
 }
 export interface Command {
   command: string;
@@ -129,7 +130,7 @@ function removeKickEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
     .replace(regex, (match, id, name) => {
-      console.log(`${match} ${id} ${name}`)
+      console.log(`${match} ${id} ${name}`);
       return name + " ";
     })
     .replace(kickEmotePrefix, "");
@@ -151,6 +152,7 @@ export function getSuffix(i: number) {
 
 export class TalkingBot {
   public twitch: Twitch;
+  public youTube: YouTube;
   public kick: Kick;
   public iochat: Server;
   public iomodtext: Server;
@@ -823,8 +825,10 @@ export class TalkingBot {
 
     this.twitch = new Twitch(this);
     this.kick = new Kick(this.kickId, this);
+    this.youTube = new YouTube("sweetbaboostreams1351", this);
   }
   public initBot() {
+    this.youTube.initBot();
     this.twitch.initBot().then(() => {
       this.kick.initBot();
     });

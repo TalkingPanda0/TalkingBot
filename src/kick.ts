@@ -24,7 +24,7 @@ export class Kick {
         }),
       );
 
-      console.log("\x1b[32m%s\x1b[0m", "Kick Setup Complete");
+      console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
     });
 
     chat.on("error", console.error);
