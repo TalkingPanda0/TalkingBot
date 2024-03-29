@@ -330,7 +330,7 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          if (platform == Platform.kick) return;
+          if (platform != Platform.twitch) return;
           const stream = await this.twitch.apiClient.streams.getStreamByUserId(
             this.twitch.channel.id,
           );
@@ -365,7 +365,7 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          if (platform == Platform.kick) return;
+          if (platform != Platform.twitch) return;
           const stream = await this.twitch.apiClient.streams.getStreamByUserId(
             this.twitch.channel.id,
           );
@@ -390,7 +390,7 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          if (platform == Platform.kick) return;
+          if (platform != Platform.twitch) return;
           const followed =
             await this.twitch.apiClient.channels.getChannelFollowers(
               this.twitch.channel.id,
@@ -774,28 +774,27 @@ export class TalkingBot {
           context?: ChatMessage,
         ): void | Promise<void> => {
           if (!isUserMod && !this.ttsEnabled) return;
-          if (platform == Platform.twitch && context != null) {
-            let msg = message.trim();
+          switch (platform) {
+            case Platform.twitch:
+              if (context == null) break;
+              let msg = message.trim();
 
-            var indexes: number[] = [];
-            context.emoteOffsets.forEach((emote) => {
-              emote.forEach((index) => {
-                indexes.push(parseInt(index) - "!tts ".length);
+              var indexes: number[] = [];
+              context.emoteOffsets.forEach((emote) => {
+                emote.forEach((index) => {
+                  indexes.push(parseInt(index) - "!tts ".length);
+                });
               });
-            });
-            msg = removeByIndexToUppercase(msg, indexes);
-            let ttsMessage: TTSMessage = {
-              text: msg,
-              sender: user,
-            };
+              msg = removeByIndexToUppercase(msg, indexes);
+              this.sendTTS({ text: msg, sender: user });
 
-            this.sendTTS(ttsMessage);
-          } else if (platform == Platform.kick) {
-            const ttsMessage = {
-              text: removeKickEmotes(message),
-              sender: user,
-            };
-            this.sendTTS(ttsMessage);
+              break;
+            case Platform.kick:
+              this.sendTTS({ text: removeKickEmotes(message), sender: user });
+              break;
+            default:
+              this.sendTTS({ text: message, sender: user });
+              break;
           }
         },
       },

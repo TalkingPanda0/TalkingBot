@@ -234,7 +234,7 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!uptime",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (platform == Platform.kick)
+                    if (platform != Platform.twitch)
                         return;
                     const stream = yield this.twitch.apiClient.streams.getStreamByUserId(this.twitch.channel.id);
                     if (stream == null) {
@@ -260,7 +260,7 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!status",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (platform == Platform.kick)
+                    if (platform != Platform.twitch)
                         return;
                     const stream = yield this.twitch.apiClient.streams.getStreamByUserId(this.twitch.channel.id);
                     if (stream == null) {
@@ -274,7 +274,7 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!followage",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
-                    if (platform == Platform.kick)
+                    if (platform != Platform.twitch)
                         return;
                     const followed = yield this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
                     // User is not following
@@ -536,27 +536,26 @@ class TalkingBot {
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod && !this.ttsEnabled)
                         return;
-                    if (platform == Platform.twitch && context != null) {
-                        let msg = message.trim();
-                        var indexes = [];
-                        context.emoteOffsets.forEach((emote) => {
-                            emote.forEach((index) => {
-                                indexes.push(parseInt(index) - "!tts ".length);
+                    switch (platform) {
+                        case Platform.twitch:
+                            if (context == null)
+                                break;
+                            let msg = message.trim();
+                            var indexes = [];
+                            context.emoteOffsets.forEach((emote) => {
+                                emote.forEach((index) => {
+                                    indexes.push(parseInt(index) - "!tts ".length);
+                                });
                             });
-                        });
-                        msg = removeByIndexToUppercase(msg, indexes);
-                        let ttsMessage = {
-                            text: msg,
-                            sender: user,
-                        };
-                        this.sendTTS(ttsMessage);
-                    }
-                    else if (platform == Platform.kick) {
-                        const ttsMessage = {
-                            text: removeKickEmotes(message),
-                            sender: user,
-                        };
-                        this.sendTTS(ttsMessage);
+                            msg = removeByIndexToUppercase(msg, indexes);
+                            this.sendTTS({ text: msg, sender: user });
+                            break;
+                        case Platform.kick:
+                            this.sendTTS({ text: removeKickEmotes(message), sender: user });
+                            break;
+                        default:
+                            this.sendTTS({ text: message, sender: user });
+                            break;
                     }
                 },
             },
@@ -579,7 +578,7 @@ class TalkingBot {
         ];
         this.twitch = new twitch_1.Twitch(this);
         this.kick = new kick_1.Kick(this.kickId, this);
-        this.youTube = new youtube_1.YouTube("LofiGirl", this);
+        this.youTube = new youtube_1.YouTube("sweetbaboostreams1351", this);
     }
     initBot() {
         this.youTube.initBot();
