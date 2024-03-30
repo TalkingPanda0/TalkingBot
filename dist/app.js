@@ -92,8 +92,10 @@ if (!node_fs_1.default.existsSync("./token-bot.json") ||
     });
 }
 else {
+    console.profile();
     bot.twitch.readAuth();
     bot.initBot();
+    setTimeout(() => { console.profileEnd(); console.log("done!"); }, 30000);
 }
 server.listen(3000, () => {
     console.log("listening on *:3000");

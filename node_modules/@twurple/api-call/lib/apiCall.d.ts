@@ -12,8 +12,9 @@ import type { TwitchApiCallFetchOptions, TwitchApiCallOptions } from './TwitchAp
  *
  * Defaults to "Bearer" for Helix and "OAuth" for everything else.
  * @param fetchOptions Additional options to be passed to the `fetch` function.
+ * @param mockServerPort
  */
-export declare function callTwitchApiRaw(options: TwitchApiCallOptions, clientId?: string, accessToken?: string, authorizationType?: string, fetchOptions?: TwitchApiCallFetchOptions): Promise<Response>;
+export declare function callTwitchApiRaw(options: TwitchApiCallOptions, clientId?: string, accessToken?: string, authorizationType?: string, fetchOptions?: TwitchApiCallFetchOptions, mockServerPort?: number): Promise<Response>;
 /**
  * Makes a call to the Twitch API using given credentials.
  *

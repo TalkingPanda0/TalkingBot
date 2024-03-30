@@ -6,7 +6,7 @@ export class Kick {
   public currentPoll: Poll;
   private channelId: string;
   private bot: TalkingBot;
-  
+  private chat: WebSocket;
 
   constructor(channelId: string, bot: TalkingBot) {
     this.channelId = channelId;
@@ -14,11 +14,11 @@ export class Kick {
   }
 
   public initBot() {
-    let chat = new WebSocket(
+    this.chat = new WebSocket(
       "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false",
     );
-    chat.on("open", () => {
-      chat.send(
+    this.chat.on("open", () => {
+      this.chat.send(
         JSON.stringify({
           event: "pusher:subscribe",
           data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
@@ -28,15 +28,18 @@ export class Kick {
       console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
     });
 
-    chat.on("error", console.error);
+    this.chat.on("error", console.error);
 
-    chat.on("close", () => {
-      console.log("\x1b[32m%s\x1b[0m","Connection closed for chatroom, trying to reconnect...");
-      chat = null;
-      setInterval(() => this.initBot(), 250);
+    this.chat.on("close", () => {
+      console.log(
+        "\x1b[32m%s\x1b[0m",
+        "Connection closed for chatroom, trying to reconnect...",
+      );
+      this.chat = null;
+      setTimeout(() => this.initBot(), 10000);
     });
 
-    chat.on("message", (data: WebSocket.Data) => {
+    this.chat.on("message", (data: WebSocket.Data) => {
       try {
         const badges = ["https://kick.com/favicon.ico"];
         const dataString = data.toString();

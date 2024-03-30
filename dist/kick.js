@@ -12,20 +12,21 @@ class Kick {
         this.bot = bot;
     }
     initBot() {
-        const chat = new ws_1.default("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false");
-        chat.on("open", () => {
-            chat.send(JSON.stringify({
+        this.chat = new ws_1.default("wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false");
+        this.chat.on("open", () => {
+            this.chat.send(JSON.stringify({
                 event: "pusher:subscribe",
                 data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
             }));
             console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
         });
-        chat.on("error", console.error);
-        chat.on("close", () => {
+        this.chat.on("error", console.error);
+        this.chat.on("close", () => {
             console.log("\x1b[32m%s\x1b[0m", "Connection closed for chatroom, trying to reconnect...");
-            setInterval(() => this.initBot(), 250);
+            this.chat = null;
+            setTimeout(() => this.initBot(), 10000);
         });
-        chat.on("message", (data) => {
+        this.chat.on("message", (data) => {
             try {
                 const badges = ["https://kick.com/favicon.ico"];
                 const dataString = data.toString();

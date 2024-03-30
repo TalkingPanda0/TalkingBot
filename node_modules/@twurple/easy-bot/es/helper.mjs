@@ -33,6 +33,10 @@ export function createBotCommand(commandName, handler, options = {}) {
                 }
             }, ((_a = this._options.cooldownCleanupRate) !== null && _a !== void 0 ? _a : 600) * 1000).unref();
         }
+        get aliases() {
+            var _a;
+            return (_a = options.aliases) !== null && _a !== void 0 ? _a : [];
+        }
         canExecute(channelId, userId) {
             const now = Date.now();
             if (options.globalCooldown) {

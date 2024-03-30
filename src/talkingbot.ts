@@ -1,7 +1,8 @@
 import { ChatMessage } from "@twurple/chat";
-import { Twitch } from "./twitch";
-import { Kick } from "./kick";
 import { HelixGame } from "@twurple/api";
+import { Twitch } from "./twitch";
+import { YouTube } from "./youtube";
+import { Kick } from "./kick";
 import {
   Star,
   findClosestStar,
@@ -12,7 +13,6 @@ import fs, { existsSync } from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
-import { YouTube } from "./youtube";
 const kickEmotePrefix = /sweetbabooo-o/g;
 
 export enum Platform {

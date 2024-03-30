@@ -1,8 +1,16 @@
 /** @internal */
-export function getTwitchApiUrl(url, type) {
+export function getTwitchApiUrl(url, type, mockServerPort) {
     switch (type) {
-        case 'helix':
-            return `https://api.twitch.tv/helix/${url.replace(/^\//, '')}`;
+        case 'helix': {
+            const unprefixedUrl = url.replace(/^\//, '');
+            if (mockServerPort) {
+                if (unprefixedUrl === 'eventsub/subscriptions') {
+                    return `http://localhost:${mockServerPort}/${unprefixedUrl}`;
+                }
+                return `http://localhost:${mockServerPort}/mock/${unprefixedUrl}`;
+            }
+            return `https://api.twitch.tv/helix/${unprefixedUrl}`;
+        }
         case 'auth':
             return `https://id.twitch.tv/oauth2/${url.replace(/^\//, '')}`;
         case 'custom':
