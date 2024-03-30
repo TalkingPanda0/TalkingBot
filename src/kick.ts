@@ -30,8 +30,8 @@ export class Kick {
     chat.on("error", console.error);
 
     chat.on("close", () => {
-      console.log("Connection closed for chatroom, trying to reconnect...");
-      setInterval(this.initBot, 250);
+      console.log("\x1b[32m%s\x1b[0m","Connection closed for chatroom, trying to reconnect...");
+      setInterval(() => this.initBot(), 250);
     });
 
     chat.on("message", (data: WebSocket.Data) => {

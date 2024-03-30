@@ -17,7 +17,7 @@ class YouTube {
         return __awaiter(this, void 0, void 0, function* () {
             this.chat.connect(this.channelName);
             this.chat.on("chat_connected", (channel, videoId) => {
-                console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete`);
+                console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
             });
             this.chat.on("message", ({ badges, channel, channelId, color, id, isMembership, isModerator, isNewMember, isOwner, isVerified, message, name, thumbnail, timestamp, }) => __awaiter(this, void 0, void 0, function* () {
                 try {
@@ -25,11 +25,15 @@ class YouTube {
                     const isMod = isModerator || isOwner;
                     if (text == null)
                         return;
-                    console.log("\x1b[31m%s\x1b[0m", `Youtube - ${name}: ${text}`);
+                    console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
+                    let badgeList = ["https://www.youtube.com/favicon.ico"];
+                    if (badges.moderator) {
+                        badgeList.push(badges.thumbnail.url);
+                    }
                     if (!text.startsWith("!")) {
                         // not a command!
                         this.bot.iochat.emit("message", {
-                            badges: ["https://www.youtube.com/favicon.ico"],
+                            badges: badgeList,
                             text: text,
                             sender: name,
                             senderId: "youtube",
