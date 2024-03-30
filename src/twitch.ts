@@ -58,6 +58,29 @@ const userColors = [
   "#8a2be2",
   "#00ff7f",
 ];
+export function parseTwitchEmotes(
+  text: string,
+  emoteOffsets: Map<String, String[]>,
+): string {
+  let emotes: Map<string, string> = new Map<string, string>();
+
+  emoteOffsets.forEach((offsets: string[], emote: string) => {
+    let startIndex = parseInt(offsets[0]);
+    let endIndex = parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
+    let emoteString = text.slice(startIndex, endIndex);
+    emotes.set(
+      emoteString,
+      `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`,
+    );
+  });
+  emotes.forEach((emoteUrl: string, emote: string) => {
+    text = text.replace(
+      new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"),
+      `<img src=${emoteUrl} class="emote" />`,
+    );
+  });
+  return text;
+}
 
 export class Twitch {
   public clientId: string = "";
@@ -112,25 +135,7 @@ export class Twitch {
       replyTo = message.parentMessageUserDisplayName;
       replyId = message.parentMessageUserId;
     }
-
-    let emotes: Map<string, string> = new Map<string, string>();
-
-    message.emoteOffsets.forEach((offsets: string[], emote: string) => {
-      let startIndex = parseInt(offsets[0]);
-      let endIndex =
-        parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
-      let emoteString = text.slice(startIndex, endIndex);
-      emotes.set(
-        emoteString,
-        `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`,
-      );
-    });
-    emotes.forEach((emoteUrl: string, emote: string) => {
-      text = text.replace(
-        new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"),
-        `<img src=${emoteUrl} class="emote" />`,
-      );
-    });
+    text = parseTwitchEmotes(text, message.emoteOffsets);
 
     this.bot.iochat.emit("message", {
       badges: badges,

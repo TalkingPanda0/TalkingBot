@@ -1,6 +1,6 @@
 import { ChatMessage } from "@twurple/chat";
 import { HelixGame } from "@twurple/api";
-import { Twitch } from "./twitch";
+import { Twitch, parseTwitchEmotes } from "./twitch";
 import { YouTube } from "./youtube";
 import { Kick } from "./kick";
 import {
@@ -232,6 +232,11 @@ export class TalkingBot {
         ) => {
           if (!isUserMod) return;
           this.modtext = message;
+          message = parseTwitchEmotes(
+            "!modtext " + message,
+            context.emoteOffsets,
+          );
+          message = message.replace("!modtext", "");
           this.iomodtext.emit("message", message);
         },
       },

@@ -32,7 +32,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Twitch = void 0;
+exports.Twitch = exports.parseTwitchEmotes = void 0;
 const auth_1 = require("@twurple/auth");
 const chat_1 = require("@twurple/chat");
 const api_1 = require("@twurple/api");
@@ -60,6 +60,20 @@ const userColors = [
     "#8a2be2",
     "#00ff7f",
 ];
+function parseTwitchEmotes(text, emoteOffsets) {
+    let emotes = new Map();
+    emoteOffsets.forEach((offsets, emote) => {
+        let startIndex = parseInt(offsets[0]);
+        let endIndex = parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
+        let emoteString = text.slice(startIndex, endIndex);
+        emotes.set(emoteString, `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`);
+    });
+    emotes.forEach((emoteUrl, emote) => {
+        text = text.replace(new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), `<img src=${emoteUrl} class="emote" />`);
+    });
+    return text;
+}
+exports.parseTwitchEmotes = parseTwitchEmotes;
 class Twitch {
     constructor(bot) {
         this.clientId = "";
@@ -99,16 +113,7 @@ class Twitch {
                 replyTo = message.parentMessageUserDisplayName;
                 replyId = message.parentMessageUserId;
             }
-            let emotes = new Map();
-            message.emoteOffsets.forEach((offsets, emote) => {
-                let startIndex = parseInt(offsets[0]);
-                let endIndex = parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
-                let emoteString = text.slice(startIndex, endIndex);
-                emotes.set(emoteString, `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`);
-            });
-            emotes.forEach((emoteUrl, emote) => {
-                text = text.replace(new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), `<img src=${emoteUrl} class="emote" />`);
-            });
+            text = parseTwitchEmotes(text, message.emoteOffsets);
             this.bot.iochat.emit("message", {
                 badges: badges,
                 text: text,

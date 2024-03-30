@@ -34,11 +34,11 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TalkingBot = exports.getSuffix = exports.replaceAsync = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
+const youtube_1 = require("./youtube");
 const kick_1 = require("./kick");
 const stars_1 = require("./stars");
 const node_fs_1 = __importStar(require("node:fs"));
 const socket_io_1 = require("socket.io");
-const youtube_1 = require("./youtube");
 const kickEmotePrefix = /sweetbabooo-o/g;
 var Platform;
 (function (Platform) {
@@ -163,6 +163,8 @@ class TalkingBot {
                     if (!isUserMod)
                         return;
                     this.modtext = message;
+                    message = (0, twitch_1.parseTwitchEmotes)("!modtext " + message, context.emoteOffsets);
+                    message = message.replace("!modtext", "");
                     this.iomodtext.emit("message", message);
                 },
             },

@@ -33,16 +33,13 @@ export class YouTube {
           let text = message.at(0).text;
           const isMod = isModerator || isOwner;
           if (text == null) return;
+          if(name === "BotRix") return;
           console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
-          let badgeList = ["https://www.youtube.com/favicon.ico"];
-          if (badges.moderator) {
-            badgeList.push(badges.thumbnail.url);
-          }
 
           if (!text.startsWith("!")) {
             // not a command!
             this.bot.iochat.emit("message", {
-              badges: badgeList,
+              badges: ["https://www.youtube.com/favicon.ico"],
               text: text,
               sender: name,
               senderId: "youtube",
