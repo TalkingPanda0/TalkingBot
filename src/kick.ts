@@ -6,6 +6,7 @@ export class Kick {
   public currentPoll: Poll;
   private channelId: string;
   private bot: TalkingBot;
+  
 
   constructor(channelId: string, bot: TalkingBot) {
     this.channelId = channelId;
@@ -13,7 +14,7 @@ export class Kick {
   }
 
   public initBot() {
-    const chat = new WebSocket(
+    let chat = new WebSocket(
       "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false",
     );
     chat.on("open", () => {
@@ -31,6 +32,7 @@ export class Kick {
 
     chat.on("close", () => {
       console.log("\x1b[32m%s\x1b[0m","Connection closed for chatroom, trying to reconnect...");
+      chat = null;
       setInterval(() => this.initBot(), 250);
     });
 
