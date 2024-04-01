@@ -162,9 +162,14 @@ class TalkingBot {
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod)
                         return;
+                    if (platform == Platform.twitch) {
+                        message = (0, twitch_1.parseTwitchEmotes)("!modtext " + message, context.emoteOffsets);
+                        message = message.replace("!modtext", "");
+                    }
+                    else if (platform == Platform.kick) {
+                        message = (0, kick_1.parseKickEmotes)(message);
+                    }
                     this.modtext = message;
-                    message = (0, twitch_1.parseTwitchEmotes)("!modtext " + message, context.emoteOffsets);
-                    message = message.replace("!modtext", "");
                     this.iomodtext.emit("message", message);
                 },
             },

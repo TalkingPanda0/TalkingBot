@@ -417,7 +417,7 @@ export class Twitch {
       },
     );
     this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
-      this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+      this.bot.iochat.emit("banUser", `twitch-${msg.tags.get("target-user-id")}`);
       this.chatClient.say(
         this.channelName,
         `@${user} has been banished to the nut room.`,
@@ -425,7 +425,7 @@ export class Twitch {
     });
     this.chatClient.onTimeout(
       (channel: string, user: string, duration: number, msg: ClearChat) => {
-        this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+        this.bot.iochat.emit("banUser", `twitch-${msg.tags.get("target-user-id")}`);
         this.chatClient.say(
           this.channelName,
           `@${user} has been banished to the nut room.`,

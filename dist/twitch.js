@@ -304,11 +304,11 @@ class Twitch {
                 });
             });
             this.chatClient.onBan((channel, user, msg) => {
-                this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+                this.bot.iochat.emit("banUser", `twitch-${msg.tags.get("target-user-id")}`);
                 this.chatClient.say(this.channelName, `@${user} has been banished to the nut room.`);
             });
             this.chatClient.onTimeout((channel, user, duration, msg) => {
-                this.bot.iochat.emit("banUser", msg.tags.get("target-user-id"));
+                this.bot.iochat.emit("banUser", `twitch-${msg.tags.get("target-user-id")}`);
                 this.chatClient.say(this.channelName, `@${user} has been banished to the nut room.`);
             });
             this.chatClient.onMessageRemove((channel, messageId, msg) => {

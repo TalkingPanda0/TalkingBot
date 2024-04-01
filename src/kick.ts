@@ -2,6 +2,15 @@ import WebSocket from "ws";
 import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
 import { json } from "stream/consumers";
 
+export function parseKickEmotes(message: string) {
+  const regex = /\[emote:(\d+):([^\]]+)\]/g;
+  return message.replace(
+    regex,
+    (match, id, name) =>
+      `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
+  );
+}
+
 export class Kick {
   public currentPoll: Poll;
   private channelId: string;
@@ -83,7 +92,7 @@ export class Kick {
             }
             if (!text.startsWith("!")) {
               this.bot.iochat.emit("message", {
-                text: this.parseEmotes(text),
+                text: parseKickEmotes(text),
                 sender: jsonDataSub.sender.username,
                 senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,
@@ -113,7 +122,7 @@ export class Kick {
               );
               if (!command.showOnChat) return;
               this.bot.iochat.emit("message", {
-                text: this.parseEmotes(text),
+                text: parseKickEmotes(text),
                 sender: jsonDataSub.sender.username,
                 senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,
@@ -136,7 +145,7 @@ export class Kick {
             this.bot.iochat.emit("clearChat", "kick");
             break;
           case "App\\Events\\UserBannedEvent":
-            this.bot.iochat.emit("banUser", jsonDataSub.user.id);
+            this.bot.iochat.emit("banUser", `kick-${jsonDataSub.user.id}`);
             break;
           case "App\\Events\\PollUpdateEvent":
             this.currentPoll = jsonDataSub.poll;
@@ -167,13 +176,5 @@ export class Kick {
         console.log(error);
       }
     });
-  }
-  private parseEmotes(message: string) {
-    const regex = /\[emote:(\d+):([^\]]+)\]/g;
-    return message.replace(
-      regex,
-      (match, id, name) =>
-        `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
-    );
   }
 }

@@ -2,7 +2,7 @@ import { ChatMessage } from "@twurple/chat";
 import { HelixGame } from "@twurple/api";
 import { Twitch, parseTwitchEmotes } from "./twitch";
 import { YouTube } from "./youtube";
-import { Kick } from "./kick";
+import { Kick, parseKickEmotes } from "./kick";
 import {
   Star,
   findClosestStar,
@@ -231,12 +231,16 @@ export class TalkingBot {
           context,
         ) => {
           if (!isUserMod) return;
+          if (platform == Platform.twitch) {
+            message = parseTwitchEmotes(
+              "!modtext " + message,
+              context.emoteOffsets,
+            );
+            message = message.replace("!modtext", "");
+          } else if (platform == Platform.kick) {
+            message = parseKickEmotes(message);
+          }
           this.modtext = message;
-          message = parseTwitchEmotes(
-            "!modtext " + message,
-            context.emoteOffsets,
-          );
-          message = message.replace("!modtext", "");
           this.iomodtext.emit("message", message);
         },
       },

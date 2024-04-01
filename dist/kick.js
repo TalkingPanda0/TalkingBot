@@ -3,9 +3,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Kick = void 0;
+exports.Kick = exports.parseKickEmotes = void 0;
 const ws_1 = __importDefault(require("ws"));
 const talkingbot_1 = require("./talkingbot");
+function parseKickEmotes(message) {
+    const regex = /\[emote:(\d+):([^\]]+)\]/g;
+    return message.replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`);
+}
+exports.parseKickEmotes = parseKickEmotes;
 class Kick {
     constructor(channelId, bot) {
         this.channelId = channelId;
@@ -64,7 +69,7 @@ class Kick {
                         }
                         if (!text.startsWith("!")) {
                             this.bot.iochat.emit("message", {
-                                text: this.parseEmotes(text),
+                                text: parseKickEmotes(text),
                                 sender: jsonDataSub.sender.username,
                                 senderId: "kick-" + jsonDataSub.sender.id,
                                 badges: badges,
@@ -88,7 +93,7 @@ class Kick {
                             if (!command.showOnChat)
                                 return;
                             this.bot.iochat.emit("message", {
-                                text: this.parseEmotes(text),
+                                text: parseKickEmotes(text),
                                 sender: jsonDataSub.sender.username,
                                 senderId: "kick-" + jsonDataSub.sender.id,
                                 badges: badges,
@@ -108,7 +113,7 @@ class Kick {
                         this.bot.iochat.emit("clearChat", "kick");
                         break;
                     case "App\\Events\\UserBannedEvent":
-                        this.bot.iochat.emit("banUser", jsonDataSub.user.id);
+                        this.bot.iochat.emit("banUser", `kick-${jsonDataSub.user.id}`);
                         break;
                     case "App\\Events\\PollUpdateEvent":
                         this.currentPoll = jsonDataSub.poll;
@@ -133,10 +138,6 @@ class Kick {
                 console.log(error);
             }
         });
-    }
-    parseEmotes(message) {
-        const regex = /\[emote:(\d+):([^\]]+)\]/g;
-        return message.replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`);
     }
 }
 exports.Kick = Kick;
