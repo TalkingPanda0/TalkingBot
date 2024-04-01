@@ -108,12 +108,12 @@ class Twitch {
                 color = userColors[parseInt(message.userInfo.userId) % userColors.length];
             }
             let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            text = parseTwitchEmotes(text, message.emoteOffsets);
             if (message.isReply) {
                 text = text.replace(new RegExp(`@${message.parentMessageUserDisplayName}`, "i"), "");
                 replyTo = message.parentMessageUserDisplayName;
                 replyId = message.parentMessageUserId;
             }
-            text = parseTwitchEmotes(text, message.emoteOffsets);
             this.bot.iochat.emit("message", {
                 badges: badges,
                 text: text,
