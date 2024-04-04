@@ -10,6 +10,8 @@
     const messageList = document.getElementById("message-list");
 
     function addToMessageList(message) {
+      // Don't add if a message with the same id already exits
+      if(document.getElementById(message.id)) return;
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
       if (message.isFirst)
