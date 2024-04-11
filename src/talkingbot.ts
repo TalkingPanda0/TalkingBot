@@ -1,6 +1,7 @@
 import { ChatMessage } from "@twurple/chat";
 import { HelixGame } from "@twurple/api";
 import { Twitch, parseTwitchEmotes } from "./twitch";
+import { Discord } from "./discord";
 import { YouTube } from "./youtube";
 import { Kick, parseKickEmotes } from "./kick";
 import {
@@ -151,6 +152,7 @@ export function getSuffix(i: number) {
 }
 
 export class TalkingBot {
+  public discord: Discord;
   public twitch: Twitch;
   public youTube: YouTube;
   public kick: Kick;
@@ -834,8 +836,10 @@ export class TalkingBot {
     this.twitch = new Twitch(this);
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
+    this.discord = new Discord();
   }
   public initBot() {
+    this.discord.initBot();
     this.youTube.initBot();
     this.twitch.initBot().then(() => {
       this.kick.initBot();

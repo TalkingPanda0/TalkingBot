@@ -1,10 +1,22 @@
 import { time } from "console";
 import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
+import { userColors } from "./twitch";
 export class YouTube {
   private bot: TalkingBot;
   private chat: TubeChat;
   private channelName: string;
+  private getColor(username: string): string {
+    let hash = 0,
+      i: number,
+      chr: number;
+    for (i = 0; i < username.length; i++) {
+      chr = username.charCodeAt(i);
+      hash = (hash << 5) - hash + chr;
+      hash |= 0; // Convert to 32bit integer
+    }
+    return userColors[hash % userColors.length];
+  }
   public async initBot() {
     this.chat.connect(this.channelName);
     this.chat.on("chat_connected", (channel, videoId) => {
@@ -33,11 +45,12 @@ export class YouTube {
           let text = message.at(0).text;
           const isMod = isModerator || isOwner;
           if (text == null) return;
-          if(name === "BotRix") return;
+          if (name === "BotRix") return;
           console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
 
           if (!text.startsWith("!")) {
             // not a command!
+            color = this.getColor(name);
             this.bot.iochat.emit("message", {
               badges: ["https://www.youtube.com/favicon.ico"],
               text: text,
@@ -74,6 +87,7 @@ export class YouTube {
               Platform.youtube,
             );
             if (command.showOnChat) {
+              color = this.getColor(name);
               this.bot.iochat.emit("message", {
                 badges: ["https://www.youtube.com/favicon.ico"],
                 text: text,

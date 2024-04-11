@@ -17,6 +17,7 @@ const emoteSoundEffects = {
   Silly: "silly.mp3",
   realBoo: "realboo.mp3",
   Shy: "uwu.mp3",
+  Sexy: "sexy.mp3"
 };
 
 let queue = [];

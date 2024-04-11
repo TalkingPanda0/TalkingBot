@@ -12,6 +12,10 @@ function parseKickEmotes(message) {
 }
 exports.parseKickEmotes = parseKickEmotes;
 class Kick {
+    currentPoll;
+    channelId;
+    bot;
+    chat;
     constructor(channelId, bot) {
         this.channelId = channelId;
         this.bot = bot;
@@ -36,6 +40,8 @@ class Kick {
                 const badges = ["https://kick.com/favicon.ico"];
                 const dataString = data.toString();
                 const jsonData = JSON.parse(dataString);
+                if (jsonData.event === "pusher:error")
+                    return;
                 const jsonDataSub = JSON.parse(jsonData.data);
                 switch (jsonData.event) {
                     case "App\\Events\\ChatMessageEvent":

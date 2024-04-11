@@ -22,18 +22,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TalkingBot = exports.getSuffix = exports.replaceAsync = exports.Platform = void 0;
 const twitch_1 = require("./twitch");
+const discord_1 = require("./discord");
 const youtube_1 = require("./youtube");
 const kick_1 = require("./kick");
 const stars_1 = require("./stars");
@@ -68,16 +60,14 @@ function getTimeDifference(startDate, endDate) {
 function removeByIndex(str, index) {
     return str.slice(0, index) + str.slice(index + 1);
 }
-function replaceAsync(str, regex, asyncFn) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const promises = [];
-        str.replace(regex, (full, ...args) => {
-            promises.push(asyncFn(full, ...args));
-            return full;
-        });
-        const data = yield Promise.all(promises);
-        return str.replace(regex, () => data.shift());
+async function replaceAsync(str, regex, asyncFn) {
+    const promises = [];
+    str.replace(regex, (full, ...args) => {
+        promises.push(asyncFn(full, ...args));
+        return full;
     });
+    const data = await Promise.all(promises);
+    return str.replace(regex, () => data.shift());
 }
 exports.replaceAsync = replaceAsync;
 function removeByIndexToUppercase(str, indexes) {
@@ -116,6 +106,26 @@ function getSuffix(i) {
 }
 exports.getSuffix = getSuffix;
 class TalkingBot {
+    discord;
+    twitch;
+    youTube;
+    kick;
+    iochat;
+    iomodtext;
+    iopoll;
+    ioalert;
+    commandList = [];
+    customCommands = [];
+    aliasCommands = [];
+    kickId;
+    modtext;
+    counter = 0;
+    ttsEnabled = false;
+    server;
+    iotts;
+    dynamicTitle;
+    dynamicTitleInterval;
+    lastDynamicTitle;
     readCustomCommands() {
         if (!(0, node_fs_1.existsSync)("./commands.json"))
             return;
@@ -129,11 +139,6 @@ class TalkingBot {
         node_fs_1.default.writeFileSync("./aliases.json", JSON.stringify(this.aliasCommands), "utf-8");
     }
     constructor(kickId, server) {
-        this.commandList = [];
-        this.customCommands = [];
-        this.aliasCommands = [];
-        this.counter = 0;
-        this.ttsEnabled = false;
         this.server = server;
         this.iomodtext = new socket_io_1.Server(this.server, {
             path: "/modtext/",
@@ -240,10 +245,10 @@ class TalkingBot {
             {
                 showOnChat: false,
                 command: "!uptime",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
                     if (platform != Platform.twitch)
                         return;
-                    const stream = yield this.twitch.apiClient.streams.getStreamByUserId(this.twitch.channel.id);
+                    const stream = await this.twitch.apiClient.streams.getStreamByUserId(this.twitch.channel.id);
                     if (stream == null) {
                         reply(`${this.twitch.channel.displayName} is currently offline`, true);
                         return;
@@ -261,29 +266,29 @@ class TalkingBot {
                     if (time.minutes != 0)
                         timeString += `${time.minutes} minutes`;
                     reply(`${this.twitch.channel.displayName} has been live for ${timeString}`, true);
-                }),
+                },
             },
             {
                 showOnChat: false,
                 command: "!status",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
                     if (platform != Platform.twitch)
                         return;
-                    const stream = yield this.twitch.apiClient.streams.getStreamByUserId(this.twitch.channel.id);
+                    const stream = await this.twitch.apiClient.streams.getStreamByUserId(this.twitch.channel.id);
                     if (stream == null) {
                         reply(`${this.twitch.channel.displayName} is currently offline`, true);
                         return;
                     }
                     reply(`\"${stream.title}\" - \"${stream.gameName}\"`, true);
-                }),
+                },
             },
             {
                 showOnChat: false,
                 command: "!followage",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
                     if (platform != Platform.twitch)
                         return;
-                    const followed = yield this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
+                    const followed = await this.twitch.apiClient.channels.getChannelFollowers(this.twitch.channel.id, context.userInfo.userId);
                     // User is not following
                     if (followed.data.length == 0) {
                         reply(`You are not following ${this.twitch.channel.displayName}`, true);
@@ -303,7 +308,7 @@ class TalkingBot {
                             timeString += `${time.minutes} minutes`;
                         reply(`@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`, false);
                     }
-                }),
+                },
             },
             {
                 showOnChat: false,
@@ -456,29 +461,29 @@ class TalkingBot {
             {
                 showOnChat: false,
                 command: "!settitle",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod || message.length == 0)
                         return;
-                    yield this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { title: message });
+                    await this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { title: message });
                     // TODO change title in kick
                     reply(`Title has been changed to "${message}"`, true);
-                }),
+                },
             },
             {
                 showOnChat: false,
                 command: "!setgame",
-                commandFunction: (user, isUserMod, message, reply, platform, context) => __awaiter(this, void 0, void 0, function* () {
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
                     if (!isUserMod || message.length == 0)
                         return;
-                    const game = yield this.twitch.apiClient.games.getGameByName(message);
+                    const game = await this.twitch.apiClient.games.getGameByName(message);
                     if (game == null) {
                         reply(`Can't find game "${message}"`, true);
                         return;
                     }
-                    yield this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { gameId: game.id });
+                    await this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, { gameId: game.id });
                     // TODO change game in kick
                     reply(`Game has been changed to "${game.name}"`, true);
-                }),
+                },
             },
             /*{
               showOnChat: false,
@@ -586,8 +591,10 @@ class TalkingBot {
         this.twitch = new twitch_1.Twitch(this);
         this.kick = new kick_1.Kick(this.kickId, this);
         this.youTube = new youtube_1.YouTube("sweetbaboostreams1351", this);
+        this.discord = new discord_1.Discord();
     }
     initBot() {
+        this.discord.initBot();
         this.youTube.initBot();
         this.twitch.initBot().then(() => {
             this.kick.initBot();
@@ -630,30 +637,28 @@ class TalkingBot {
     sendTTS(message) {
         this.iotts.emit("message", message);
     }
-    setDynamicTitle() {
-        return __awaiter(this, void 0, void 0, function* () {
-            if (this.dynamicTitle == null)
-                return;
-            const title = (yield replaceAsync(this.dynamicTitle, /(!?fetch)\[([^]+)\]{?(\w+)?}?/g, (message, command, url, key) => __awaiter(this, void 0, void 0, function* () {
-                const req = yield fetch(url);
-                if (key === undefined) {
-                    return yield req.text();
-                }
-                else {
-                    const json = yield req.json();
-                    return json[key];
-                }
-            }))).replace(/suffix\((\d+)\)/g, (message, number) => {
-                return getSuffix(parseInt(number));
-            });
-            if (title != this.lastDynamicTitle) {
-                this.twitch.chatClient.say(this.twitch.channel.name, `Title has been set to ${title}`);
-                this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
-                    title: title,
-                });
-                this.lastDynamicTitle = title;
+    async setDynamicTitle() {
+        if (this.dynamicTitle == null)
+            return;
+        const title = (await replaceAsync(this.dynamicTitle, /(!?fetch)\[([^]+)\]{?(\w+)?}?/g, async (message, command, url, key) => {
+            const req = await fetch(url);
+            if (key === undefined) {
+                return await req.text();
             }
+            else {
+                const json = await req.json();
+                return json[key];
+            }
+        })).replace(/suffix\((\d+)\)/g, (message, number) => {
+            return getSuffix(parseInt(number));
         });
+        if (title != this.lastDynamicTitle) {
+            this.twitch.chatClient.say(this.twitch.channel.name, `Title has been set to ${title}`);
+            this.twitch.apiClient.channels.updateChannelInfo(this.twitch.channel.id, {
+                title: title,
+            });
+            this.lastDynamicTitle = title;
+        }
     }
 }
 exports.TalkingBot = TalkingBot;

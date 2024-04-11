@@ -30,9 +30,9 @@ import * as fs from "fs";
 import { EventSubWsListener } from "@twurple/eventsub-ws";
 import {
   EventSubChannelRedemptionAddEvent,
-  EventSubChannelBanEvent,
   EventSubChannelFollowEvent,
   EventSubChannelPollProgressEvent,
+  EventSubStreamOnlineEvent,
   EventSubChannelPollEndEvent,
   EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
@@ -42,7 +42,7 @@ const oauthPath = "oauth.json";
 const botPath = "token-bot.json";
 const broadcasterPath = "token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
-const userColors = [
+export const userColors = [
   "#ff0000",
   "#0000ff",
   "#b22222",
@@ -245,6 +245,18 @@ export class Twitch {
     this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
+    this.eventListener.onStreamOnline(
+      this.channel.id,
+      async (event: EventSubStreamOnlineEvent) => {
+        const stream = await event.getStream();
+        const thumbnail = stream.getThumbnailUrl(1280, 720);
+        this.bot.discord.sendStreamPing({
+          title: stream.title,
+          game: stream.gameName,
+          thumbnailUrl: thumbnail,
+        });
+      },
+    );
     this.eventListener.onChannelFollow(
       this.channel.id,
       this.channel.id,
@@ -417,7 +429,10 @@ export class Twitch {
       },
     );
     this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
-      this.bot.iochat.emit("banUser", `twitch-${msg.tags.get("target-user-id")}`);
+      this.bot.iochat.emit(
+        "banUser",
+        `twitch-${msg.tags.get("target-user-id")}`,
+      );
       this.chatClient.say(
         this.channelName,
         `@${user} has been banished to the nut room.`,
@@ -425,7 +440,10 @@ export class Twitch {
     });
     this.chatClient.onTimeout(
       (channel: string, user: string, duration: number, msg: ClearChat) => {
-        this.bot.iochat.emit("banUser", `twitch-${msg.tags.get("target-user-id")}`);
+        this.bot.iochat.emit(
+          "banUser",
+          `twitch-${msg.tags.get("target-user-id")}`,
+        );
         this.chatClient.say(
           this.channelName,
           `@${user} has been banished to the nut room.`,

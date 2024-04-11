@@ -53,6 +53,7 @@ export class Kick {
         const badges = ["https://kick.com/favicon.ico"];
         const dataString = data.toString();
         const jsonData = JSON.parse(dataString);
+        if (jsonData.event === "pusher:error") return;
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
           case "App\\Events\\ChatMessageEvent":
