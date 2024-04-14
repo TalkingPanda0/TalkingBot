@@ -208,7 +208,7 @@ class Twitch {
                     votes: choice.totalVotes,
                 });
             });
-            this.currentPoll = { title: data.title, options: options };
+            this.currentPoll = { title: data.title, options: options, id: data.id };
             this.bot.updatePoll();
         });
         this.eventListener.onChannelPollEnd(this.channel.id, (data) => {

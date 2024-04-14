@@ -128,6 +128,10 @@
       socket.on("updatePoll", (options) => {
         updatePoll(options);
       });
+      socket.on("deletePoll", () => {
+        pollElement.innerHtml = "";
+        pollElement.style = "display: none;";
+      });
     </script>
   </body>
 </html>

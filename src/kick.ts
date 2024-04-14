@@ -1,6 +1,7 @@
 import WebSocket from "ws";
 import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
 import { json } from "stream/consumers";
+import { HelixPoll } from "@twurple/api";
 
 export function parseKickEmotes(message: string) {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
@@ -48,7 +49,7 @@ export class Kick {
       setTimeout(() => this.initBot(), 10000);
     });
 
-    this.chat.on("message", (data: WebSocket.Data) => {
+    this.chat.on("message", async (data: WebSocket.Data) => {
       try {
         const badges = ["https://kick.com/favicon.ico"];
         const dataString = data.toString();
@@ -150,7 +151,12 @@ export class Kick {
             break;
           case "App\\Events\\PollUpdateEvent":
             this.currentPoll = jsonDataSub.poll;
-            if (jsonDataSub.poll.duration != jsonDataSub.poll.remaining) {
+            if (
+              jsonDataSub.poll.options.some((e) => {
+                console.log(e);
+                return e.votes != 0;
+              })
+            ) {
               this.bot.updatePoll();
               break;
             }
@@ -162,16 +168,33 @@ export class Kick {
               (item: { label: string }) => item.label,
             );
 
-            this.bot.twitch.apiClient.polls.createPoll(
-              this.bot.twitch.channel.id,
-              {
-                title: jsonDataSub.poll.title,
-                duration: jsonDataSub.poll.duration,
-                choices: options,
-              },
-            );
+            const twitchPoll: HelixPoll =
+              await this.bot.twitch.apiClient.polls.createPoll(
+                this.bot.twitch.channel.id,
+                {
+                  title: jsonDataSub.poll.title,
+                  duration: jsonDataSub.poll.duration,
+                  choices: options,
+                },
+              );
+            this.bot.twitch.currentPoll = {
+              id: twitchPoll.id,
+              options: jsonDataSub.poll.options,
+              title: twitchPoll.title,
+            };
             this.bot.iopoll.emit("createPoll", jsonDataSub.poll);
             break;
+          case "App\\Events\\PollDeleteEvent":
+            this.bot.twitch.apiClient.polls.endPoll(
+              this.bot.twitch.channel.id,
+              this.bot.twitch.currentPoll.id,
+              false,
+            );
+            this.bot.iopoll.emit("deletePoll");
+            break;
+          /*default:
+            console.log(dataString);
+            break;*/
         }
       } catch (error) {
         console.log(error);

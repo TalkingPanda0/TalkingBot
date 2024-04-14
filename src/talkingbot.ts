@@ -67,6 +67,7 @@ export interface pollOption {
 export interface Poll {
   title: string;
   options: pollOption[];
+  id?: string;
 }
 interface TimeDifference {
   years: number;

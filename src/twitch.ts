@@ -92,6 +92,7 @@ export class Twitch {
   public chatClient: ChatClient;
   public rewardData: HelixCreateCustomRewardData;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
+
   private channelName: string;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
@@ -277,7 +278,7 @@ export class Twitch {
             votes: choice.totalVotes,
           });
         });
-        this.currentPoll = { title: data.title, options: options };
+        this.currentPoll = { title: data.title, options: options, id: data.id };
         this.bot.updatePoll();
       },
     );
