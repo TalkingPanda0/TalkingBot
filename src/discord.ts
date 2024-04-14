@@ -27,7 +27,7 @@ export class Discord {
   }
   public sendStreamPing(stream: streamInfo) {
     this.channel.send({
-      content: "<&@965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
+      content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
       allowedMentions: { roles: ["965609596087595018"] },
       embeds: [
         {
