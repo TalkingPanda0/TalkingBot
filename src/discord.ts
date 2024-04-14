@@ -4,6 +4,7 @@ import {
   Events,
   GatewayIntentBits,
   TextChannel,
+  VoiceState,
 } from "discord.js";
 import fs from "node:fs";
 export interface streamInfo {
@@ -49,7 +50,7 @@ export class Discord {
   public initBot() {
     if (this.token === undefined) return;
     this.client = new Client({
-      intents: [GatewayIntentBits.Guilds],
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
       allowedMentions: { parse: ["users", "roles"] },
     });
 
@@ -58,29 +59,27 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
-      /*this.channel.send({
-        content: "<@483756719504097301> SWEETBABOO IS STREAMIIONG!'!!!!!",
-        allowedMentions: { users: ["483756719504097301"] },
-        embeds: [
-          {
-            color: 0x0099ff,
-            title: "romania simulator 2",
-            url: "https://www.twitch.tv/sweetbabooo_o",
-            description: "Resident Evil Village",
-            thumbnail: {
-              url: "https://talkingpanda.dev/hapboo.gif",
-            },
-            fields: [],
-            image: {
-              url: "https://talkingpanda.dev/hapboo.gif",
-            },
-          },
-        ],
-      });*/
-      this.client.once(Events.Error, (error: Error) => {
-        console.error(error);
-      });
     });
+    this.client.once(Events.Error, (error: Error) => {
+      console.error(error);
+    });
+    this.client.on(
+      Events.VoiceStateUpdate,
+      async (oldstate: VoiceState, newState: VoiceState) => {
+        // is sweetbaboo and streaming in #streaming
+        if (
+          newState.member.id === "350054317811564544" &&
+          newState.streaming &&
+          newState.channelId === "858430399380979721"
+        ) {
+          newState.channel.send({
+            content:
+              "<@&965609422028144700> SWEETBABOO IS STREAMIIONG ON DISCORD!'!!!!!",
+            allowedMentions: { roles: ["965609422028144700"] },
+          });
+        }
+      },
+    );
     this.client.login(this.token);
   }
 }
