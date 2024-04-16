@@ -10,6 +10,7 @@ class Discord {
     token;
     client;
     channel;
+    shouldPing = true;
     constructor() {
         if (!node_fs_1.default.existsSync("discord.json")) {
             console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
@@ -56,14 +57,24 @@ class Discord {
             console.error(error);
         });
         this.client.on(discord_js_1.Events.VoiceStateUpdate, async (oldstate, newState) => {
-            // is sweetbaboo and streaming in #streaming
-            if (newState.member.id === "350054317811564544" &&
+            // is sweetbaboo
+            if (newState.member.id !== "350054317811564544")
+                return;
+            // started streaming on #streaming and should ping
+            if (this.shouldPing &&
+                newState.channelId === "858430399380979721" &&
                 newState.streaming &&
-                newState.channelId === "858430399380979721") {
+                oldstate.streaming === false) {
                 newState.channel.send({
                     content: "<@&965609422028144700> SWEETBABOO IS STREAMIIONG ON DISCORD!'!!!!!",
                     allowedMentions: { roles: ["965609422028144700"] },
                 });
+                this.shouldPing = false;
+            }
+            // left #streaming
+            else if (oldstate.channelId === "858430399380979721" &&
+                newState.channel === null) {
+                this.shouldPing = true;
             }
         });
         this.client.login(this.token);
