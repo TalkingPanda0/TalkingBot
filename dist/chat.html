@@ -11,7 +11,7 @@
 
     function addToMessageList(message) {
       // Don't add if a message with the same id already exits
-      if(document.getElementById(message.id)) return;
+      if (document.getElementById(message.id)) return;
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
       if (message.isFirst)
@@ -57,7 +57,11 @@
       spanElement.appendChild(element);
       messageElement.appendChild(spanElement);
       messageList.appendChild(messageElement);
-      messageList.scrollIntoView({ behavior: "smooth", block: "end", inline: "nearest" });
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
     }
 
     var socket = io("/", { path: "/chat/" });
@@ -125,8 +129,8 @@
       display: inline-table;
       vertical-align: middle;
       height: 25px;
-      width:25px;
-      
+      width: 25px;
+
       margin: 2px;
       filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
         drop-shadow(0 0 0 #000);
@@ -145,7 +149,7 @@
     }
     .emote {
       height: 28px;
-      width: 28px;
+      min-width: 28px;
     }
     .reply {
       color: #a5a5a5;
