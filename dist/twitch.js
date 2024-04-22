@@ -60,7 +60,7 @@ function parseTwitchEmotes(text, emoteOffsets) {
         emotes.set(emoteString, `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`);
     });
     emotes.forEach((emoteUrl, emote) => {
-        text = text.replace(new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), `<img src=${emoteUrl} class="emote" />`);
+        text = text.replace(new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), `<img src=${emoteUrl} class="emote" id="${emote}" />`);
     });
     return text;
 }

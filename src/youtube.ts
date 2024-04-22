@@ -2,6 +2,7 @@ import { time } from "console";
 import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
+import { IChatYTMessage, MessageFragments } from "tubechat/lib/types/Client";
 export class YouTube {
   private bot: TalkingBot;
   private chat: TubeChat;
@@ -17,6 +18,19 @@ export class YouTube {
     }
     return userColors[hash % userColors.length];
   }
+  private parseMessage(message: MessageFragments[]): string {
+    let text = "";
+    for (let i = 0; i < message.length; i++) {
+      const fragment: MessageFragments = message.at(i);
+      if (fragment.text !== undefined) {
+        text += fragment.text;
+      } else if (fragment.emoji !== undefined) {
+        text += `<img src="${fragment.emoji}" class="emote" />`;
+      }
+    }
+    return text;
+  }
+
   public async initBot() {
     this.chat.connect(this.channelName);
     this.chat.on("chat_connected", (channel, videoId) => {
@@ -42,18 +56,19 @@ export class YouTube {
         timestamp,
       }) => {
         try {
+          console.log("\x1b[31m%s\x1b[0m", message.length);
           let text = message.at(0).text;
           const isMod = isModerator || isOwner;
-          if (text == null) return;
+          //if (text == null) return;
           if (name === "BotRix") return;
           console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
 
-          if (!text.startsWith("!")) {
+          if (text === undefined || !text.startsWith("!")) {
             // not a command!
             color = this.getColor(name);
             this.bot.iochat.emit("message", {
               badges: ["https://www.youtube.com/favicon.ico"],
-              text: text,
+              text: this.parseMessage(message),
               sender: name,
               senderId: "youtube",
               color: color,
@@ -90,7 +105,7 @@ export class YouTube {
               color = this.getColor(name);
               this.bot.iochat.emit("message", {
                 badges: ["https://www.youtube.com/favicon.ico"],
-                text: text,
+                text: this.parseMessage(message),
                 sender: name,
                 senderId: "youtube",
                 color: color,

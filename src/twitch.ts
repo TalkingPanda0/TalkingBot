@@ -76,7 +76,7 @@ export function parseTwitchEmotes(
   emotes.forEach((emoteUrl: string, emote: string) => {
     text = text.replace(
       new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"),
-      `<img src=${emoteUrl} class="emote" />`,
+      `<img src=${emoteUrl} class="emote" id="${emote}" />`,
     );
   });
   return text;

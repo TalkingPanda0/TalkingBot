@@ -587,6 +587,18 @@ class TalkingBot {
                     }
                 },
             },
+            {
+                showOnChat: false,
+                command: "!clip",
+                commandFunction: async (user, isUserMod, message, reply, platform, context) => {
+                    if (!isUserMod)
+                        return;
+                    reply(await this.twitch.apiClient.clips.createClip({
+                        channel: this.twitch.channel.id,
+                        createAfterDelay: true,
+                    }), true);
+                },
+            },
         ];
         this.twitch = new twitch_1.Twitch(this);
         this.kick = new kick_1.Kick(this.kickId, this);

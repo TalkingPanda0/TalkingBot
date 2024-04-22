@@ -17,6 +17,19 @@ class YouTube {
         }
         return twitch_1.userColors[hash % twitch_1.userColors.length];
     }
+    parseMessage(message) {
+        let text = "";
+        for (let i = 0; i < message.length; i++) {
+            const fragment = message.at(i);
+            if (fragment.text !== undefined) {
+                text += fragment.text;
+            }
+            else if (fragment.emoji !== undefined) {
+                text += `<img src="${fragment.emoji}" class="emote" />`;
+            }
+        }
+        return text;
+    }
     async initBot() {
         this.chat.connect(this.channelName);
         this.chat.on("chat_connected", (channel, videoId) => {
@@ -24,19 +37,19 @@ class YouTube {
         });
         this.chat.on("message", async ({ badges, channel, channelId, color, id, isMembership, isModerator, isNewMember, isOwner, isVerified, message, name, thumbnail, timestamp, }) => {
             try {
+                console.log("\x1b[31m%s\x1b[0m", message.length);
                 let text = message.at(0).text;
                 const isMod = isModerator || isOwner;
-                if (text == null)
-                    return;
+                //if (text == null) return;
                 if (name === "BotRix")
                     return;
                 console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
-                if (!text.startsWith("!")) {
+                if (text === undefined || !text.startsWith("!")) {
                     // not a command!
                     color = this.getColor(name);
                     this.bot.iochat.emit("message", {
                         badges: ["https://www.youtube.com/favicon.ico"],
-                        text: text,
+                        text: this.parseMessage(message),
                         sender: name,
                         senderId: "youtube",
                         color: color,
@@ -67,7 +80,7 @@ class YouTube {
                         color = this.getColor(name);
                         this.bot.iochat.emit("message", {
                             badges: ["https://www.youtube.com/favicon.ico"],
-                            text: text,
+                            text: this.parseMessage(message),
                             sender: name,
                             senderId: "youtube",
                             color: color,
