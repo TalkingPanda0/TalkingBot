@@ -66,6 +66,15 @@
 
     var socket = io("/", { path: "/chat/" });
 
+    socket.on("connect", () => {
+      const disconnectMessage = document.getElementById("disconnect");
+      if(disconnectMessage !== null) document.getElementById("disconnect").remove();
+
+    });
+    socket.on("disconnect", () => {
+      messageList.insertAdjacentHTML('beforeend', '<div class="message" style="background: red" id="disconnect"><span><span class="text">Disconnected from the chat!</span></span></div>');
+    });
+
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
       addToMessageList(message);
