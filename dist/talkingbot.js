@@ -307,7 +307,7 @@ class TalkingBot {
                 showOnChat: false,
                 command: "!8ball",
                 commandFunction: (user, isUserMod, message, reply, platform, context) => {
-                    if (message.toLowerCase().includes("furry")) {
+                    if (message.toLowerCase().includes("furry") && message.toLowerCase().includes("sweet")) {
                         reply("Yes.", false);
                         return;
                     }

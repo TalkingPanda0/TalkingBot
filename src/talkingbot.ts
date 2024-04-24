@@ -374,7 +374,7 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          if (message.toLowerCase().includes("furry")) {
+          if (message.toLowerCase().includes("furry") && message.toLowerCase().includes("sweet")) {
             reply("Yes.", false);
             return;
           }
