@@ -87,7 +87,7 @@ class Twitch {
     constructor(bot) {
         this.bot = bot;
     }
-    async sendToChatList(message) {
+    async sendToChatList(message, isCommand) {
         let color = message.userInfo.color;
         let badges = ["https://twitch.tv/favicon.ico"];
         let replyTo = "";
@@ -124,6 +124,7 @@ class Twitch {
             isFirst: message.isFirst,
             replyTo: replyTo,
             replyId: "twitch-" + replyId,
+            isCommand: isCommand,
         });
     }
     setupAuth(auth) {
@@ -329,9 +330,10 @@ class Twitch {
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);
                 // not a command
                 if (!text.startsWith("!")) {
-                    this.sendToChatList(msg);
+                    this.sendToChatList(msg, false);
                     return;
                 }
+                this.sendToChatList(msg, true);
                 const name = msg.userInfo.displayName;
                 const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
                 let commandName = text.split(" ")[0];
@@ -347,12 +349,24 @@ class Twitch {
                     if (commandName != command.command)
                         continue;
                     command.commandFunction(name, isMod, text.replace(command.command, "").trim(), (message, replyToUser) => {
-                        this.chatClient.say(channel, message, {
-                            replyTo: replyToUser ? msg.id : null,
+                        const replyId = replyToUser ? msg.id : null;
+                        this.chatClient.say(channel, message, { replyTo: replyId });
+                        this.bot.iochat.emit("message", {
+                            badges: [this.badges.get("moderator")],
+                            text: message,
+                            sender: "TalkingBotO_o",
+                            senderId: "twitch-" + "bot",
+                            color: "#00ff7f",
+                            id: undefined,
+                            platform: "twitch",
+                            isFirst: false,
+                            replyTo: replyToUser ? name : "",
+                            replyId: "twitch-" + msg.userInfo.userId,
+                            isCommand: true,
                         });
                     }, talkingbot_1.Platform.twitch, msg);
                     if (command.showOnChat)
-                        this.sendToChatList(msg);
+                        this.sendToChatList(msg, false);
                     return;
                 }
                 for (let i = 0; i < this.bot.customCommands.length; i++) {
@@ -389,6 +403,19 @@ class Twitch {
                     this.chatClient.say(channel, response, {
                         replyTo: doReply ? msg.id : null,
                     });
+                    this.bot.iochat.emit("message", {
+                        badges: [this.badges.get("moderator")],
+                        text: response,
+                        sender: "TalkingBotO_o",
+                        senderId: "twitch-" + "bot",
+                        color: "#00ff7f",
+                        id: undefined,
+                        platform: "twitch",
+                        isFirst: false,
+                        replyTo: doReply ? name : "",
+                        replyId: "twitch-" + msg.userInfo.userId,
+                        isCommand: true,
+                    });
                 }
             }
             catch (e) {
@@ -397,6 +424,7 @@ class Twitch {
         });
         this.chatClient.onConnect(() => {
             console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
+            // this.getRecentMessages();
         });
         this.chatClient.connect();
         this.eventListener.start();

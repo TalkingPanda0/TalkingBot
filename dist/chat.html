@@ -1,17 +1,25 @@
 <!doctype html>
 <html>
-  <body>
+  <body id="body">
     <div id="message-list"></div>
+    <div id="a"></div>
   </body>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
     const messageList = document.getElementById("message-list");
+    const queryString = window.location.search;
+    const searchParams = new URLSearchParams(queryString);
+    const showCommands = searchParams.get("showcmd") === "yes";
 
     function addToMessageList(message) {
-      // Don't add if a message with the same id already exits
-      if (document.getElementById(message.id)) return;
+      if (message.isCommand && !showCommands) return;
+
+      // Don't add if a message with the same id already exits or if it's from the bot
+      if (message.id !== undefined && document.getElementById(message.id))
+        return;
+
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
       if (message.isFirst)
@@ -68,11 +76,14 @@
 
     socket.on("connect", () => {
       const disconnectMessage = document.getElementById("disconnect");
-      if(disconnectMessage !== null) document.getElementById("disconnect").remove();
-
+      if (disconnectMessage !== null)
+        document.getElementById("disconnect").remove();
     });
     socket.on("disconnect", () => {
-      messageList.insertAdjacentHTML('beforeend', '<div class="message" style="background: red" id="disconnect"><span><span class="text">Disconnected from the chat!</span></span></div>');
+      messageList.insertAdjacentHTML(
+        "beforeend",
+        '<div class="message" style="background: red" id="disconnect"><span><span class="text">Disconnected from the chat!</span></span></div>',
+      );
     });
 
     socket.on("message", (message) => {

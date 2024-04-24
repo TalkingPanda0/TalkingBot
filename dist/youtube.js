@@ -37,7 +37,6 @@ class YouTube {
         });
         this.chat.on("message", async ({ badges, channel, channelId, color, id, isMembership, isModerator, isNewMember, isOwner, isVerified, message, name, thumbnail, timestamp, }) => {
             try {
-                console.log("\x1b[31m%s\x1b[0m", message.length);
                 let text = message.at(0).text;
                 const isMod = isModerator || isOwner;
                 //if (text == null) return;

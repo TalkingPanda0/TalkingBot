@@ -36,6 +36,7 @@ import {
   EventSubChannelPollEndEvent,
   EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
+import { isContext } from "vm";
 
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
@@ -106,7 +107,10 @@ export class Twitch {
   constructor(bot: TalkingBot) {
     this.bot = bot;
   }
-  async sendToChatList(message: ChatMessage): Promise<void> {
+  async sendToChatList(
+    message: ChatMessage,
+    isCommand: Boolean,
+  ): Promise<void> {
     let color = message.userInfo.color;
     let badges = ["https://twitch.tv/favicon.ico"];
     let replyTo = "";
@@ -149,6 +153,7 @@ export class Twitch {
       isFirst: message.isFirst,
       replyTo: replyTo,
       replyId: "twitch-" + replyId,
+      isCommand: isCommand,
     });
   }
 
@@ -472,9 +477,10 @@ export class Twitch {
 
           // not a command
           if (!text.startsWith("!")) {
-            this.sendToChatList(msg);
+            this.sendToChatList(msg, false);
             return;
           }
+          this.sendToChatList(msg, true);
           const name = msg.userInfo.displayName;
           const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
           let commandName = text.split(" ")[0];
@@ -494,14 +500,26 @@ export class Twitch {
               isMod,
               text.replace(command.command, "").trim(),
               (message: string, replyToUser: boolean) => {
-                this.chatClient.say(channel, message, {
-                  replyTo: replyToUser ? msg.id : null,
+                const replyId = replyToUser ? msg.id : null;
+                this.chatClient.say(channel, message, { replyTo: replyId });
+                this.bot.iochat.emit("message", {
+                  badges: [this.badges.get("moderator")],
+                  text: message,
+                  sender: "TalkingBotO_o",
+                  senderId: "twitch-" + "bot",
+                  color: "#00ff7f",
+                  id: undefined,
+                  platform: "twitch",
+                  isFirst: false,
+                  replyTo: replyToUser ? name : "",
+                  replyId: "twitch-" + msg.userInfo.userId,
+                  isCommand: true,
                 });
               },
               Platform.twitch,
               msg,
             );
-            if (command.showOnChat) this.sendToChatList(msg);
+            if (command.showOnChat) this.sendToChatList(msg, false);
             return;
           }
           for (let i = 0; i < this.bot.customCommands.length; i++) {
@@ -550,6 +568,19 @@ export class Twitch {
             this.chatClient.say(channel, response, {
               replyTo: doReply ? msg.id : null,
             });
+            this.bot.iochat.emit("message", {
+              badges: [this.badges.get("moderator")],
+              text: response,
+              sender: "TalkingBotO_o",
+              senderId: "twitch-" + "bot",
+              color: "#00ff7f",
+              id: undefined,
+              platform: "twitch",
+              isFirst: false,
+              replyTo: doReply ? name : "",
+              replyId: "twitch-" + msg.userInfo.userId,
+              isCommand: true,
+            });
           }
         } catch (e) {
           console.log(e);
@@ -559,6 +590,7 @@ export class Twitch {
 
     this.chatClient.onConnect(() => {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
+      // this.getRecentMessages();
     });
 
     this.chatClient.connect();
@@ -616,4 +648,15 @@ export class Twitch {
       accept ? "FULFILLED" : "CANCELED",
     );
   }
+  /*private async getRecentMessages(timeStampms?: string){
+    let url = `https://recent-messages.robotty.de/api/v2/recent-messages/${this.channelName.toLowerCase()}?hide_moderation_messages=true&hide_moderated_messages=true&limit=10`;
+    if(timeStampms === null) url+= `&after${timeStampms}`;
+    try {
+      const recentMessages = JSON.parse(await (await fetch(url)).text()); 
+      console.log(recentMessages);
+    } catch(e) {
+      console.error(e);
+    }
+
+  }*/
 }
