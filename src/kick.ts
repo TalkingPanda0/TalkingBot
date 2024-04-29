@@ -2,6 +2,7 @@ import WebSocket from "ws";
 import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
 import { json } from "stream/consumers";
 import { HelixPoll } from "@twurple/api";
+import DOMPurify from "isomorphic-dompurify";
 
 export function parseKickEmotes(message: string) {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
@@ -58,9 +59,7 @@ export class Kick {
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
           case "App\\Events\\ChatMessageEvent":
-            const text = jsonDataSub.content
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;");
+            const text = DOMPurify.sanitize(jsonDataSub.content);
             const user = jsonDataSub.sender.username;
 
             const userBadges = jsonDataSub.sender.identity.badges;

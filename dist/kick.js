@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Kick = exports.parseKickEmotes = void 0;
 const ws_1 = __importDefault(require("ws"));
 const talkingbot_1 = require("./talkingbot");
+const isomorphic_dompurify_1 = __importDefault(require("isomorphic-dompurify"));
 function parseKickEmotes(message) {
     const regex = /\[emote:(\d+):([^\]]+)\]/g;
     return message.replace(regex, (match, id, name) => `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`);
@@ -45,9 +46,7 @@ class Kick {
                 const jsonDataSub = JSON.parse(jsonData.data);
                 switch (jsonData.event) {
                     case "App\\Events\\ChatMessageEvent":
-                        const text = jsonDataSub.content
-                            .replace(/</g, "&lt;")
-                            .replace(/>/g, "&gt;");
+                        const text = isomorphic_dompurify_1.default.sanitize(jsonDataSub.content);
                         const user = jsonDataSub.sender.username;
                         const userBadges = jsonDataSub.sender.identity.badges;
                         if (user === "BotRix")
