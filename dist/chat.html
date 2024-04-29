@@ -84,6 +84,11 @@
         "beforeend",
         '<div class="message" style="background: red" id="disconnect"><span><span class="text">Disconnected from the chat!</span></span></div>',
       );
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
     });
 
     socket.on("message", (message) => {
@@ -170,6 +175,7 @@
     .emote {
       height: 28px;
       min-width: 28px;
+      vertical-align: middle;
     }
     .reply {
       color: #a5a5a5;

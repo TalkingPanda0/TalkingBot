@@ -56,23 +56,32 @@ exports.userColors = [
     "#00ff7f",
 ];
 function parseTwitchEmotes(text, emoteOffsets) {
-    let parsed = "";
+    let parsed = '';
     let currentOffset = 0;
-    emoteOffsets.forEach((offsetList, emoteId) => {
+    // Sort emoteOffsets by start index
+    const sortedOffsets = Array.from(emoteOffsets.entries()).sort((a, b) => {
+        const startIndexA = parseInt(a[1][0].split('-')[0]);
+        const startIndexB = parseInt(b[1][0].split('-')[0]);
+        return startIndexA - startIndexB;
+    });
+    sortedOffsets.forEach(([emoteId, offsetList]) => {
         offsetList.forEach((offsetString) => {
-            const [startIndex, endIndex] = offsetString.split("-").map(Number);
+            const [startIndex, endIndex] = offsetString.split('-').map(Number);
             // Extract text segment before emote and sanitize it
-            const textSegment = text.substring(currentOffset, startIndex);
-            parsed += isomorphic_dompurify_1.default.sanitize(textSegment, { ALLOWED_TAGS: [] });
+            const textSegmentBefore = text.substring(currentOffset, startIndex).trim();
+            if (textSegmentBefore.length > 0) {
+                parsed += isomorphic_dompurify_1.default.sanitize(textSegmentBefore, { ALLOWED_TAGS: [] });
+            }
             const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
             parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}">`;
             currentOffset = endIndex + 1;
         });
     });
     // Sanitize remaining text after emotes
-    parsed += isomorphic_dompurify_1.default.sanitize(text.substring(currentOffset), {
-        ALLOWED_TAGS: [],
-    });
+    const remainingText = text.substring(currentOffset).trim();
+    if (remainingText.length > 0) {
+        parsed += isomorphic_dompurify_1.default.sanitize(remainingText, { ALLOWED_TAGS: [] });
+    }
     return parsed;
 }
 exports.parseTwitchEmotes = parseTwitchEmotes;

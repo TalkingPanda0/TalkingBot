@@ -60,20 +60,30 @@ export const userColors = [
   "#8a2be2",
   "#00ff7f",
 ];
+
 export function parseTwitchEmotes(
   text: string,
-  emoteOffsets: Map<String, String[]>,
+  emoteOffsets: Map<string, string[]>
 ): string {
-  let parsed = "";
+  let parsed = '';
   let currentOffset = 0;
 
-  emoteOffsets.forEach((offsetList, emoteId) => {
+  // Sort emoteOffsets by start index
+  const sortedOffsets = Array.from(emoteOffsets.entries()).sort((a, b) => {
+    const startIndexA = parseInt(a[1][0].split('-')[0]);
+    const startIndexB = parseInt(b[1][0].split('-')[0]);
+    return startIndexA - startIndexB;
+  });
+
+  sortedOffsets.forEach(([emoteId, offsetList]) => {
     offsetList.forEach((offsetString) => {
-      const [startIndex, endIndex] = offsetString.split("-").map(Number);
+      const [startIndex, endIndex] = offsetString.split('-').map(Number);
 
       // Extract text segment before emote and sanitize it
-      const textSegment = text.substring(currentOffset, startIndex);
-      parsed += DOMPurify.sanitize(textSegment, { ALLOWED_TAGS: [] });
+      const textSegmentBefore = text.substring(currentOffset, startIndex).trim();
+      if (textSegmentBefore.length > 0) {
+        parsed += DOMPurify.sanitize(textSegmentBefore, { ALLOWED_TAGS: [] });
+      }
 
       const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
       parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}">`;
@@ -83,13 +93,13 @@ export function parseTwitchEmotes(
   });
 
   // Sanitize remaining text after emotes
-  parsed += DOMPurify.sanitize(text.substring(currentOffset), {
-    ALLOWED_TAGS: [],
-  });
+  const remainingText = text.substring(currentOffset).trim();
+  if (remainingText.length > 0) {
+    parsed += DOMPurify.sanitize(remainingText, { ALLOWED_TAGS: [] });
+  }
 
   return parsed;
 }
-
 export class Twitch {
   public clientId: string = "";
   public clientSecret: string = "";
