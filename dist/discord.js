@@ -20,6 +20,12 @@ class Discord {
         this.token = fileContent.token;
     }
     sendStreamPing(stream) {
+        if (stream === undefined) {
+            this.channel.send({
+                content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
+                allowedMentions: { roles: ["965609596087595018"] },
+            });
+        }
         this.channel.send({
             content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
             allowedMentions: { roles: ["965609596087595018"] },

@@ -26,7 +26,13 @@ export class Discord {
     const fileContent = JSON.parse(fs.readFileSync("discord.json", "utf-8"));
     this.token = fileContent.token;
   }
-  public sendStreamPing(stream: streamInfo) {
+  public sendStreamPing(stream?: streamInfo) {
+    if (stream === undefined) {
+      this.channel.send({
+        content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
+        allowedMentions: { roles: ["965609596087595018"] },
+      });
+    }
     this.channel.send({
       content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
       allowedMentions: { roles: ["965609596087595018"] },

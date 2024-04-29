@@ -22,6 +22,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
     __setModuleDefault(result, mod);
     return result;
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Twitch = exports.parseTwitchEmotes = exports.userColors = void 0;
 const auth_1 = require("@twurple/auth");
@@ -30,6 +33,7 @@ const api_1 = require("@twurple/api");
 const talkingbot_1 = require("./talkingbot");
 const fs = __importStar(require("fs"));
 const eventsub_ws_1 = require("@twurple/eventsub-ws");
+const isomorphic_dompurify_1 = __importDefault(require("isomorphic-dompurify"));
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
 const botPath = "token-bot.json";
@@ -52,17 +56,24 @@ exports.userColors = [
     "#00ff7f",
 ];
 function parseTwitchEmotes(text, emoteOffsets) {
-    let emotes = new Map();
-    emoteOffsets.forEach((offsets, emote) => {
-        let startIndex = parseInt(offsets[0]);
-        let endIndex = parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
-        let emoteString = text.slice(startIndex, endIndex);
-        emotes.set(emoteString, `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`);
+    let parsed = "";
+    let currentOffset = 0;
+    emoteOffsets.forEach((offsetList, emoteId) => {
+        offsetList.forEach((offsetString) => {
+            const [startIndex, endIndex] = offsetString.split("-").map(Number);
+            // Extract text segment before emote and sanitize it
+            const textSegment = text.substring(currentOffset, startIndex);
+            parsed += isomorphic_dompurify_1.default.sanitize(textSegment, { ALLOWED_TAGS: [] });
+            const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
+            parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}">`;
+            currentOffset = endIndex + 1;
+        });
     });
-    emotes.forEach((emoteUrl, emote) => {
-        text = text.replace(new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"), `<img src=${emoteUrl} class="emote" id="${emote}" />`);
+    // Sanitize remaining text after emotes
+    parsed += isomorphic_dompurify_1.default.sanitize(text.substring(currentOffset), {
+        ALLOWED_TAGS: [],
     });
-    return text;
+    return parsed;
 }
 exports.parseTwitchEmotes = parseTwitchEmotes;
 class Twitch {
@@ -102,12 +113,11 @@ class Twitch {
         else if (message.userInfo.isBroadcaster) {
             badges.push(this.badges.get("broadcaster"));
         }
-        // User hasn't set a color get a "random" color
+        // User hasn't set a color or failed to get the color get a "random" color
         if (color === null || color === undefined) {
             color = exports.userColors[parseInt(message.userInfo.userId) % exports.userColors.length];
         }
-        let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        text = parseTwitchEmotes(text, message.emoteOffsets);
+        let text = parseTwitchEmotes(message.text, message.emoteOffsets);
         if (message.isReply) {
             text = text.replace(new RegExp(`@${message.parentMessageUserDisplayName}`, "i"), "");
             replyTo = message.parentMessageUserDisplayName;
@@ -187,13 +197,19 @@ class Twitch {
             apiClient: this.apiClient,
         });
         this.eventListener.onStreamOnline(this.channel.id, async (event) => {
-            const stream = await event.getStream();
-            const thumbnail = stream.getThumbnailUrl(1280, 720);
-            this.bot.discord.sendStreamPing({
-                title: stream.title,
-                game: stream.gameName,
-                thumbnailUrl: thumbnail,
-            });
+            try {
+                const stream = await event.getStream();
+                const thumbnail = stream.getThumbnailUrl(1280, 720);
+                this.bot.discord.sendStreamPing({
+                    title: stream.title,
+                    game: stream.gameName,
+                    thumbnailUrl: thumbnail,
+                });
+            }
+            catch (e) {
+                console.error(e);
+                this.bot.discord.sendStreamPing();
+            }
         });
         this.eventListener.onChannelFollow(this.channel.id, this.channel.id, (event) => {
             this.bot.ioalert.emit("alert", {
@@ -324,7 +340,6 @@ class Twitch {
         });
         this.chatClient.onMessage(async (channel, user, text, msg) => {
             try {
-                text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 if (user === "botrixoficial")
                     return;
                 console.log("\x1b[35m%s\x1b[0m", `Twitch - ${msg.userInfo.displayName}: ${text}`);
@@ -431,7 +446,7 @@ class Twitch {
     }
     async handleRedeemQueue(accept) {
         const redeem = this.redeemQueue.shift();
-        if (accept != null) {
+        if (accept) {
             switch (redeem.rewardId) {
                 case this.pollid:
                     const matches = redeem.input.match(pollRegex);
@@ -464,7 +479,7 @@ class Twitch {
                     break;
             }
         }
-        else {
+        else if (accept === null) {
             // scam
             accept = true;
         }

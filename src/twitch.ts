@@ -37,6 +37,7 @@ import {
   EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
 import { isContext } from "vm";
+import DOMPurify from "isomorphic-dompurify";
 
 // Get the tokens from ../tokens.json
 const oauthPath = "oauth.json";
@@ -63,24 +64,30 @@ export function parseTwitchEmotes(
   text: string,
   emoteOffsets: Map<String, String[]>,
 ): string {
-  let emotes: Map<string, string> = new Map<string, string>();
+  let parsed = "";
+  let currentOffset = 0;
 
-  emoteOffsets.forEach((offsets: string[], emote: string) => {
-    let startIndex = parseInt(offsets[0]);
-    let endIndex = parseInt(offsets[0].slice(offsets[0].indexOf("-") + 1)) + 1;
-    let emoteString = text.slice(startIndex, endIndex);
-    emotes.set(
-      emoteString,
-      `https://static-cdn.jtvnw.net/emoticons/v2/${emote}/default/dark/3.0`,
-    );
+  emoteOffsets.forEach((offsetList, emoteId) => {
+    offsetList.forEach((offsetString) => {
+      const [startIndex, endIndex] = offsetString.split("-").map(Number);
+
+      // Extract text segment before emote and sanitize it
+      const textSegment = text.substring(currentOffset, startIndex);
+      parsed += DOMPurify.sanitize(textSegment, { ALLOWED_TAGS: [] });
+
+      const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
+      parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}">`;
+
+      currentOffset = endIndex + 1;
+    });
   });
-  emotes.forEach((emoteUrl: string, emote: string) => {
-    text = text.replace(
-      new RegExp(emote.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "g"),
-      `<img src=${emoteUrl} class="emote" id="${emote}" />`,
-    );
+
+  // Sanitize remaining text after emotes
+  parsed += DOMPurify.sanitize(text.substring(currentOffset), {
+    ALLOWED_TAGS: [],
   });
-  return text;
+
+  return parsed;
 }
 
 export class Twitch {
@@ -126,13 +133,13 @@ export class Twitch {
       badges.push(this.badges.get("broadcaster"));
     }
 
-    // User hasn't set a color get a "random" color
+    // User hasn't set a color or failed to get the color get a "random" color
     if (color === null || color === undefined) {
       color = userColors[parseInt(message.userInfo.userId) % userColors.length];
     }
 
-    let text = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    text = parseTwitchEmotes(text, message.emoteOffsets);
+    let text = parseTwitchEmotes(message.text, message.emoteOffsets);
+
     if (message.isReply) {
       text = text.replace(
         new RegExp(`@${message.parentMessageUserDisplayName}`, "i"),
@@ -254,13 +261,18 @@ export class Twitch {
     this.eventListener.onStreamOnline(
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
-        const stream = await event.getStream();
-        const thumbnail = stream.getThumbnailUrl(1280, 720);
-        this.bot.discord.sendStreamPing({
-          title: stream.title,
-          game: stream.gameName,
-          thumbnailUrl: thumbnail,
-        });
+        try {
+          const stream = await event.getStream();
+          const thumbnail = stream.getThumbnailUrl(1280, 720);
+          this.bot.discord.sendStreamPing({
+            title: stream.title,
+            game: stream.gameName,
+            thumbnailUrl: thumbnail,
+          });
+        } catch (e) {
+          console.error(e);
+          this.bot.discord.sendStreamPing();
+        }
       },
     );
     this.eventListener.onChannelFollow(
@@ -467,7 +479,6 @@ export class Twitch {
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
-          text = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
           if (user === "botrixoficial") return;
 
           console.log(
@@ -598,7 +609,7 @@ export class Twitch {
   }
   public async handleRedeemQueue(accept?: Boolean) {
     const redeem = this.redeemQueue.shift();
-    if (accept != null) {
+    if (accept) {
       switch (redeem.rewardId) {
         case this.pollid:
           const matches = redeem.input.match(pollRegex);
@@ -637,7 +648,7 @@ export class Twitch {
           );
           break;
       }
-    } else {
+    } else if (accept === null) {
       // scam
       accept = true;
     }

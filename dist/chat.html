@@ -46,23 +46,23 @@
         messageElement.appendChild(replyElement);
         messageElement.appendChild(document.createElement("br"));
       }
-      const badges = document.createElement("span");
-      badges.classList.add("badges");
+      const badgesElement = document.createElement("span");
+      badgesElement.classList.add("badges");
       message.badges.forEach((badge) => {
         const badgeElement = document.createElement("img");
         badgeElement.src = badge;
         badgeElement.height = "25";
         badgeElement.classList.add("badge");
-        badges.appendChild(badgeElement);
+        badgesElement.appendChild(badgeElement);
       });
-      const element = document.createElement("span");
-      element.classList.add("sender");
-      element.style = `color:${message.color}`;
+      const textElement = document.createElement("span");
+      textElement.classList.add("sender");
+      textElement.style = `color:${message.color}`;
 
-      element.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
+      textElement.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
 
-      spanElement.appendChild(badges);
-      spanElement.appendChild(element);
+      spanElement.appendChild(badgesElement);
+      spanElement.appendChild(textElement);
       messageElement.appendChild(spanElement);
       messageList.appendChild(messageElement);
       messageList.scrollIntoView({
