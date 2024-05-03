@@ -486,7 +486,7 @@ export class Twitch {
     this.chatClient.onChatClear((channel: string, msg: ClearChat) => {
       this.bot.iochat.emit("clearChat", "twitch");
     });
-    this.chatClient.onMessage(
+        this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
           if (user === "botrixoficial") return;
@@ -611,9 +611,13 @@ export class Twitch {
 
     this.chatClient.onConnect(() => {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
+      this.bot.iochat.emit("chatConnect",{name:"Twitch"})
       // this.getRecentMessages();
     });
-
+    this.chatClient.onDisconnect((manually:boolean,reason?:Error) => {
+      this.bot.iochat.emit("chatDisconnect",{color:"#6441a5",name:"Twitch"})
+      console.error("\x1b[35m%s\x1b[0m", `Disconnected from twitch: ${reason}`);
+    });
     this.chatClient.connect();
     this.eventListener.start();
   }

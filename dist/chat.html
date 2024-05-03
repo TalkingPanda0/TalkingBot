@@ -77,7 +77,7 @@
     socket.on("connect", () => {
       const disconnectMessage = document.getElementById("disconnect");
       if (disconnectMessage !== null)
-        document.getElementById("disconnect").remove();
+        disconnectMessage.remove();
     });
     socket.on("disconnect", () => {
       messageList.insertAdjacentHTML(
@@ -119,6 +119,23 @@
         message.remove();
       });
     });
+    socket.on("chatDisconnect", (chat) => {
+      messageList.insertAdjacentHTML(
+        "beforeend",
+        `<div class="message" style="background: ${chat.color}" id="${chat.name}-disconnect"><span><span class="text">Disconnected from ${chat.name}!</span></span></div>`,
+      );
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    })
+    socket.on("chatConnect", (chat) => {
+      const disconnectMessage = document.getElementById(`${chat.name}-disconnect`);
+      if (disconnectMessage !== null)
+        disconnectMessage.remove();
+    });
+
   </script>
   <style>
     #message-list {
@@ -176,6 +193,8 @@
       height: 28px;
       min-width: 28px;
       vertical-align: middle;
+      padding-left: 5px;
+      padding-right: 5px;
     }
     .reply {
       color: #a5a5a5;

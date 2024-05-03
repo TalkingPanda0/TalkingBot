@@ -36,12 +36,13 @@ export class Kick {
         }),
       );
 
-      console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
     });
 
     this.chat.on("error", console.error);
 
     this.chat.on("close", () => {
+
+      this.bot.iochat.emit("chatDisconnect",{color:"#52fb18",name:"Kick"})
       console.log(
         "\x1b[32m%s\x1b[0m",
         "Connection closed for chatroom, trying to reconnect...",
@@ -58,6 +59,10 @@ export class Kick {
         if (jsonData.event === "pusher:error") return;
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
+          case "pusher_internal:subscription_succeeded":
+            this.bot.iochat.emit("chatConnect",{name:"Kick"});
+            console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
+            break;
           case "App\\Events\\ChatMessageEvent":
             const text = DOMPurify.sanitize(jsonDataSub.content);
             const user = jsonDataSub.sender.username;
