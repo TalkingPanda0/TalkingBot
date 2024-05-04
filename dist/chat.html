@@ -1,5 +1,3 @@
-<!doctype html>
-<html>
   <body id="body">
     <div id="message-list"></div>
     <div id="a"></div>
@@ -46,6 +44,14 @@
         messageElement.appendChild(replyElement);
         messageElement.appendChild(document.createElement("br"));
       }
+      if (message.rewardName != "") {
+        const rewardElement = document.createElement("span");
+        rewardElement.classList.add("reply");
+        rewardElement.innerHTML = `Redeemed ${message.rewardName}`;
+        messageElement.appendChild(rewardElement);
+        messageElement.appendChild(document.createElement("br"));
+      }
+
       const badgesElement = document.createElement("span");
       badgesElement.classList.add("badges");
       message.badges.forEach((badge) => {

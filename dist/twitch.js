@@ -112,6 +112,8 @@ class Twitch {
         let badges = ["https://twitch.tv/favicon.ico"];
         let replyTo = "";
         let replyId = "";
+        let text = parseTwitchEmotes(message.text, message.emoteOffsets);
+        let rewardName = "";
         const badge = message.userInfo.badges.get("subscriber");
         if (badge != undefined) {
             badges.push(this.badges.get(badge));
@@ -126,11 +128,14 @@ class Twitch {
         if (color === null || color === undefined) {
             color = exports.userColors[parseInt(message.userInfo.userId) % exports.userColors.length];
         }
-        let text = parseTwitchEmotes(message.text, message.emoteOffsets);
         if (message.isReply) {
             text = text.replace(new RegExp(`@${message.parentMessageUserDisplayName}`, "i"), "");
             replyTo = message.parentMessageUserDisplayName;
             replyId = message.parentMessageUserId;
+        }
+        if (message.isRedemption) {
+            const reward = await this.apiClient.channelPoints.getCustomRewardById(this.channel.id, message.rewardId);
+            rewardName = reward.title;
         }
         this.bot.iochat.emit("message", {
             badges: badges,
@@ -144,6 +149,7 @@ class Twitch {
             replyTo: replyTo,
             replyId: "twitch-" + replyId,
             isCommand: isCommand,
+            rewardName: rewardName,
         });
     }
     setupAuth(auth) {
