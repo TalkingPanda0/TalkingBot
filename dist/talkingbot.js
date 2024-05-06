@@ -269,16 +269,16 @@ class TalkingBot {
     dynamicTitleInterval;
     lastDynamicTitle;
     readCustomCommands() {
-        if (!(0, node_fs_1.existsSync)("./commands.json"))
+        if (!(0, node_fs_1.existsSync)("./config/commands.json"))
             return;
-        this.customCommands = JSON.parse(node_fs_1.default.readFileSync("./commands.json", "utf-8"));
-        if (!(0, node_fs_1.existsSync)("./aliases.json"))
+        this.customCommands = JSON.parse(node_fs_1.default.readFileSync("./config/commands.json", "utf-8"));
+        if (!(0, node_fs_1.existsSync)("./config/aliases.json"))
             return;
-        this.aliasCommands = JSON.parse(node_fs_1.default.readFileSync("./aliases.json", "utf-8"));
+        this.aliasCommands = JSON.parse(node_fs_1.default.readFileSync("./config/aliases.json", "utf-8"));
     }
     writeCustomCommands() {
-        node_fs_1.default.writeFileSync("./commands.json", JSON.stringify(this.customCommands), "utf-8");
-        node_fs_1.default.writeFileSync("./aliases.json", JSON.stringify(this.aliasCommands), "utf-8");
+        node_fs_1.default.writeFileSync("./config/commands.json", JSON.stringify(this.customCommands), "utf-8");
+        node_fs_1.default.writeFileSync("./config/aliases.json", JSON.stringify(this.aliasCommands), "utf-8");
     }
     constructor(kickId, server) {
         this.server = server;

@@ -19,11 +19,11 @@ export class Discord {
   private channel: TextChannel;
   private shouldPing: boolean = true;
   constructor() {
-    if (!fs.existsSync("discord.json")) {
+    if (!fs.existsSync("./config/discord.json")) {
       console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
       return;
     }
-    const fileContent = JSON.parse(fs.readFileSync("discord.json", "utf-8"));
+    const fileContent = JSON.parse(fs.readFileSync("./config/discord.json", "utf-8"));
     this.token = fileContent.token;
   }
   public sendStreamPing(stream?: streamInfo) {

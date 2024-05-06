@@ -40,9 +40,9 @@ import { isContext } from "vm";
 import DOMPurify from "isomorphic-dompurify";
 
 // Get the tokens from ../tokens.json
-const oauthPath = "oauth.json";
-const botPath = "token-bot.json";
-const broadcasterPath = "token-broadcaster.json";
+const oauthPath = "./config/oauth.json";
+const botPath = "./config/token-bot.json";
+const broadcasterPath = "./config/token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
 export const userColors = [
   "#ff0000",

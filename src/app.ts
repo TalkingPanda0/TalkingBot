@@ -54,8 +54,8 @@ app.get("/oauth", (req: Request, res: Response) => {
 });
 
 if (
-  !fs.existsSync("./token-bot.json") ||
-  !fs.existsSync("./token-broadcaster.json")
+  !fs.existsSync("./config/token-bot.json") ||
+  !fs.existsSync("./config/token-broadcaster.json")
 ) {
   console.log(
     "\x1b[31m%s\x1b[0m",

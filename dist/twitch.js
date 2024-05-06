@@ -35,9 +35,9 @@ const fs = __importStar(require("fs"));
 const eventsub_ws_1 = require("@twurple/eventsub-ws");
 const isomorphic_dompurify_1 = __importDefault(require("isomorphic-dompurify"));
 // Get the tokens from ../tokens.json
-const oauthPath = "oauth.json";
-const botPath = "token-bot.json";
-const broadcasterPath = "token-broadcaster.json";
+const oauthPath = "./config/oauth.json";
+const botPath = "./config/token-bot.json";
+const broadcasterPath = "./config/token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
 exports.userColors = [
     "#ff0000",
@@ -56,19 +56,21 @@ exports.userColors = [
     "#00ff7f",
 ];
 function parseTwitchEmotes(text, emoteOffsets) {
-    let parsed = '';
+    let parsed = "";
     let currentOffset = 0;
     // Sort emoteOffsets by start index
     const sortedOffsets = Array.from(emoteOffsets.entries()).sort((a, b) => {
-        const startIndexA = parseInt(a[1][0].split('-')[0]);
-        const startIndexB = parseInt(b[1][0].split('-')[0]);
+        const startIndexA = parseInt(a[1][0].split("-")[0]);
+        const startIndexB = parseInt(b[1][0].split("-")[0]);
         return startIndexA - startIndexB;
     });
     sortedOffsets.forEach(([emoteId, offsetList]) => {
         offsetList.forEach((offsetString) => {
-            const [startIndex, endIndex] = offsetString.split('-').map(Number);
+            const [startIndex, endIndex] = offsetString.split("-").map(Number);
             // Extract text segment before emote and sanitize it
-            const textSegmentBefore = text.substring(currentOffset, startIndex).trim();
+            const textSegmentBefore = text
+                .substring(currentOffset, startIndex)
+                .trim();
             if (textSegmentBefore.length > 0) {
                 parsed += isomorphic_dompurify_1.default.sanitize(textSegmentBefore, { ALLOWED_TAGS: [] });
             }
@@ -458,52 +460,63 @@ class Twitch {
             // this.getRecentMessages();
         });
         this.chatClient.onDisconnect((manually, reason) => {
-            this.bot.iochat.emit("chatDisconnect", { color: "#6441a5", name: "Twitch" });
+            this.bot.iochat.emit("chatDisconnect", {
+                color: "#6441a5",
+                name: "Twitch",
+            });
             console.error("\x1b[35m%s\x1b[0m", `Disconnected from twitch: ${reason}`);
         });
         this.chatClient.connect();
         this.eventListener.start();
     }
     async handleRedeemQueue(accept) {
-        const redeem = this.redeemQueue.shift();
-        if (accept) {
-            switch (redeem.rewardId) {
-                case this.pollid:
-                    const matches = redeem.input.match(pollRegex);
-                    if (matches) {
-                        const question = matches[1];
-                        const options = matches[2]
-                            .split(",")
-                            .map((word) => word.trim());
-                        this.apiClient.polls.createPoll(this.channel.id, {
-                            title: question,
-                            duration: 60,
-                            choices: options,
+        try {
+            const redeem = this.redeemQueue.shift();
+            if (accept) {
+                switch (redeem.rewardId) {
+                    case this.pollid:
+                        const matches = redeem.input.match(pollRegex);
+                        if (matches) {
+                            const question = matches[1];
+                            const options = matches[2]
+                                .split(",")
+                                .map((word) => word.trim());
+                            this.apiClient.polls.createPoll(this.channel.id, {
+                                title: question,
+                                duration: 60,
+                                choices: options,
+                            });
+                            this.chatClient.say(this.channelName, `Created poll: ${redeem.input} requested by @${redeem.userName}`);
+                        }
+                        else {
+                            this.chatClient.say(this.channelName, `@${redeem.userDisplayName} Couldn't parse poll: ${redeem.input}`);
+                            accept = false;
+                        }
+                        break;
+                    case this.titleid:
+                        const currentInfo = await this.apiClient.channels.getChannelInfoById(this.channel.id);
+                        await this.apiClient.channels.updateChannelInfo(this.channel.id, {
+                            title: redeem.input,
                         });
-                    }
-                    else {
-                        this.chatClient.say(this.channelName, `@${redeem.userDisplayName} Couldn't parse poll: ${redeem.input}`);
-                        accept = false;
-                    }
-                    break;
-                case this.titleid:
-                    const currentInfo = await this.apiClient.channels.getChannelInfoById(this.channel.id);
-                    await this.apiClient.channels.updateChannelInfo(this.channel.id, {
-                        title: redeem.input,
-                    });
-                    setTimeout(() => {
-                        this.apiClient.channels.updateChannelInfo(this.channel.id, {
-                            title: currentInfo.title,
-                        });
-                    }, 15 * 60 * 1000);
-                    break;
+                        this.chatClient.say(this.channelName, `Changed title to: ${redeem.input} requested by @${redeem.userName}`);
+                        setTimeout(() => {
+                            this.apiClient.channels.updateChannelInfo(this.channel.id, {
+                                title: currentInfo.title,
+                            });
+                            this.chatClient.say(this.channelName, `Changed title back to: ${currentInfo.title}`);
+                        }, 15 * 60 * 1000);
+                        break;
+                }
             }
+            else if (accept === null) {
+                // scam
+                accept = true;
+            }
+            this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, redeem.rewardId, [redeem.id], accept ? "FULFILLED" : "CANCELED");
         }
-        else if (accept === null) {
-            // scam
-            accept = true;
+        catch (e) {
+            console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem queue: ${e}`);
         }
-        this.apiClient.channelPoints.updateRedemptionStatusByIds(this.channel.id, redeem.rewardId, [redeem.id], accept ? "FULFILLED" : "CANCELED");
     }
 }
 exports.Twitch = Twitch;

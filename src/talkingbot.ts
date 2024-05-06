@@ -316,21 +316,21 @@ export class TalkingBot {
   private dynamicTitleInterval: NodeJS.Timeout;
   private lastDynamicTitle: string;
   private readCustomCommands(): void {
-    if (!existsSync("./commands.json")) return;
+    if (!existsSync("./config/commands.json")) return;
     this.customCommands = JSON.parse(
-      fs.readFileSync("./commands.json", "utf-8"),
+      fs.readFileSync("./config/commands.json", "utf-8"),
     );
-    if (!existsSync("./aliases.json")) return;
-    this.aliasCommands = JSON.parse(fs.readFileSync("./aliases.json", "utf-8"));
+    if (!existsSync("./config/aliases.json")) return;
+    this.aliasCommands = JSON.parse(fs.readFileSync("./config/aliases.json", "utf-8"));
   }
   private writeCustomCommands(): void {
     fs.writeFileSync(
-      "./commands.json",
+      "./config/commands.json",
       JSON.stringify(this.customCommands),
       "utf-8",
     );
     fs.writeFileSync(
-      "./aliases.json",
+      "./config/aliases.json",
       JSON.stringify(this.aliasCommands),
       "utf-8",
     );

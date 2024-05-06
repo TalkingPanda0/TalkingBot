@@ -12,11 +12,11 @@ class Discord {
     channel;
     shouldPing = true;
     constructor() {
-        if (!node_fs_1.default.existsSync("discord.json")) {
+        if (!node_fs_1.default.existsSync("./config/discord.json")) {
             console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
             return;
         }
-        const fileContent = JSON.parse(node_fs_1.default.readFileSync("discord.json", "utf-8"));
+        const fileContent = JSON.parse(node_fs_1.default.readFileSync("./config/discord.json", "utf-8"));
         this.token = fileContent.token;
     }
     sendStreamPing(stream) {
