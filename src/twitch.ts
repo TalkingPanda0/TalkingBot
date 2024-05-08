@@ -284,7 +284,7 @@ export class Twitch {
             thumbnailUrl: thumbnail,
           });
         } catch (e) {
-          console.error(e);
+          console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
           this.bot.discord.sendStreamPing();
         }
       },
@@ -394,7 +394,7 @@ export class Twitch {
             completed ? "FULFILLED" : "CANCELED",
           );
         } catch (e) {
-          console.log(e);
+            console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
         }
       },
     );
@@ -608,7 +608,7 @@ export class Twitch {
             });
           }
         } catch (e) {
-          console.log(e);
+           console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
         }
       },
     );
