@@ -4,16 +4,10 @@ import { Twitch, parseTwitchEmotes } from "./twitch";
 import { Discord } from "./discord";
 import { YouTube } from "./youtube";
 import { Kick, parseKickEmotes } from "./kick";
-import {
-  Star,
-  findClosestStar,
-  metersToSolarRadii,
-  solarRadiiToMeter,
-} from "./stars";
-import fs, { existsSync } from "node:fs";
 
 import { Server } from "socket.io";
 import * as http from "http";
+import { BunFile } from "bun";
 const kickEmotePrefix = /sweetbabooo-o/g;
 
 export enum Platform {
@@ -315,25 +309,21 @@ export class TalkingBot {
   private dynamicTitle: string;
   private dynamicTitleInterval: NodeJS.Timeout;
   private lastDynamicTitle: string;
-  private readCustomCommands(): void {
-    if (!existsSync("./config/commands.json")) return;
-    this.customCommands = JSON.parse(
-      fs.readFileSync("./config/commands.json", "utf-8"),
-    );
-    if (!existsSync("./config/aliases.json")) return;
-    this.aliasCommands = JSON.parse(fs.readFileSync("./config/aliases.json", "utf-8"));
+  private commandsFile: BunFile = Bun.file(
+    __dirname + "/../config/commands.json",
+  );
+  private aliasesFile: BunFile = Bun.file(
+    __dirname + "/../config/aliases.json",
+  );
+  private async readCustomCommands() {
+    if (!(await this.commandsFile.exists())) return;
+    this.customCommands = await this.commandsFile.json();
+    if (!(await this.aliasesFile.exists())) return;
+    this.aliasCommands = await this.aliasesFile.json();
   }
-  private writeCustomCommands(): void {
-    fs.writeFileSync(
-      "./config/commands.json",
-      JSON.stringify(this.customCommands),
-      "utf-8",
-    );
-    fs.writeFileSync(
-      "./config/aliases.json",
-      JSON.stringify(this.aliasCommands),
-      "utf-8",
-    );
+  private writeCustomCommands() {
+    Bun.write(this.commandsFile, JSON.stringify(this.customCommands));
+    Bun.write(this.aliasesFile, JSON.stringify(this.aliasCommands));
   }
 
   constructor(kickId: string, server: http.Server) {
@@ -374,7 +364,10 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          if (message.toLowerCase().includes("furry") && message.toLowerCase().includes("sweet")) {
+          if (
+            message.toLowerCase().includes("furry") &&
+            message.toLowerCase().includes("sweet")
+          ) {
             reply("Yes.", false);
             return;
           }
@@ -822,30 +815,6 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
-        command: "!distance",
-        commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          const distance = parseInt(message);
-          const distanceinkm = Math.round(distance / 10) / 100;
-          const star: Star = findClosestStar(metersToSolarRadii(distance));
-          const diameter = solarRadiiToMeter(star.radius * 2);
-          const diameterinkm = Math.round(diameter / 10) / 100;
-          const percent =
-            Math.round((distanceinkm / diameterinkm) * 10000) / 100;
-          reply(
-            `${star.name}: ${distanceinkm}/${diameterinkm} km (${percent}%) `,
-            true,
-          );
-        },
-      },
-      {
-        showOnChat: false,
         command: "!settitle",
 
         commandFunction: async (
@@ -1049,9 +1018,8 @@ export class TalkingBot {
   public initBot() {
     this.discord.initBot();
     this.youTube.initBot();
-    this.twitch.initBot().then(() => {
-      this.kick.initBot();
-    });
+    this.twitch.initBot();
+    this.kick.initBot();
   }
   public updatePoll() {
     const combinedOptions = {};

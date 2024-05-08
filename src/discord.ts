@@ -1,3 +1,4 @@
+import { BunFile } from "bun";
 import {
   Channel,
   Client,
@@ -6,7 +7,6 @@ import {
   TextChannel,
   VoiceState,
 } from "discord.js";
-import fs from "node:fs";
 export interface streamInfo {
   game: string;
   title: string;
@@ -18,14 +18,10 @@ export class Discord {
   private client: Client;
   private channel: TextChannel;
   private shouldPing: boolean = true;
-  constructor() {
-    if (!fs.existsSync("./config/discord.json")) {
-      console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
-      return;
-    }
-    const fileContent = JSON.parse(fs.readFileSync("./config/discord.json", "utf-8"));
-    this.token = fileContent.token;
-  }
+  private discordFile: BunFile = Bun.file(
+    __dirname + "/../config/discord.json",
+  );
+  constructor() {}
   public sendStreamPing(stream?: streamInfo) {
     if (stream === undefined) {
       this.channel.send({
@@ -54,7 +50,14 @@ export class Discord {
     });
   }
 
-  public initBot() {
+  public async initBot() {
+    if (!(await this.discordFile.exists())) {
+      console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
+      return;
+    }
+    const fileContent = await this.discordFile.json();
+    this.token = fileContent.token;
+
     if (this.token === undefined) return;
     this.client = new Client({
       intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],

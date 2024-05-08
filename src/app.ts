@@ -11,27 +11,27 @@ const server = http.createServer(app);
 app.use(express.static("public"));
 
 app.get("/tts", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/tts.html");
+  res.sendFile(__dirname + "/html/tts.html");
 });
 app.get("/modtext", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/modtext.html");
+  res.sendFile(__dirname + "/html/modtext.html");
 });
 app.get("/alerts", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/alerts.html");
+  res.sendFile(__dirname + "/html/alerts.html");
 });
 
 app.get("/poll", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/poll.html");
+  res.sendFile(__dirname + "/html/poll.html");
 });
 
 app.get("/chat", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/chat.html");
+  res.sendFile(__dirname + "/html/chat.html");
 });
 app.get("/setup", (req: Request, res: Response) => {
-  res.sendFile(__dirname + "/setup.html");
+  res.sendFile(__dirname + "/html/setup.html");
 });
 
-let bot: TalkingBot = new TalkingBot("17587561", server);
+const bot: TalkingBot = new TalkingBot("17587561", server);
 
 const iosetup = new Server(server, { path: "/setup/" });
 
@@ -52,40 +52,30 @@ app.get("/oauth", (req: Request, res: Response) => {
     );
   }
 });
+iosetup.on("connection", (socket) => {
+  console.log("got setup connection");
 
-if (
-  !fs.existsSync("./config/token-bot.json") ||
-  !fs.existsSync("./config/token-broadcaster.json")
-) {
-  console.log(
-    "\x1b[31m%s\x1b[0m",
-    "Auth not found, please go to localhost:3000/setup to create it",
-  );
-  if (fs.existsSync("./oauth.json")) bot.twitch.readAuth();
+  let twitchClientId = bot.twitch.clientId;
+  let twitchClientSecret = bot.twitch.clientSecret;
 
-  iosetup.on("connection", (socket) => {
-    console.log("got setup connection");
-
-    let twitchClientId = bot.twitch.clientId;
-    let twitchClientSecret = bot.twitch.clientSecret;
-
-    // Send the client id and client secret if they have been given already
-    if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
-      socket.emit("setup_message", {
-        twitchClientId: twitchClientId,
-        twitchClientSecret: twitchClientSecret,
-      });
-
-    socket.on("setup_message", (message: AuthSetup) => {
-      console.log(`Got setup message!`);
-      bot.twitch.setupAuth(message);
+  // Send the client id and client secret if they have been given already
+  if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
+    socket.emit("setup_message", {
+      twitchClientId: twitchClientId,
+      twitchClientSecret: twitchClientSecret,
     });
-  });
-} else {
-  bot.twitch.readAuth();
-  bot.initBot();
-}
 
+  socket.on("setup_message", (message: AuthSetup) => {
+    console.log(`Got setup message!`);
+    bot.twitch.setupAuth(message);
+  });
+});
+bot.initBot();
 server.listen(3000, () => {
   console.log("listening on *:3000");
+});
+
+process.on("SIGINT", () => {
+  console.log("Exitting...");
+  process.exit();
 });

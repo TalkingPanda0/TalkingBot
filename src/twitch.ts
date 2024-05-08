@@ -11,14 +11,11 @@ import {
 } from "@twurple/chat";
 import {
   ApiClient,
-  HelixChannelUpdate,
   HelixCreateCustomRewardData,
-  HelixCustomRewardRedemption,
   HelixUser,
 } from "@twurple/api";
 import {
   AuthSetup,
-  Command,
   Platform,
   Poll,
   TalkingBot,
@@ -26,7 +23,6 @@ import {
   pollOption,
   replaceAsync,
 } from "./talkingbot";
-import * as fs from "fs";
 import { EventSubWsListener } from "@twurple/eventsub-ws";
 import {
   EventSubChannelRedemptionAddEvent,
@@ -36,14 +32,11 @@ import {
   EventSubChannelPollEndEvent,
   EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
-import { isContext } from "vm";
 import DOMPurify from "isomorphic-dompurify";
+import { BunFile } from "bun";
 
-// Get the tokens from ../tokens.json
-const oauthPath = "./config/oauth.json";
-const botPath = "./config/token-bot.json";
-const broadcasterPath = "./config/token-broadcaster.json";
 const pollRegex = /^(.*?):\s*(.*)$/;
+
 export const userColors = [
   "#ff0000",
   "#0000ff",
@@ -122,6 +115,11 @@ export class Twitch {
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
   private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
+  private oauthFile: BunFile = Bun.file(__dirname + "/../config/oauth.json");
+  private broadcasterFile: BunFile = Bun.file(
+    __dirname + "/../config/token-broadcaster.json",
+  );
+  private botFile: BunFile = Bun.file(__dirname + "/../config/token-bot.json");
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -190,16 +188,14 @@ export class Twitch {
     this.clientSecret = auth.twitchClientSecret;
     this.channelName = auth.channelName;
 
-    fs.writeFileSync(
-      oauthPath,
+    Bun.write(
+      this.oauthFile,
       JSON.stringify({
         clientId: this.clientId,
         clientSecret: this.clientSecret,
         channelName: this.channelName,
       }),
-      "utf-8",
     );
-
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
       clientSecret: this.clientSecret,
@@ -215,21 +211,21 @@ export class Twitch {
       code,
       "http://localhost:3000/oauth",
     );
-    fs.writeFileSync(
-      isBroadcaster ? broadcasterPath : botPath,
+    Bun.write(
+      isBroadcaster ? this.broadcasterFile : this.botFile,
       JSON.stringify(tokenData, null, 4),
-      "utf-8",
     );
   }
 
-  public readAuth() {
-    const fileContent = JSON.parse(fs.readFileSync(oauthPath, "utf-8"));
+  public async readAuth() {
+    const fileContent = await this.oauthFile.json();
     this.clientId = fileContent.clientId;
     this.clientSecret = fileContent.clientSecret;
     this.channelName = fileContent.channelName;
   }
 
   async initBot(): Promise<void> {
+    await this.readAuth();
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
       clientSecret: this.clientSecret,
@@ -239,21 +235,18 @@ export class Twitch {
     this.authProvider.onRefresh(async (userId, newTokenData) => {
       let isBroadcaster: Boolean =
         newTokenData.scope[0].startsWith("bits:read");
-      fs.writeFileSync(
-        isBroadcaster ? broadcasterPath : botPath,
+      Bun.write(
+        isBroadcaster ? this.broadcasterFile : this.botFile,
         JSON.stringify(newTokenData, null, 4),
-        "utf-8",
       );
     });
 
-    await this.authProvider.addUserForToken(
-      JSON.parse(fs.readFileSync(botPath, "utf-8")),
-      ["chat"],
-    );
-    await this.authProvider.addUserForToken(
-      JSON.parse(fs.readFileSync(broadcasterPath, "utf-8")),
-      [""],
-    );
+    await this.authProvider.addUserForToken(await this.botFile.json(), [
+      "chat",
+    ]);
+    await this.authProvider.addUserForToken(await this.broadcasterFile.json(), [
+      "",
+    ]);
 
     this.apiClient = new ApiClient({ authProvider: this.authProvider });
 

@@ -1,5 +1,2 @@
-token-*.json
-oauth.json
-commands.json
-discord.json
+node_modules
 config/*
