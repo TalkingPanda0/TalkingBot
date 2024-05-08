@@ -77,11 +77,11 @@ export function parseTwitchEmotes(
         .substring(currentOffset, startIndex)
         .trim();
       if (textSegmentBefore.length > 0) {
-        parsed += DOMPurify.sanitize(textSegmentBefore, { ALLOWED_TAGS: [] });
+        parsed += DOMPurify.sanitize(textSegmentBefore, { ALLOWED_TAGS: [] }) + " ";
       }
 
       const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
-      parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}">`;
+      parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}"> `;
 
       currentOffset = endIndex + 1;
     });
@@ -90,11 +90,12 @@ export function parseTwitchEmotes(
   // Sanitize remaining text after emotes
   const remainingText = text.substring(currentOffset).trim();
   if (remainingText.length > 0) {
-    parsed += DOMPurify.sanitize(remainingText, { ALLOWED_TAGS: [] });
+    parsed += DOMPurify.sanitize(remainingText, { ALLOWED_TAGS: [] }) + " ";
   }
 
   return parsed;
 }
+
 export class Twitch {
   public clientId: string = "";
   public clientSecret: string = "";
@@ -105,6 +106,8 @@ export class Twitch {
   public chatClient: ChatClient;
   public rewardData: HelixCreateCustomRewardData;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
+  public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
+  public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/(\S+)/;
 
   private channelName: string;
   private bot: TalkingBot;
@@ -135,6 +138,9 @@ export class Twitch {
     let text = parseTwitchEmotes(message.text, message.emoteOffsets);
     let rewardName = "";
 
+    text = await this.bot.parseClips(text);
+
+    
     const badge = message.userInfo.badges.get("subscriber");
     if (badge != undefined) {
       badges.push(this.badges.get(badge));
@@ -284,7 +290,7 @@ export class Twitch {
             thumbnailUrl: thumbnail,
           });
         } catch (e) {
-          console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
+          console.error("\x1b[35m%s\x1b[0m", `Fai!counter +179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000led getting stream info: ${e}`);
           this.bot.discord.sendStreamPing();
         }
       },

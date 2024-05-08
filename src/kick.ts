@@ -98,7 +98,7 @@ export class Kick {
             }
             if (!text.startsWith("!")) {
               this.bot.iochat.emit("message", {
-                text: parseKickEmotes(text),
+                text: await this.bot.parseClips(parseKickEmotes(text)),
                 sender: jsonDataSub.sender.username,
                 senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,
@@ -128,7 +128,7 @@ export class Kick {
               );
               if (!command.showOnChat) return;
               this.bot.iochat.emit("message", {
-                text: parseKickEmotes(text),
+                text:await this.bot.parseClips(parseKickEmotes(text)),
                 sender: jsonDataSub.sender.username,
                 senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,

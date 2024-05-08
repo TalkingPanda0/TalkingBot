@@ -1091,4 +1091,25 @@ export class TalkingBot {
       this.lastDynamicTitle = title;
     }
   }
+  public async parseClips(text: string) : Promise<string>{
+    const clipId = this.twitch.clipRegex.exec(text);
+    if(clipId !== null){
+      const clip = await this.twitch.apiClient.clips.getClipById(clipId[1]);
+      if(clip !== null){
+        return text + `<a target="_blank" href="${clip.url}" style="text-decoration: none;"><div style="background-color: #191b1f;box-shadow: 0 1px 2px rgba(0,0,0,.9),0 0px 2px rgba(0,0,0,.9);border-radius: 0.2rem;border: none;padding: 4px;display: flex;align-content: center;margin-top: 5px;text-decoration: none;font-size: 15px;line-height: 25px;"> <img width="80" height="45" src="${clip.thumbnailUrl}" style="padding-right: 10px;"> ${clip.title}  <br> Clipped by ${clip.creatorDisplayName}</div></a>`;
+      } else {
+          console.error("\x1b[35m%s\x1b[0m", `Failed getting clip info: ${clipId[1]}`);
+      }
+    }
+    const wwwclipId = this.twitch.wwwclipRegex.exec(text);
+    if(wwwclipId !== null){
+      const clip = await this.twitch.apiClient.clips.getClipById(wwwclipId[1]);
+      if(clip !== null){
+        return text + `<a target="_blank" href="${clip.url}" style="text-decoration: none;"><div style="background-color: #191b1f;box-shadow: 0 1px 2px rgba(0,0,0,.9),0 0px 2px rgba(0,0,0,.9);border-radius: 0.2rem;border: none;padding: 4px;display: flex;align-content: center;margin-top: 5px;text-decoration: none;font-size: 15px;line-height: 25px;"> <img width="80" height="45" src="${clip.thumbnailUrl}" style="padding-right: 10px;"> ${clip.title}  <br> Clipped by ${clip.creatorDisplayName}</div></a>`;
+      } else {
+          console.error("\x1b[35m%s\x1b[0m", `Failed getting clip info: ${wwwclipId[1]}`);
+      }
+    }
+    return text;
+  }
 }
