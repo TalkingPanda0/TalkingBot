@@ -8,6 +8,10 @@ import {
   ClearMsg,
   UserNotice,
   ChatSubGiftInfo,
+  parseEmotePositions,
+  parseChatMessage,
+  ParsedMessagePart,
+  buildEmoteImageUrl,
 } from "@twurple/chat";
 import {
   ApiClient,
@@ -58,42 +62,25 @@ export function parseTwitchEmotes(
   text: string,
   emoteOffsets: Map<string, string[]>,
 ): string {
-  let parsed = "";
-  let currentOffset = 0;
+	let parsed = "";
+	const parsedParts = parseChatMessage(text,emoteOffsets);
+	parsedParts.forEach((parsedPart: ParsedMessagePart) => {
+		switch(parsedPart.type){
+			case "text":
+				parsed += DOMPurify.sanitize(parsedPart.text);
+			break;
+			case "cheer":
+				parsed += parsedPart.name;
+				break;
+			case "emote":
+				const emoteUrl = buildEmoteImageUrl(parsedPart.id,{size:"3.0",backgroundType: 'dark',animationSettings:'default'});
+				parsed += ` <img src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+			break;
+		}
 
-  // Sort emoteOffsets by start index
-  const sortedOffsets = Array.from(emoteOffsets.entries()).sort((a, b) => {
-    const startIndexA = parseInt(a[1][0].split("-")[0]);
-    const startIndexB = parseInt(b[1][0].split("-")[0]);
-    return startIndexA - startIndexB;
-  });
+	});
 
-  sortedOffsets.forEach(([emoteId, offsetList]) => {
-    offsetList.forEach((offsetString) => {
-      const [startIndex, endIndex] = offsetString.split("-").map(Number);
-
-      // Extract text segment before emote and sanitize it
-      const textSegmentBefore = text
-        .substring(currentOffset, startIndex)
-        .trim();
-      if (textSegmentBefore.length > 0) {
-        parsed += DOMPurify.sanitize(textSegmentBefore, { ALLOWED_TAGS: [] }) + " ";
-      }
-
-      const emoteUrl = `https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/3.0`;
-      parsed += `<img src="${emoteUrl}" class="emote" id="${emoteId}"> `;
-
-      currentOffset = endIndex + 1;
-    });
-  });
-
-  // Sanitize remaining text after emotes
-  const remainingText = text.substring(currentOffset).trim();
-  if (remainingText.length > 0) {
-    parsed += DOMPurify.sanitize(remainingText, { ALLOWED_TAGS: [] }) + " ";
-  }
-
-  return parsed;
+	return parsed;
 }
 
 export class Twitch {
@@ -499,6 +486,7 @@ export class Twitch {
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
+					console.log(parseChatMessage(text,msg.emoteOffsets));
           if (user === "botrixoficial") return;
 
           console.log(
