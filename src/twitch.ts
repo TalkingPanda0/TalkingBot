@@ -12,6 +12,8 @@ import {
   parseChatMessage,
   ParsedMessagePart,
   buildEmoteImageUrl,
+  parseTwitchMessage,
+  extractMessageText,
 } from "@twurple/chat";
 import {
   ApiClient,
@@ -62,25 +64,28 @@ export function parseTwitchEmotes(
   text: string,
   emoteOffsets: Map<string, string[]>,
 ): string {
-	let parsed = "";
-	const parsedParts = parseChatMessage(text,emoteOffsets);
-	parsedParts.forEach((parsedPart: ParsedMessagePart) => {
-		switch(parsedPart.type){
-			case "text":
-				parsed += DOMPurify.sanitize(parsedPart.text);
-			break;
-			case "cheer":
-				parsed += parsedPart.name;
-				break;
-			case "emote":
-				const emoteUrl = buildEmoteImageUrl(parsedPart.id,{size:"3.0",backgroundType: 'dark',animationSettings:'default'});
-				parsed += ` <img src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
-			break;
-		}
+  let parsed = "";
+  const parsedParts = parseChatMessage(text, emoteOffsets);
+  parsedParts.forEach((parsedPart: ParsedMessagePart) => {
+    switch (parsedPart.type) {
+      case "text":
+        parsed += DOMPurify.sanitize(parsedPart.text);
+        break;
+      case "cheer":
+        parsed += parsedPart.name;
+        break;
+      case "emote":
+        const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
+          size: "3.0",
+          backgroundType: "dark",
+          animationSettings: "default",
+        });
+        parsed += ` <img src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+        break;
+    }
+  });
 
-	});
-
-	return parsed;
+  return parsed;
 }
 
 export class Twitch {
@@ -127,7 +132,6 @@ export class Twitch {
 
     text = await this.bot.parseClips(text);
 
-    
     const badge = message.userInfo.badges.get("subscriber");
     if (badge != undefined) {
       badges.push(this.badges.get(badge));
@@ -277,7 +281,10 @@ export class Twitch {
             thumbnailUrl: thumbnail,
           });
         } catch (e) {
-          console.error("\x1b[35m%s\x1b[0m", `Fai!counter +179769313486231570000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000led getting stream info: ${e}`);
+          console.error(
+            "\x1b[35m%s\x1b[0m",
+            `Failed getting stream info: ${e}`,
+          );
           this.bot.discord.sendStreamPing();
         }
       },
@@ -387,7 +394,7 @@ export class Twitch {
             completed ? "FULFILLED" : "CANCELED",
           );
         } catch (e) {
-            console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
+          console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
         }
       },
     );
@@ -486,7 +493,6 @@ export class Twitch {
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
-					console.log(parseChatMessage(text,msg.emoteOffsets));
           if (user === "botrixoficial") return;
 
           console.log(
@@ -602,15 +608,17 @@ export class Twitch {
             });
           }
         } catch (e) {
-           console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
+          console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
         }
       },
     );
 
     this.chatClient.onConnect(() => {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
-      this.bot.iochat.emit("chatConnect", { name: "Twitch" });
-      // this.getRecentMessages();
+      if (this.bot.connectedtoOverlay) {
+        this.bot.iochat.emit("chatConnect", { name: "Twitch" });
+        this.sendRecentMessages();
+      }
     });
     this.chatClient.onDisconnect((manually: boolean, reason?: Error) => {
       this.bot.iochat.emit("chatDisconnect", {
@@ -689,15 +697,26 @@ export class Twitch {
       console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem queue: ${e}`);
     }
   }
-  /*private async getRecentMessages(timeStampms?: string){
-    let url = `https://recent-messages.robotty.de/api/v2/recent-messages/${this.channelName.toLowerCase()}?hide_moderation_messages=true&hide_moderated_messages=true&limit=10`;
-    if(timeStampms === null) url+= `&after${timeStampms}`;
+  public async sendRecentMessages() {
+    const url = `https://recent-messages.robotty.de/api/v2/recent-messages/${this.channelName.toLowerCase()}?hide_moderation_messages=true&hide_moderated_messages=true&limit=20`;
     try {
-      const recentMessages = JSON.parse(await (await fetch(url)).text()); 
-      console.log(recentMessages);
-    } catch(e) {
-      console.error(e);
-    }
+      const recentMessages = JSON.parse(await (await fetch(url)).text());
+      recentMessages.messages.forEach((element: string) => {
+        const message = parseTwitchMessage(element) as ChatMessage;
+        if (message.userInfo.userName === "botrixoficial") return;
 
-  }*/
+        // find a better way to get bot's id
+        const isCommand =
+          message.text.startsWith("!") ||
+          message.userInfo.userId === "736013381";
+
+        this.sendToChatList(message, isCommand);
+      });
+    } catch (e) {
+      console.error(
+        "\x1b[35m%s\x1b[0m",
+        `Failed getting recent Messages: ${e}`,
+      );
+    }
+  }
 }
