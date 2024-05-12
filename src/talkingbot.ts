@@ -976,7 +976,7 @@ export class TalkingBot {
                 break;
               }
             default:
-              reply("Usage !pet feed|status|fuel", true);
+              reply("Usage !pet feed|fuel|status|graveyard", true);
           }
         },
       },
