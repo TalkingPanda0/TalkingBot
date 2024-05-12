@@ -287,8 +287,14 @@ export class Twitch {
           );
           this.bot.discord.sendStreamPing();
         }
+        this.bot.pet.init();
       },
     );
+
+    this.eventListener.onStreamOffline(this.channel.id, (event) => {
+      this.bot.pet.sleep();
+    });
+
     this.eventListener.onChannelFollow(
       this.channel.id,
       this.channel.id,

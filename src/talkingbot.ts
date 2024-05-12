@@ -8,6 +8,7 @@ import { Kick, parseKickEmotes } from "./kick";
 import { Server } from "socket.io";
 import * as http from "http";
 import { BunFile } from "bun";
+import { Pet, StatusReason } from "./pet";
 const kickEmotePrefix = /sweetbabooo-o/g;
 
 export enum Platform {
@@ -35,7 +36,6 @@ export interface CommandAlias {
   alias: string;
   command: string;
 }
-
 export interface TTSMessage {
   text: string;
   sender: string;
@@ -63,15 +63,8 @@ export interface Poll {
   options: pollOption[];
   id?: string;
 }
-interface TimeDifference {
-  years: number;
-  months: number;
-  days: number;
-  hours: number;
-  minutes: number;
-}
 
-function getTimeDifference(startDate: Date, endDate: Date): TimeDifference {
+export function getTimeDifference(startDate: Date, endDate: Date): string {
   const timeDifference = endDate.getTime() - startDate.getTime();
   const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365.25));
   const remainingTime = timeDifference % (1000 * 60 * 60 * 24 * 365.25);
@@ -82,18 +75,19 @@ function getTimeDifference(startDate: Date, endDate: Date): TimeDifference {
   const hours = Math.floor(remainingTime3 / (1000 * 60 * 60));
   const remainingTime4 = remainingTime3 % (1000 * 60 * 60);
   const minutes = Math.floor(remainingTime4 / (1000 * 60));
+  const remainingTime5 = remainingTime4 % (1000 * 60);
+  const seconds = Math.floor(remainingTime5 / 1000);
 
-  return {
-    years,
-    months,
-    days,
-    hours,
-    minutes,
-  };
+  let timeString = "";
+  if (years != 0) timeString += `${years} years `;
+  if (months != 0) timeString += `${months} months `;
+  if (days != 0) timeString += `${days} days `;
+  if (hours != 0) timeString += `${hours} hours `;
+  if (minutes != 0) timeString += `${minutes} minutes `;
+  if (seconds != 0) timeString += `${seconds} seconds`;
+  return timeString;
 }
-function removeByIndex(str: string, index: number): string {
-  return str.slice(0, index) + str.slice(index + 1);
-}
+
 export async function replaceAsync(
   str: string,
   regex: RegExp,
@@ -107,6 +101,11 @@ export async function replaceAsync(
   const data = await Promise.all(promises);
   return str.replace(regex, () => data.shift());
 }
+
+function removeByIndex(str: string, index: number): string {
+  return str.slice(0, index) + str.slice(index + 1);
+}
+
 function removeByIndexToUppercase(str: string, indexes: number[]): string {
   let deletedChars = 0;
   indexes.forEach((index) => {
@@ -131,6 +130,7 @@ function removeKickEmotes(message: string): string {
     })
     .replace(kickEmotePrefix, "");
 }
+
 export function getSuffix(i: number) {
   var j = i % 10,
     k = i % 100;
@@ -145,10 +145,12 @@ export function getSuffix(i: number) {
   }
   return i + "th";
 }
+
 function getRandomElement(array: string[]): string {
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 }
+
 const selfKillMessages: string[] = [
   "$1 managed to kill themself.",
   "$1 died from an unknown cause.",
@@ -199,11 +201,12 @@ const selfKillMessages: string[] = [
   "$1 went up in flames.",
   "$1 withered away.",
   "$1 went skydiving, and forgot the parachute.",
-  "$1 spontaneously combusted.",
+  "$1 spontvar timeDiffInSecond = Math.ceil(timeDiff / 1000); // in secondaneously combusted.",
   "$1 was struck with a bolt of inspiration, I mean lightning.",
   "$1 ended it all. Goodbye cruel world!",
   "$1 passed the event horizon.",
 ];
+
 const killOtherMessages: string[] = [
   "$1 murdered $2 with a unicorn's horn!",
   "$2 was killed by $1!",
@@ -223,7 +226,7 @@ const killOtherMessages: string[] = [
   "$1 stole a car known as 'KITT' and ran over $2.",
   "$1 tickled $2 to death!",
   "$2's skull was crushed by $1!",
-  "$2 is in several pieces after a tragic accident involving $1 and cutlery.",
+  "$2 is in var timeDiffInSecond = Math.ceil(timeDiff / 1000); // in secondseveral pieces after a tragic accident involving $1 and cutlery.",
   "$1 licked $2 until $2 was squishy, yeah.. squishy.",
   "$1 catapulted a huge load of rusty sporks on to $2. $2 died.",
   "$1 ran out of rusty sporks and unicorn horns to kill $2 with, so instead they used a rusty hanger.",
@@ -250,6 +253,7 @@ const killOtherMessages: string[] = [
   "$1 hugged $2 a little too tight.",
   "$1 sent $2 to an awesome farm in the country.",
 ];
+
 const eightballMessages: string[] = [
   "Reply hazy try again.",
   "Ask again later.",
@@ -300,6 +304,7 @@ export class TalkingBot {
   public customCommands: CustomCommand[] = [];
   public aliasCommands: CommandAlias[] = [];
   public connectedtoOverlay: Boolean = false;
+  public pet: Pet;
 
   private kickId: string;
   private modtext: string;
@@ -308,7 +313,7 @@ export class TalkingBot {
   private server: http.Server;
   private iotts: Server;
   private dynamicTitle: string;
-  private dynamicTitleInterval: NodeJS.Timeout;
+  private dynamicTitleInterval: Timer;
   private lastDynamicTitle: string;
   private commandsFile: BunFile = Bun.file(
     __dirname + "/../config/commands.json",
@@ -316,12 +321,14 @@ export class TalkingBot {
   private aliasesFile: BunFile = Bun.file(
     __dirname + "/../config/aliases.json",
   );
+
   private async readCustomCommands() {
     if (!(await this.commandsFile.exists())) return;
     this.customCommands = await this.commandsFile.json();
     if (!(await this.aliasesFile.exists())) return;
     this.aliasCommands = await this.aliasesFile.json();
   }
+
   private writeCustomCommands() {
     Bun.write(this.commandsFile, JSON.stringify(this.customCommands));
     Bun.write(this.aliasesFile, JSON.stringify(this.aliasCommands));
@@ -537,13 +544,7 @@ export class TalkingBot {
             );
             return;
           }
-          const time = getTimeDifference(stream.startDate, new Date());
-          let timeString = "";
-          if (time.years != 0) timeString += `${time.years} years `;
-          if (time.months != 0) timeString += `${time.months} months `;
-          if (time.days != 0) timeString += `${time.days} days `;
-          if (time.hours != 0) timeString += `${time.hours} hours `;
-          if (time.minutes != 0) timeString += `${time.minutes} minutes`;
+          const timeString = getTimeDifference(stream.startDate, new Date());
           reply(
             `${this.twitch.channel.displayName} has been live for ${timeString}`,
             true,
@@ -572,7 +573,7 @@ export class TalkingBot {
             );
             return;
           }
-          reply(`\"${stream.title}\" - \"${stream.gameName}\"`, true);
+          reply(`\"${stream.title}\" - ${stream.gameName}`, true);
         },
       },
       {
@@ -600,17 +601,10 @@ export class TalkingBot {
               true,
             );
           } else {
-            const time = getTimeDifference(
+            const timeString = getTimeDifference(
               followed.data[0].followDate,
               new Date(),
             );
-            let timeString = "";
-            if (time.years != 0) timeString += `${time.years} years `;
-            if (time.months != 0) timeString += `${time.months} months `;
-            if (time.days != 0) timeString += `${time.days} days `;
-            if (time.hours != 0) timeString += `${time.hours} hours `;
-            if (time.minutes != 0) timeString += `${time.minutes} minutes`;
-
             reply(
               `@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`,
               false,
@@ -868,54 +862,6 @@ export class TalkingBot {
           reply(`Game has been changed to "${game.name}"`, true);
         },
       },
-      /*{
-        showOnChat: false,
-        command: "!adopt",
-
-        commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply(`${message} has been adopted by @${user}!`, true);
-        },
-      },
-      {
-        showOnChat: false,
-        command: "!socials",
-        commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply(
-            "SweetbabooO_o's socials: https://linktr.ee/SweetbabooO_o",
-            true,
-          );
-        },
-      },
-      {
-        showOnChat: false,
-        command: "!yt",
-        commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply(
-            "SweetbabooO_o's Youtube channel: https://www.youtube.com/channel/UC1dRtHovRsOwq2qSComV_OQ",
-            true,
-          );
-        },
-      },
-      {
-        showOnChat: false,
-        command: "!twitch",
-        commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply(
-            "SweetbabooO_o's Twitch channel: https://www.twitch.tv/sweetbabooo_o",
-            true,
-          );
-        },
-      },
-      {
-        showOnChat: false,
-        command: "!kick",
-        commandFunction(user, isUserMod, message, reply, platform, context) {
-          reply(
-            "SweetbabooO_o's Kick channel: https://kick.com/sweetbabooo-o/",
-            true,
-          );
-        },
-      },*/
       {
         showOnChat: false,
         command: "!bsr",
@@ -958,14 +904,17 @@ export class TalkingBot {
                 });
               });
               msg = removeByIndexToUppercase(msg, indexes);
-              this.sendTTS({ text: msg, sender: user });
+              this.iotts.emit("message", { text: msg, sender: user });
 
               break;
             case Platform.kick:
-              this.sendTTS({ text: removeKickEmotes(message), sender: user });
+              this.iotts.emit("message", {
+                text: removeKickEmotes(message),
+                sender: user,
+              });
               break;
             default:
-              this.sendTTS({ text: message, sender: user });
+              this.iotts.emit("message", { text: message, sender: user });
               break;
           }
         },
@@ -994,7 +943,7 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
-        command: "!clip",
+        command: "!pet",
         commandFunction: async (
           user,
           isUserMod,
@@ -1003,29 +952,50 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-          if (!isUserMod) return;
-          reply(
-            await this.twitch.apiClient.clips.createClip({
-              channel: this.twitch.channel.id,
-              createAfterDelay: true,
-            }),
-            true,
-          );
+          switch (message) {
+            case "feed":
+              this.pet.feed();
+              break;
+            case "status":
+              this.pet.sayStatus(StatusReason.command);
+              break;
+            case "graveyard":
+              this.pet.graveyard();
+              break;
+            case "fuel":
+              this.pet.fuel();
+              break;
+            case "start":
+              if (isUserMod) {
+                this.pet.init();
+                break;
+              }
+            case "sleep":
+              if (isUserMod) {
+                this.pet.sleep();
+                break;
+              }
+            default:
+              reply("Usage !pet feed|status|fuel", true);
+          }
         },
       },
     ];
 
+    this.pet = new Pet(this);
     this.twitch = new Twitch(this);
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord();
   }
+
   public initBot() {
     this.discord.initBot();
     this.youTube.initBot();
     this.twitch.initBot();
     this.kick.initBot();
   }
+
   public updatePoll() {
     const combinedOptions = {};
 
@@ -1062,9 +1032,7 @@ export class TalkingBot {
     }));
     this.iopoll.emit("updatePoll", combinedOptionsArray);
   }
-  public sendTTS(message: TTSMessage) {
-    this.iotts.emit("message", message);
-  }
+
   private async setDynamicTitle() {
     if (this.dynamicTitle == null) return;
     const title = (
@@ -1096,6 +1064,7 @@ export class TalkingBot {
       this.lastDynamicTitle = title;
     }
   }
+
   public async parseClips(text: string): Promise<string> {
     const clipId = this.twitch.clipRegex.exec(text);
     if (clipId !== null) {
