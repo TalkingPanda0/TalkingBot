@@ -15,6 +15,8 @@ export function parseKickEmotes(message: string) {
 
 export class Kick {
   public currentPoll: Poll;
+  public isConnected: boolean = false;
+
   private channelId: string;
   private bot: TalkingBot;
   private chat: WebSocket;
@@ -43,6 +45,7 @@ export class Kick {
     this.chat.on("close", () => {
 
       this.bot.iochat.emit("chatDisconnect",{color:"#52fb18",name:"Kick"})
+			this.isConnected = false;
       console.log(
         "\x1b[32m%s\x1b[0m",
         "Connection closed for chatroom, trying to reconnect...",
@@ -61,6 +64,7 @@ export class Kick {
         switch (jsonData.event) {
           case "pusher_internal:subscription_succeeded":
             this.bot.iochat.emit("chatConnect",{name:"Kick"});
+						this.isConnected = true;
             console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
             break;
           case "App\\Events\\ChatMessageEvent":

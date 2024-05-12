@@ -4,6 +4,8 @@ import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
 import { IChatYTMessage, MessageFragments } from "tubechat/lib/types/Client";
 export class YouTube {
+	public isConnected: boolean  = false;
+
   private bot: TalkingBot;
   private chat: TubeChat;
   private channelName: string;
@@ -33,11 +35,15 @@ export class YouTube {
 
   public async initBot() {
     this.chat.connect(this.channelName);
+
     this.chat.on("disconnect",() => {
       this.bot.iochat.emit("chatDisconnect",{color:"#FF0000",name:"YouTube"});
+			this.isConnected = false;
     });
+
     this.chat.on("chat_connected", (channel, videoId) => {
       this.bot.iochat.emit("chatConnect",{name:"YouTube"});
+			this.isConnected = true;
       console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
     });
 

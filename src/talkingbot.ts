@@ -353,6 +353,19 @@ export class TalkingBot {
     });
     this.iochat.on("connect", () => {
       this.twitch.sendRecentMessages();
+			if(!this.twitch.chatClient.isConnected){
+this.iochat.emit("chatDisconnect", {
+        color: "#6441a5",
+        name: "Twitch",
+      });
+
+			}
+			if(!this.kick.isConnected){
+      this.iochat.emit("chatDisconnect",{color:"#52fb18",name:"Kick"})
+			}
+			if(!this.youTube.isConnected){
+				this.iochat.emit("chatDisconnect",{color:"#FF0000",name:"YouTube"});
+			}
       this.connectedtoOverlay = true;
     });
     this.iopoll = new Server(this.server, {
