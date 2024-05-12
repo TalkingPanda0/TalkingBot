@@ -638,6 +638,22 @@ export class Twitch {
     this.chatClient.connect();
     this.eventListener.start();
   }
+  public say(message: string) {
+    this.chatClient.say(this.channel.name, message);
+    this.bot.iochat.emit("message", {
+      badges: [this.badges.get("moderator")],
+      text: message,
+      sender: "TalkingBotO_o",
+      senderId: "twitch-" + "bot",
+      color: "#00ff7f",
+      id: undefined,
+      platform: "twitch",
+      isFirst: false,
+      replyTo: "",
+      replyId: "",
+      isCommand: false,
+    });
+  }
   public async handleRedeemQueue(accept?: Boolean) {
     try {
       const redeem = this.redeemQueue.shift();

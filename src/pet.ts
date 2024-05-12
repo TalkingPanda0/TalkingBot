@@ -59,9 +59,8 @@ export class Pet {
 
   public graveyard() {
     if (this.deadPets.length === 0) {
-      this.bot.twitch.chatClient.say(
+      this.bot.twitch.say(
         this.bot.twitch.channel.name,
-        "The graveyard is empty...",
       );
       return;
     }
@@ -78,8 +77,7 @@ export class Pet {
       }
     });
 
-    this.bot.twitch.chatClient.say(
-      this.bot.twitch.channel.name,
+    this.bot.twitch.say(
       message.join(" "),
     );
   }
@@ -112,13 +110,12 @@ export class Pet {
     }
     if (this.status === Status.alive && this.timer === undefined)
       message += " He is sleeping.";
-    this.bot.twitch.chatClient.say(this.bot.twitch.channel.name, message);
+    this.bot.twitch.say(message);
   }
 
   public feed() {
     if (this.stomach >= 3) {
-      this.bot.twitch.chatClient.say(
-        this.bot.twitch.channel.name,
+      this.bot.twitch.say(
         `Hapboo #${this.name} became too fat.`,
       );
       this.die(DeathReason.overfed);
@@ -133,8 +130,7 @@ export class Pet {
 
   public sleep() {
     if (this.status === Status.alive)
-      this.bot.twitch.chatClient.say(
-        this.bot.twitch.channel.name,
+      this.bot.twitch.say(
         `Hapboo #${this.name} is going to sleep!`,
       );
     clearInterval(this.timer);
@@ -146,8 +142,7 @@ export class Pet {
     if (this.status > Status.hatching) return;
     this.campfire += 2;
     if (this.campfire >= 5) {
-      this.bot.twitch.chatClient.say(
-        this.bot.twitch.channel.name,
+      this.bot.twitch.say(
         `The campfire got too hot. Habpoo #${this.name} is now 🍳`,
       );
       this.die(DeathReason.omelete);
@@ -187,6 +182,7 @@ export class Pet {
     clearInterval(this.timer);
     this.timer = undefined;
     this.stomach = 0;
+		this.campfire = 2;
     this.status = Status.dead;
     this.deadPets.push({ name: this.name, deathReason: reason });
     this.writePet();
@@ -215,8 +211,7 @@ export class Pet {
     if (this.status <= Status.hatching) {
       this.campfire--;
       if (this.campfire <= 0) {
-        this.bot.twitch.chatClient.say(
-          this.bot.twitch.channel.name,
+        this.bot.twitch.say(
           `The campfire got too cold. Habpoo #${this.name} is now dead`,
         );
         this.die(DeathReason.failed);
@@ -228,8 +223,7 @@ export class Pet {
       return;
     }
     if (this.status === Status.alive && this.stomach === 0) {
-      this.bot.twitch.chatClient.say(
-        this.bot.twitch.channel.name,
+      this.bot.twitch.say(
         `Hapboo #${this.name} has starved.`,
       );
       this.die(DeathReason.starved);
