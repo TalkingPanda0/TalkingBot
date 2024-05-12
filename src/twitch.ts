@@ -122,6 +122,7 @@ export class Twitch {
   async sendToChatList(
     message: ChatMessage,
     isCommand: Boolean,
+    isOld: Boolean,
   ): Promise<void> {
     let color = message.userInfo.color;
     let badges = ["https://twitch.tv/favicon.ico"];
@@ -177,6 +178,7 @@ export class Twitch {
       replyId: "twitch-" + replyId,
       isCommand: isCommand,
       rewardName: rewardName,
+      isOld: isOld,
     });
   }
 
@@ -508,10 +510,10 @@ export class Twitch {
 
           // not a command
           if (!text.startsWith("!")) {
-            this.sendToChatList(msg, false);
+            this.sendToChatList(msg, false, false);
             return;
           }
-          this.sendToChatList(msg, true);
+          this.sendToChatList(msg, true, false);
           const name = msg.userInfo.displayName;
           const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
           let commandName = text.split(" ")[0];
@@ -550,7 +552,7 @@ export class Twitch {
               Platform.twitch,
               msg,
             );
-            if (command.showOnChat) this.sendToChatList(msg, false);
+            if (command.showOnChat) this.sendToChatList(msg, false, false);
             return;
           }
           for (let i = 0; i < this.bot.customCommands.length; i++) {
@@ -716,7 +718,7 @@ export class Twitch {
           message.text.startsWith("!") ||
           message.userInfo.userId === "736013381";
 
-        this.sendToChatList(message, isCommand);
+        this.sendToChatList(message, isCommand, true);
       });
     } catch (e) {
       console.error(

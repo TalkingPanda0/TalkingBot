@@ -61,7 +61,7 @@ export class Pet {
     if (this.deadPets.length === 0) {
       this.bot.twitch.chatClient.say(
         this.bot.twitch.channel.name,
-        "The graveyard is empty... for now.",
+        "The graveyard is empty...",
       );
       return;
     }
