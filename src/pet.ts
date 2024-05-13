@@ -141,7 +141,7 @@ export class Pet {
   public fuel() {
     if (this.status > Status.hatching) return;
     this.campfire += 2;
-    if (this.campfire >= 5) {
+    if (this.campfire > 5) {
       this.bot.twitch.say(
         `The campfire got too hot. Habpoo #${this.name} is now 🍳`,
       );
@@ -174,7 +174,7 @@ export class Pet {
         () => {
           this.tick();
         },
-        30 * 60 * 1000, // 30 minutes
+        15 * 60 * 1000, // 15 minutes
       );
   }
 

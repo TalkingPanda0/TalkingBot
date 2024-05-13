@@ -4,6 +4,7 @@ import { Twitch, parseTwitchEmotes } from "./twitch";
 import { Discord } from "./discord";
 import { YouTube } from "./youtube";
 import { Kick, parseKickEmotes } from "./kick";
+import { kill } from "./BeatSniper.js";
 
 import { Server } from "socket.io";
 import * as http from "http";
@@ -939,6 +940,26 @@ export class TalkingBot {
           }
         },
       },
+			{
+			showOnChat: false,
+			command: "!snipe",
+			   commandFunction: async (
+          user,
+          isUserMod,
+          message,
+          reply,
+          platform,
+          context,
+        ) => {
+					if(!isUserMod) return;
+					reply(`Sniping ${message}`,true);
+					const songs = await kill(message); 
+					songs.forEach((map) => {
+						reply(`!bsr ${map}`,false);
+					})
+
+				}
+			},
       {
         showOnChat: false,
         command: "!modtts",
