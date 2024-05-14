@@ -105,12 +105,13 @@ export class Pet {
       default:
         return;
     }
-    if (this.status !== Status.dead && this.timer === undefined)
+    if (this.status !== Status.dead && this.timer == null)
       message += " He is sleeping.";
     this.bot.twitch.say(message);
   }
 
   public feed() {
+    if (this.timer == null || this.status !== Status.alive) return;
     if (this.stomach >= 3) {
       this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
@@ -127,12 +128,12 @@ export class Pet {
     if (this.status === Status.alive)
       this.bot.twitch.say(`Hapboo #${this.name} is going to sleep!`);
     clearInterval(this.timer);
-    this.timer = undefined;
+    this.timer = null;
     this.writePet();
   }
 
   public fuel() {
-    if (this.status > Status.hatching) return;
+    if (this.timer == null || this.status > Status.hatching) return;
     this.campfire += 2;
     if (this.campfire > 5) {
       this.bot.twitch.say(
@@ -173,7 +174,7 @@ export class Pet {
 
   public die(reason: DeathReason) {
     clearInterval(this.timer);
-    this.timer = undefined;
+    this.timer = null;
     this.stomach = 0;
     this.campfire = 2;
     this.status = Status.dead;
