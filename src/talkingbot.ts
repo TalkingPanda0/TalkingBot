@@ -953,7 +953,10 @@ export class TalkingBot {
         ) => {
 					if(!isUserMod) return;
 					reply(`Sniping ${message}`,true);
-					const songs = await kill(message); 
+					const songs: String[] = await kill(message); 
+					if(songs.length === 0){
+						reply("Couldn't find songs",true);
+					}
 					songs.forEach((map) => {
 						reply(`!bsr ${map}`,false);
 					})
