@@ -2,10 +2,10 @@ import { BunFile } from "bun";
 import { TalkingBot, getTimeDifference } from "./talkingbot";
 
 const emotes = [
-  "sweetb35Stunky",
+  "sweetb35Stunky. he is getting hungry",
   "sweetb35Sexy",
   "sweetb35Heheh",
-  "sweetb35HNNNGH",
+  "sweetb35HNNNGH. he is a bit too full",
 ];
 const eggs = ["🥚", "🐣"];
 
@@ -59,9 +59,7 @@ export class Pet {
 
   public graveyard() {
     if (this.deadPets.length === 0) {
-      this.bot.twitch.say(
-        this.bot.twitch.channel.name,
-      );
+      this.bot.twitch.say(this.bot.twitch.channel.name);
       return;
     }
     const message = this.deadPets.map((pet) => {
@@ -77,9 +75,7 @@ export class Pet {
       }
     });
 
-    this.bot.twitch.say(
-      message.join(" "),
-    );
+    this.bot.twitch.say(message.join(" "));
   }
 
   public sayStatus(reason: StatusReason) {
@@ -104,20 +100,19 @@ export class Pet {
       case Status.egg:
       case Status.hatching:
         message += ` is ${eggs[this.status]} The campfire is at ${this.campfire}/5 🔥 `;
+        if (this.campfire > 3) message += "He is getting a bit too warm";
         break;
       default:
         return;
     }
-    if (this.status === Status.alive && this.timer === undefined)
+    if (this.status !== Status.dead && this.timer === undefined)
       message += " He is sleeping.";
     this.bot.twitch.say(message);
   }
 
   public feed() {
     if (this.stomach >= 3) {
-      this.bot.twitch.say(
-        `Hapboo #${this.name} became too fat.`,
-      );
+      this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
       return;
     }
@@ -130,9 +125,7 @@ export class Pet {
 
   public sleep() {
     if (this.status === Status.alive)
-      this.bot.twitch.say(
-        `Hapboo #${this.name} is going to sleep!`,
-      );
+      this.bot.twitch.say(`Hapboo #${this.name} is going to sleep!`);
     clearInterval(this.timer);
     this.timer = undefined;
     this.writePet();
@@ -182,7 +175,7 @@ export class Pet {
     clearInterval(this.timer);
     this.timer = undefined;
     this.stomach = 0;
-		this.campfire = 2;
+    this.campfire = 2;
     this.status = Status.dead;
     this.deadPets.push({ name: this.name, deathReason: reason });
     this.writePet();
@@ -223,9 +216,7 @@ export class Pet {
       return;
     }
     if (this.status === Status.alive && this.stomach === 0) {
-      this.bot.twitch.say(
-        `Hapboo #${this.name} has starved.`,
-      );
+      this.bot.twitch.say(`Hapboo #${this.name} has starved.`);
       this.die(DeathReason.starved);
       this.writePet();
       return;
