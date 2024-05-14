@@ -17,7 +17,7 @@ const emoteSoundEffects = {
   Silly: "silly.mp3",
   realBoo: "realboo.mp3",
   Shy: "uwu.mp3",
-  Sexy: "sexy.mp3"
+  Sexy: "sexy.mp3",
 };
 
 let queue = [];
@@ -84,13 +84,25 @@ function handleQueue() {
     return;
   var message = queue.shift();
   var text = message.text.trim();
+  var playing;
+  var interval;
   isPlaying = true;
+  interval = setTimeout(() => {
+    if (playing != null) {
+      playing.pause();
+      playing.currentTime = 0;
+      playing = null;
+      isPlaying = false;
+      setTimeout(removePopup, 10000);
+    }
+  }, 30 * 1000);
   createPopup(message);
   for (const key in emoteSoundEffects) {
     const index = text.indexOf(key);
     if (index !== -1) {
       let tempqueue = [];
       console.log("GOT " + index);
+
       if (index != 0) {
         message.text = text.slice(0, index);
         tempqueue.push(getTTSAudio(message));
@@ -100,54 +112,72 @@ function handleQueue() {
         message.text = text.slice(index + key.length, text.length);
         tempqueue.push(getTTSAudio(message));
       }
-      tempqueue.forEach((audio, index) => {
+      tempqueue.forEach((audio) => {
         audio.onerror = (err) => {
           console.log("Got error: " + err);
           isPlaying = false;
+          clearInterval(interval);
+          interval = null;
+
+          playing = null;
           removePopup();
           createPopup({ sender: "Brian himself", text: err });
           setTimeout(removePopup, 10000);
         };
         audio.onended = () => {
           if (tempqueue.length == 0) {
+            playing = null;
             isPlaying = false;
+            clearInterval(interval);
+            interval = null;
             setTimeout(removePopup, 10000);
             return;
           }
-          tempqueue
-            .shift()
-            .play()
-            .catch((err) => {
-              isPlaying = false;
-              console.log(err);
-              createPopup({ sender: "Brian himself", text: err });
-              setTimeout(removePopup, 10000);
-            });
+          playing = tempqueue.shift();
+          playing.play().catch((err) => {
+            playing = null;
+            isPlaying = false;
+            clearInterval(interval);
+            interval = null;
+            console.error(err);
+            createPopup({ sender: "Brian himself", text: err });
+            setTimeout(removePopup, 10000);
+          });
         };
       });
 
-      tempqueue
-        .shift()
-        .play()
-        .catch((err) => {
-          isPlaying = false;
-          console.log(err);
-          createPopup({ sender: "Brian himself", text: err });
-          setTimeout(removePopup, 10000);
-        });
+      playing = tempqueue.shift();
+      playing.play().catch((err) => {
+        isPlaying = false;
+        clearInterval(interval);
+        interval = null;
+        playing = null;
+        console.eror(err);
+        createPopup({ sender: "Brian himself", text: err });
+        setTimeout(removePopup, 10000);
+      });
+
       return;
     }
   }
   message.text = text;
   const audio = getTTSAudio(message);
 
+  playing = audio;
   audio.onended = () => {
     isPlaying = false;
+    clearInterval(interval);
+    interval = null;
+    playing = null;
     setTimeout(removePopup, 10000);
   };
   audio.play().catch((err) => {
     isPlaying = false;
-    console.log(err);
+    clearInterval(interval);
+    interval = null;
+
+    playing = null;
+    console.error(err);
     createPopup({ sender: "Brian himself", text: err });
     setTimeout(removePopup, 10000);
   });
