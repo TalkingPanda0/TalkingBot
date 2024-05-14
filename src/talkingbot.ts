@@ -4,7 +4,7 @@ import { Twitch, parseTwitchEmotes } from "./twitch";
 import { Discord } from "./discord";
 import { YouTube } from "./youtube";
 import { Kick, parseKickEmotes } from "./kick";
-import { kill } from "./BeatSniper.js";
+import { kill } from "./beatsniper.js";
 
 import { Server } from "socket.io";
 import * as http from "http";

@@ -1,8 +1,7 @@
-import { time } from "console";
 import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
-import { IChatYTMessage, MessageFragments } from "tubechat/lib/types/Client";
+import {  MessageFragments } from "tubechat/lib/types/Client";
 export class YouTube {
 	public isConnected: boolean  = false;
 
@@ -18,7 +17,7 @@ export class YouTube {
       hash = (hash << 5) - hash + chr;
       hash |= 0; // Convert to 32bit integer
     }
-    return userColors[hash % userColors.length];
+    return userColors[Math.abs(hash % userColors.length)];
   }
   private parseMessage(message: MessageFragments[]): string {
     let text = "";

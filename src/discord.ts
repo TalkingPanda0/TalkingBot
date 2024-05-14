@@ -1,6 +1,5 @@
 import { BunFile } from "bun";
 import {
-  Channel,
   Client,
   Events,
   GatewayIntentBits,

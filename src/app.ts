@@ -2,8 +2,7 @@ import express, { Express, Request, Response } from "express";
 import * as http from "http";
 
 import { Server } from "socket.io";
-import { AuthSetup, TalkingBot, TTSMessage } from "./talkingbot";
-import fs from "node:fs";
+import { AuthSetup, TalkingBot} from "./talkingbot";
 
 const app: Express = express();
 const server = http.createServer(app);

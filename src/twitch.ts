@@ -8,12 +8,10 @@ import {
   ClearMsg,
   UserNotice,
   ChatSubGiftInfo,
-  parseEmotePositions,
   parseChatMessage,
   ParsedMessagePart,
   buildEmoteImageUrl,
   parseTwitchMessage,
-  extractMessageText,
 } from "@twurple/chat";
 import {
   ApiClient,

@@ -1,6 +1,5 @@
 import WebSocket from "ws";
-import { Command, Platform, Poll, TalkingBot } from "./talkingbot";
-import { json } from "stream/consumers";
+import { Platform, Poll, TalkingBot } from "./talkingbot";
 import { HelixPoll } from "@twurple/api";
 import DOMPurify from "isomorphic-dompurify";
 
