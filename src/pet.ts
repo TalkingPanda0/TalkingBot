@@ -2,10 +2,10 @@ import { BunFile } from "bun";
 import { TalkingBot, getTimeDifference } from "./talkingbot";
 
 const emotes = [
-  "sweetb35Stunky. he is getting hungry",
+  "sweetb35Stunky he is getting hungry",
   "sweetb35Sexy",
   "sweetb35Heheh",
-  "sweetb35HNNNGH. he is a bit too full",
+  "sweetb35HNNNGH he is a bit too full",
 ];
 const eggs = ["🥚", "🐣"];
 
@@ -90,6 +90,10 @@ export class Pet {
             message += ` is feeling: ${emotes[this.stomach]}`;
             break;
           case StatusReason.command:
+            if (this.lastFed == null) {
+              message += ` is feeling: ${emotes[this.stomach]}`;
+              break;
+            }
             message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.stomach]}`;
             break;
         }
@@ -162,7 +166,6 @@ export class Pet {
       case Status.alive:
         break;
     }
-    this.sayStatus(StatusReason.tick);
     if (this.timer === undefined)
       this.timer = setInterval(
         () => {
@@ -170,6 +173,7 @@ export class Pet {
         },
         15 * 60 * 1000, // 15 minutes
       );
+    this.sayStatus(StatusReason.tick);
   }
 
   public die(reason: DeathReason) {
