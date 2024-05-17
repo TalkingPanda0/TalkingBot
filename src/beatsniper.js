@@ -19,6 +19,10 @@ async function getSongsByPlayerName(playerName) {
     return songs;
 }
 
+function removeNonHexCharacters(input) {
+    return input.replace(/[^0-9a-fA-F]/g, '');
+}
+
 export async function kill(playerName) {
 	try {
     const songsToRequest = [];
@@ -35,7 +39,7 @@ export async function kill(playerName) {
         const myScore = await getSongLeaderboardPosition(playerId, songId, songDiff, songMode)
             if (enemySongs[0]['baseScore'] > myScore) {
                 songId = song['song']['id'];
-                songsToRequest.push(songId);
+                songsToRequest.push(removeNonHexCharacters(songId));
             }
     }
 
