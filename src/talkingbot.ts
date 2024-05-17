@@ -940,10 +940,10 @@ export class TalkingBot {
           }
         },
       },
-			{
-			showOnChat: false,
-			command: "!snipe",
-			   commandFunction: async (
+      {
+        showOnChat: false,
+        command: "!snipe",
+        commandFunction: async (
           user,
           isUserMod,
           message,
@@ -951,18 +951,17 @@ export class TalkingBot {
           platform,
           context,
         ) => {
-					if(!isUserMod) return;
-					reply(`Sniping ${message}`,true);
-					const songs: String[] = await kill(message); 
-					if(songs.length === 0){
-						reply("Couldn't find songs",true);
-					}
-					songs.forEach((map) => {
-						reply(`!bsr ${map}`,false);
-					})
-
-				}
-			},
+          if (!isUserMod) return;
+          reply(`Sniping ${message}`, true);
+          const songs: String[] = await kill(message);
+          if (songs.length === 0) {
+            reply("Couldn't find songs", true);
+          }
+          songs.forEach((map) => {
+            reply(`!bsr ${map}`, false);
+          });
+        },
+      },
       {
         showOnChat: false,
         command: "!modtts",
@@ -977,10 +976,12 @@ export class TalkingBot {
           if (!isUserMod) return;
           if (message == "enable") {
             this.ttsEnabled = true;
+            reply("TTS command has been enabled", true);
             return;
           }
           if (message == "disable") {
             this.ttsEnabled = false;
+            reply("TTS command has been disabled", true);
             return;
           }
         },
