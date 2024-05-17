@@ -148,6 +148,22 @@
         disconnectMessage.remove();
     });
 
+		socket.on("redeem",(redeem) => {
+			console.log(`Got redeem ${redeem}`);
+      if (document.getElementById(redeem.id)) return;
+			const rewardElement = document.createElement("span");
+			rewardElement.id = redeem.id;
+      rewardElement.classList.add("redeem");
+      rewardElement.classList.add("message");
+			rewardElement.innerHTML = `@${redeem.user} Redeemed ${redeem.title}`;
+			messageList.appendChild(rewardElement);
+			messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    });
+
   </script>
   <style>
     #message-list {
@@ -211,6 +227,13 @@
     .reply {
       color: #a5a5a5;
       font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+    }
+		.redeem {
+      color: #a5a5a5;
+      font-size: 20px;
       margin-left: 4px;
       margin-bottom: 5px;
       display: inline-table;

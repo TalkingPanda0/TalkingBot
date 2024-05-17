@@ -333,6 +333,13 @@ export class Twitch {
             `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
           );
           let completed: Boolean;
+          if (data.input === "") {
+            this.bot.iochat.emit("redeem", {
+              id: data.id,
+              user: data.userDisplayName,
+              title: data.rewardTitle,
+            });
+          }
           switch (data.rewardId) {
             case this.selftimeoutid:
               const modlist = await this.apiClient.moderation.getModerators(
