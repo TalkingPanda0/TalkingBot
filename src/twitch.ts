@@ -728,9 +728,10 @@ export class Twitch {
   }
   public async sendRecentMessages() {
     const url = `https://recent-messages.robotty.de/api/v2/recent-messages/${this.channelName.toLowerCase()}?hide_moderation_messages=true&hide_moderated_messages=true&limit=20`;
-    try {
-      const recentMessages = JSON.parse(await (await fetch(url)).text());
-      recentMessages.messages.forEach((element: string) => {
+    const recentMessages = JSON.parse(await (await fetch(url)).text());
+    recentMessages.messages.forEach((element: string) => {
+      try {
+        if (!element.includes("PRIVMSG")) return;
         const message = parseTwitchMessage(element) as ChatMessage;
         if (message.userInfo.userName === "botrixoficial") return;
 
@@ -740,12 +741,12 @@ export class Twitch {
           message.userInfo.userId === "736013381";
 
         this.sendToChatList(message, isCommand, true);
-      });
-    } catch (e) {
-      console.error(
-        "\x1b[35m%s\x1b[0m",
-        `Failed getting recent Messages: ${e}`,
-      );
-    }
+      } catch (e) {
+        console.error(
+          "\x1b[35m%s\x1b[0m",
+          `Failed parsing message ${element} : ${e}`,
+        );
+      }
+    });
   }
 }
