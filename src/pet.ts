@@ -166,7 +166,7 @@ export class Pet {
       case Status.alive:
         break;
     }
-    if (this.timer === undefined)
+    if (this.timer == null)
       this.timer = setInterval(
         () => {
           this.tick();
