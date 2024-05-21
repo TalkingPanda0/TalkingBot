@@ -32,6 +32,7 @@ enum DeathReason {
 interface DeadPet {
   name: number;
   deathReason: DeathReason;
+  age?: number;
 }
 
 interface CurrentPet {
@@ -39,6 +40,7 @@ interface CurrentPet {
   name: number;
   stomach: number;
   status: Status;
+  age: number;
 }
 
 export class Pet {
@@ -49,6 +51,7 @@ export class Pet {
   private status: Status;
   private lastFed: Date;
   private campfire: number = 2;
+  private age: number = 0;
   private petFile: BunFile = Bun.file(__dirname + "/../config/pet.json");
   private deadPets: DeadPet[] = [];
 
@@ -69,9 +72,9 @@ export class Pet {
         case DeathReason.failed:
           return `Hapboo #${pet.name} couldn't hatch.`;
         case DeathReason.overfed:
-          return `Hapboo #${pet.name} became too fat.`;
+          return `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams.`;
         case DeathReason.starved:
-          return `Hapboo #${pet.name} has starved.`;
+          return `Hapboo #${pet.name} starved at the age of ${pet.age} streams.`;
       }
     });
 
@@ -84,17 +87,18 @@ export class Pet {
       case Status.alive:
         switch (reason) {
           case StatusReason.fed:
-            message += ` has been given a candy. He is feeling: ${emotes[this.stomach]}`;
+            message += ` has been given a candy. He is feeling: ${emotes[this.stomach]}.`;
             break;
           case StatusReason.tick:
-            message += ` is feeling: ${emotes[this.stomach]}`;
+            message += ` is feeling: ${emotes[this.stomach]}.`;
             break;
           case StatusReason.command:
             if (this.lastFed == null) {
-              message += ` is feeling: ${emotes[this.stomach]}`;
+              message += ` is feeling: ${emotes[this.stomach]}.`;
               break;
             }
             message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.stomach]}`;
+            message += ` He is ${this.age} streams old.`;
             break;
         }
         break;
@@ -154,6 +158,7 @@ export class Pet {
       case Status.hatching:
         this.status = Status.alive;
         this.stomach = 1;
+        this.age = 0;
         break;
       case Status.egg:
         this.status = Status.hatching;
@@ -164,6 +169,7 @@ export class Pet {
         this.status = Status.egg;
         break;
       case Status.alive:
+        this.age++;
         break;
     }
     if (this.timer == null)
@@ -182,7 +188,7 @@ export class Pet {
     this.stomach = 0;
     this.campfire = 2;
     this.status = Status.dead;
-    this.deadPets.push({ name: this.name, deathReason: reason });
+    this.deadPets.push({ name: this.name, deathReason: reason, age: this.age });
     this.writePet();
   }
 
@@ -193,6 +199,7 @@ export class Pet {
     this.name = pet.name;
     this.stomach = pet.stomach;
     this.deadPets = pet.deadPets;
+    if (pet.age != null) this.age = pet.age;
   }
 
   private async writePet() {
@@ -201,6 +208,7 @@ export class Pet {
       status: this.status,
       stomach: this.stomach,
       deadPets: this.deadPets,
+      age: this.age,
     };
     Bun.write(this.petFile, JSON.stringify(currentPet));
   }
