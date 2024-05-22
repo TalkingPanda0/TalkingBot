@@ -142,8 +142,13 @@ export class Twitch {
     }
 
     // User hasn't set a color or failed to get the color get a "random" color
-    if (color === null || color === undefined) {
+		console.log(message.userInfo.userName);
+		console.log(color);
+    if (!color) {
       color = userColors[parseInt(message.userInfo.userId) % userColors.length];
+			console.log(color);
+			console.log(message.userInfo.userId);
+			console.log(userColors.length);
     }
 
     if (message.isReply) {
