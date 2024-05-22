@@ -52,6 +52,7 @@ export class Pet {
   private lastFed: Date;
   private campfire: number = 2;
   private age: number = 0;
+	private timeout: boolean = false;
   private petFile: BunFile = Bun.file(__dirname + "/../config/pet.json");
   private deadPets: DeadPet[] = [];
 
@@ -59,6 +60,13 @@ export class Pet {
     this.bot = bot;
     this.readPet();
   }
+
+	private startTimeout(){
+		this.timeout = true;
+		setTimeout(() => {
+			this.timeout = false;
+		},1000 * 60);
+	}
 
   public graveyard() {
     if (this.deadPets.length === 0) {
@@ -119,7 +127,9 @@ export class Pet {
   }
 
   public feed() {
-    if (this.timer == null || this.status !== Status.alive) return;
+    if (this.timeout || this.timer == null || this.status !== Status.alive) return;
+		this.startTimeout();
+
     if (this.stomach >= 3) {
       this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
@@ -141,7 +151,8 @@ export class Pet {
   }
 
   public fuel() {
-    if (this.timer == null || this.status > Status.hatching) return;
+    if (this.timeout || this.timer == null || this.status > Status.hatching) return;
+		this.startTimeout();
     this.campfire += 2;
     if (this.campfire > 5) {
       this.bot.twitch.say(
