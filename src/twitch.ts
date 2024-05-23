@@ -632,7 +632,6 @@ export class Twitch {
         this.bot.iochat.emit("chatConnect", { name: "Twitch" });
         this.sendRecentMessages();
       }
-			this.bot.pet.init();
     });
     this.chatClient.onDisconnect((manually: boolean, reason?: Error) => {
       this.bot.iochat.emit("chatDisconnect", {
