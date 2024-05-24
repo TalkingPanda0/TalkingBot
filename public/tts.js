@@ -59,12 +59,12 @@ function HAPBOO() {
 }
 
 function createPopup(message) {
-  var popupElement = `<span class="sender"><span style="color: ${message.color}">${message.sender}</span> says:</span><br/><span class="text">${message.text}</span class="text"></span><div></div>`;
+  var popupElement = `<span class="sender"><span style="color: ${message.color}">${message.sender}</span> says:</span><br/><span class="text">${message.parsedText}</span class="text"></span><div></div>`;
   messageList.innerHTML = popupElement;
   messageList.style.opacity = 1;
-  if (Math.floor(Math.random() * 20) == 0) {
+  /*if (Math.floor(Math.random() * 20) == 0) {
     messageList.appendChild(HAPBOO());
-  }
+  }*/
 }
 
 function removePopup() {
@@ -107,7 +107,7 @@ function handleQueue() {
         message.text = text.slice(0, index);
         tempqueue.push(getTTSAudio(message));
       }
-      tempqueue.push(new Audio("/static" + emoteSoundEffects[key]));
+      tempqueue.push(new Audio(emoteSoundEffects[key]));
       if (index + key.length != text.length) {
         message.text = text.slice(index + key.length, text.length);
         tempqueue.push(getTTSAudio(message));
@@ -121,7 +121,7 @@ function handleQueue() {
 
           playing = null;
           removePopup();
-          createPopup({ sender: "Brian himself", text: err, color: "red" });
+          createPopup({ sender: "Brian himself", text: err,parsedText: err,  color: "red" });
           setTimeout(removePopup, 10000);
         };
         audio.onended = () => {
@@ -140,7 +140,7 @@ function handleQueue() {
             clearInterval(interval);
             interval = null;
             console.error(err);
-            createPopup({ sender: "Brian himself", text: err,color: "red" });
+            createPopup({ sender: "Brian himself", text: err,parsedText: err, color: "red" });
             setTimeout(removePopup, 10000);
           });
         };
@@ -152,8 +152,8 @@ function handleQueue() {
         clearInterval(interval);
         interval = null;
         playing = null;
-        console.eror(err);
-        createPopup({ sender: "Brian himself", text: err, color: "red" });
+        console.error(err);
+        createPopup({ sender: "Brian himself", text: err, parsedText: err, color: "red" });
         setTimeout(removePopup, 10000);
       });
 
@@ -178,7 +178,7 @@ function handleQueue() {
 
     playing = null;
     console.error(err);
-    createPopup({ sender: "Brian himself", text: err,color: "red" });
+    createPopup({ sender: "Brian himself", text: err,parsedText: err, color: "red" });
     setTimeout(removePopup, 10000);
   });
 }

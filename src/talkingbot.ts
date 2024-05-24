@@ -120,7 +120,6 @@ function removeKickEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
     .replace(regex, (match, id, name) => {
-      console.log(`${match} ${id} ${name}`);
       return name + " ";
     })
     .replace(kickEmotePrefix, "");
@@ -196,7 +195,7 @@ const selfKillMessages: string[] = [
   "$1 went up in flames.",
   "$1 withered away.",
   "$1 went skydiving, and forgot the parachute.",
-  "$1 spontvar timeDiffInSecond = Math.ceil(timeDiff / 1000); // in secondaneously combusted.",
+  "$1 spontaneously combusted.",
   "$1 was struck with a bolt of inspiration, I mean lightning.",
   "$1 ended it all. Goodbye cruel world!",
   "$1 passed the event horizon.",
@@ -221,7 +220,7 @@ const killOtherMessages: string[] = [
   "$1 stole a car known as 'KITT' and ran over $2.",
   "$1 tickled $2 to death!",
   "$2's skull was crushed by $1!",
-  "$2 is in var timeDiffInSecond = Math.ceil(timeDiff / 1000); // in secondseveral pieces after a tragic accident involving $1 and cutlery.",
+  "$2 is in several pieces after a tragic accident involving $1 and cutlery.",
   "$1 licked $2 until $2 was squishy, yeah.. squishy.",
   "$1 catapulted a huge load of rusty sporks on to $2. $2 died.",
   "$1 ran out of rusty sporks and unicorn horns to kill $2 with, so instead they used a rusty hanger.",
@@ -369,8 +368,8 @@ export class TalkingBot {
         }
         this.connectedtoOverlay = true;
       } catch (e) {
-				console.error(e);
-			}
+        console.error(e);
+      }
     });
     this.iopoll = new Server(this.server, {
       path: "/poll/",
@@ -732,7 +731,7 @@ export class TalkingBot {
           );
           // TODO change title in kick
 
-          data.reply(`Title has been changed to "${message}"`, true);
+          data.reply(`Title has been changed to "${data.message}"`, true);
         },
       },
       {
@@ -784,20 +783,30 @@ export class TalkingBot {
                 });
               });
               msg = removeByIndexToUppercase(msg, indexes);
-              this.iotts.emit("message", { text: msg, sender: data.user, color: data.userColor });
+              this.iotts.emit("message", {
+                text: msg,
+                sender: data.user,
+                color: data.userColor,
+                parsedText: parseTwitchEmotes(
+                  "!tts " + data.message,
+                  data.context.emoteOffsets,
+                ).replace("!tts ", ""),
+              });
 
               break;
             case Platform.kick:
               this.iotts.emit("message", {
                 text: removeKickEmotes(data.message),
                 sender: data.user,
+                parsedText: parseKickEmotes(data.message),
               });
               break;
             default:
-							console.log(data);
+              console.log(data);
               this.iotts.emit("message", {
                 text: data.message,
                 sender: data.user,
+                parsedText: data.message,
               });
               break;
           }
