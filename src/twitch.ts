@@ -638,7 +638,9 @@ export class Twitch {
         color: "#6441a5",
         name: "Twitch",
       });
-      console.error("\x1b[35m%s\x1b[0m", `Disconnected from twitch: ${reason}`);
+      console.error("\x1b[35m%s\x1b[0m", `Disconnected from twitch, trying to reconnect: ${reason}, ${manually}`);
+			this.chatClient.connect();
+
     });
     this.chatClient.connect();
     this.eventListener.start();
