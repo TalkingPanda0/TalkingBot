@@ -36,15 +36,16 @@ export class Kick {
           data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
         }),
       );
-
     });
 
     this.chat.on("error", console.error);
 
     this.chat.on("close", () => {
-
-      this.bot.iochat.emit("chatDisconnect",{color:"#52fb18",name:"Kick"})
-			this.isConnected = false;
+      this.bot.iochat.emit("chatDisconnect", {
+        color: "#52fb18",
+        name: "Kick",
+      });
+      this.isConnected = false;
       console.log(
         "\x1b[32m%s\x1b[0m",
         "Connection closed for chatroom, trying to reconnect...",
@@ -62,8 +63,8 @@ export class Kick {
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
           case "pusher_internal:subscription_succeeded":
-            this.bot.iochat.emit("chatConnect",{name:"Kick"});
-						this.isConnected = true;
+            this.bot.iochat.emit("chatConnect", { name: "Kick" });
+            this.isConnected = true;
             console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
             break;
           case "App\\Events\\ChatMessageEvent":
@@ -118,23 +119,22 @@ export class Kick {
             for (let i = 0; i < this.bot.commandList.length; i++) {
               let command = this.bot.commandList[i];
               if (!text.startsWith(command.command)) continue;
-							command.commandFunction(
-								{
-									user: user,
-									isUserMod: firstBadgeType === "moderator" ||
+              command.commandFunction({
+                user: user,
+                userColor: jsonDataSub.sender.identity.color,
+                isUserMod:
+                  firstBadgeType === "moderator" ||
                   firstBadgeType === "broadcaster",
 
-									platform: Platform.kick,
-									message: text.replace(command.command, "").trim(),
-									reply: (message: string, replyToUser: boolean) => {
+                platform: Platform.kick,
+                message: text.replace(command.command, "").trim(),
+                reply: (message: string, replyToUser: boolean) => {
                   // Can't reply on kick yet
                 },
-
-								}
-							)
+              });
               if (!command.showOnChat) return;
               this.bot.iochat.emit("message", {
-                text:await this.bot.parseClips(parseKickEmotes(text)),
+                text: await this.bot.parseClips(parseKickEmotes(text)),
                 sender: jsonDataSub.sender.username,
                 senderId: "kick-" + jsonDataSub.sender.id,
                 badges: badges,

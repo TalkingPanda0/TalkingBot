@@ -17,19 +17,22 @@ export enum Platform {
   kick,
   youtube,
 }
+
 export interface CommandData {
-	user: string,
-	isUserMod: boolean,
-	message: string,
-	reply: (message: string, replyToUser: boolean) => void | Promise<void>,
-	platform: Platform,
-	context?: ChatMessage
+  user: string;
+  userColor: string;
+  isUserMod: boolean;
+  message: string;
+  reply: (message: string, replyToUser: boolean) => void | Promise<void>;
+  platform: Platform;
+  context?: ChatMessage;
 }
 export interface Command {
   command: string;
   showOnChat: boolean;
   commandFunction: (data: CommandData) => void | Promise<void>;
 }
+
 export interface CustomCommand {
   command: string;
   response: string;
@@ -38,23 +41,13 @@ export interface CommandAlias {
   alias: string;
   command: string;
 }
-export interface TTSMessage {
-  text: string;
-  sender: string;
-}
+
 export interface AuthSetup {
   twitchClientId: string;
   twitchClientSecret: string;
   channelName: string;
 }
-export interface ChatMsg {
-  text: string;
-  sender: string;
-  badges: string[];
-  color: string;
-  id: string;
-  platform: string;
-}
+
 export interface pollOption {
   id: string;
   label: string;
@@ -390,9 +383,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!8ball",
-        commandFunction: (
-					data
-                 ) => {
+        commandFunction: (data) => {
           if (
             data.message.toLowerCase().includes("furry") &&
             data.message.toLowerCase().includes("sweet")
@@ -407,9 +398,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!kill",
-        commandFunction: (
-					data
-                  ) => {
+        commandFunction: (data) => {
           if (data.message === "" || data.message === undefined) {
             data.reply(
               getRandomElement(selfKillMessages).replaceAll("$1", data.user),
@@ -428,9 +417,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!modtext",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           if (data.platform == Platform.twitch) {
             data.message = parseTwitchEmotes(
@@ -448,9 +435,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!dyntitle",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           if (data.message == "stop") {
             clearInterval(this.dynamicTitleInterval);
@@ -471,9 +456,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!redeem",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           if (this.twitch.redeemQueue.length == 0) {
             data.reply("No redeem found", true);
@@ -498,9 +481,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!counter",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           const regex = /[+|-]/g;
           if (data.isUserMod && data.message != "") {
             if (regex.test(data.message)) {
@@ -517,9 +498,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!uptime",
-        commandFunction: async (
-					data
-        ) => {
+        commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
           const stream = await this.twitch.apiClient.streams.getStreamByUserId(
             this.twitch.channel.id,
@@ -532,7 +511,7 @@ export class TalkingBot {
             return;
           }
           const timeString = getTimeDifference(stream.startDate, new Date());
-					data.reply(
+          data.reply(
             `${this.twitch.channel.displayName} has been live for ${timeString}`,
             true,
           );
@@ -541,9 +520,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!status",
-        commandFunction: async (
-					data
-        ) => {
+        commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
           const stream = await this.twitch.apiClient.streams.getStreamByUserId(
             this.twitch.channel.id,
@@ -561,9 +538,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!followage",
-        commandFunction: async (
-					data
-        ) => {
+        commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
           const followed =
             await this.twitch.apiClient.channels.getChannelFollowers(
@@ -592,9 +567,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!addcmd",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
           let commandName = splitMessage[0];
@@ -630,9 +603,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!showcmd",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
           let commandName = splitMessage[0];
@@ -653,9 +624,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!delcmd",
-        commandFunction: (
-					data
-                 ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           const oldLen = this.customCommands.length;
           const commandName = data.message.split(" ")[0];
@@ -673,9 +642,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!editcmd",
-        commandFunction: (
-					data
-                 ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           const commandName = data.message.split(" ")[0];
           const response = data.message.substring(
@@ -698,9 +665,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!delalias",
-        commandFunction: (
-					data
-                ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           const oldLen = this.aliasCommands.length;
           const alias = data.message.split(" ")[0];
@@ -719,9 +684,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!aliascmd",
-        commandFunction: (
-					data
-        ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
           const commandName = splitMessage[1];
@@ -733,7 +696,10 @@ export class TalkingBot {
 
           this.aliasCommands.push({ command: commandName, alias: alias });
 
-          data.reply(`command ${commandName} has been aliased to ${alias}`, true);
+          data.reply(
+            `command ${commandName} has been aliased to ${alias}`,
+            true,
+          );
           this.writeCustomCommands();
           return;
         },
@@ -741,9 +707,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!listcmd",
-        commandFunction: (
-					data
-                 ) => {
+        commandFunction: (data) => {
           const custom = this.customCommands
             .map((obj) => obj.command)
             .join(", ");
@@ -758,9 +722,7 @@ export class TalkingBot {
         showOnChat: false,
         command: "!settitle",
 
-        commandFunction: async (
-					data
-                 ) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod || data.message.length == 0) return;
           await this.twitch.apiClient.channels.updateChannelInfo(
             this.twitch.channel.id,
@@ -775,9 +737,7 @@ export class TalkingBot {
         showOnChat: false,
         command: "!setgame",
 
-        commandFunction: async (
-					data
-        ) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod || data.message.length == 0) return;
           const game: HelixGame =
             await this.twitch.apiClient.games.getGameByName(data.message);
@@ -797,9 +757,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!bsr",
-        commandFunction: (
-					data
-        ): void | Promise<void> => {
+        commandFunction: (data): void | Promise<void> => {
           if (data.platform == Platform.twitch) return;
           this.twitch.chatClient.say(
             this.twitch.channel.name,
@@ -810,9 +768,7 @@ export class TalkingBot {
       {
         showOnChat: true,
         command: "!tts",
-        commandFunction: (
-					data
-        ): void | Promise<void> => {
+        commandFunction: (data): void | Promise<void> => {
           if (!data.isUserMod && !this.ttsEnabled) return;
           switch (data.platform) {
             case Platform.twitch:
@@ -836,7 +792,10 @@ export class TalkingBot {
               });
               break;
             default:
-              this.iotts.emit("message", { text: data.message, sender: data.user });
+              this.iotts.emit("message", {
+                text: data.message,
+                sender: data.user,
+              });
               break;
           }
         },
@@ -844,9 +803,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!snipe",
-        commandFunction: async (
-					data
-                ) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod) return;
           data.reply(`Sniping ${data.message}`, true);
           const songs: String[] = await kill(data.message);
@@ -861,9 +818,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!modtts",
-        commandFunction: (
-					data
-                 ) => {
+        commandFunction: (data) => {
           if (!data.isUserMod) return;
           if (data.message == "enable") {
             this.ttsEnabled = true;
@@ -880,9 +835,7 @@ export class TalkingBot {
       {
         showOnChat: false,
         command: "!pet",
-        commandFunction: async (
-					data
-                  ) => {
+        commandFunction: async (data) => {
           switch (data.message) {
             case "feed":
               this.pet.feed();

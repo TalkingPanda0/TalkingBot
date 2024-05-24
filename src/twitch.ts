@@ -106,7 +106,7 @@ export class Twitch {
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
- // private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
+  // private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private oauthFile: BunFile = Bun.file(__dirname + "/../config/oauth.json");
   private broadcasterFile: BunFile = Bun.file(
@@ -117,6 +117,18 @@ export class Twitch {
   constructor(bot: TalkingBot) {
     this.bot = bot;
   }
+
+  getUserColor(message: ChatMessage): string {
+    let color = message.userInfo.color;
+
+    // User hasn't set a color or failed to get the color get a "random" color
+    if (!color) {
+      color = userColors[parseInt(message.userInfo.userId) % userColors.length];
+    }
+
+    return color;
+  }
+
   async sendToChatList(
     message: ChatMessage,
     isCommand: Boolean,
@@ -141,10 +153,7 @@ export class Twitch {
       badges.push(this.badges.get("broadcaster"));
     }
 
-    // User hasn't set a color or failed to get the color get a "random" color
-    if (!color) {
-      color = userColors[parseInt(message.userInfo.userId) % userColors.length];
-    }
+    color = this.getUserColor(message);
 
     if (message.isReply) {
       text = text.replace(
@@ -532,13 +541,13 @@ export class Twitch {
           for (let i = 0; i < this.bot.commandList.length; i++) {
             const command = this.bot.commandList[i];
             if (commandName != command.command) continue;
-						command.commandFunction(
-							{
-								user: name,
-								isUserMod: isMod,
-								platform: Platform.twitch,
-								message: text.replace(command.command, "").trim(),
-							reply: (message: string, replyToUser: boolean) => {
+            command.commandFunction({
+              user: name,
+              userColor: this.getUserColor(msg),
+              isUserMod: isMod,
+              platform: Platform.twitch,
+              message: text.replace(command.command, "").trim(),
+              reply: (message: string, replyToUser: boolean) => {
                 const replyId = replyToUser ? msg.id : null;
                 this.chatClient.say(channel, message, { replyTo: replyId });
                 this.bot.iochat.emit("message", {
@@ -555,9 +564,7 @@ export class Twitch {
                   isCommand: true,
                 });
               },
-
-
-						});
+            });
 
             if (command.showOnChat) this.sendToChatList(msg, false, false);
             return;
@@ -640,9 +647,11 @@ export class Twitch {
         color: "#6441a5",
         name: "Twitch",
       });
-      console.error("\x1b[35m%s\x1b[0m", `Disconnected from twitch, trying to reconnect: ${reason}, ${manually}`);
-			this.chatClient.connect();
-
+      console.error(
+        "\x1b[35m%s\x1b[0m",
+        `Disconnected from twitch, trying to reconnect: ${reason}, ${manually}`,
+      );
+      this.chatClient.connect();
     });
     this.chatClient.connect();
     this.eventListener.start();

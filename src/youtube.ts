@@ -105,6 +105,7 @@ export class YouTube {
 
             command.commandFunction({
               user: name,
+              userColor: this.getColor(name),
               isUserMod: isMod,
               message: text.replace(command.command, "").trim(),
               reply: (message: string, replyToUser: boolean) => {
