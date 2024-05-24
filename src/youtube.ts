@@ -1,9 +1,9 @@
 import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
-import {  MessageFragments } from "tubechat/lib/types/Client";
+import { MessageFragments } from "tubechat/lib/types/Client";
 export class YouTube {
-	public isConnected: boolean  = false;
+  public isConnected: boolean = false;
 
   private bot: TalkingBot;
   private chat: TubeChat;
@@ -35,14 +35,17 @@ export class YouTube {
   public async initBot() {
     this.chat.connect(this.channelName);
 
-    this.chat.on("disconnect",() => {
-      this.bot.iochat.emit("chatDisconnect",{color:"#FF0000",name:"YouTube"});
-			this.isConnected = false;
+    this.chat.on("disconnect", () => {
+      this.bot.iochat.emit("chatDisconnect", {
+        color: "#FF0000",
+        name: "YouTube",
+      });
+      this.isConnected = false;
     });
 
     this.chat.on("chat_connected", (channel, videoId) => {
-      this.bot.iochat.emit("chatConnect",{name:"YouTube"});
-			this.isConnected = true;
+      this.bot.iochat.emit("chatConnect", { name: "YouTube" });
+      this.isConnected = true;
       console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
     });
 
@@ -100,15 +103,15 @@ export class YouTube {
             const command = this.bot.commandList[i];
             if (commandName != command.command) continue;
 
-            command.commandFunction(
-              name,
-              isMod,
-              text.replace(command.command, "").trim(),
-              (message: string, replyToUser: boolean) => {
+            command.commandFunction({
+              user: name,
+              isUserMod: isMod,
+              message: text.replace(command.command, "").trim(),
+              reply: (message: string, replyToUser: boolean) => {
                 // can't
               },
-              Platform.youtube,
-            );
+              platform: Platform.youtube,
+            });
             if (command.showOnChat) {
               color = this.getColor(name);
               this.bot.iochat.emit("message", {

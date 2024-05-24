@@ -17,17 +17,18 @@ export enum Platform {
   kick,
   youtube,
 }
+export interface CommandData {
+	user: string,
+	isUserMod: boolean,
+	message: string,
+	reply: (message: string, replyToUser: boolean) => void | Promise<void>,
+	platform: Platform,
+	context?: ChatMessage
+}
 export interface Command {
   command: string;
   showOnChat: boolean;
-  commandFunction: (
-    user: string,
-    isUserMod: boolean,
-    message: string,
-    reply: (message: string, replyToUser: boolean) => void | Promise<void>,
-    platform: Platform,
-    context?: ChatMessage,
-  ) => void | Promise<void>;
+  commandFunction: (data: CommandData) => void | Promise<void>;
 }
 export interface CustomCommand {
   command: string;
@@ -390,21 +391,16 @@ export class TalkingBot {
         showOnChat: false,
         command: "!8ball",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
+					data
+                 ) => {
           if (
-            message.toLowerCase().includes("furry") &&
-            message.toLowerCase().includes("sweet")
+            data.message.toLowerCase().includes("furry") &&
+            data.message.toLowerCase().includes("sweet")
           ) {
-            reply("Yes.", false);
+            data.reply("Yes.", false);
             return;
           }
-          reply(getRandomElement(eightballMessages), false);
+          data.reply(getRandomElement(eightballMessages), false);
         },
       },
 
@@ -412,23 +408,18 @@ export class TalkingBot {
         showOnChat: false,
         command: "!kill",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (message === "" || message === undefined) {
-            reply(
-              getRandomElement(selfKillMessages).replaceAll("$1", user),
+					data
+                  ) => {
+          if (data.message === "" || data.message === undefined) {
+            data.reply(
+              getRandomElement(selfKillMessages).replaceAll("$1", data.user),
               false,
             );
           } else {
-            reply(
+            data.reply(
               getRandomElement(killOtherMessages)
-                .replaceAll("$1", user)
-                .replaceAll("$2", message),
+                .replaceAll("$1", data.user)
+                .replaceAll("$2", data.message),
               false,
             );
           }
@@ -438,51 +429,41 @@ export class TalkingBot {
         showOnChat: false,
         command: "!modtext",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod) return;
-          if (platform == Platform.twitch) {
-            message = parseTwitchEmotes(
-              "!modtext " + message,
-              context.emoteOffsets,
+          if (!data.isUserMod) return;
+          if (data.platform == Platform.twitch) {
+            data.message = parseTwitchEmotes(
+              "!modtext " + data.message,
+              data.context.emoteOffsets,
             );
-            message = message.replace("!modtext", "");
-          } else if (platform == Platform.kick) {
-            message = parseKickEmotes(message);
+            data.message = data.message.replace("!modtext", "");
+          } else if (data.platform == Platform.kick) {
+            data.message = parseKickEmotes(data.message);
           }
-          this.modtext = message;
-          this.iomodtext.emit("message", message);
+          this.modtext = data.message;
+          this.iomodtext.emit("message", data.message);
         },
       },
       {
         showOnChat: false,
         command: "!dyntitle",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod) return;
-          if (message == "stop") {
+          if (!data.isUserMod) return;
+          if (data.message == "stop") {
             clearInterval(this.dynamicTitleInterval);
-            reply("Stopped dynamic title", true);
+            data.reply("Stopped dynamic title", true);
           } else {
-            this.dynamicTitle = message;
+            this.dynamicTitle = data.message;
             this.setDynamicTitle();
             this.dynamicTitleInterval = setInterval(
               this.setDynamicTitle.bind(this),
               1000 * 60,
             );
             if (this.dynamicTitleInterval != null) {
-              reply("Started dynamic title", true);
+              data.reply("Started dynamic title", true);
             }
           }
         },
@@ -491,19 +472,14 @@ export class TalkingBot {
         showOnChat: false,
         command: "!redeem",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod) return;
+          if (!data.isUserMod) return;
           if (this.twitch.redeemQueue.length == 0) {
-            reply("No redeem found", true);
+            data.reply("No redeem found", true);
             return;
           }
-          switch (message) {
+          switch (data.message) {
             case "accept":
               this.twitch.handleRedeemQueue(true);
               break;
@@ -514,7 +490,7 @@ export class TalkingBot {
               this.twitch.handleRedeemQueue(null);
               break;
             default:
-              reply("Usage: !redeem accept/deny", true);
+              data.reply("Usage: !redeem accept/deny", true);
               break;
           }
         },
@@ -523,50 +499,40 @@ export class TalkingBot {
         showOnChat: false,
         command: "!counter",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
           const regex = /[+|-]/g;
-          if (isUserMod && message != "") {
-            if (regex.test(message)) {
-              this.counter += parseInt(message);
+          if (data.isUserMod && data.message != "") {
+            if (regex.test(data.message)) {
+              this.counter += parseInt(data.message);
             } else {
-              this.counter = parseInt(message);
+              this.counter = parseInt(data.message);
             }
-            reply(`The counter has been set to ${this.counter}`, true);
+            data.reply(`The counter has been set to ${this.counter}`, true);
             return;
           }
-          reply(`The counter is at ${this.counter}`, true);
+          data.reply(`The counter is at ${this.counter}`, true);
         },
       },
       {
         showOnChat: false,
         command: "!uptime",
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (platform != Platform.twitch) return;
+          if (data.platform != Platform.twitch) return;
           const stream = await this.twitch.apiClient.streams.getStreamByUserId(
             this.twitch.channel.id,
           );
           if (stream == null) {
-            reply(
+            data.reply(
               `${this.twitch.channel.displayName} is currently offline`,
               true,
             );
             return;
           }
           const timeString = getTimeDifference(stream.startDate, new Date());
-          reply(
+					data.reply(
             `${this.twitch.channel.displayName} has been live for ${timeString}`,
             true,
           );
@@ -576,48 +542,38 @@ export class TalkingBot {
         showOnChat: false,
         command: "!status",
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (platform != Platform.twitch) return;
+          if (data.platform != Platform.twitch) return;
           const stream = await this.twitch.apiClient.streams.getStreamByUserId(
             this.twitch.channel.id,
           );
           if (stream == null) {
-            reply(
+            data.reply(
               `${this.twitch.channel.displayName} is currently offline`,
               true,
             );
             return;
           }
-          reply(`\"${stream.title}\" - ${stream.gameName}`, true);
+          data.reply(`\"${stream.title}\" - ${stream.gameName}`, true);
         },
       },
       {
         showOnChat: false,
         command: "!followage",
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (platform != Platform.twitch) return;
+          if (data.platform != Platform.twitch) return;
           const followed =
             await this.twitch.apiClient.channels.getChannelFollowers(
               this.twitch.channel.id,
-              context.userInfo.userId,
+              data.context.userInfo.userId,
             );
 
           // User is not following
           if (followed.data.length == 0) {
-            reply(
+            data.reply(
               `You are not following ${this.twitch.channel.displayName}`,
               true,
             );
@@ -626,8 +582,8 @@ export class TalkingBot {
               followed.data[0].followDate,
               new Date(),
             );
-            reply(
-              `@${user} has been following ${this.twitch.channel.displayName} for ${timeString}`,
+            data.reply(
+              `@${data.user} has been following ${this.twitch.channel.displayName} for ${timeString}`,
               false,
             );
           }
@@ -637,19 +593,14 @@ export class TalkingBot {
         showOnChat: false,
         command: "!addcmd",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod) return;
-          const splitMessage = message.split(" ");
+          if (!data.isUserMod) return;
+          const splitMessage = data.message.split(" ");
           let commandName = splitMessage[0];
-          const response = message.substring(
-            message.indexOf(" ") + 1,
-            message.length,
+          const response = data.message.substring(
+            data.message.indexOf(" ") + 1,
+            data.message.length,
           );
 
           if (!commandName.startsWith("!")) commandName = `!${commandName}`;
@@ -662,17 +613,17 @@ export class TalkingBot {
               (element) => element.command == commandName,
             )
           ) {
-            reply(`Command ${commandName} already exists!`, true);
+            data.reply(`Command ${commandName} already exists!`, true);
             return;
           }
           if (splitMessage.length <= 1) {
-            reply("No command response given", true);
+            data.reply("No command response given", true);
             return;
           }
 
           this.customCommands.push(customCom);
 
-          reply(`Command ${commandName} has been added`, true);
+          data.reply(`Command ${commandName} has been added`, true);
           this.writeCustomCommands();
         },
       },
@@ -680,25 +631,20 @@ export class TalkingBot {
         showOnChat: false,
         command: "!showcmd",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod) return;
-          const splitMessage = message.split(" ");
+          if (!data.isUserMod) return;
+          const splitMessage = data.message.split(" ");
           let commandName = splitMessage[0];
           if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           const command: CustomCommand[] = this.customCommands.filter(
             (element) => element.command == commandName,
           );
           if (command) {
-            reply(`${command[0].command}: ${command[0].response}`, true);
+            data.reply(`${command[0].command}: ${command[0].response}`, true);
             return;
           } else {
-            reply(`Command ${commandName} doesn't exist!`, true);
+            data.reply(`Command ${commandName} doesn't exist!`, true);
             return;
           }
         },
@@ -708,24 +654,19 @@ export class TalkingBot {
         showOnChat: false,
         command: "!delcmd",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (!isUserMod) return;
+					data
+                 ) => {
+          if (!data.isUserMod) return;
           const oldLen = this.customCommands.length;
-          const commandName = message.split(" ")[0];
+          const commandName = data.message.split(" ")[0];
           this.customCommands = this.customCommands.filter(
             (element) => element.command != commandName,
           );
           if (oldLen != this.customCommands.length) {
-            reply(`${commandName} has been removed`, true);
+            data.reply(`${commandName} has been removed`, true);
             this.writeCustomCommands();
           } else {
-            reply(`${commandName} is not a command`, true);
+            data.reply(`${commandName} is not a command`, true);
           }
         },
       },
@@ -733,54 +674,44 @@ export class TalkingBot {
         showOnChat: false,
         command: "!editcmd",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (!isUserMod) return;
-          const commandName = message.split(" ")[0];
-          const response = message.substring(
-            message.indexOf(" ") + 1,
-            message.length,
+					data
+                 ) => {
+          if (!data.isUserMod) return;
+          const commandName = data.message.split(" ")[0];
+          const response = data.message.substring(
+            data.message.indexOf(" ") + 1,
+            data.message.length,
           );
 
           for (let i = 0; i < this.customCommands.length; i++) {
             const command = this.customCommands[i];
             if (command.command == commandName) {
               command.response = response;
-              reply(`command ${commandName} has been edited`, true);
+              data.reply(`command ${commandName} has been edited`, true);
               this.writeCustomCommands();
               return;
             }
           }
-          reply(`${commandName} is not a command`, true);
+          data.reply(`${commandName} is not a command`, true);
         },
       },
       {
         showOnChat: false,
         command: "!delalias",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (!isUserMod) return;
+					data
+                ) => {
+          if (!data.isUserMod) return;
           const oldLen = this.aliasCommands.length;
-          const alias = message.split(" ")[0];
+          const alias = data.message.split(" ")[0];
           this.aliasCommands = this.aliasCommands.filter(
             (element) => element.alias != alias,
           );
           if (oldLen != this.aliasCommands.length) {
-            reply(`${alias} has been removed`, true);
+            data.reply(`${alias} has been removed`, true);
             this.writeCustomCommands();
           } else {
-            reply(`${alias} is not an alias`, true);
+            data.reply(`${alias} is not an alias`, true);
           }
         },
       },
@@ -789,25 +720,20 @@ export class TalkingBot {
         showOnChat: false,
         command: "!aliascmd",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod) return;
-          const splitMessage = message.split(" ");
+          if (!data.isUserMod) return;
+          const splitMessage = data.message.split(" ");
           const commandName = splitMessage[1];
           const alias = splitMessage[0];
           if (this.customCommands.some((element) => element.command == alias)) {
-            reply(`${alias} already exists`, true);
+            data.reply(`${alias} already exists`, true);
             return;
           }
 
           this.aliasCommands.push({ command: commandName, alias: alias });
 
-          reply(`command ${commandName} has been aliased to ${alias}`, true);
+          data.reply(`command ${commandName} has been aliased to ${alias}`, true);
           this.writeCustomCommands();
           return;
         },
@@ -816,18 +742,13 @@ export class TalkingBot {
         showOnChat: false,
         command: "!listcmd",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
+					data
+                 ) => {
           const custom = this.customCommands
             .map((obj) => obj.command)
             .join(", ");
           const builtin = this.commandList.map((obj) => obj.command).join(", ");
-          reply(
+          data.reply(
             `Builtin Commands: ${builtin}, Custom Commands: ${custom}`,
             true,
           );
@@ -838,21 +759,16 @@ export class TalkingBot {
         command: "!settitle",
 
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (!isUserMod || message.length == 0) return;
+					data
+                 ) => {
+          if (!data.isUserMod || data.message.length == 0) return;
           await this.twitch.apiClient.channels.updateChannelInfo(
             this.twitch.channel.id,
-            { title: message },
+            { title: data.message },
           );
           // TODO change title in kick
 
-          reply(`Title has been changed to "${message}"`, true);
+          data.reply(`Title has been changed to "${message}"`, true);
         },
       },
       {
@@ -860,18 +776,13 @@ export class TalkingBot {
         command: "!setgame",
 
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
+					data
         ) => {
-          if (!isUserMod || message.length == 0) return;
+          if (!data.isUserMod || data.message.length == 0) return;
           const game: HelixGame =
-            await this.twitch.apiClient.games.getGameByName(message);
+            await this.twitch.apiClient.games.getGameByName(data.message);
           if (game == null) {
-            reply(`Can't find game "${message}"`, true);
+            data.reply(`Can't find game "${data.message}"`, true);
             return;
           }
           await this.twitch.apiClient.channels.updateChannelInfo(
@@ -880,24 +791,19 @@ export class TalkingBot {
           );
           // TODO change game in kick
 
-          reply(`Game has been changed to "${game.name}"`, true);
+          data.reply(`Game has been changed to "${game.name}"`, true);
         },
       },
       {
         showOnChat: false,
         command: "!bsr",
         commandFunction: (
-          user: string,
-          isUserMod: boolean,
-          message: string,
-          reply: Function,
-          platform: Platform,
-          context?: ChatMessage,
+					data
         ): void | Promise<void> => {
-          if (platform == Platform.twitch) return;
+          if (data.platform == Platform.twitch) return;
           this.twitch.chatClient.say(
             this.twitch.channel.name,
-            `!bsr ${message}`,
+            `!bsr ${data.message}`,
           );
         },
       },
@@ -905,37 +811,32 @@ export class TalkingBot {
         showOnChat: true,
         command: "!tts",
         commandFunction: (
-          user: string,
-          isUserMod: boolean,
-          message: string,
-          reply: Function,
-          platform: Platform,
-          context?: ChatMessage,
+					data
         ): void | Promise<void> => {
-          if (!isUserMod && !this.ttsEnabled) return;
-          switch (platform) {
+          if (!data.isUserMod && !this.ttsEnabled) return;
+          switch (data.platform) {
             case Platform.twitch:
-              if (context == null) break;
-              let msg = message.trim();
+              if (data.context == null) break;
+              let msg = data.message.trim();
 
               var indexes: number[] = [];
-              context.emoteOffsets.forEach((emote) => {
+              data.context.emoteOffsets.forEach((emote) => {
                 emote.forEach((index) => {
                   indexes.push(parseInt(index) - "!tts ".length);
                 });
               });
               msg = removeByIndexToUppercase(msg, indexes);
-              this.iotts.emit("message", { text: msg, sender: user });
+              this.iotts.emit("message", { text: msg, sender: data.user });
 
               break;
             case Platform.kick:
               this.iotts.emit("message", {
-                text: removeKickEmotes(message),
-                sender: user,
+                text: removeKickEmotes(data.message),
+                sender: data.user,
               });
               break;
             default:
-              this.iotts.emit("message", { text: message, sender: user });
+              this.iotts.emit("message", { text: data.message, sender: data.user });
               break;
           }
         },
@@ -944,21 +845,16 @@ export class TalkingBot {
         showOnChat: false,
         command: "!snipe",
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (!isUserMod) return;
-          reply(`Sniping ${message}`, true);
-          const songs: String[] = await kill(message);
+					data
+                ) => {
+          if (!data.isUserMod) return;
+          data.reply(`Sniping ${data.message}`, true);
+          const songs: String[] = await kill(data.message);
           if (songs.length === 0) {
-            reply("Couldn't find songs", true);
+            data.reply("Couldn't find songs", true);
           }
           songs.forEach((map) => {
-            reply(`!bsr ${map}`, false);
+            data.reply(`!bsr ${map}`, false);
           });
         },
       },
@@ -966,22 +862,17 @@ export class TalkingBot {
         showOnChat: false,
         command: "!modtts",
         commandFunction: (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          if (!isUserMod) return;
-          if (message == "enable") {
+					data
+                 ) => {
+          if (!data.isUserMod) return;
+          if (data.message == "enable") {
             this.ttsEnabled = true;
-            reply("TTS command has been enabled", true);
+            data.reply("TTS command has been enabled", true);
             return;
           }
-          if (message == "disable") {
+          if (data.message == "disable") {
             this.ttsEnabled = false;
-            reply("TTS command has been disabled", true);
+            data.reply("TTS command has been disabled", true);
             return;
           }
         },
@@ -990,14 +881,9 @@ export class TalkingBot {
         showOnChat: false,
         command: "!pet",
         commandFunction: async (
-          user,
-          isUserMod,
-          message,
-          reply,
-          platform,
-          context,
-        ) => {
-          switch (message) {
+					data
+                  ) => {
+          switch (data.message) {
             case "feed":
               this.pet.feed();
               break;
@@ -1011,17 +897,17 @@ export class TalkingBot {
               this.pet.fuel();
               break;
             case "start":
-              if (isUserMod) {
+              if (data.isUserMod) {
                 this.pet.init();
                 break;
               }
             case "sleep":
-              if (isUserMod) {
+              if (data.isUserMod) {
                 this.pet.sleep();
                 break;
               }
             default:
-              reply("Usage !pet feed|fuel|status|graveyard", true);
+              data.reply("Usage !pet feed|fuel|status|graveyard", true);
           }
         },
       },

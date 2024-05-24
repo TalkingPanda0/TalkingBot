@@ -118,17 +118,20 @@ export class Kick {
             for (let i = 0; i < this.bot.commandList.length; i++) {
               let command = this.bot.commandList[i];
               if (!text.startsWith(command.command)) continue;
-
-              command.commandFunction(
-                user,
-                firstBadgeType === "moderator" ||
+							command.commandFunction(
+								{
+									user: user,
+									isUserMod: firstBadgeType === "moderator" ||
                   firstBadgeType === "broadcaster",
-                text.replace(command.command, "").trim(),
-                (message: string, replyToUser: boolean) => {
+
+									platform: Platform.kick,
+									message: text.replace(command.command, "").trim(),
+									reply: (message: string, replyToUser: boolean) => {
                   // Can't reply on kick yet
                 },
-                Platform.kick,
-              );
+
+								}
+							)
               if (!command.showOnChat) return;
               this.bot.iochat.emit("message", {
                 text:await this.bot.parseClips(parseKickEmotes(text)),

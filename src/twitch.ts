@@ -106,7 +106,7 @@ export class Twitch {
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
-  private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
+ // private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private oauthFile: BunFile = Bun.file(__dirname + "/../config/oauth.json");
   private broadcasterFile: BunFile = Bun.file(
@@ -532,12 +532,13 @@ export class Twitch {
           for (let i = 0; i < this.bot.commandList.length; i++) {
             const command = this.bot.commandList[i];
             if (commandName != command.command) continue;
-
-            command.commandFunction(
-              name,
-              isMod,
-              text.replace(command.command, "").trim(),
-              (message: string, replyToUser: boolean) => {
+						command.commandFunction(
+							{
+								user: name,
+								isUserMod: isMod,
+								platform: Platform.twitch,
+								message: text.replace(command.command, "").trim(),
+							reply: (message: string, replyToUser: boolean) => {
                 const replyId = replyToUser ? msg.id : null;
                 this.chatClient.say(channel, message, { replyTo: replyId });
                 this.bot.iochat.emit("message", {
@@ -554,9 +555,10 @@ export class Twitch {
                   isCommand: true,
                 });
               },
-              Platform.twitch,
-              msg,
-            );
+
+
+						});
+
             if (command.showOnChat) this.sendToChatList(msg, false, false);
             return;
           }
