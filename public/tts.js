@@ -59,7 +59,7 @@ function HAPBOO() {
 }
 
 function createPopup(message) {
-  var popupElement = `<span class="sender">${message.sender} says:</span><br/><span class="text">${message.text}</span class="text"></span><div></div>`;
+  var popupElement = `<span class="sender"><span style="color: ${message.color}">${message.sender}</span> says:</span><br/><span class="text">${message.text}</span class="text"></span><div></div>`;
   messageList.innerHTML = popupElement;
   messageList.style.opacity = 1;
   if (Math.floor(Math.random() * 20) == 0) {
@@ -121,7 +121,7 @@ function handleQueue() {
 
           playing = null;
           removePopup();
-          createPopup({ sender: "Brian himself", text: err });
+          createPopup({ sender: "Brian himself", text: err, color: "red" });
           setTimeout(removePopup, 10000);
         };
         audio.onended = () => {
@@ -140,7 +140,7 @@ function handleQueue() {
             clearInterval(interval);
             interval = null;
             console.error(err);
-            createPopup({ sender: "Brian himself", text: err });
+            createPopup({ sender: "Brian himself", text: err,color: "red" });
             setTimeout(removePopup, 10000);
           });
         };
@@ -153,7 +153,7 @@ function handleQueue() {
         interval = null;
         playing = null;
         console.eror(err);
-        createPopup({ sender: "Brian himself", text: err });
+        createPopup({ sender: "Brian himself", text: err, color: "red" });
         setTimeout(removePopup, 10000);
       });
 
@@ -178,7 +178,7 @@ function handleQueue() {
 
     playing = null;
     console.error(err);
-    createPopup({ sender: "Brian himself", text: err });
+    createPopup({ sender: "Brian himself", text: err,color: "red" });
     setTimeout(removePopup, 10000);
   });
 }

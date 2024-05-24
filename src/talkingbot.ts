@@ -368,7 +368,9 @@ export class TalkingBot {
           });
         }
         this.connectedtoOverlay = true;
-      } catch (e) {}
+      } catch (e) {
+				console.error(e);
+			}
     });
     this.iopoll = new Server(this.server, {
       path: "/poll/",
@@ -782,7 +784,7 @@ export class TalkingBot {
                 });
               });
               msg = removeByIndexToUppercase(msg, indexes);
-              this.iotts.emit("message", { text: msg, sender: data.user });
+              this.iotts.emit("message", { text: msg, sender: data.user, color: data.userColor });
 
               break;
             case Platform.kick:
@@ -792,6 +794,7 @@ export class TalkingBot {
               });
               break;
             default:
+							console.log(data);
               this.iotts.emit("message", {
                 text: data.message,
                 sender: data.user,

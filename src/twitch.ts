@@ -564,6 +564,7 @@ export class Twitch {
                   isCommand: true,
                 });
               },
+							context: msg,
             });
 
             if (command.showOnChat) this.sendToChatList(msg, false, false);
