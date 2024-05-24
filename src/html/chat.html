@@ -131,10 +131,10 @@
       });
     });
     socket.on("chatDisconnect", (chat) => {
-			if(document.getElementById(`${chat.name}-disconnect`));
+			if(document.getElementById(`${chat.name}-disconnect`)) return;
       messageList.insertAdjacentHTML(
         "beforeend",
-        `<div class="message" style="background: ${chat.color}" id="${chat.name}-disconnect"><span><span class="text">Disconnected from ${chat.name}!</span></span></div>`,
+				`<div class="message" style="background: ${chat.color}" id="${chat.name}-disconnect"><span><span class="text">Disconnected from ${chat.name}!</span></span></div>`,
       );
       messageList.scrollIntoView({
         behavior: "smooth",
