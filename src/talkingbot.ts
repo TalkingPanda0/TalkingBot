@@ -798,6 +798,7 @@ export class TalkingBot {
               this.iotts.emit("message", {
                 text: removeKickEmotes(data.message),
                 sender: data.user,
+								color: data.userColor,
                 parsedText: parseKickEmotes(data.message),
               });
               break;
@@ -806,6 +807,7 @@ export class TalkingBot {
               this.iotts.emit("message", {
                 text: data.message,
                 sender: data.user,
+								color: data.userColor,
                 parsedText: data.message,
               });
               break;
