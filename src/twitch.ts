@@ -281,8 +281,13 @@ export class Twitch {
     this.eventListener.onStreamOnline(
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
+        this.bot.pet.init();
         try {
           const stream = await event.getStream();
+          if (!stream) {
+            this.bot.discord.sendStreamPing();
+            return;
+          }
           const thumbnail = stream.getThumbnailUrl(1280, 720);
           this.bot.discord.sendStreamPing({
             title: stream.title,
@@ -296,7 +301,6 @@ export class Twitch {
           );
           this.bot.discord.sendStreamPing();
         }
-        this.bot.pet.init();
       },
     );
 
@@ -564,7 +568,7 @@ export class Twitch {
                   isCommand: true,
                 });
               },
-							context: msg,
+              context: msg,
             });
 
             if (command.showOnChat) this.sendToChatList(msg, false, false);
