@@ -2,6 +2,19 @@ import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
 import { MessageFragments } from "tubechat/lib/types/Client";
+export function parseYTMessage(message: MessageFragments[]): string {
+  let text = "";
+  for (let i = 0; i < message.length; i++) {
+    const fragment: MessageFragments = message.at(i);
+    if (fragment.text !== undefined) {
+      text += fragment.text;
+    } else if (fragment.emoji !== undefined) {
+      text += `<img src="${fragment.emoji}" class="emote" />`;
+    }
+  }
+  return text;
+}
+
 export class YouTube {
   public isConnected: boolean = false;
 
@@ -18,18 +31,6 @@ export class YouTube {
       hash |= 0; // Convert to 32bit integer
     }
     return userColors[Math.abs(hash % userColors.length)];
-  }
-  private parseMessage(message: MessageFragments[]): string {
-    let text = "";
-    for (let i = 0; i < message.length; i++) {
-      const fragment: MessageFragments = message.at(i);
-      if (fragment.text !== undefined) {
-        text += fragment.text;
-      } else if (fragment.emoji !== undefined) {
-        text += `<img src="${fragment.emoji}" class="emote" />`;
-      }
-    }
-    return text;
   }
 
   public async initBot() {
@@ -68,7 +69,11 @@ export class YouTube {
         timestamp,
       }) => {
         try {
-          let text = message.at(0).text;
+          let text = message
+            .map((messageFragment) => {
+              return messageFragment.text;
+            })
+            .join("");
           const isMod = isModerator || isOwner;
           //if (text == null) return;
           if (name === "BotRix") return;
@@ -79,7 +84,7 @@ export class YouTube {
             color = this.getColor(name);
             this.bot.iochat.emit("message", {
               badges: ["https://www.youtube.com/favicon.ico"],
-              text: this.parseMessage(message),
+              text: parseYTMessage(message),
               sender: name,
               senderId: "youtube",
               color: color,
@@ -108,16 +113,14 @@ export class YouTube {
               userColor: this.getColor(name),
               isUserMod: isMod,
               message: text.replace(command.command, "").trim(),
-              reply: (message: string, replyToUser: boolean) => {
-                // can't
-              },
               platform: Platform.youtube,
+              context: message,
             });
             if (command.showOnChat) {
               color = this.getColor(name);
               this.bot.iochat.emit("message", {
                 badges: ["https://www.youtube.com/favicon.ico"],
-                text: this.parseMessage(message),
+                text: parseYTMessage(message),
                 sender: name,
                 senderId: "youtube",
                 color: color,

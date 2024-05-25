@@ -2,15 +2,15 @@ import { ChatMessage } from "@twurple/chat";
 import { HelixGame } from "@twurple/api";
 import { Twitch, parseTwitchEmotes } from "./twitch";
 import { Discord } from "./discord";
-import { YouTube } from "./youtube";
-import { Kick, parseKickEmotes } from "./kick";
+import { YouTube, parseYTMessage } from "./youtube";
+import { Kick, parseKickEmotes, removeKickEmotes } from "./kick";
 import { kill } from "./beatsniper.js";
 
 import { Server } from "socket.io";
 import * as http from "http";
 import { BunFile } from "bun";
 import { Pet, StatusReason } from "./pet";
-const kickEmotePrefix = /sweetbabooo-o/g;
+import { MessageFragments } from "tubechat/lib/types/Client";
 
 export enum Platform {
   twitch,
@@ -18,15 +18,32 @@ export enum Platform {
   youtube,
 }
 
-export interface CommandData {
+export interface TwitchCommandData {
+  platform: Platform.twitch;
   user: string;
   userColor: string;
   isUserMod: boolean;
   message: string;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  platform: Platform;
-  context?: ChatMessage;
+  context: ChatMessage;
 }
+export interface YoutubeCommandData {
+  user: string;
+  userColor: string;
+  isUserMod: boolean;
+  message: string;
+  platform: Platform.youtube;
+  context: MessageFragments[];
+}
+export interface KickComamndData{
+  user: string;
+  userColor: string;
+  isUserMod: boolean;
+  message: string;
+  platform: Platform.kick;
+}
+export type CommandData = TwitchCommandData | YoutubeCommandData | KickComamndData;
+
 export interface Command {
   command: string;
   showOnChat: boolean;
@@ -116,14 +133,6 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
   return str;
 }
 
-function removeKickEmotes(message: string): string {
-  const regex = /\[emote:(\d+):([^\]]+)\]/g;
-  return message
-    .replace(regex, (match, id, name) => {
-      return name + " ";
-    })
-    .replace(kickEmotePrefix, "");
-}
 
 export function getSuffix(i: number) {
   var j = i % 10,
@@ -802,13 +811,12 @@ export class TalkingBot {
                 parsedText: parseKickEmotes(data.message),
               });
               break;
-            default:
-              console.log(data);
+            case Platform.youtube:
               this.iotts.emit("message", {
                 text: data.message,
                 sender: data.user,
 								color: data.userColor,
-                parsedText: data.message,
+                parsedText: parseYTMessage(data.context),
               });
               break;
           }

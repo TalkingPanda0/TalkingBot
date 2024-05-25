@@ -3,6 +3,17 @@ import { Platform, Poll, TalkingBot } from "./talkingbot";
 import { HelixPoll } from "@twurple/api";
 import DOMPurify from "isomorphic-dompurify";
 
+const kickEmotePrefix = /sweetbabooo-o/g;
+
+export function removeKickEmotes(message: string): string {
+  const regex = /\[emote:(\d+):([^\]]+)\]/g;
+  return message
+    .replace(regex, (match, id, name) => {
+      return name + " ";
+    })
+    .replace(kickEmotePrefix, "");
+}
+
 export function parseKickEmotes(message: string) {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message.replace(
@@ -128,9 +139,6 @@ export class Kick {
 
                 platform: Platform.kick,
                 message: text.replace(command.command, "").trim(),
-                reply: (message: string, replyToUser: boolean) => {
-                  // Can't reply on kick yet
-                },
               });
               if (!command.showOnChat) return;
               this.bot.iochat.emit("message", {
