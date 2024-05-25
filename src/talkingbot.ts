@@ -357,7 +357,7 @@ export class TalkingBot {
     this.iochat.on("connect", () => {
       try {
         this.twitch.sendRecentMessages();
-        if (!this.twitch.chatClient.isConnected) {
+        if (this.twitch.chatClient != null && !this.twitch.chatClient.isConnected) {
           this.iochat.emit("chatDisconnect", {
             color: "#6441a5",
             name: "Twitch",
