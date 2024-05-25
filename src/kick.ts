@@ -157,7 +157,7 @@ export class Kick {
             break;
           case "App\\Events\\MessageDeletedEvent":
             this.bot.iochat.emit(
-              "messageDelete",
+              "deleteMessage",
               "kick-" + jsonDataSub.message.id,
             );
             break;

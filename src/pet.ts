@@ -153,7 +153,7 @@ export class Pet {
   public fuel() {
     if (this.timeout || this.timer == null || this.status > Status.hatching) return;
 		this.startTimeout();
-    this.campfire += 2;
+    this.campfire++;
     if (this.campfire > 5) {
       this.bot.twitch.say(
         `The campfire got too hot. Habpoo #${this.name} is now 🍳`,
