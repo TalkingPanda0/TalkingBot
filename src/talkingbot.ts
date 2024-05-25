@@ -882,7 +882,7 @@ export class TalkingBot {
                 break;
               }
             default:
-              data.reply("Usage !pet feed|fuel|status|graveyard", true);
+							if(data.platform == Platform.twitch) data.reply("Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info", true);
           }
         },
       },

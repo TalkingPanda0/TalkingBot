@@ -116,7 +116,7 @@ export class Pet {
       case Status.egg:
       case Status.hatching:
         message += ` is ${eggs[this.status]} The campfire is at ${this.campfire}/5 🔥 `;
-        if (this.campfire > 3) message += "He is getting a bit too warm";
+        if (this.campfire > 4) message += "He is getting a bit too warm";
         break;
       default:
         return;
