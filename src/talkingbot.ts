@@ -33,6 +33,7 @@ export interface YoutubeCommandData {
   isUserMod: boolean;
   message: string;
   platform: Platform.youtube;
+  reply: (message: string, replyToUser: boolean) => {};
   context: MessageFragments[];
 }
 export interface KickComamndData{
@@ -40,6 +41,7 @@ export interface KickComamndData{
   userColor: string;
   isUserMod: boolean;
   message: string;
+  reply: (message: string, replyToUser: boolean) => {};
   platform: Platform.kick;
 }
 export type CommandData = TwitchCommandData | YoutubeCommandData | KickComamndData;
@@ -433,7 +435,7 @@ export class TalkingBot {
             data.message = parseTwitchEmotes(
               "!modtext " + data.message,
               data.context.emoteOffsets,
-            );
+            ).replaceAll("$counter",this.counter.toString());
             data.message = data.message.replace("!modtext", "");
           } else if (data.platform == Platform.kick) {
             data.message = parseKickEmotes(data.message);
