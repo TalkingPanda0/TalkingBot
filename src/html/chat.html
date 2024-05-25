@@ -70,7 +70,7 @@
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
 
-      textElement.innerHTML = `${message.sender}<span class="text">: ${message.text}</span>`;
+      textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${message.text.trim()}</span>`;
 
       spanElement.appendChild(badgesElement);
       spanElement.appendChild(textElement);
