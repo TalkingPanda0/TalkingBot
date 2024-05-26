@@ -36,7 +36,7 @@ export interface YoutubeCommandData {
   reply: (message: string, replyToUser: boolean) => {};
   context: MessageFragments[];
 }
-export interface KickComamndData{
+export interface KickComamndData {
   user: string;
   userColor: string;
   isUserMod: boolean;
@@ -44,7 +44,10 @@ export interface KickComamndData{
   reply: (message: string, replyToUser: boolean) => {};
   platform: Platform.kick;
 }
-export type CommandData = TwitchCommandData | YoutubeCommandData | KickComamndData;
+export type CommandData =
+  | TwitchCommandData
+  | YoutubeCommandData
+  | KickComamndData;
 
 export interface Command {
   command: string;
@@ -134,7 +137,6 @@ function removeByIndexToUppercase(str: string, indexes: number[]): string {
   });
   return str;
 }
-
 
 export function getSuffix(i: number) {
   var j = i % 10,
@@ -359,7 +361,10 @@ export class TalkingBot {
     this.iochat.on("connect", () => {
       try {
         this.twitch.sendRecentMessages();
-        if (this.twitch.chatClient != null && !this.twitch.chatClient.isConnected) {
+        if (
+          this.twitch.chatClient != null &&
+          !this.twitch.chatClient.isConnected
+        ) {
           this.iochat.emit("chatDisconnect", {
             color: "#6441a5",
             name: "Twitch",
@@ -435,7 +440,7 @@ export class TalkingBot {
             data.message = parseTwitchEmotes(
               "!modtext " + data.message,
               data.context.emoteOffsets,
-            ).replaceAll("$counter",this.counter.toString());
+            ).replaceAll("$counter", this.counter.toString());
             data.message = data.message.replace("!modtext", "");
           } else if (data.platform == Platform.kick) {
             data.message = parseKickEmotes(data.message);
@@ -544,7 +549,10 @@ export class TalkingBot {
             );
             return;
           }
-          data.reply(`\"${stream.title}\" - ${stream.gameName}`, true);
+          data.reply(
+            `\"${stream.title}\" - ${stream.gameName}: ${stream.tags}`,
+            true,
+          );
         },
       },
       {
@@ -768,6 +776,50 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
+        command: "!tags",
+        commandFunction: async (data) => {
+          if (!data.isUserMod || data.platform !== Platform.twitch) return;
+          const stream = await this.twitch.apiClient.streams.getStreamByUserId(
+            this.twitch.channel.id,
+          );
+          if (stream == null) {
+            data.reply("Stream is currently offline", true);
+            return;
+          }
+
+          switch (data.message) {
+            case "add":
+              const newTags = data.message.split(" ").slice(1);
+              stream.tags.concat(newTags);
+              await this.twitch.apiClient.channels.updateChannelInfo(
+                this.twitch.channel.id,
+                { tags: stream.tags },
+              );
+              data.reply(`Tags ${newTags} has been added`, true);
+              break;
+            case "remove":
+              const tagsToRemove = data.message
+                .toLowerCase()
+                .split(" ")
+                .slice(1);
+              stream.tags.filter((value) => {
+                return !tagsToRemove.includes(value.toLowerCase());
+              });
+              await this.twitch.apiClient.channels.updateChannelInfo(
+                this.twitch.channel.id,
+                { tags: stream.tags },
+              );
+
+              data.reply(`Tags ${tagsToRemove} has been removed`, true);
+              break;
+            default:
+              data.reply(`Current tags: ${stream.tags}`, true);
+              return;
+          }
+        },
+      },
+      {
+        showOnChat: false,
         command: "!bsr",
         commandFunction: (data): void | Promise<void> => {
           if (data.platform == Platform.twitch) return;
@@ -809,7 +861,7 @@ export class TalkingBot {
               this.iotts.emit("message", {
                 text: removeKickEmotes(data.message),
                 sender: data.user,
-								color: data.userColor,
+                color: data.userColor,
                 parsedText: parseKickEmotes(data.message),
               });
               break;
@@ -817,7 +869,7 @@ export class TalkingBot {
               this.iotts.emit("message", {
                 text: data.message,
                 sender: data.user,
-								color: data.userColor,
+                color: data.userColor,
                 parsedText: parseYTMessage(data.context),
               });
               break;
@@ -884,7 +936,11 @@ export class TalkingBot {
                 break;
               }
             default:
-							if(data.platform == Platform.twitch) data.reply("Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info", true);
+              if (data.platform == Platform.twitch)
+                data.reply(
+                  "Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info",
+                  true,
+                );
           }
         },
       },
