@@ -93,9 +93,9 @@ export class Kick {
 
               jsonBadges.forEach((element: { type: string }) => {
                 if (element.type === "moderator") {
-                  badges.push("/static/kickmod.svg");
+                  badges.push("/kickmod.svg");
                 } else if (element.type === "subscriber") {
-                  badges.push("/static/kicksub.svg");
+                  badges.push("/kicksub.svg");
                 }
               });
             }

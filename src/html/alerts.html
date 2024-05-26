@@ -67,13 +67,13 @@
 
     <div id="alert"></div>
     <div style="display: none">
-      <img id="hapboo0" src="/static/hapboo0.png" />
-      <img id="hapboo1" src="/static/hapboo1.png" />
-      <img id="hapboo2" src="/static/hapboo2.png" />
-      <img id="hapboo3" src="/static/hapboo3.png" />
-      <img id="hapboo4" src="/static/hapboo4.png" />
-      <img id="hapboo5" src="/static/hapboo5.png" />
-      <img id="hapboo6" src="/static/hapboo6.png" />
+      <img id="hapboo0" src="/hapboo0.png" />
+      <img id="hapboo1" src="/hapboo1.png" />
+      <img id="hapboo2" src="/hapboo2.png" />
+      <img id="hapboo3" src="/hapboo3.png" />
+      <img id="hapboo4" src="/hapboo4.png" />
+      <img id="hapboo5" src="/hapboo5.png" />
+      <img id="hapboo6" src="/hapboo6.png" />
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -92,7 +92,7 @@
       const trollbab = document.getElementById("trollbab");
       const alertQueue = [];
       const alertElement = document.getElementById("alert");
-      let hapbooAudio = new Audio("/static/yippe.mp3");
+      let hapbooAudio = new Audio("yippe.mp3");
       hapbooAudio.volume = 0.2;
       let hapbooIndex = 0;
 
@@ -126,7 +126,7 @@
       }
       function followAlert(followInfo) {
         isPlaying = true;
-        alertElement.innerHTML = ` <img class="follow" height="1000" src="/static/follow.gif" /><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
         alertElement.style = "opacity: 100%;";
         const name = getTTSAudio({
           voice: "Brian",
@@ -227,24 +227,24 @@
 
         alertElement.id = "alert";
         if (!subInfo.gift)
-          alertElement.innerHTML = ` <img class="bab" height="1000" src="/static/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
+          alertElement.innerHTML = ` <img class="bab" height="1000" src="/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
         else
-          alertElement.innerHTML = ` <img class="bab" height="1000" src="/static/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><br /><span class="text"><span class="sender">${subInfo.name} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.gifted}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML = ` <img class="bab" height="1000" src="/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><br /><span class="text"><span class="sender">${subInfo.name} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.gifted}</span></span><br /><span class="message">${subInfo.message}</span>`;
         alertElement.style = "opacity: 100%";
 
         const imgElement = document.getElementById("image");
-        const exp = new Audio("/static/explosions.mp3");
+        const exp = new Audio("/explosions.mp3");
         const usera = getTTSAudio({ voice: "Brian", text: subInfo.name });
-        const sub = new Audio("/static/sub.mp3");
+        const sub = new Audio("/sub.mp3");
         const exp0 = document.getElementById("exp0");
         const exp1 = document.getElementById("exp1");
         const exp2 = document.getElementById("exp2");
-        exp0.src = "/static/explosion0.gif";
+        exp0.src = "/explosion0.gif";
         setTimeout(() => {
-          exp1.src = "/static/explosion1.gif";
+          exp1.src = "/explosion1.gif";
         }, 733);
         setTimeout(() => {
-          exp2.src = "/static/explosion2.gif";
+          exp2.src = "/explosion2.gif";
         }, 1553);
 
         setTimeout(() => {
@@ -264,7 +264,7 @@
         usera.onended = () => {
           sub.play();
           setTimeout(() => {
-            exp0.src = "/static/explosion1.gif";
+            exp0.src = "/explosion1.gif";
           }, 2005);
         };
         sub.onended = () => {
