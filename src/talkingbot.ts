@@ -786,10 +786,11 @@ export class TalkingBot {
             data.reply("Stream is currently offline", true);
             return;
           }
+          const args = data.message.toLowerCase().split(" ");
 
           switch (data.message) {
             case "add":
-              const newTags = data.message.split(" ").slice(1);
+              const newTags = args.slice(1);
               stream.tags.concat(newTags);
               await this.twitch.apiClient.channels.updateChannelInfo(
                 this.twitch.channel.id,
@@ -798,10 +799,7 @@ export class TalkingBot {
               data.reply(`Tags ${newTags} has been added`, true);
               break;
             case "remove":
-              const tagsToRemove = data.message
-                .toLowerCase()
-                .split(" ")
-                .slice(1);
+              const tagsToRemove = args.slice(1);
               stream.tags.filter((value) => {
                 return !tagsToRemove.includes(value.toLowerCase());
               });
