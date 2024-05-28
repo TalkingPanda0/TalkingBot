@@ -440,13 +440,16 @@ export class TalkingBot {
             data.message = parseTwitchEmotes(
               "!modtext " + data.message,
               data.context.emoteOffsets,
-            ).replaceAll("$counter", this.counter.toString());
+            );
             data.message = data.message.replace("!modtext", "");
           } else if (data.platform == Platform.kick) {
             data.message = parseKickEmotes(data.message);
           }
           this.modtext = data.message;
-          this.iomodtext.emit("message", data.message);
+          this.iomodtext.emit(
+            "message",
+            this.modtext.replaceAll("$counter", this.counter.toString()),
+          );
         },
       },
       {
@@ -507,6 +510,10 @@ export class TalkingBot {
               this.counter = parseInt(data.message);
             }
             data.reply(`The counter has been set to ${this.counter}`, true);
+            this.iomodtext.emit(
+              "message",
+              this.modtext.replaceAll("$counter", this.counter.toString()),
+            );
             return;
           }
           data.reply(`The counter is at ${this.counter}`, true);
@@ -795,7 +802,6 @@ export class TalkingBot {
                 this.twitch.channel.id,
                 { tags: stream.tags.concat(newTags) },
               );
-              console.log(stream.tags.concat(newTags));
               data.reply(`Tags ${newTags} has been added`, true);
               break;
             case "remove":
