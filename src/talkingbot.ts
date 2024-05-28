@@ -791,21 +791,22 @@ export class TalkingBot {
           switch (args[0]) {
             case "add":
               const newTags = args.slice(1);
-              stream.tags.concat(newTags);
               await this.twitch.apiClient.channels.updateChannelInfo(
                 this.twitch.channel.id,
-                { tags: stream.tags },
+                { tags: stream.tags.concat(newTags) },
               );
+              console.log(stream.tags.concat(newTags));
               data.reply(`Tags ${newTags} has been added`, true);
               break;
             case "remove":
               const tagsToRemove = args.slice(1);
-              stream.tags.filter((value) => {
-                return !tagsToRemove.includes(value.toLowerCase());
-              });
               await this.twitch.apiClient.channels.updateChannelInfo(
                 this.twitch.channel.id,
-                { tags: stream.tags },
+                {
+                  tags: stream.tags.filter((value) => {
+                    return !tagsToRemove.includes(value.toLowerCase());
+                  }),
+                },
               );
 
               data.reply(`Tags ${tagsToRemove} has been removed`, true);
