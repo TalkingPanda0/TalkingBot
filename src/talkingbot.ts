@@ -788,7 +788,7 @@ export class TalkingBot {
           }
           const args = data.message.toLowerCase().split(" ");
 
-          switch (data.message) {
+          switch (args[0]) {
             case "add":
               const newTags = args.slice(1);
               stream.tags.concat(newTags);
