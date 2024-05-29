@@ -1,5 +1,3 @@
-import { ChatMessage } from "@twurple/chat";
-import { HelixGame } from "@twurple/api";
 import { Twitch, parseTwitchEmotes } from "./twitch";
 import { Discord } from "./discord";
 import { YouTube, parseYTMessage } from "./youtube";
@@ -932,12 +930,17 @@ export class TalkingBot {
               break;
             case "start":
               if (data.isUserMod) {
-                this.pet.init();
+                this.pet.init(true);
                 break;
               }
             case "sleep":
               if (data.isUserMod) {
                 this.pet.sleep();
+                break;
+              }
+            case "continue":
+              if (data.isUserMod) {
+                this.pet.init(false);
                 break;
               }
             default:

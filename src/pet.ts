@@ -52,7 +52,7 @@ export class Pet {
   private lastFed: Date;
   private campfire: number = 2;
   private age: number = 0;
-	private timeout: boolean = false;
+  private timeout: boolean = false;
   private petFile: BunFile = Bun.file(__dirname + "/../config/pet.json");
   private deadPets: DeadPet[] = [];
 
@@ -61,12 +61,12 @@ export class Pet {
     this.readPet();
   }
 
-	private startTimeout(){
-		this.timeout = true;
-		setTimeout(() => {
-			this.timeout = false;
-		},1000 * 60);
-	}
+  private startTimeout() {
+    this.timeout = true;
+    setTimeout(() => {
+      this.timeout = false;
+    }, 1000 * 60);
+  }
 
   public graveyard() {
     if (this.deadPets.length === 0) {
@@ -127,8 +127,9 @@ export class Pet {
   }
 
   public feed() {
-    if (this.timeout || this.timer == null || this.status !== Status.alive) return;
-		this.startTimeout();
+    if (this.timeout || this.timer == null || this.status !== Status.alive)
+      return;
+    this.startTimeout();
 
     if (this.stomach >= 3) {
       this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
@@ -151,8 +152,9 @@ export class Pet {
   }
 
   public fuel() {
-    if (this.timeout || this.timer == null || this.status > Status.hatching) return;
-		this.startTimeout();
+    if (this.timeout || this.timer == null || this.status > Status.hatching)
+      return;
+    this.startTimeout();
     this.campfire++;
     if (this.campfire > 5) {
       this.bot.twitch.say(
@@ -164,24 +166,26 @@ export class Pet {
     this.sayStatus(StatusReason.fed);
   }
 
-  public init() {
-    switch (this.status) {
-      case Status.hatching:
-        this.status = Status.alive;
-        this.stomach = 1;
-        this.age = 0;
-        break;
-      case Status.egg:
-        this.status = Status.hatching;
-        break;
-      case undefined:
-      case Status.dead:
-        this.name++;
-        this.status = Status.egg;
-        break;
-      case Status.alive:
-        this.age++;
-        break;
+  public init(hatch: boolean) {
+    if (hatch) {
+      switch (this.status) {
+        case Status.hatching:
+          this.status = Status.alive;
+          this.stomach = 1;
+          this.age = 0;
+          break;
+        case Status.egg:
+          this.status = Status.hatching;
+          break;
+        case undefined:
+        case Status.dead:
+          this.name++;
+          this.status = Status.egg;
+          break;
+        case Status.alive:
+          this.age++;
+          break;
+      }
     }
     if (this.timer == null)
       this.timer = setInterval(
