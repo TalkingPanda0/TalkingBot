@@ -3,6 +3,7 @@ import { TalkingBot, getTimeDifference } from "./talkingbot";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry",
+  "sweetb35Shy",
   "sweetb35Sexy",
   "sweetb35Heheh",
   "sweetb35HNNNGH he is a bit too full",
@@ -95,17 +96,17 @@ export class Pet {
       case Status.alive:
         switch (reason) {
           case StatusReason.fed:
-            message += ` has been given a candy. He is feeling: ${emotes[this.stomach]}.`;
+            message += ` has been given a candy. He is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
             break;
           case StatusReason.tick:
-            message += ` is feeling: ${emotes[this.stomach]}.`;
+            message += ` is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
             break;
           case StatusReason.command:
             if (this.lastFed == null) {
-              message += ` is feeling: ${emotes[this.stomach]}.`;
+              message += ` is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
               break;
             }
-            message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.stomach]}`;
+            message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
             message += ` He is ${this.age} streams old.`;
             break;
         }
@@ -131,7 +132,7 @@ export class Pet {
       return;
     this.startTimeout();
 
-    if (this.stomach >= 3) {
+    if (this.stomach >= 4) {
       this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
       return;
@@ -171,7 +172,7 @@ export class Pet {
       switch (this.status) {
         case Status.hatching:
           this.status = Status.alive;
-          this.stomach = 1;
+          this.stomach = 2;
           this.age = 0;
           break;
         case Status.egg:
@@ -228,7 +229,7 @@ export class Pet {
     Bun.write(this.petFile, JSON.stringify(currentPet));
   }
 
-  private tick() {
+  public tick() {
     if (this.status <= Status.hatching) {
       this.campfire--;
       if (this.campfire <= 0) {

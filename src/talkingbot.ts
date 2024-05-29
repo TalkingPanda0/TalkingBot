@@ -943,6 +943,12 @@ export class TalkingBot {
                 this.pet.init(false);
                 break;
               }
+            case "tick":
+              if (data.isUserMod) {
+                this.pet.tick();
+                break;
+              }
+
             default:
               if (data.platform == Platform.twitch)
                 data.reply(
