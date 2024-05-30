@@ -18,6 +18,8 @@ const emoteSoundEffects = {
   realBoo: "realboo.mp3",
   Shy: "uwu.mp3",
   Sexy: "sexy.mp3",
+  Stunky: "stunky.mp3",
+  BanBan: "borf.mp3",
 };
 
 let queue = [];
@@ -121,7 +123,12 @@ function handleQueue() {
 
           playing = null;
           removePopup();
-          createPopup({ sender: "Brian himself", text: err,parsedText: err,  color: "red" });
+          createPopup({
+            sender: "Brian himself",
+            text: err,
+            parsedText: err,
+            color: "red",
+          });
           setTimeout(removePopup, 10000);
         };
         audio.onended = () => {
@@ -140,7 +147,12 @@ function handleQueue() {
             clearInterval(interval);
             interval = null;
             console.error(err);
-            createPopup({ sender: "Brian himself", text: err,parsedText: err, color: "red" });
+            createPopup({
+              sender: "Brian himself",
+              text: err,
+              parsedText: err,
+              color: "red",
+            });
             setTimeout(removePopup, 10000);
           });
         };
@@ -153,7 +165,12 @@ function handleQueue() {
         interval = null;
         playing = null;
         console.error(err);
-        createPopup({ sender: "Brian himself", text: err, parsedText: err, color: "red" });
+        createPopup({
+          sender: "Brian himself",
+          text: err,
+          parsedText: err,
+          color: "red",
+        });
         setTimeout(removePopup, 10000);
       });
 
@@ -178,7 +195,12 @@ function handleQueue() {
 
     playing = null;
     console.error(err);
-    createPopup({ sender: "Brian himself", text: err,parsedText: err, color: "red" });
+    createPopup({
+      sender: "Brian himself",
+      text: err,
+      parsedText: err,
+      color: "red",
+    });
     setTimeout(removePopup, 10000);
   });
 }
