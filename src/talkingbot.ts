@@ -9,6 +9,7 @@ import * as http from "http";
 import { BunFile } from "bun";
 import { Pet, StatusReason } from "./pet";
 import { MessageFragments } from "tubechat/lib/types/Client";
+import { ChatMessage } from "@twurple/chat";
 
 export enum Platform {
   twitch,
@@ -946,6 +947,16 @@ export class TalkingBot {
             case "tick":
               if (data.isUserMod) {
                 this.pet.tick();
+                break;
+              }
+            case "read":
+              if (data.isUserMod) {
+                this.pet.readPet();
+                break;
+              }
+            case "write":
+              if (data.isUserMod) {
+                this.pet.writePet();
                 break;
               }
 

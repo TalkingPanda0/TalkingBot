@@ -130,16 +130,15 @@ export class Pet {
   public feed() {
     if (this.timeout || this.timer == null || this.status !== Status.alive)
       return;
-    this.startTimeout();
 
-    if (this.stomach >= 4) {
+    this.startTimeout();
+    this.stomach++;
+    this.lastFed = new Date();
+
+    if (this.stomach >= emotes.length) {
       this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
       return;
-    }
-    if (this.status === Status.alive) {
-      this.stomach++;
-      this.lastFed = new Date();
     }
     this.sayStatus(StatusReason.fed);
   }
@@ -196,6 +195,7 @@ export class Pet {
         15 * 60 * 1000, // 15 minutes
       );
     this.sayStatus(StatusReason.tick);
+    this.writePet();
   }
 
   public die(reason: DeathReason) {
@@ -208,7 +208,7 @@ export class Pet {
     this.writePet();
   }
 
-  private async readPet() {
+  public async readPet() {
     if (!(await this.petFile.exists())) return;
     const pet: CurrentPet = await this.petFile.json();
     this.status = pet.status;
@@ -218,7 +218,7 @@ export class Pet {
     if (pet.age != null) this.age = pet.age;
   }
 
-  private async writePet() {
+  public async writePet() {
     const currentPet: CurrentPet = {
       name: this.name,
       status: this.status,
