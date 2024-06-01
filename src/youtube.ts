@@ -32,6 +32,9 @@ export class YouTube {
     }
     return userColors[Math.abs(hash % userColors.length)];
   }
+  public cleanUp() {
+    this.chat.disconnect(this.channelName);
+  }
 
   public async initBot() {
     this.chat.connect(this.channelName);

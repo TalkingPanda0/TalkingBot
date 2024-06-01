@@ -10,7 +10,7 @@ import { BunFile } from "bun";
 import { Pet, StatusReason } from "./pet";
 import { MessageFragments } from "tubechat/lib/types/Client";
 import { ChatMessage } from "@twurple/chat";
-
+import { HelixGame } from "@twurple/api";
 export enum Platform {
   twitch,
   kick,
@@ -983,6 +983,13 @@ export class TalkingBot {
     this.youTube.initBot();
     this.twitch.initBot();
     this.kick.initBot();
+  }
+
+  public cleanUp() {
+    this.twitch.cleanUp();
+    this.youTube.cleanUp();
+    this.kick.cleanUp();
+    this.discord.cleanUp();
   }
 
   public updatePoll() {

@@ -13,20 +13,8 @@ import {
   buildEmoteImageUrl,
   parseTwitchMessage,
 } from "@twurple/chat";
-import {
-  ApiClient,
-  HelixCreateCustomRewardData,
-  HelixUser,
-} from "@twurple/api";
-import {
-  AuthSetup,
-  Platform,
-  Poll,
-  TalkingBot,
-  getSuffix,
-  pollOption,
-  replaceAsync,
-} from "./talkingbot";
+import { ApiClient, HelixUser } from "@twurple/api";
+
 import { EventSubWsListener } from "@twurple/eventsub-ws";
 import {
   EventSubChannelRedemptionAddEvent,
@@ -36,6 +24,15 @@ import {
   EventSubChannelPollEndEvent,
   EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
+import {
+  AuthSetup,
+  Platform,
+  Poll,
+  TalkingBot,
+  getSuffix,
+  pollOption,
+  replaceAsync,
+} from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { BunFile } from "bun";
 
@@ -91,15 +88,14 @@ export class Twitch {
   public clientSecret: string = "";
   public apiClient: ApiClient;
   public channel: HelixUser;
-  public eventListener: EventSubWsListener;
   public currentPoll: Poll;
   public chatClient: ChatClient;
-  public rewardData: HelixCreateCustomRewardData;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/(\S+)/;
 
   private channelName: string;
+  private eventListener: EventSubWsListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
   private badges: Map<string, string> = new Map<string, string>();
@@ -187,6 +183,10 @@ export class Twitch {
       rewardName: rewardName,
       isOld: isOld,
     });
+  }
+  public cleanUp() {
+    this.chatClient.quit();
+    this.eventListener.stop();
   }
 
   public setupAuth(auth: AuthSetup) {
@@ -281,7 +281,7 @@ export class Twitch {
     this.eventListener.onStreamOnline(
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
-        this.bot.pet.init();
+        this.bot.pet.init(true);
         try {
           const stream = await event.getStream();
           if (!stream) {

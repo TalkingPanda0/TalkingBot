@@ -36,6 +36,10 @@ export class Kick {
     this.bot = bot;
   }
 
+  public cleanUp() {
+    this.chat.close();
+  }
+
   public initBot() {
     this.chat = new WebSocket(
       "wss://ws-us2.pusher.com/app/eb1d5f283081a78b932c?protocol=7&client=js&version=7.6.0&flash=false",

@@ -2,7 +2,7 @@ import express, { Express, Request, Response } from "express";
 import * as http from "http";
 
 import { Server } from "socket.io";
-import { AuthSetup, TalkingBot} from "./talkingbot";
+import { AuthSetup, TalkingBot } from "./talkingbot";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -32,43 +32,6 @@ app.get("/setup", (req: Request, res: Response) => {
 
 const bot: TalkingBot = new TalkingBot("17587561", server);
 
-const iosetup = new Server(server, { path: "/setup/" });
-
-app.get("/oauth", (req: Request, res: Response) => {
-  let code: string = req.query.code as string;
-  let scope: string = req.query.scope as string;
-  if (code == "initBot") {
-    res.send("initing bot");
-    bot.initBot();
-    return;
-  }
-  if (code.length == 0 || scope.length == 0) {
-    res.send("Something went wrong!");
-  } else {
-    bot.twitch.addUser(code, scope);
-    res.send(
-      `Success! ${scope.startsWith("bits:read") ? "Broadcaster account added!" : "Bot account added!"}`,
-    );
-  }
-});
-iosetup.on("connection", (socket) => {
-  console.log("got setup connection");
-
-  let twitchClientId = bot.twitch.clientId;
-  let twitchClientSecret = bot.twitch.clientSecret;
-
-  // Send the client id and client secret if they have been given already
-  if (twitchClientId.length != 0 && twitchClientSecret.length != 0)
-    socket.emit("setup_message", {
-      twitchClientId: twitchClientId,
-      twitchClientSecret: twitchClientSecret,
-    });
-
-  socket.on("setup_message", (message: AuthSetup) => {
-    console.log(`Got setup message!`);
-    bot.twitch.setupAuth(message);
-  });
-});
 bot.initBot();
 server.listen(3000, () => {
   console.log("listening on *:3000");
@@ -76,5 +39,6 @@ server.listen(3000, () => {
 
 process.on("SIGINT", () => {
   console.log("Exitting...");
+  bot.cleanUp();
   process.exit();
 });

@@ -20,7 +20,9 @@ export class Discord {
   private discordFile: BunFile = Bun.file(
     __dirname + "/../config/discord.json",
   );
-  constructor() {}
+  public cleanUp() {
+    this.client.destroy();
+  }
   public sendStreamPing(stream?: streamInfo) {
     if (stream === undefined) {
       this.channel.send({
