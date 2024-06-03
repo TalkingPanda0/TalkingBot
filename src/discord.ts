@@ -26,12 +26,12 @@ export class Discord {
   public sendStreamPing(stream?: streamInfo) {
     if (stream === undefined) {
       this.channel.send({
-        content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
+        content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
         allowedMentions: { roles: ["965609596087595018"] },
       });
     }
     this.channel.send({
-      content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!!",
+      content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
       allowedMentions: { roles: ["965609596087595018"] },
       embeds: [
         {

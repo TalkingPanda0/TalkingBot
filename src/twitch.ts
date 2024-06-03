@@ -284,10 +284,6 @@ export class Twitch {
         this.bot.pet.init(true);
         try {
           const stream = await event.getStream();
-          if (!stream) {
-            this.bot.discord.sendStreamPing();
-            return;
-          }
           const thumbnail = stream.getThumbnailUrl(1280, 720);
           this.bot.discord.sendStreamPing({
             title: stream.title,
