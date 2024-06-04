@@ -123,12 +123,15 @@
       }
       var socket = io("/", { path: "/poll/" });
       socket.on("createPoll", (poll) => {
+        console.log(poll);
         createPoll(poll);
       });
       socket.on("updatePoll", (options) => {
+        console.log(options);
         updatePoll(options);
       });
       socket.on("deletePoll", () => {
+        console.log("deletepoll");
         pollElement.innerHtml = "";
         pollElement.style = "display: none;";
       });

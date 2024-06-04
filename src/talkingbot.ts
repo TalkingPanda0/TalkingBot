@@ -929,6 +929,9 @@ export class TalkingBot {
             case "fuel":
               this.pet.fuel();
               break;
+            case "pet":
+              this.pet.pet(data.user);
+              break;
             case "start":
               if (data.isUserMod) {
                 this.pet.init(true);
@@ -995,7 +998,6 @@ export class TalkingBot {
   public updatePoll() {
     const combinedOptions = {};
 
-    // Add options from poll1 to the combinedOptions
     if (this.kick.currentPoll != null) {
       this.kick.currentPoll.options.forEach((option) => {
         combinedOptions[option.id] = {
@@ -1005,8 +1007,6 @@ export class TalkingBot {
       });
     }
 
-    // Add or update options from poll2 to the combinedOptions
-    //
     if (this.twitch.currentPoll != null) {
       this.twitch.currentPoll.options.forEach((option) => {
         if (combinedOptions.hasOwnProperty(option.id)) {
@@ -1020,7 +1020,6 @@ export class TalkingBot {
       });
     }
 
-    // Convert combinedOptions back to an array of options
     const combinedOptionsArray = Object.keys(combinedOptions).map((id) => ({
       id: parseInt(id),
       label: combinedOptions[id].label,

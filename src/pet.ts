@@ -55,7 +55,9 @@ export class Pet {
   private age: number = 0;
   private timeout: boolean = false;
   private petFile: BunFile = Bun.file(__dirname + "/../config/pet.json");
-  private createHapbooFile: BunFile = Bun.file(__dirname + "/../config/createHapboo");
+  private createHapbooFile: BunFile = Bun.file(
+    __dirname + "/../config/createHapboo",
+  );
   private deadPets: DeadPet[] = [];
 
   constructor(bot: TalkingBot) {
@@ -145,7 +147,7 @@ export class Pet {
   }
 
   public sleep() {
-    if (this.status === Status.alive)
+    if (this.status !== Status.dead)
       this.bot.twitch.say(`Hapboo #${this.name} is going to sleep!`);
     clearInterval(this.timer);
     this.timer = null;
@@ -167,29 +169,29 @@ export class Pet {
     this.sayStatus(StatusReason.fed);
   }
 
-	public pet(user: string){
-		if(this.status !== Status.alive) return
-		this.bot.twitch.say(`${user} petted Hapboo #${this.name}.`);
-	}
+  public pet(user: string) {
+    if (this.status !== Status.alive) return;
+    this.bot.twitch.say(`${user} petted Hapboo #${this.name}.`);
+  }
 
   public init(hatch: boolean) {
     if (hatch) {
       switch (this.status) {
         case Status.hatching:
           this.status = Status.alive;
-					Bun.write(this.createHapbooFile,`a`);
+          Bun.write(this.createHapbooFile, "a");
           this.stomach = 2;
           this.age = 0;
           break;
         case Status.egg:
           this.status = Status.hatching;
-					Bun.write(this.createHapbooFile,`e`);
+          Bun.write(this.createHapbooFile, "e");
           break;
         case undefined:
         case Status.dead:
           this.name++;
           this.status = Status.egg;
-					Bun.write(this.createHapbooFile,`e`);
+          Bun.write(this.createHapbooFile, "e");
           break;
         case Status.alive:
           this.age++;
@@ -215,20 +217,26 @@ export class Pet {
     this.status = Status.dead;
     this.deadPets.push({ name: this.name, deathReason: reason, age: this.age });
     this.writePet();
-		switch(reason){
-			case DeathReason.starved:
-				Bun.write(this.createHapbooFile,`#${this.name} Starved at the age of ${this.age}`);
-				break;
-			case DeathReason.overfed:
-				Bun.write(this.createHapbooFile,`#${this.name} became too fat at the age of ${this.age}`);
-				break;
-			case DeathReason.failed:
-				Bun.write(this.createHapbooFile,`#${this.name} Couldn't hatch`);
-				break;
-			case DeathReason.omelete:
-				Bun.write(this.createHapbooFile,`#${this.name} Became an 🍳`);
-				break;
-		}
+    switch (reason) {
+      case DeathReason.starved:
+        Bun.write(
+          this.createHapbooFile,
+          `#${this.name} Starved at the age of ${this.age}`,
+        );
+        break;
+      case DeathReason.overfed:
+        Bun.write(
+          this.createHapbooFile,
+          `#${this.name} became too fat at the age of ${this.age}`,
+        );
+        break;
+      case DeathReason.failed:
+        Bun.write(this.createHapbooFile, `#${this.name} Couldn't hatch`);
+        break;
+      case DeathReason.omelete:
+        Bun.write(this.createHapbooFile, `#${this.name} Became an 🍳`);
+        break;
+    }
   }
 
   public async readPet() {

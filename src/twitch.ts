@@ -313,10 +313,42 @@ export class Twitch {
         });
       },
     );
+
+    this.eventListener.onUserSocketDisconnect((event) => {
+      console.error(`Disconnected from event sub ${event}`);
+    });
+
+    this.eventListener.onChannelPollBegin(this.channel.id, (data) => {
+      if (this.currentPoll != null) return;
+      const pollOptions: pollOption[] = data.choices.reduce(
+        (options, choice, index) => {
+          const option: pollOption = {
+            id: index.toString(),
+            label: choice.title,
+            votes: 0,
+          };
+          options.push(option);
+          return options;
+        },
+        [],
+      );
+
+      this.currentPoll = {
+        title: data.title,
+        options: pollOptions,
+      };
+
+      this.bot.iopoll.emit("createPoll", {
+        duration: 60,
+        options: pollOptions,
+        title: data.title,
+      });
+    });
+
     this.eventListener.onChannelPollProgress(
       this.channel.id,
       (data: EventSubChannelPollProgressEvent) => {
-        let options: pollOption[] = [];
+        const options: pollOption[] = [];
         data.choices.forEach((choice, i) => {
           options.push({
             label: choice.title,
@@ -685,11 +717,14 @@ export class Twitch {
               const options = matches[2]
                 .split(",")
                 .map((word: string) => word.trim());
-              this.apiClient.polls.createPoll(this.channel.id, {
-                title: question,
-                duration: 60,
-                choices: options,
-              });
+              const poll = await this.apiClient.polls.createPoll(
+                this.channel.id,
+                {
+                  title: question,
+                  duration: 60,
+                  choices: options,
+                },
+              );
               this.chatClient.say(
                 this.channelName,
                 `Created poll: ${redeem.input} requested by @${redeem.userName}`,
@@ -730,7 +765,7 @@ export class Twitch {
         // scam
         accept = true;
       }
-      this.apiClient.channelPoints.updateRedemptionStatusByIds(
+      await this.apiClient.channelPoints.updateRedemptionStatusByIds(
         this.channel.id,
         redeem.rewardId,
         [redeem.id],
