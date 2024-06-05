@@ -916,9 +916,10 @@ export class TalkingBot {
         showOnChat: false,
         command: "!pet",
         commandFunction: async (data) => {
+          if (data.platform != Platform.twitch) return;
           switch (data.message) {
             case "feed":
-              this.pet.feed();
+              this.pet.feed(data.context.userInfo.userId);
               break;
             case "status":
               this.pet.sayStatus(StatusReason.command);
@@ -927,7 +928,7 @@ export class TalkingBot {
               this.pet.graveyard();
               break;
             case "fuel":
-              this.pet.fuel();
+              this.pet.fuel(data.context.userInfo.userId);
               break;
             case "pet":
               this.pet.pet(data.user);

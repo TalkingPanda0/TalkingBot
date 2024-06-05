@@ -87,7 +87,7 @@
 
     socket.on("connect", () => {
       const disconnectMessage = document.getElementById("disconnect");
-      if (disconnectMessage !== null)
+      if (disconnectMessage != null)
         disconnectMessage.remove();
     });
     socket.on("disconnect", () => {

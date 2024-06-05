@@ -50,6 +50,7 @@ export class Pet {
   private timer: Timer;
   private name = 0;
   private status: Status;
+  private shield = false;
   private lastFed: Date;
   private campfire: number = 2;
   private age: number = 0;
@@ -127,10 +128,11 @@ export class Pet {
     }
     if (this.status !== Status.dead && this.timer == null)
       message += " He is sleeping.";
+    if (this.shield) message += " He is being protected.";
     this.bot.twitch.say(message);
   }
 
-  public feed() {
+  public feed(userId: string) {
     if (this.timeout || this.timer == null || this.status !== Status.alive)
       return;
 
@@ -139,6 +141,19 @@ export class Pet {
     this.lastFed = new Date();
 
     if (this.stomach >= emotes.length) {
+      if (this.shield) {
+        this.bot.twitch.apiClient.moderation.banUser(
+          this.bot.twitch.channel.id,
+          {
+            user: userId,
+            reason: "Hapboo Shield",
+            duration: 10 * 60,
+          },
+        );
+        this.shield = false;
+        this.bot.twitch.updateShieldReedem(false);
+        return;
+      }
       this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
       return;
@@ -146,7 +161,18 @@ export class Pet {
     this.sayStatus(StatusReason.fed);
   }
 
+  public activateShield(): boolean {
+    if (this.shield) return false;
+
+    this.shield = true;
+    this.bot.twitch.updateShieldReedem(true);
+
+    return true;
+  }
+
   public sleep() {
+    this.bot.twitch.updateShieldReedem(true);
+    this.shield = false;
     if (this.status !== Status.dead)
       this.bot.twitch.say(`Hapboo #${this.name} is going to sleep!`);
     clearInterval(this.timer);
@@ -154,12 +180,21 @@ export class Pet {
     this.writePet();
   }
 
-  public fuel() {
+  public fuel(userId: string) {
     if (this.timeout || this.timer == null || this.status > Status.hatching)
       return;
     this.startTimeout();
     this.campfire++;
     if (this.campfire > 5) {
+      if (this.shield) {
+        this.bot.twitch.apiClient.moderation.banUser(
+          this.bot.twitch.channel.id,
+          { user: userId, reason: "Hapboo Shield", duration: 10 * 60 },
+        );
+        this.shield = false;
+        this.bot.twitch.updateShieldReedem(false);
+        return;
+      }
       this.bot.twitch.say(
         `The campfire got too hot. Habpoo #${this.name} is now 🍳`,
       );
@@ -175,6 +210,7 @@ export class Pet {
   }
 
   public init(hatch: boolean) {
+    this.bot.twitch.updateShieldReedem(false);
     if (hatch) {
       switch (this.status) {
         case Status.hatching:
