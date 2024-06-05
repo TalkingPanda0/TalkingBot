@@ -525,16 +525,15 @@ export class Twitch {
         });
       },
     );
-    this.chatClient.onBan((channel: string, user: string, msg: ClearChat) => {
-      this.bot.iochat.emit(
-        "banUser",
-        `twitch-${msg.tags.get("target-user-id")}`,
-      );
+
+    this.eventListener.onChannelBan(this.channel.id, (event) => {
+      this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.chatClient.say(
         this.channelName,
-        `@${user} has been banished to the nut room.`,
+        `@${event.userName} has been banished to the nut room ${event.isPermanent ? "Forever." : "."}`,
       );
     });
+
     this.chatClient.onTimeout(
       (channel: string, user: string, duration: number, msg: ClearChat) => {
         this.bot.iochat.emit(
