@@ -160,13 +160,13 @@ export class Twitch {
       replyTo = message.parentMessageUserDisplayName;
       replyId = message.parentMessageUserId;
     }
-		
-		if(message.isHighlight) {
-			rewardName = "Highlight My Message";
-		}
+
+    if (message.isHighlight) {
+      rewardName = "Highlight My Message";
+    }
 
     if (message.isRedemption) {
-			console.log("redmep");
+      console.log("redmep");
       const reward = await this.apiClient.channelPoints.getCustomRewardById(
         this.channel.id,
         message.rewardId,
@@ -453,7 +453,7 @@ export class Twitch {
               break;
             case this.shieldid:
               completed = this.bot.pet.activateShield();
-							//break;
+              break;
             default:
               return;
           }
@@ -540,18 +540,6 @@ export class Twitch {
       );
     });
 
-    this.chatClient.onTimeout(
-      (channel: string, user: string, duration: number, msg: ClearChat) => {
-        this.bot.iochat.emit(
-          "banUser",
-          `twitch-${msg.tags.get("target-user-id")}`,
-        );
-        this.chatClient.say(
-          this.channelName,
-          `@${user} has been banished to the nut room.`,
-        );
-      },
-    );
     this.chatClient.onMessageRemove(
       (channel: string, messageId: string, msg: ClearMsg) => {
         this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
