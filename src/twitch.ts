@@ -160,8 +160,13 @@ export class Twitch {
       replyTo = message.parentMessageUserDisplayName;
       replyId = message.parentMessageUserId;
     }
+		
+		if(message.isHighlight) {
+			rewardName = "Highlight My Message";
+		}
 
     if (message.isRedemption) {
+			console.log("redmep");
       const reward = await this.apiClient.channelPoints.getCustomRewardById(
         this.channel.id,
         message.rewardId,

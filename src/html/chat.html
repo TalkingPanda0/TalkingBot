@@ -51,10 +51,10 @@
         messageElement.appendChild(rewardElement);
         messageElement.appendChild(document.createElement("br"));
         if(message.rewardName === "Highlight My Message")
-          messageElement.style = "background: #755ebc";
+          messageElement.style.background = "#755ebc";
       }
 			if(message.isOld)	{
-				messageElement.style = "opacity: 75%";
+				messageElement.style.opacity = "75%";
 			}
 
       const badgesElement = document.createElement("span");
