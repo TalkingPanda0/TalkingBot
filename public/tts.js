@@ -6,6 +6,7 @@ const voicesRegex =
 const messageList = document.getElementById("message-list");
 
 const emoteSoundEffects = {
+	ShyTwerk: "twerk.mp3",
   HapBoo: "yippe.mp3",
   HapFlat: "squish.mp3",
   HabPoo: "habpoo.mp3",
@@ -20,6 +21,8 @@ const emoteSoundEffects = {
   Sexy: "sexy.mp3",
   Stunky: "stunky.mp3",
   BanBan: "borf.mp3",
+	EatsDrywall: "eat.mp3",
+	HeartSweet: "kiss.mp3"
 };
 
 let queue = [];
