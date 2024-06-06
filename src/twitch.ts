@@ -448,6 +448,7 @@ export class Twitch {
               break;
             case this.shieldid:
               completed = this.bot.pet.activateShield();
+							//break;
             default:
               return;
           }
@@ -530,7 +531,7 @@ export class Twitch {
       this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.chatClient.say(
         this.channelName,
-        `@${event.userName} has been banished to the nut room ${event.isPermanent ? "Forever." : "."}`,
+        `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever." : "."}`,
       );
     });
 

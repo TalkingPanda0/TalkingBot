@@ -142,6 +142,7 @@ export class Pet {
 
     if (this.stomach >= emotes.length) {
       if (this.shield) {
+				this.stomach = 4;
         this.bot.twitch.apiClient.moderation.banUser(
           this.bot.twitch.channel.id,
           {
@@ -166,6 +167,7 @@ export class Pet {
 
     this.shield = true;
     this.bot.twitch.updateShieldReedem(true);
+		this.bot.twitch.say(`Hapboo ${this.name} is now being protected.`)
 
     return true;
   }
@@ -187,6 +189,7 @@ export class Pet {
     this.campfire++;
     if (this.campfire > 5) {
       if (this.shield) {
+				this.campfire = 5;
         this.bot.twitch.apiClient.moderation.banUser(
           this.bot.twitch.channel.id,
           { user: userId, reason: "Hapboo Shield", duration: 10 * 60 },
