@@ -92,7 +92,7 @@ export class Twitch {
   public chatClient: ChatClient;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
-  public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/(\S+)/;
+  public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
 
   private channelName: string;
   private eventListener: EventSubWsListener;
