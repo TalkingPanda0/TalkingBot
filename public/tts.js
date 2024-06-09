@@ -22,7 +22,8 @@ const emoteSoundEffects = {
   Stunky: "stunky.mp3",
   BanBan: "borf.mp3",
 	EatsDrywall: "eat.mp3",
-	HeartSweet: "kiss.mp3"
+	HeartSweet: "kiss.mp3",
+	Trol: "troll.mp3",
 };
 
 let queue = [];
