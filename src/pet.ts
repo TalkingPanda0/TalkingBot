@@ -72,6 +72,15 @@ export class Pet {
       this.timeout = false;
     }, 1000 * 60);
   }
+  private restartTickTimer() {
+    clearInterval(this.timer);
+    this.timer = setInterval(
+      () => {
+        this.tick();
+      },
+      15 * 60 * 1000, // 15 minutes
+    );
+  }
 
   public graveyard() {
     if (this.deadPets.length === 0) {
@@ -142,7 +151,7 @@ export class Pet {
 
     if (this.stomach >= emotes.length) {
       if (this.shield) {
-				this.stomach = 4;
+        this.stomach = 4;
         this.bot.twitch.apiClient.moderation.banUser(
           this.bot.twitch.channel.id,
           {
@@ -160,6 +169,7 @@ export class Pet {
       return;
     }
     this.sayStatus(StatusReason.fed);
+    this.restartTickTimer();
   }
 
   public activateShield(): boolean {
@@ -167,7 +177,7 @@ export class Pet {
 
     this.shield = true;
     this.bot.twitch.updateShieldReedem(true);
-		this.bot.twitch.say(`Hapboo ${this.name} is now being protected.`)
+    this.bot.twitch.say(`Hapboo ${this.name} is now being protected.`);
 
     return true;
   }
@@ -189,7 +199,7 @@ export class Pet {
     this.campfire++;
     if (this.campfire > 5) {
       if (this.shield) {
-				this.campfire = 5;
+        this.campfire = 5;
         this.bot.twitch.apiClient.moderation.banUser(
           this.bot.twitch.channel.id,
           { user: userId, reason: "Hapboo Shield", duration: 10 * 60 },
@@ -205,6 +215,7 @@ export class Pet {
       return;
     }
     this.sayStatus(StatusReason.fed);
+    this.restartTickTimer();
   }
 
   public pet(user: string) {
