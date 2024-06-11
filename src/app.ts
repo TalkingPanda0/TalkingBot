@@ -29,6 +29,9 @@ app.get("/chat", (req: Request, res: Response) => {
 app.get("/setup", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/setup.html");
 });
+app.get("/control", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/html/control.html");
+});
 
 const bot: TalkingBot = new TalkingBot("17587561", server);
 
