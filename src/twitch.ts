@@ -140,16 +140,17 @@ export class Twitch {
 
     text = await this.bot.parseClips(text);
 
-    const badge = message.userInfo.badges.get("subscriber");
-    if (badge != undefined) {
-      badges.push(this.badges.get(badge));
-    }
-    if (message.userInfo.isMod) {
+		if (message.userInfo.isMod) {
       badges.push(this.badges.get("moderator"));
     } else if (message.userInfo.isBroadcaster) {
       badges.push(this.badges.get("broadcaster"));
     }
 
+    const badge = message.userInfo.badges.get("subscriber");
+    if (badge != undefined) {
+      badges.push(this.badges.get(badge));
+    }
+    
     color = this.getUserColor(message);
 
     if (message.isReply) {
