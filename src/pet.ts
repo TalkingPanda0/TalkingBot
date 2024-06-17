@@ -1,5 +1,7 @@
 import { BunFile } from "bun";
 import { TalkingBot, getTimeDifference } from "./talkingbot";
+import { MessageMentions } from "discord.js";
+import { validateHeaderName } from "http";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry",
@@ -82,25 +84,103 @@ export class Pet {
     );
   }
 
-  public graveyard() {
+  public graveyard(hapboo?: string) {
     if (this.deadPets.length === 0) {
-      this.bot.twitch.say(this.bot.twitch.channel.name);
+      this.bot.twitch.say("The graveyard is empty for now...");
       return;
     }
-    const message = this.deadPets.map((pet) => {
-      switch (pet.deathReason) {
-        case DeathReason.omelete:
-          return `Hapboo #${pet.name} became a 🍳.`;
-        case DeathReason.failed:
-          return `Hapboo #${pet.name} couldn't hatch.`;
-        case DeathReason.overfed:
-          return `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams.`;
-        case DeathReason.starved:
-          return `Hapboo #${pet.name} starved at the age of ${pet.age} streams.`;
-      }
-    });
+    if (hapboo == null) {
+      const longestSurvivingHapboos = this.deadPets
+        .toSorted((a, b) => {
+          if (
+            a.deathReason < DeathReason.omelete &&
+            b.deathReason < DeathReason.omelete
+          ) {
+            // Both hatched
+            return a.age - b.age;
+          } else if (
+            a.deathReason >= DeathReason.omelete &&
+            b.deathReason >= DeathReason.omelete
+          ) {
+            // None Hatched
+            return 0;
+          } else if (
+            a.deathReason < DeathReason.omelete &&
+            b.deathReason >= DeathReason.omelete
+          ) {
+            // a hatched b didn't
+            return 1;
+          } else {
+            // b hatched a didn't
+            return -1;
+          }
+        })
+        .splice(-3)
+        .map((value, index, array) => {
+          return value.name;
+        })
+        .join(",");
+      console.log(
+        this.deadPets.toSorted((a, b) => {
+          if (
+            a.deathReason > DeathReason.omelete &&
+            b.deathReason > DeathReason.omelete
+          ) {
+            // Both hatched
+            return a.age - b.age;
+          } else if (
+            a.deathReason <= DeathReason.omelete &&
+            b.deathReason <= DeathReason.omelete
+          ) {
+            // None Hatched
+            return 0;
+          } else if (
+            a.deathReason > DeathReason.omelete &&
+            b.deathReason <= DeathReason.omelete
+          ) {
+            // a hatched b didn't
+            return 1;
+          } else {
+            // b hatched a didn't
+            return -1;
+          }
+        }),
+      );
 
-    this.bot.twitch.say(message.join(" "));
+      this.bot.twitch.say(
+        `Hapboos lost: ${this.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}`,
+      );
+      return;
+    }
+    if (hapboo === "3") {
+      this.bot.twitch.say("[REDACTED]");
+      return;
+    }
+    const pet = this.deadPets.find((value, index, obj) => {
+      return value.name === parseInt(hapboo);
+    });
+    if (pet == null) {
+      this.bot.twitch.say(`Couldn't find hapboo #${hapboo} in the graveyard`);
+      return;
+    }
+    switch (pet.deathReason) {
+      case DeathReason.omelete:
+        this.bot.twitch.say(`Hapboo #${pet.name} became a 🍳.`);
+        return;
+      case DeathReason.failed:
+        this.bot.twitch.say(`Hapboo #${pet.name} couldn't hatch.`);
+        return;
+      case DeathReason.overfed:
+        this.bot.twitch.say(
+          `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams.`,
+        );
+        return;
+      case DeathReason.starved:
+        this.bot.twitch.say(
+          `Hapboo #${pet.name} starved at the age of ${pet.age} streams.`,
+        );
+        return;
+    }
   }
 
   public sayStatus(reason: StatusReason) {
