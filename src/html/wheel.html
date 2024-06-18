@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="Winwheel.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
+      integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/@simondmc/popup-js@1.4.2/popup.min.js"></script>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+      .wheel {
+        background-image: url("/wheel.png");
+        background-repeat: no-repeat;
+        background-position: center;
+        vertical-align: middle;
+        padding-top: 4px;
+      }
+      .popup-close {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <table cellpadding="0" cellspacing="0" border="0">
+      <td width="438" height="582" class="wheel" align="center" valign="center">
+        <canvas id="canvas" width="434" height="434">
+          <p style="{color: white}" align="center">
+            Sorry, your browser doesn't support canvas. Please try another.
+          </p>
+        </canvas>
+      </td>
+    </table>
+    <script>
+      let theWheel;
+      var socket = io("/", { path: "/wheel/" });
+
+      socket.on("spinWheel", () => {
+        theWheel.startAnimation();
+      });
+      socket.on("createWheel", (segments) => {
+        console.log(segments);
+        theWheel = new Winwheel({
+          textAlignment: "outer",
+          textFontSize: 24,
+          innerRadius: 75,
+          fillStyle: "#e7706f",
+          lineWidth: 3,
+          textFontFamily: "Arial",
+          textFontSize: 20,
+          numSegments: segments.length,
+          segments: segments,
+          // Definition of the animation
+          animation: {
+            type: "spinToStop",
+            duration: 5,
+            spins: 8,
+            callbackSound: playSound,
+            callbackFinished: (value) => {
+              console.log(`WON ${value.text}`);
+              const popup = new Popup({
+                id: "-popup",
+                title: `${value.text}`,
+                content: ``,
+                showImmediately: true,
+              });
+              setTimeout(() => {
+                popup.hide();
+                theWheel.stopAnimation(false);
+                theWheel.rotationAngle = 0;
+                theWheel.draw();
+              }, 5000);
+            },
+          },
+        });
+      });
+      let audio = new Audio("/tick.mp3");
+      function playSound() {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.play();
+      }
+
+      socket.on("updateWheel", () => {
+        location.reload();
+      });
+    </script>
+  </body>
+</html>

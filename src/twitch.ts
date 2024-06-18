@@ -139,8 +139,7 @@ export class Twitch {
     let rewardName = "";
 
     text = await this.bot.parseClips(text);
-
-		if (message.userInfo.isMod) {
+    if (message.userInfo.isMod) {
       badges.push(this.badges.get("moderator"));
     } else if (message.userInfo.isBroadcaster) {
       badges.push(this.badges.get("broadcaster"));
@@ -150,7 +149,7 @@ export class Twitch {
     if (badge != undefined) {
       badges.push(this.badges.get(badge));
     }
-    
+
     color = this.getUserColor(message);
 
     if (message.isReply) {

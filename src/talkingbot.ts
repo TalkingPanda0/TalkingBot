@@ -11,6 +11,7 @@ import { Pet, StatusReason } from "./pet";
 import { MessageFragments } from "tubechat/lib/types/Client";
 import { ChatMessage } from "@twurple/chat";
 import { HelixGame } from "@twurple/api";
+import { Wheel } from "./wheel";
 export enum Platform {
   twitch,
   kick,
@@ -320,6 +321,7 @@ export class TalkingBot {
   public pet: Pet;
 
   private kickId: string;
+  private wheel: Wheel;
   private modtext: string;
   private counter: number = 0;
   private ttsEnabled: Boolean = false;
@@ -959,6 +961,47 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
+        command: "!wheel",
+        commandFunction: async (data) => {
+          if (!data.isUserMod) return;
+          const args = data.message.split(" ");
+          switch (args[0]) {
+            case "spin":
+              this.wheel.spinWheel();
+              data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
+              break;
+            case "add":
+       
+							let weight  = parseInt(args.at(-1));
+							let color: string;
+							let text: string;
+
+							if(isNaN(weight)){
+								weight  = parseInt(args.at(-2));
+								color = args.at(-1);
+								text = args.slice(1,-2).join(" ");
+							} else {
+								text = args.slice(1,-1).join(" ");
+							}
+              if (text == null || isNaN(weight)) {
+                return;
+              }
+              this.wheel.addSegment(text, weight, color);
+							data.reply(`Added segment ${text}`,true);
+              break;
+            case "remove":
+              if (args[1] == null) return;
+              this.wheel.removeSegment(args[1]);
+              data.reply(`Removed segment ${args[1]}`, true);
+              break;
+            case "update":
+              this.wheel.updateWheel();
+              break;
+          }
+        },
+      },
+      {
+        showOnChat: false,
         command: "!pet",
         commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
@@ -1022,6 +1065,7 @@ export class TalkingBot {
     ];
 
     this.pet = new Pet(this);
+    this.wheel = new Wheel(this.server);
     this.twitch = new Twitch(this);
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);

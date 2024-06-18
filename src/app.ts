@@ -32,6 +32,9 @@ app.get("/setup", (req: Request, res: Response) => {
 app.get("/control", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/control.html");
 });
+app.get("/wheel", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/html/wheel.html");
+});
 
 const bot: TalkingBot = new TalkingBot("17587561", server);
 
