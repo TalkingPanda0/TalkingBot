@@ -1,7 +1,5 @@
 import { BunFile } from "bun";
 import { TalkingBot, getTimeDifference } from "./talkingbot";
-import { MessageMentions } from "discord.js";
-import { validateHeaderName } from "http";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry",
@@ -117,38 +115,20 @@ export class Pet {
         })
         .splice(-3)
         .map((value, index, array) => {
-          return value.name;
+          switch (value.deathReason) {
+            case DeathReason.omelete:
+              return `Hapboo #${value.name} became a 🍳`;
+            case DeathReason.failed:
+              return `Hapboo #${value.name} couldn't hatch`;
+            case DeathReason.overfed:
+              return `Hapboo #${value.name} became too fat at the age of ${value.age} streams`;
+            case DeathReason.starved:
+              return `Hapboo #${value.name} starved at the age of ${value.age} streams`;
+          }
         })
         .join(",");
-      console.log(
-        this.deadPets.toSorted((a, b) => {
-          if (
-            a.deathReason > DeathReason.omelete &&
-            b.deathReason > DeathReason.omelete
-          ) {
-            // Both hatched
-            return a.age - b.age;
-          } else if (
-            a.deathReason <= DeathReason.omelete &&
-            b.deathReason <= DeathReason.omelete
-          ) {
-            // None Hatched
-            return 0;
-          } else if (
-            a.deathReason > DeathReason.omelete &&
-            b.deathReason <= DeathReason.omelete
-          ) {
-            // a hatched b didn't
-            return 1;
-          } else {
-            // b hatched a didn't
-            return -1;
-          }
-        }),
-      );
-
       this.bot.twitch.say(
-        `Hapboos lost: ${this.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}`,
+        `Hapboos lost: ${this.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}.`,
       );
       return;
     }

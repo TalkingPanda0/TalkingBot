@@ -1052,7 +1052,11 @@ export class TalkingBot {
                 this.pet.writePet();
                 break;
               }
-
+						case "protect":
+						if(data.isUserMod) {
+								this.pet.activateShield();
+								break;
+						}
             default:
               if (data.platform == Platform.twitch)
                 data.reply(
