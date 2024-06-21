@@ -40,7 +40,7 @@ Mods can always use `!tts` and disable or enable it for non-mods using `!modtts 
 `!settitle [title]` will set the stream title to `[title]`.
 # Dyntitle
 `!dyntitle [title]` will update the stream title with `[title]` every minute.
-`[title]` can have `fetch(url)` and `suffix(n)` see [Response syntax](###Response-syntax).
+`[title]` can have `fetch(url)` and `suffix(n)` see [Response syntax](#Response-syntax).
 # Counter
 `!counter` will show the current counter.
 `!conter n` will set the counter to n.
