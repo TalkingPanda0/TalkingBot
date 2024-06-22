@@ -963,7 +963,10 @@ export class TalkingBot {
         showOnChat: false,
         command: "!wheel",
         commandFunction: async (data) => {
-          if (!data.isUserMod) return;
+          if (!data.isUserMod) {
+            data.reply(this.wheel.toString(), true);
+            return;
+          }
           const args = data.message.split(" ");
           switch (args[0]) {
             case "spin":
@@ -971,31 +974,38 @@ export class TalkingBot {
               data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
               break;
             case "add":
-       
-							let weight  = parseInt(args.at(-1));
-							let color: string;
-							let text: string;
+              let weight = parseInt(args.at(-1));
+              let color: string;
+              let text: string;
 
-							if(isNaN(weight)){
-								weight  = parseInt(args.at(-2));
-								color = args.at(-1);
-								text = args.slice(1,-2).join(" ");
-							} else {
-								text = args.slice(1,-1).join(" ");
-							}
+              if (isNaN(weight)) {
+                weight = parseInt(args.at(-2));
+                color = args.at(-1);
+                text = args.slice(1, -2).join(" ");
+              } else {
+                text = args.slice(1, -1).join(" ");
+              }
               if (text == null || isNaN(weight)) {
                 return;
               }
               this.wheel.addSegment(text, weight, color);
-							data.reply(`Added segment ${text}`,true);
+              data.reply(`Added segment ${text}`, true);
               break;
             case "remove":
-              if (args[1] == null) return;
-              this.wheel.removeSegment(args[1]);
-              data.reply(`Removed segment ${args[1]}`, true);
+              const segment = args.splice(1).join(" ");
+              if (segment == null) return;
+              if (this.wheel.removeSegment(segment)) {
+                data.reply(`Removed segment ${segment}`, true);
+              }
               break;
             case "update":
               this.wheel.updateWheel();
+              break;
+            case "read":
+              this.wheel.readWheel();
+              break;
+            default:
+              data.reply(this.wheel.toString(), true);
               break;
           }
         },
@@ -1052,11 +1062,11 @@ export class TalkingBot {
                 this.pet.writePet();
                 break;
               }
-						case "protect":
-						if(data.isUserMod) {
-								this.pet.activateShield();
-								break;
-						}
+            case "protect":
+              if (data.isUserMod) {
+                this.pet.activateShield();
+                break;
+              }
             default:
               if (data.platform == Platform.twitch)
                 data.reply(

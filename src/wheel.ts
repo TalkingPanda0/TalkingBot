@@ -3,7 +3,8 @@ import * as http from "http";
 import { BunFile } from "bun";
 
 interface WheelSegment {
-  size: number;
+  weight: number;
+  size?: number;
   text: string;
   fillStyle?: string;
 }
@@ -28,12 +29,12 @@ export class Wheel {
     const multiplier =
       360 /
       this.wheelSegments.reduce((sum, value) => {
-        return (sum += value.size);
+        return (sum += value.weight);
       }, 0);
 
     const calculatedSegments = this.wheelSegments;
     calculatedSegments.forEach((value) => {
-      value.size *= multiplier;
+      value.size = value.weight * multiplier;
     });
 
     return calculatedSegments;
@@ -43,26 +44,30 @@ export class Wheel {
     await Bun.write(this.wheelFile, JSON.stringify(this.wheelSegments));
   }
 
-  private async readWheel() {
+  public async readWheel() {
     this.wheelSegments = await this.wheelFile.json();
     if (this.wheelSegments == null) this.wheelSegments = [];
   }
 
   public addSegment(text: string, weight: number, fillStyle?: string) {
-    console.log(this.wheelSegments);
     this.wheelSegments.push({
       text: text,
       fillStyle: fillStyle,
-      size: weight,
+      weight: weight,
     });
     this.writeWheel();
   }
 
-  public removeSegment(text: string) {
+  public removeSegment(text: string): boolean {
+    const oldLength = this.wheelSegments.length;
     this.wheelSegments = this.wheelSegments.filter((value) => {
       return value.text != text;
     });
-    this.writeWheel();
+    if (this.wheelSegments.length != oldLength) {
+      this.writeWheel();
+      return true;
+    }
+    return false;
   }
 
   public updateWheel() {
@@ -71,5 +76,13 @@ export class Wheel {
 
   public spinWheel() {
     this.iowheel.emit("spinWheel");
+  }
+  public toString(): string {
+    const calculatedSegments = this.calculateWheel();
+    return calculatedSegments
+      .map((value) => {
+        return `${value.text}: ${Math.round((value.size / 360) * 100)}%`;
+      })
+      .join(", ");
   }
 }

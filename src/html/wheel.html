@@ -43,19 +43,60 @@
       socket.on("spinWheel", () => {
         theWheel.startAnimation();
       });
+      function shuffleArray(array) {
+        for (var i = array.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var temp = array[i];
+          array[i] = array[j];
+          array[j] = temp;
+        }
+      }
+
       socket.on("createWheel", (segments) => {
+        shuffleArray(segments);
+        const angleSize = 360 / segments.length;
+        const margin = 80;
+        const angleWidth = 215;
+        const ctx = document.getElementById("canvas").getContext("2d");
+        segments.forEach((segment) => {
+          let fontSize = angleWidth;
+          let foundSize = false;
+          while (!foundSize) {
+            ctx.font = fontSize + "px Arial";
+            let metrics = ctx.measureText(segment.text);
+            let fontHeight =
+              metrics.actualBoundingBoxAscent +
+              metrics.actualBoundingBoxDescent;
+            let fontWidth = metrics.width;
+
+            if (
+              !fitsInsideArc({
+                fontSize,
+                margin,
+                angle: segment.size,
+                wheelWidth: angleWidth,
+                text: segment.text,
+                ctx,
+              })
+            )
+              fontSize--;
+            else foundSize = true;
+          }
+          segment.textFontSize = fontSize;
+          console.log(fontSize);
+        });
         console.log(segments);
         theWheel = new Winwheel({
           textAlignment: "outer",
-          textFontSize: 24,
           innerRadius: 75,
+          outerRadius: angleWidth,
+          margin: 0,
+          textMargin: 5,
           fillStyle: "#e7706f",
-          lineWidth: 3,
+          lineWidth: 2,
           textFontFamily: "Arial",
-          textFontSize: 20,
           numSegments: segments.length,
           segments: segments,
-          // Definition of the animation
           animation: {
             type: "spinToStop",
             duration: 5,
@@ -65,8 +106,8 @@
               console.log(`WON ${value.text}`);
               const popup = new Popup({
                 id: "-popup",
-                title: `${value.text}`,
-                content: ``,
+                title: ``,
+                content: `${value.text}`,
                 showImmediately: true,
               });
               setTimeout(() => {
@@ -89,6 +130,33 @@
       socket.on("updateWheel", () => {
         location.reload();
       });
+      //Simple math function to get length of an arc.
+      function heightOfArc(radius, angle) {
+        return (angle / 360) * 2 * Math.PI * radius;
+      }
+      /**
+       * NOTE: this only works when using the winWheel param: "textAlignment": "outer",
+       * @param {number} props.fontSize               - the fontSize to test the text
+       * @param {number} props.wheelWidth             - the width of the wheel
+       * @param {number} props.margin                 - the margin on the wheel
+       * @param {number} props.angle                  - the angle of the arc
+       * @param {string} props.text                   - the text to test
+       * @param {CanvasRenderingContext2D} props.ctx  - the 2d context
+       * @return {boolean}
+       */
+      function fitsInsideArc(props) {
+        let arcWidth = props.wheelWidth - props.margin;
+        props.ctx.font = props.fontSize + "px Arial";
+        let metrics = props.ctx.measureText(props.text);
+        let fontHeight =
+          metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent;
+        let fontWidth = metrics.width;
+        if (fontWidth > arcWidth) return false;
+        for (let i = arcWidth - fontWidth; i < arcWidth; i++) {
+          if (fontHeight > heightOfArc(i, props.angle)) return false;
+        }
+        return true;
+      }
     </script>
   </body>
 </html>
