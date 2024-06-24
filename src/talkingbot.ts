@@ -158,7 +158,7 @@ export function getSuffix(i: number) {
   return i + "th";
 }
 
-function getRandomElement(array: string[]): string {
+export function getRandomElement(array: string[]): string {
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 }

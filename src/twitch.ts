@@ -67,7 +67,8 @@ export function parseTwitchEmotes(
         parsed += DOMPurify.sanitize(parsedPart.text);
         break;
       case "cheer":
-        parsed += parsedPart.name;
+				const cheermoteUrl = `https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/${parsedPart.amount}/4.gif`;
+        parsed += `<img src="${cheermoteUrl}" class="emote"">`
         break;
       case "emote":
         const emoteUrl = buildEmoteImageUrl(parsedPart.id, {

@@ -1,6 +1,8 @@
 import { Server } from "socket.io";
 import * as http from "http";
 import { BunFile } from "bun";
+import { userColors } from "./twitch";
+import { getRandomElement } from "./talkingbot";
 
 interface WheelSegment {
   weight: number;
@@ -50,12 +52,15 @@ export class Wheel {
   }
 
   public addSegment(text: string, weight: number, fillStyle?: string) {
+    if (fillStyle == null) fillStyle = getRandomElement(userColors);
+
     this.wheelSegments.push({
       text: text,
       fillStyle: fillStyle,
       weight: weight,
     });
     this.writeWheel();
+    this.updateWheel();
   }
 
   public removeSegment(text: string): boolean {
@@ -65,6 +70,8 @@ export class Wheel {
     });
     if (this.wheelSegments.length != oldLength) {
       this.writeWheel();
+
+      this.updateWheel();
       return true;
     }
     return false;
@@ -81,7 +88,7 @@ export class Wheel {
     const calculatedSegments = this.calculateWheel();
     return calculatedSegments
       .map((value) => {
-        return `${value.text}: ${Math.round((value.size / 360) * 100)}%`;
+        return `${value.text}: ${Math.round((value.size / 360) * 100)}%(${value.weight})`;
       })
       .join(", ");
   }
