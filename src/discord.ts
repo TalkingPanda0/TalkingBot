@@ -26,12 +26,14 @@ export class Discord {
   public sendStreamPing(stream?: streamInfo) {
     if (stream === undefined) {
       this.channel.send({
-        content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
+        content:
+          "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
         allowedMentions: { roles: ["965609596087595018"] },
       });
     }
     this.channel.send({
-      content: "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
+      content:
+        "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
       allowedMentions: { roles: ["965609596087595018"] },
       embeds: [
         {
@@ -61,7 +63,11 @@ export class Discord {
 
     if (this.token === undefined) return;
     this.client = new Client({
-      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+      intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildMessages,
+      ],
       allowedMentions: { parse: ["users", "roles"] },
     });
 
@@ -73,6 +79,16 @@ export class Discord {
     });
     this.client.once(Events.Error, (error: Error) => {
       console.error(error);
+    });
+    this.client.on(Events.MessageCreate, (message) => {
+      console.log(
+        "\x1b[34m%s\x1b[0m",
+        `Discord - got message from ${message.author.displayName}`,
+      );
+
+      if (Math.random() < 0.01) {
+        message.react("1255212339406573641");
+      }
     });
     this.client.on(
       Events.VoiceStateUpdate,
