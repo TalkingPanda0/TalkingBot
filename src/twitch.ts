@@ -67,8 +67,8 @@ export function parseTwitchEmotes(
         parsed += DOMPurify.sanitize(parsedPart.text);
         break;
       case "cheer":
-				const cheermoteUrl = `https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/${parsedPart.amount}/4.gif`;
-        parsed += `<img src="${cheermoteUrl}" class="emote"">`
+        const cheermoteUrl = `https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/${parsedPart.amount}/4.gif`;
+        parsed += `<img src="${cheermoteUrl}" class="emote"">`;
         break;
       case "emote":
         const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
@@ -571,9 +571,8 @@ export class Twitch {
           for (let i = 0; i < this.bot.aliasCommands.length; i++) {
             const alias = this.bot.aliasCommands[i];
             if (commandName != alias.alias) continue;
-            text = text.replace(alias.alias, alias.command);   
-						commandName = alias.command;
-
+            text = text.replace(alias.alias, alias.command);
+            commandName = alias.command;
           }
 
           for (let i = 0; i < this.bot.commandList.length; i++) {
@@ -677,15 +676,12 @@ export class Twitch {
     this.chatClient.onConnect(() => {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
       if (this.bot.connectedtoOverlay) {
-        this.bot.iochat.emit("chatConnect", { name: "Twitch" });
+        this.bot.iochat.emit("chatConnect", "Twitch");
         this.sendRecentMessages();
       }
     });
     this.chatClient.onDisconnect((manually: boolean, reason?: Error) => {
-      this.bot.iochat.emit("chatDisconnect", {
-        color: "#6441a5",
-        name: "Twitch",
-      });
+      this.bot.iochat.emit("chatDisconnect", "Twitch");
       console.error(
         "\x1b[35m%s\x1b[0m",
         `Disconnected from twitch, trying to reconnect: ${reason}, ${manually}`,
@@ -694,7 +690,7 @@ export class Twitch {
     });
     this.chatClient.connect();
     this.eventListener.start();
-		// Apis ready
+    // Apis ready
   }
   public say(message: string) {
     this.chatClient.say(this.channel.name, message);

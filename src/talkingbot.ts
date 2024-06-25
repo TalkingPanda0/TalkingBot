@@ -375,22 +375,13 @@ export class TalkingBot {
           this.twitch.chatClient != null &&
           !this.twitch.chatClient.isConnected
         ) {
-          this.iochat.emit("chatDisconnect", {
-            color: "#6441a5",
-            name: "Twitch",
-          });
+          this.iochat.emit("chatDisconnect", "Twitch");
         }
         if (!this.kick.isConnected) {
-          this.iochat.emit("chatDisconnect", {
-            color: "#52fb18",
-            name: "Kick",
-          });
+          this.iochat.emit("chatDisconnect", "Kick");
         }
         if (!this.youTube.isConnected) {
-          this.iochat.emit("chatDisconnect", {
-            color: "#FF0000",
-            name: "YouTube",
-          });
+          this.iochat.emit("chatDisconnect", "YouTube");
         }
         this.connectedtoOverlay = true;
       } catch (e) {

@@ -56,10 +56,7 @@ export class Kick {
     this.chat.on("error", console.error);
 
     this.chat.on("close", () => {
-      this.bot.iochat.emit("chatDisconnect", {
-        color: "#52fb18",
-        name: "Kick",
-      });
+      this.bot.iochat.emit("chatDisconnect", "Kick");
       this.isConnected = false;
       console.log(
         "\x1b[32m%s\x1b[0m",
@@ -78,7 +75,7 @@ export class Kick {
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
           case "pusher_internal:subscription_succeeded":
-            this.bot.iochat.emit("chatConnect", { name: "Kick" });
+            this.bot.iochat.emit("chatConnect", "Kick");
             this.isConnected = true;
             console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
             break;

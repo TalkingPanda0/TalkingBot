@@ -1,12 +1,21 @@
   <body id="body">
     <div id="message-list"></div>
+		<div id="disconnect-list" style="position: fixed;top: 10px;right: 10px;filter: grayscale(1);display: flex;"></div>
     <div id="a"></div>
   </body>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
+		const platformIcons = {
+			"Bot": "https://talkingpanda.dev/bot.png",
+			"Twitch": "https://twitch.tv/favicon.ico",
+			"Kick": "https://kick.com/favicon.ico",
+			"YouTube":	"https://www.youtube.com/favicon.ico"
+		};
+
     const messageList = document.getElementById("message-list");
+    const disconnectList = document.getElementById("disconnect-list");
     const queryString = window.location.search;
     const searchParams = new URLSearchParams(queryString);
     const showCommands = searchParams.get("showcmd") === "yes";
@@ -82,25 +91,35 @@
         inline: "nearest",
       });
     }
+		function addToDisconnectList(id){
+			const disconnectElement = document.createElement("img");
+			disconnectElement.src = platformIcons[id];
+			disconnectElement.classList.add("badge");
+			disconnectList.appendChild(disconnectElement);
+		}
+
+		function removeFromDisconnectList(id){
+			const elementToRemove = document.getElementById(id);
+			if(elementToRemove != null)	elementToRemove.remove();
+		}
+
+		function emptyDisconnectList(){
+			disconnectList.innerHTML = "";
+		}
 
     var socket = io("/", { path: "/chat/" });
 
     socket.on("connect", () => {
-      const disconnectMessage = document.getElementById("disconnect");
-      if (disconnectMessage != null)
-        disconnectMessage.remove();
-    });
+			console.log("Connected");
+			emptyDisconnectList();
+			removeFromDisconnectList("Bot");
+		});
+
     socket.on("disconnect", () => {
-      messageList.insertAdjacentHTML(
-        "beforeend",
-        '<div class="message" style="background: red" id="disconnect"><span><span class="text">Disconnected from the chat!</span></span></div>',
-      );
-      messageList.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "nearest",
-      });
-    });
+			console.log("Disconnected");
+			emptyDisconnectList();
+			addToDisconnectList("Bot");
+		});
 
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
@@ -111,6 +130,7 @@
     });
 
     socket.on("deleteMessage", (messageId) => {
+      console.log("deleteMessage:", message);
       const messageElement = document.getElementById(messageId);
       if (messageElement) {
         messageElement.remove();
@@ -119,6 +139,7 @@
       }
     });
     socket.on("clearChat", (platform) => {
+			console.log(`Clear chat for ${platform}`)
       Array.from(document.getElementsByClassName(platform)).forEach(
         (message) => {
           message.remove();
@@ -126,26 +147,18 @@
       );
     });
     socket.on("banUser", (user) => {
+			console.log(`banuser: ${user}`);
       Array.from(document.getElementsByClassName(user)).forEach((message) => {
         message.remove();
       });
     });
     socket.on("chatDisconnect", (chat) => {
-			if(document.getElementById(`${chat.name}-disconnect`)) return;
-      messageList.insertAdjacentHTML(
-        "beforeend",
-				`<div class="message" style="background: ${chat.color}" id="${chat.name}-disconnect"><span><span class="text">Disconnected from ${chat.name}!</span></span></div>`,
-      );
-      messageList.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "nearest",
-      });
+			console.log(`Chat disconnect: ${chat}`);
+			addToDisconnectList(chat);
     })
     socket.on("chatConnect", (chat) => {
-      const disconnectMessage = document.getElementById(`${chat.name}-disconnect`);
-      if (disconnectMessage !== null)
-        disconnectMessage.remove();
+			console.log(`Chat connect: ${chat}`);
+			removeFromDisconnectList(chat);
     });
 
 		socket.on("redeem",(redeem) => {
