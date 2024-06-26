@@ -58,18 +58,26 @@ export const userColors = [
 export function parseTwitchEmotes(
   text: string,
   emoteOffsets: Map<string, string[]>,
-  cheerEmotes?: string[],
+  cheerEmotes: HelixCheermoteList,
 ): string {
   let parsed = "";
-  const parsedParts = parseChatMessage(text, emoteOffsets, cheerEmotes);
+  const parsedParts = parseChatMessage(
+    text,
+    emoteOffsets,
+    cheerEmotes?.getPossibleNames(),
+  );
   parsedParts.forEach((parsedPart: ParsedMessagePart) => {
     switch (parsedPart.type) {
       case "text":
         parsed += DOMPurify.sanitize(parsedPart.text);
         break;
       case "cheer":
-        const cheermoteUrl = `https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/${parsedPart.amount}/4.gif`;
-        parsed += `<img src="${cheermoteUrl}" class="emote"> ${parsedPart.amount}`;
+        const cheermote = cheerEmotes.getCheermoteDisplayInfo(
+          parsedPart.name,
+          parsedPart.amount,
+          { background: "dark", state: "animated", scale: "4" },
+        );
+        parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${parsedPart.amount} </span>`;
         break;
       case "emote":
         const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
@@ -141,7 +149,7 @@ export class Twitch {
     let text = parseTwitchEmotes(
       message.text,
       message.emoteOffsets,
-      this.cheerEmotes?.getPossibleNames(),
+      this.cheerEmotes,
     );
     let rewardName = "";
 
