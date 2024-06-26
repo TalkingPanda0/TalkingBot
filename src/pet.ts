@@ -49,6 +49,7 @@ export class Pet {
   private stomach: number = 1;
   private timer: Timer;
   private name = 0;
+  private streamStatus = false;
   private status: Status;
   private shield = false;
   private lastFed: Date;
@@ -283,7 +284,13 @@ export class Pet {
     this.bot.twitch.say(`${user} petted Hapboo #${this.name}.`);
   }
 
+  public updateStreamStatus(status: boolean) {
+    this.streamStatus = status;
+    if (!status) this.sleep();
+  }
+
   public init(hatch: boolean) {
+    if (this.timer != null || !this.streamStatus) return;
     this.bot.twitch.updateShieldReedem(false);
     if (hatch) {
       switch (this.status) {

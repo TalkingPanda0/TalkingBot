@@ -33,7 +33,7 @@ export interface YoutubeCommandData {
   isUserMod: boolean;
   message: string;
   platform: Platform.youtube;
-  reply: (message: string, replyToUser: boolean) => {};
+  reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   context: MessageFragments[];
 }
 export interface KickComamndData {
@@ -41,7 +41,7 @@ export interface KickComamndData {
   userColor: string;
   isUserMod: boolean;
   message: string;
-  reply: (message: string, replyToUser: boolean) => {};
+  reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   platform: Platform.kick;
 }
 export type CommandData =
@@ -1023,6 +1023,10 @@ export class TalkingBot {
             case "pet":
               this.pet.pet(data.user);
               break;
+            case "wakeup":
+              this.pet.init(true);
+              break;
+
             case "start":
               if (data.isUserMod) {
                 this.pet.init(true);
@@ -1059,11 +1063,10 @@ export class TalkingBot {
                 break;
               }
             default:
-              if (data.platform == Platform.twitch)
-                data.reply(
-                  "Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info",
-                  true,
-                );
+              data.reply(
+                "Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info",
+                true,
+              );
           }
         },
       },

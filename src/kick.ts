@@ -138,6 +138,7 @@ export class Kick {
                   firstBadgeType === "moderator" ||
                   firstBadgeType === "broadcaster",
 
+								reply: (message: string, replyToUser: boolean) => {},
                 platform: Platform.kick,
                 message: text.replace(command.command, "").trim(),
               });

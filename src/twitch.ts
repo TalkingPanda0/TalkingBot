@@ -13,7 +13,7 @@ import {
   buildEmoteImageUrl,
   parseTwitchMessage,
 } from "@twurple/chat";
-import { ApiClient, HelixUser } from "@twurple/api";
+import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
 import { EventSubWsListener } from "@twurple/eventsub-ws";
 import {
@@ -58,9 +58,10 @@ export const userColors = [
 export function parseTwitchEmotes(
   text: string,
   emoteOffsets: Map<string, string[]>,
+  cheerEmotes?: string[],
 ): string {
   let parsed = "";
-  const parsedParts = parseChatMessage(text, emoteOffsets);
+  const parsedParts = parseChatMessage(text, emoteOffsets, cheerEmotes);
   parsedParts.forEach((parsedPart: ParsedMessagePart) => {
     switch (parsedPart.type) {
       case "text":
@@ -68,7 +69,7 @@ export function parseTwitchEmotes(
         break;
       case "cheer":
         const cheermoteUrl = `https://d3aqoihi2n8ty8.cloudfront.net/actions/cheer/dark/animated/${parsedPart.amount}/4.gif`;
-        parsed += `<img src="${cheermoteUrl}" class="emote"">`;
+        parsed += `<img src="${cheermoteUrl}" class="emote"> ${parsedPart.amount}`;
         break;
       case "emote":
         const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
@@ -96,6 +97,7 @@ export class Twitch {
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
 
   private channelName: string;
+  private cheerEmotes: HelixCheermoteList;
   private eventListener: EventSubWsListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
@@ -104,7 +106,7 @@ export class Twitch {
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
   private shieldid = "9a3d1045-a42b-4cb0-b5eb-7e850b4984ec";
-  private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
+  //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private oauthFile: BunFile = Bun.file(__dirname + "/../config/oauth.json");
   private broadcasterFile: BunFile = Bun.file(
@@ -136,7 +138,11 @@ export class Twitch {
     let badges = ["https://twitch.tv/favicon.ico"];
     let replyTo = "";
     let replyId = "";
-    let text = parseTwitchEmotes(message.text, message.emoteOffsets);
+    let text = parseTwitchEmotes(
+      message.text,
+      message.emoteOffsets,
+      this.cheerEmotes?.getPossibleNames(),
+    );
     let rewardName = "";
 
     text = await this.bot.parseClips(text);
@@ -289,6 +295,7 @@ export class Twitch {
         this.badges.set(badge.id, element.getImageUrl(4));
       });
     });
+    this.cheerEmotes = await this.apiClient.bits.getCheermotes(this.channel.id);
 
     this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
@@ -296,7 +303,7 @@ export class Twitch {
     this.eventListener.onStreamOnline(
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
-        this.bot.pet.init(true);
+        this.bot.pet.updateStreamStatus(true);
         try {
           const stream = await event.getStream();
           const thumbnail = stream.getThumbnailUrl(1280, 720);
@@ -316,7 +323,7 @@ export class Twitch {
     );
 
     this.eventListener.onStreamOffline(this.channel.id, (event) => {
-      this.bot.pet.sleep();
+      this.bot.pet.updateStreamStatus(false);
     });
 
     this.eventListener.onChannelFollow(

@@ -42,6 +42,7 @@ export class YouTube {
     this.chat.on("disconnect", () => {
       this.bot.iochat.emit("chatDisconnect", "YouTube");
       this.isConnected = false;
+      console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
     });
 
     this.chat.on("chat_connected", (channel, videoId) => {
@@ -115,6 +116,7 @@ export class YouTube {
               message: text.replace(command.command, "").trim(),
               platform: Platform.youtube,
               context: message,
+							reply: (message: string, replyToUser: boolean) => {},
             });
             if (command.showOnChat) {
               color = this.getColor(name);
