@@ -92,9 +92,12 @@
       });
     }
 		function addToDisconnectList(id){
+			if( document.getElementById(id) != null) return;
+
 			const disconnectElement = document.createElement("img");
 			disconnectElement.src = platformIcons[id];
 			disconnectElement.classList.add("badge");
+			disconnectElement.id = id;
 			disconnectList.appendChild(disconnectElement);
 		}
 
