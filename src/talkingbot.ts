@@ -955,7 +955,7 @@ export class TalkingBot {
         command: "!wheel",
         commandFunction: async (data) => {
           if (!data.isUserMod) {
-            data.reply(this.wheel.toString(), true);
+            data.reply(this.wheel.toString(false), true);
             return;
           }
           const args = data.message.split(" ");
@@ -995,8 +995,11 @@ export class TalkingBot {
             case "read":
               this.wheel.readWheel();
               break;
+						case "weights":
+              data.reply(this.wheel.toString(true), true);
+							break;
             default:
-              data.reply(this.wheel.toString(), true);
+              data.reply(this.wheel.toString(false), true);
               break;
           }
         },

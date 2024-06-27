@@ -84,11 +84,14 @@ export class Wheel {
   public spinWheel() {
     this.iowheel.emit("spinWheel");
   }
-  public toString(): string {
+  public toString(weights: boolean): string {
     const calculatedSegments = this.calculateWheel();
     return calculatedSegments
       .map((value) => {
-        return `${value.text}: ${Math.round((value.size / 360) * 100)}%(${value.weight})`;
+				if(weights)
+					return `${value.text}: ${value.weight}`;
+				else
+					return `${value.text}: ${Math.round((value.size / 360) * 100)}`;
       })
       .join(", ");
   }
