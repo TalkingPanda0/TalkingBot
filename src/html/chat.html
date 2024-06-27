@@ -133,7 +133,7 @@
     });
 
     socket.on("deleteMessage", (messageId) => {
-      console.log("deleteMessage:", message);
+      console.log("deleteMessage:", messageId);
       const messageElement = document.getElementById(messageId);
       if (messageElement) {
         messageElement.remove();

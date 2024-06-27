@@ -91,7 +91,7 @@ export class Wheel {
 				if(weights)
 					return `${value.text}: ${value.weight}`;
 				else
-					return `${value.text}: ${Math.round((value.size / 360) * 100)}`;
+					return `${value.text}: ${Math.round((value.size / 360) * 100)}%`;
       })
       .join(", ");
   }
