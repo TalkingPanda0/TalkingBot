@@ -875,6 +875,7 @@ export class TalkingBot {
         showOnChat: true,
         command: "!tts",
         commandFunction: (data): void | Promise<void> => {
+					if(data.message.trim() == "") return;
           if (!data.isUserMod && !this.ttsEnabled) return;
           switch (data.platform) {
             case Platform.twitch:
@@ -895,6 +896,7 @@ export class TalkingBot {
                 parsedText: parseTwitchEmotes(
                   "!tts " + data.message,
                   data.context.emoteOffsets,
+									this.twitch.cheerEmotes,
                 ).replace("!tts ", ""),
               });
 

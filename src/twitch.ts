@@ -103,9 +103,9 @@ export class Twitch {
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
+  public cheerEmotes: HelixCheermoteList;
 
   private channelName: string;
-  private cheerEmotes: HelixCheermoteList;
   private eventListener: EventSubWsListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;

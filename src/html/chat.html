@@ -141,6 +141,7 @@
         console.error(`Couldn't find message: ${messageId}`);
       }
     });
+
     socket.on("clearChat", (platform) => {
 			console.log(`Clear chat for ${platform}`)
       Array.from(document.getElementsByClassName(platform)).forEach(
