@@ -35,6 +35,7 @@ import {
 } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { BunFile } from "bun";
+import { channel } from "diagnostics_channel";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -94,8 +95,8 @@ export function parseTwitchEmotes(
 }
 
 export class Twitch {
-  public clientId: string = "";
-  public clientSecret: string = "";
+  public clientId = "";
+  public clientSecret = "";
   public apiClient: ApiClient;
   public channel: HelixUser;
   public currentPoll: Poll;
@@ -103,24 +104,25 @@ export class Twitch {
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
+  public isStreamOnline = false;
   public cheerEmotes: HelixCheermoteList;
 
   private channelName: string;
   private eventListener: EventSubWsListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
-  private badges: Map<string, string> = new Map<string, string>();
+  private badges = new Map<string, string>();
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
   private shieldid = "9a3d1045-a42b-4cb0-b5eb-7e850b4984ec";
   //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
-  private oauthFile: BunFile = Bun.file(__dirname + "/../config/oauth.json");
-  private broadcasterFile: BunFile = Bun.file(
+  private oauthFile = Bun.file(__dirname + "/../config/oauth.json");
+  private broadcasterFile = Bun.file(
     __dirname + "/../config/token-broadcaster.json",
   );
-  private botFile: BunFile = Bun.file(__dirname + "/../config/token-bot.json");
+  private botFile = Bun.file(__dirname + "/../config/token-bot.json");
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -181,7 +183,6 @@ export class Twitch {
     }
 
     if (message.isRedemption) {
-      console.log("redmep");
       const reward = await this.apiClient.channelPoints.getCustomRewardById(
         this.channel.id,
         message.rewardId,
@@ -205,9 +206,15 @@ export class Twitch {
       isOld: isOld,
     });
   }
-  public cleanUp() {
+  public async cleanUp() {
     this.chatClient.quit();
     this.eventListener.stop();
+    const chatters = await this.apiClient.chat.getChatters(this.channel.id);
+    chatters.data.forEach((chatter) => {
+      if (chatter.userId == "736013381") return;
+      console.log("\x1b[35m%s\x1b[0m", `Twitch - ${chatter.userName} left.`);
+      this.bot.database.userLeave(chatter.userId, this.isStreamOnline);
+    });
   }
 
   public updateShieldReedem(status: boolean) {
@@ -308,9 +315,11 @@ export class Twitch {
     this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
+
     this.eventListener.onStreamOnline(
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
+        this.isStreamOnline = true;
         this.bot.pet.updateStreamStatus(true);
         try {
           const stream = await event.getStream();
@@ -319,6 +328,14 @@ export class Twitch {
             title: stream.title,
             game: stream.gameName,
             thumbnailUrl: thumbnail,
+          });
+          const chatters = await this.apiClient.chat.getChatters(
+            this.channel.id,
+          );
+          chatters.data.forEach((chatter) => {
+            if (chatter.userId == "736013381") return;
+            this.bot.database.userLeave(chatter.userId, false);
+            this.bot.database.userJoin(chatter.userId, true);
           });
         } catch (e) {
           console.error(
@@ -330,8 +347,16 @@ export class Twitch {
       },
     );
 
-    this.eventListener.onStreamOffline(this.channel.id, (event) => {
+    this.eventListener.onStreamOffline(this.channel.id, async (event) => {
+      this.isStreamOnline = false;
       this.bot.pet.updateStreamStatus(false);
+
+      const chatters = await this.apiClient.chat.getChatters(this.channel.id);
+      chatters.data.forEach((chatter) => {
+        if (chatter.userId == "736013381") return;
+        this.bot.database.userLeave(chatter.userId, true);
+        this.bot.database.userJoin(chatter.userId, false);
+      });
     });
 
     this.eventListener.onChannelFollow(
@@ -499,6 +524,9 @@ export class Twitch {
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
       channels: [this.channelName],
+      isAlwaysMod: true,
+      requestMembershipEvents: true,
+      ssl: true,
     });
     this.chatClient.onSub(
       (
@@ -548,6 +576,23 @@ export class Twitch {
       },
     );
 
+    this.chatClient.onJoin(async (channel: string, user: string) => {
+      if (user.toLowerCase() == "talkingboto_o") return;
+      console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user} joined.`);
+
+      const userInfo = await this.apiClient.users.getUserByName(user);
+      this.bot.database.userJoin(userInfo.id, this.isStreamOnline);
+    });
+
+    this.chatClient.onPart(async (channel: string, user: string) => {
+      if (user.toLowerCase() == "talkingboto_o") return;
+
+      console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user} left.`);
+
+      const userInfo = await this.apiClient.users.getUserByName(user);
+      this.bot.database.userLeave(userInfo.id, this.isStreamOnline);
+    });
+
     this.eventListener.onChannelBan(this.channel.id, (event) => {
       this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.chatClient.say(
@@ -561,9 +606,11 @@ export class Twitch {
         this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
       },
     );
+
     this.chatClient.onChatClear((channel: string, msg: ClearChat) => {
       this.bot.iochat.emit("clearChat", "twitch");
     });
+
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
@@ -706,7 +753,10 @@ export class Twitch {
     this.chatClient.connect();
     this.eventListener.start();
     // Apis ready
+    this.isStreamOnline =
+      (await this.apiClient.streams.getStreamByUserId(this.channel.id)) != null;
   }
+
   public say(message: string) {
     this.chatClient.say(this.channel.name, message);
     this.bot.iochat.emit("message", {
