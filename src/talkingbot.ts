@@ -3,7 +3,6 @@ import { Discord } from "./discord";
 import { YouTube, parseYTMessage } from "./youtube";
 import { Kick, parseKickEmotes, removeKickEmotes } from "./kick";
 import { kill } from "./beatsniper.js";
-import { DB } from "./db";
 
 import { Server } from "socket.io";
 import * as http from "http";
@@ -320,7 +319,6 @@ export class TalkingBot {
   public aliasCommands: CommandAlias[] = [];
   public connectedtoOverlay: Boolean = false;
   public pet: Pet;
-  public database: DB;
 
   private kickId: string;
   private wheel: Wheel;
@@ -479,7 +477,6 @@ export class TalkingBot {
             data.message = parseTwitchEmotes(
               "!modtext " + data.message,
               data.context.emoteOffsets,
-              this.twitch.cheerEmotes,
             );
             data.message = data.message.replace("!modtext", "");
           } else if (data.platform == Platform.kick) {
@@ -878,7 +875,7 @@ export class TalkingBot {
         showOnChat: true,
         command: "!tts",
         commandFunction: (data): void | Promise<void> => {
-          if (data.message.trim() == "") return;
+					if(data.message.trim() == "") return;
           if (!data.isUserMod && !this.ttsEnabled) return;
           switch (data.platform) {
             case Platform.twitch:
@@ -899,7 +896,7 @@ export class TalkingBot {
                 parsedText: parseTwitchEmotes(
                   "!tts " + data.message,
                   data.context.emoteOffsets,
-                  this.twitch.cheerEmotes,
+									this.twitch.cheerEmotes,
                 ).replace("!tts ", ""),
               });
 
@@ -1000,9 +997,9 @@ export class TalkingBot {
             case "read":
               this.wheel.readWheel();
               break;
-            case "weights":
+						case "weights":
               data.reply(this.wheel.toString(true), true);
-              break;
+							break;
             default:
               data.reply(this.wheel.toString(false), true);
               break;
@@ -1086,23 +1083,20 @@ export class TalkingBot {
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord();
-    this.database = new DB();
   }
 
   public initBot() {
-    this.database.init();
     this.discord.initBot();
     this.youTube.initBot();
     this.twitch.initBot();
     this.kick.initBot();
   }
 
-  public async cleanUp() {
-    await this.twitch.cleanUp();
+  public cleanUp() {
+    this.twitch.cleanUp();
     this.youTube.cleanUp();
     this.kick.cleanUp();
     this.discord.cleanUp();
-    this.database.cleanUp();
   }
 
   public updatePoll() {
