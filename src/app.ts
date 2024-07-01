@@ -43,8 +43,8 @@ server.listen(3000, () => {
   console.log("listening on *:3000");
 });
 
-process.on("SIGINT", async () => {
+process.on("SIGINT", () => {
   console.log("Exitting...");
-  await bot.cleanUp();
+  bot.cleanUp();
   process.exit();
 });
