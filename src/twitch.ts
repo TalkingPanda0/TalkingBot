@@ -34,8 +34,6 @@ import {
   replaceAsync,
 } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
-import { BunFile } from "bun";
-import { channel } from "diagnostics_channel";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -320,7 +318,6 @@ export class Twitch {
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
         this.isStreamOnline = true;
-        this.bot.pet.updateStreamStatus(true);
         try {
           const stream = await event.getStream();
           const thumbnail = stream.getThumbnailUrl(1280, 720);
@@ -349,7 +346,7 @@ export class Twitch {
 
     this.eventListener.onStreamOffline(this.channel.id, async (event) => {
       this.isStreamOnline = false;
-      this.bot.pet.updateStreamStatus(false);
+      this.bot.pet.sleep();
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {

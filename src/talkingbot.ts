@@ -89,6 +89,9 @@ interface controlMessage {
 
 export function getTimeDifference(startDate: Date, endDate: Date): string {
   const timeDifference = endDate.getTime() - startDate.getTime();
+  return milliSecondsToString(timeDifference);
+}
+export function milliSecondsToString(timeDifference: number): string {
   const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365.25));
   const remainingTime = timeDifference % (1000 * 60 * 60 * 24 * 365.25);
   const months = Math.floor(remainingTime / (1000 * 60 * 60 * 24 * 30.44));
@@ -436,6 +439,27 @@ export class TalkingBot {
             return;
           }
           data.reply(getRandomElement(eightballMessages), false);
+        },
+      },
+      {
+        showOnChat: false,
+        command: "!watchtime",
+        commandFunction: async (data) => {
+          if (data.platform != Platform.twitch) return;
+          const watchTime = this.database.getWatchTime(
+            data.context.userInfo.userId,
+          );
+          if (data.message === "offline") {
+            data.reply(
+              `@${data.user} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`,
+              false,
+            );
+          } else {
+            data.reply(
+              `@${data.user} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`,
+              false,
+            );
+          }
         },
       },
 
