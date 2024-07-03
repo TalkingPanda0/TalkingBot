@@ -13,6 +13,8 @@ export class DB {
   private database: Database;
   private insertWatchTime: CallableFunction;
   private getWatchTimeQuery: Statement;
+  private getTopWatchTimeQuery: Statement;
+  private getTopWatchTimeQueryOffline: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -33,17 +35,29 @@ export class DB {
     );
 
     this.insertWatchTime = this.database.transaction((watchTime) => {
-      console.log(watchTime);
       insert.run(watchTime);
     });
 
     this.getWatchTimeQuery = this.database.query(
       "SELECT * FROM watchtimes where userId = ?1;",
     );
+    this.getTopWatchTimeQuery = this.database.query(
+      "SELECT * FROM watchtimes ORDER BY watchTime DESC LIMIT 3;",
+    );
+    this.getTopWatchTimeQueryOffline = this.database.query(
+      "SELECT * FROM watchtimes ORDER BY chatTime DESC LIMIT 3;",
+    );
   }
 
   public getWatchTime(id: string): WatchTime {
     return this.getWatchTimeQuery.get(id) as WatchTime;
+  }
+
+  public getTopWatchTime(isOffline: boolean): WatchTime[] {
+    if (isOffline) {
+      return this.getTopWatchTimeQueryOffline.all() as WatchTime[];
+    }
+    return this.getTopWatchTimeQuery.all() as WatchTime[];
   }
 
   public userLeave(id: string, isStreamOnline: boolean) {
@@ -88,8 +102,6 @@ export class DB {
       const watchTime = this.getWatchTime(id);
       const date = new Date();
       if (watchTime == null) {
-        console.log("creasting");
-        console.log(id);
         const newWatchTime: WatchTime = {
           userId: id,
           lastSeenOnStream: isStreamOnline ? date.toJSON() : null,

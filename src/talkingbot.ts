@@ -89,9 +89,6 @@ interface controlMessage {
 
 export function getTimeDifference(startDate: Date, endDate: Date): string {
   const timeDifference = endDate.getTime() - startDate.getTime();
-  return milliSecondsToString(timeDifference);
-}
-export function milliSecondsToString(timeDifference: number): string {
   const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365.25));
   const remainingTime = timeDifference % (1000 * 60 * 60 * 24 * 365.25);
   const months = Math.floor(remainingTime / (1000 * 60 * 60 * 24 * 30.44));
@@ -108,6 +105,19 @@ export function milliSecondsToString(timeDifference: number): string {
   if (years != 0) timeString += `${years} years `;
   if (months != 0) timeString += `${months} months `;
   if (days != 0) timeString += `${days} days `;
+  if (hours != 0) timeString += `${hours} hours `;
+  if (minutes != 0) timeString += `${minutes} minutes `;
+  if (seconds != 0) timeString += `${seconds} seconds`;
+  return timeString;
+}
+export function milliSecondsToString(timeDifference: number): string {
+  const hours = Math.floor(timeDifference / (1000 * 60 * 60));
+  const remainingTime4 = timeDifference % (1000 * 60 * 60);
+  const minutes = Math.floor(remainingTime4 / (1000 * 60));
+  const remainingTime5 = remainingTime4 % (1000 * 60);
+  const seconds = Math.floor(remainingTime5 / 1000);
+
+  let timeString = "";
   if (hours != 0) timeString += `${hours} hours `;
   if (minutes != 0) timeString += `${minutes} minutes `;
   if (seconds != 0) timeString += `${seconds} seconds`;
@@ -443,6 +453,31 @@ export class TalkingBot {
       },
       {
         showOnChat: false,
+        command: "!toptime",
+        commandFunction: async (data) => {
+          if (data.platform != Platform.twitch) return;
+          const isOffline = data.message === "offline";
+          const users = this.database.getTopWatchTime(isOffline);
+          data.reply(
+            (
+              await Promise.all(
+                users.map(async (watchTime) => {
+                  const user = await this.twitch.apiClient.users.getUserById(
+                    watchTime.userId,
+                  );
+                  if (isOffline)
+                    return `@${user.displayName} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`;
+                  else
+                    return `@${user.displayName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`;
+                }),
+              )
+            ).join(" "),
+            false,
+          );
+        },
+      },
+      {
+        showOnChat: false,
         command: "!watchtime",
         commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
@@ -451,12 +486,12 @@ export class TalkingBot {
           );
           if (data.message === "offline") {
             data.reply(
-              `@${data.user} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`,
+              `@${data.user} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
               false,
             );
           } else {
             data.reply(
-              `@${data.user} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`,
+              `@${data.user} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
               false,
             );
           }
