@@ -457,18 +457,23 @@ export class TalkingBot {
         commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
           const isOffline = data.message === "offline";
+          this.database.updateDataBase();
           const users = this.database.getTopWatchTime(isOffline);
           data.reply(
             (
               await Promise.all(
                 users.map(async (watchTime) => {
-                  const user = await this.twitch.apiClient.users.getUserById(
-                    watchTime.userId,
-                  );
-                  if (isOffline)
-                    return `@${user.displayName} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`;
-                  else
-                    return `@${user.displayName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`;
+                  try {
+                    const user = await this.twitch.apiClient.users.getUserById(
+                      watchTime.userId,
+                    );
+                    if (isOffline)
+                      return `@${user.displayName} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`;
+                    else
+                      return `@${user.displayName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`;
+                  } catch (e) {
+                    return e;
+                  }
                 }),
               )
             ).join(" "),

@@ -15,6 +15,7 @@ export class DB {
   private getWatchTimeQuery: Statement;
   private getTopWatchTimeQuery: Statement;
   private getTopWatchTimeQueryOffline: Statement;
+  private inChatQuery: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -47,6 +48,25 @@ export class DB {
     this.getTopWatchTimeQueryOffline = this.database.query(
       "SELECT * FROM watchtimes ORDER BY chatTime DESC LIMIT 3;",
     );
+    this.inChatQuery = this.database.query(
+      "SELECT * FROM watchtimes where inChat != 0;",
+    );
+  }
+  public updateDataBase() {
+    const toUpdate = this.inChatQuery.all() as WatchTime[];
+    console.log(`updateing ${toUpdate.length}`);
+    const date = new Date();
+    toUpdate.forEach((watchTime) => {
+      if (watchTime.inChat == 1) {
+        const lastSeen = new Date(watchTime.lastSeen);
+        watchTime.watchTime += date.getTime() - lastSeen.getTime();
+        watchTime.lastSeen = date.toJSON();
+      } else {
+        const lastSeenOnStream = new Date(watchTime.lastSeenOnStream);
+        watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
+        watchTime.lastSeenOnStream = date.toJSON();
+      }
+    });
   }
 
   public getWatchTime(id: string): WatchTime {
