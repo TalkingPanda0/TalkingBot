@@ -1,4 +1,4 @@
-import { Database, Statement, SQLQueryBindings } from "bun:sqlite";
+import { Database, Statement } from "bun:sqlite";
 
 interface WatchTime {
   userId: string;
@@ -8,6 +8,10 @@ interface WatchTime {
   chatTime: number; // in ms
   inChat: number; // 0: not in chat, 1: in offline chat, 2: watching
 }
+interface HapbooReaction {
+  userId: string;
+  times: number;
+}
 
 export class DB {
   private database: Database;
@@ -16,6 +20,8 @@ export class DB {
   private getTopWatchTimeQuery: Statement;
   private getTopWatchTimeQueryOffline: Statement;
   private inChatQuery: Statement;
+  private insertHapbooReaction: CallableFunction;
+  private getHapbooReaction: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -30,15 +36,19 @@ export class DB {
         "CREATE TABLE IF NOT EXISTS watchtimes (userId TEXT PRIMARY KEY,lastSeenOnStream TEXT,watchTime INT,lastSeen TEXT,chatTime INT,inChat INT);",
       )
       .run();
+    this.database
+      .query(
+        "CREATE TABLE IF NOT EXISTS hapboo (userId TEXT PRIMARY KEY,times INT);",
+      )
+      .run();
 
-    const insert = this.database.prepare(
+    const insertWatchTimeQuery = this.database.prepare(
       "INSERT OR REPLACE INTO watchtimes (userId,lastSeenOnStream ,watchTime ,lastSeen ,chatTime,inChat) VALUES($userId,$lastSeenOnStream,$watchTime,$lastSeen,$chatTime,$inChat);",
     );
 
     this.insertWatchTime = this.database.transaction((watchTime) => {
-      insert.run(watchTime);
+      insertWatchTimeQuery.run(watchTime);
     });
-
     this.getWatchTimeQuery = this.database.query(
       "SELECT * FROM watchtimes where userId = ?1;",
     );
@@ -50,6 +60,17 @@ export class DB {
     );
     this.inChatQuery = this.database.query(
       "SELECT * FROM watchtimes where inChat != 0;",
+    );
+
+    const insertHapbooReactionQuery = this.database.prepare(
+      "INSERT OR REPLACE INTO hapboo (userId,times) VALUES($userId,$times);",
+    );
+
+    this.insertHapbooReaction = this.database.transaction((hapbooReaction) => {
+      insertHapbooReactionQuery.run(hapbooReaction);
+    });
+    this.getHapbooReaction = this.database.query(
+      "SELECT * FROM hapboo WHERE userId = ?1;",
     );
   }
   public updateDataBase() {
@@ -143,6 +164,19 @@ export class DB {
     } catch (e) {
       console.error(`${e} ${id} ${isStreamOnline}`);
     }
+  }
+  public hapbooReaction(userId: string) {
+    const hapbooReaction = this.getHapbooReaction.get(userId) as HapbooReaction;
+    if (hapbooReaction == null) {
+      const newHapbooReaction: HapbooReaction = {
+        userId: userId,
+        times: 1,
+      };
+      this.insertHapbooReaction(newHapbooReaction);
+      return;
+    }
+    hapbooReaction.times++;
+    this.insertHapbooReaction(hapbooReaction);
   }
 
   public cleanUp() {

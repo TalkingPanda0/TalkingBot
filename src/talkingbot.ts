@@ -1149,7 +1149,7 @@ export class TalkingBot {
     this.twitch = new Twitch(this);
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
-    this.discord = new Discord();
+    this.discord = new Discord(this);
     this.database = new DB();
   }
 

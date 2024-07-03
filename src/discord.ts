@@ -5,7 +5,13 @@ import {
   GatewayIntentBits,
   TextChannel,
   VoiceState,
+  Partials,
+  SlashCommandBuilder,
+  Collection,
+  REST,
+  Routes,
 } from "discord.js";
+import { TalkingBot } from "./talkingbot";
 export interface streamInfo {
   game: string;
   title: string;
@@ -14,12 +20,19 @@ export interface streamInfo {
 
 export class Discord {
   private token: string;
+  private clientId: string;
+  private guildId: string;
+  private commands: Collection<string, SlashCommandBuilder>;
+  private bot: TalkingBot;
   private client: Client;
   private channel: TextChannel;
   private shouldPing: boolean = true;
   private discordFile: BunFile = Bun.file(
     __dirname + "/../config/discord.json",
   );
+  constructor(bot: TalkingBot) {
+    this.bot = bot;
+  }
   public cleanUp() {
     this.client.destroy();
   }
@@ -60,15 +73,20 @@ export class Discord {
     }
     const fileContent = await this.discordFile.json();
     this.token = fileContent.token;
+    this.clientId = fileContent.clientId;
+    this.guildId = fileContent.guildId;
 
-    if (this.token === undefined) return;
+    if (this.token == null) return;
     this.client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
         GatewayIntentBits.GuildVoiceStates,
         GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.GuildPresences,
       ],
       allowedMentions: { parse: ["users", "roles"] },
+      partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
     this.client.once(Events.ClientReady, (readyClient) => {
@@ -88,8 +106,12 @@ export class Discord {
 
       if (Math.random() < 0.01) {
         message.react("1255212339406573641");
+        this.bot.database.hapbooReaction(message.author.id);
       }
     });
+
+    //this.client.on(Events.MessageReactionAdd, (reaction) => {});
+
     this.client.on(
       Events.VoiceStateUpdate,
       async (oldstate: VoiceState, newState: VoiceState) => {
@@ -119,6 +141,51 @@ export class Discord {
         }
       },
     );
+    this.client.on(Events.InteractionCreate, async (interaction) => {
+      if (!interaction.isChatInputCommand()) return;
+      const command = this.commands.get(interaction.commandName);
+      if (!command) return;
+      try {
+        await interaction.reply(
+          "HAPBOO HAPBOOG PHAPBPO HAPĞBPP HAPBPP HAPBPP HAPBPPO",
+        );
+      } catch (e) {
+        console.error("\x1b[34m%s\x1b[0m", e);
+      }
+    });
     this.client.login(this.token);
+    this.commands = new Collection();
+
+    this.commands.set(
+      "hapboo",
+      new SlashCommandBuilder()
+        .setName("hapboo")
+        .setDescription("See who got hapbooed the most."),
+    );
+    const commandsArray = this.commands.map((value) => {
+      return value.toJSON();
+    });
+    const rest = new REST().setToken(this.token);
+
+    (async () => {
+      try {
+        console.log(
+          "\x1b[34m%s\x1b[0m",
+          `Started refreshing ${commandsArray.length} application (/) commands.`,
+        );
+
+        const data = (await rest.put(
+          Routes.applicationGuildCommands(this.clientId, this.guildId),
+          { body: commandsArray },
+        )) as Array<any>;
+
+        console.log(
+          "\x1b[34m%s\x1b[0m",
+          `Successfully reloaded ${data.length} application (/) commands.`,
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }
 }
