@@ -11,6 +11,7 @@ this will create a command called `[commandname]` that will respond with `[respo
 - `(reply)` will make the command reply to the message where the command was in.
 - `suffix(n)` will add a ordinal suffix after n for example `suffix(791)` becomes `791st` can be used with `fetch()`.
 - `fetch(url)` will perform a get request on `url` and return the result.
+- `fetch(url){key}` will perform a get request on `url`, return the json value of `key`.
 ## Removing Commands
 `!delcmd [commandname]` will remove the command `[commandname]` if it exists.
 ## Aliasing Commands
