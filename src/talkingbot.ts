@@ -457,7 +457,7 @@ export class TalkingBot {
         commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
           const isOffline = data.message === "offline";
-          this.database.updateDataBase();
+          this.database.updateDataBase(isOffline ? 1 : 2);
           const users = this.database.getTopWatchTime(isOffline);
           data.reply(
             (
@@ -902,10 +902,19 @@ export class TalkingBot {
           switch (args[0]) {
             case "add":
               const newTags = args.slice(1);
-              await this.twitch.apiClient.channels.updateChannelInfo(
-                this.twitch.channel.id,
-                { tags: stream.tags.concat(newTags) },
-              );
+              if (newTags.length >= 10) {
+                data.reply("Reached maxiumum amount of tags", true);
+                break;
+              }
+              try {
+                await this.twitch.apiClient.channels.updateChannelInfo(
+                  this.twitch.channel.id,
+                  { tags: stream.tags.concat(newTags) },
+                );
+              } catch (e) {
+                data.reply(e, true);
+                return;
+              }
               data.reply(`Tags ${newTags} has been added`, true);
               break;
             case "remove":

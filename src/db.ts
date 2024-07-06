@@ -90,7 +90,7 @@ export class DB {
       "SELECT * FROM watchtimes ORDER BY chatTime DESC LIMIT 3;",
     );
     this.inChatQuery = this.database.query(
-      "SELECT * FROM watchtimes where inChat != 0;",
+      "SELECT * FROM watchtimes where inChat == ?1;",
     );
 
     const insertHapbooReactionQuery = this.database.prepare(
@@ -138,11 +138,11 @@ export class DB {
       "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10",
     );
   }
-  public updateDataBase() {
-    const toUpdate = this.inChatQuery.all() as WatchTime[];
+  public updateDataBase(inChat: number) {
+    const toUpdate = this.inChatQuery.all(inChat) as WatchTime[];
     const date = new Date();
     toUpdate.forEach((watchTime) => {
-      if (watchTime.inChat == 1) {
+      if (inChat == 1) {
         const lastSeen = new Date(watchTime.lastSeen);
         watchTime.watchTime += date.getTime() - lastSeen.getTime();
         watchTime.lastSeen = date.toJSON();
@@ -151,6 +151,7 @@ export class DB {
         watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
         watchTime.lastSeenOnStream = date.toJSON();
       }
+      this.insertWatchTime(watchTime);
     });
   }
 

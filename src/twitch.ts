@@ -209,7 +209,8 @@ export class Twitch {
     this.eventListener.stop();
     const chatters = await this.apiClient.chat.getChatters(this.channel.id);
     chatters.data.forEach((chatter) => {
-      if (chatter.userId == "736013381") return;
+      if (chatter.userId == "736013381" || chatter.userId == "646848961")
+        return;
       console.log("\x1b[35m%s\x1b[0m", `Twitch - ${chatter.userName} left.`);
       this.bot.database.userLeave(chatter.userId, this.isStreamOnline);
     });
@@ -330,7 +331,8 @@ export class Twitch {
             this.channel.id,
           );
           chatters.data.forEach((chatter) => {
-            if (chatter.userId == "736013381") return;
+            if (chatter.userId == "736013381" || chatter.userId == "646848961")
+              return;
             this.bot.database.userLeave(chatter.userId, false);
             this.bot.database.userJoin(chatter.userId, true);
           });
@@ -350,7 +352,8 @@ export class Twitch {
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {
-        if (chatter.userId == "736013381") return;
+        if (chatter.userId == "736013381" || chatter.userId == "646848961")
+          return;
         this.bot.database.userLeave(chatter.userId, true);
         this.bot.database.userJoin(chatter.userId, false);
       });
@@ -574,7 +577,11 @@ export class Twitch {
     );
 
     this.chatClient.onJoin(async (channel: string, user: string) => {
-      if (user.toLowerCase() == "talkingboto_o") return;
+      if (
+        user.toLowerCase() == "talkingboto_o" ||
+        user.toLowerCase() == "botrixoficial"
+      )
+        return;
       console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user} joined.`);
 
       const userInfo = await this.apiClient.users.getUserByName(user);
@@ -582,7 +589,11 @@ export class Twitch {
     });
 
     this.chatClient.onPart(async (channel: string, user: string) => {
-      if (user.toLowerCase() == "talkingboto_o") return;
+      if (
+        user.toLowerCase() == "talkingboto_o" ||
+        user.toLowerCase() == "botrixoficial"
+      )
+        return;
 
       console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user} left.`);
 
