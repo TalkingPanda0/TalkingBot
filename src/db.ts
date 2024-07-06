@@ -8,12 +8,19 @@ interface WatchTime {
   chatTime: number; // in ms
   inChat: number; // 0: not in chat, 1: in offline chat, 2: watching
 }
-interface HapbooReaction {
+interface EmoteStat {
+  userId: string;
+  emoteId: string;
+  times: number;
+}
+export interface HapbooReaction {
   userId: string;
   times: number;
 }
 
 export class DB {
+  public getHapbooReaction: Statement;
+
   private database: Database;
   private insertWatchTime: CallableFunction;
   private getWatchTimeQuery: Statement;
@@ -21,7 +28,16 @@ export class DB {
   private getTopWatchTimeQueryOffline: Statement;
   private inChatQuery: Statement;
   private insertHapbooReaction: CallableFunction;
-  private getHapbooReaction: Statement;
+  private getHapbooReactionSorted: Statement;
+  private insertEmoteStat: CallableFunction;
+  private insertReactionStat: CallableFunction;
+
+  public getEmoteStat: Statement;
+  public getTopEmotes: Statement;
+  public getTopEmoteUsers: Statement;
+  public getReactionStat: Statement;
+  public getTopReactions: Statement;
+  public getTopReactionUsers: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -39,6 +55,21 @@ export class DB {
     this.database
       .query(
         "CREATE TABLE IF NOT EXISTS hapboo (userId TEXT PRIMARY KEY,times INT);",
+      )
+      .run();
+    this.database
+      .query(
+        "CREATE TABLE IF NOT EXISTS emotestats (userId TEXT,emoteId TEXT , times INT, PRIMARY KEY (userId,emoteId));",
+      )
+      .run();
+    this.database
+      .query(
+        "CREATE TABLE IF NOT EXISTS reactionstats (userId TEXT,emoteId TEXT , times INT, PRIMARY KEY (userId,emoteId));",
+      )
+      .run();
+    this.database
+      .query(
+        "CREATE VIEW IF NOT EXISTS combinedemotestats AS SELECT emotestats.userId,emotestats.emoteId,(IFNULL(emotestats.times,0) + IFNULL(reactionstats.times,0)) AS totaltimes FROM emotestats LEFT JOIN reactionstats UNION SELECT reactionstats.userId,reactionstats.emoteId,(IFNULL(emotestats.times,0) + IFNULL(reactionstats.times,0)) AS totaltimes FROM reactionstats LEFT JOIN emotestats USING(userId,emoteId);",
       )
       .run();
 
@@ -72,10 +103,43 @@ export class DB {
     this.getHapbooReaction = this.database.query(
       "SELECT * FROM hapboo WHERE userId = ?1;",
     );
+    this.getHapbooReactionSorted = this.database.query(
+      "SELECT * FROM hapboo ORDER BY times DESC LIMIT 10",
+    );
+
+    const insertEmoteStatQuery = this.database.prepare(
+      "INSERT OR REPLACE INTO emotestats (userId,emoteId,times) VALUES($userId,$emoteId,$times);",
+    );
+    this.insertEmoteStat = this.database.transaction((emoteStat) => {
+      insertEmoteStatQuery.run(emoteStat);
+    });
+    this.getEmoteStat = this.database.query(
+      "SELECT * FROM emotestats WHERE userId = ?1 AND emoteId = ?2;",
+    );
+    this.getTopEmotes = this.database.query(
+      "SELECT emoteId, SUM(times) as totalUsage FROM emotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
+    );
+    this.getTopEmoteUsers = this.database.query(
+      "SELECT userId,SUM(times) as totalUsage FROM emotestats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10",
+    );
+    const insertreactionStatQuery = this.database.prepare(
+      "INSERT OR REPLACE INTO reactionstats (userId,emoteId,times) VALUES($userId,$emoteId,$times);",
+    );
+    this.insertReactionStat = this.database.transaction((reactionStat) => {
+      insertreactionStatQuery.run(reactionStat);
+    });
+    this.getReactionStat = this.database.query(
+      "SELECT * FROM reactionstats WHERE userId = ?1 AND emoteId = ?2;",
+    );
+    this.getTopReactions = this.database.query(
+      "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
+    );
+    this.getTopReactionUsers = this.database.query(
+      "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10",
+    );
   }
   public updateDataBase() {
     const toUpdate = this.inChatQuery.all() as WatchTime[];
-    console.log(`updateing ${toUpdate.length}`);
     const date = new Date();
     toUpdate.forEach((watchTime) => {
       if (watchTime.inChat == 1) {
@@ -165,6 +229,7 @@ export class DB {
       console.error(`${e} ${id} ${isStreamOnline}`);
     }
   }
+
   public hapbooReaction(userId: string) {
     const hapbooReaction = this.getHapbooReaction.get(userId) as HapbooReaction;
     if (hapbooReaction == null) {
@@ -177,6 +242,37 @@ export class DB {
     }
     hapbooReaction.times++;
     this.insertHapbooReaction(hapbooReaction);
+  }
+
+  public getTopHapbooReactions(): HapbooReaction[] {
+    return this.getHapbooReactionSorted.all() as HapbooReaction[];
+  }
+
+  public reaction(userId: string, emoteId: string) {
+    const reactionUsage = this.getReactionStat.get(
+      userId,
+      emoteId,
+    ) as EmoteStat;
+    if (reactionUsage == null) {
+      this.insertReactionStat({
+        userId: userId,
+        emoteId: emoteId,
+        times: 1,
+      });
+      return;
+    }
+    reactionUsage.times++;
+    this.insertReactionStat(reactionUsage);
+  }
+
+  public emoteUsage(userId: string, emoteId: string) {
+    const emoteUsage = this.getEmoteStat.get(userId, emoteId) as EmoteStat;
+    if (emoteUsage == null) {
+      this.insertEmoteStat({ userId: userId, emoteId: emoteId, times: 1 });
+      return;
+    }
+    emoteUsage.times++;
+    this.insertEmoteStat(emoteUsage);
   }
 
   public cleanUp() {

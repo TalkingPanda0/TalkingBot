@@ -10,19 +10,31 @@ import {
   Collection,
   REST,
   Routes,
+  ChatInputCommandInteraction,
+  SlashCommandSubcommandsOnlyBuilder,
+  SlashCommandOptionsOnlyBuilder,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
+import { HapbooReaction } from "./db";
 export interface streamInfo {
   game: string;
   title: string;
   thumbnailUrl: string;
 }
 
+interface DiscordCommand {
+  commandBuilder:
+    | SlashCommandBuilder
+    | SlashCommandSubcommandsOnlyBuilder
+    | SlashCommandOptionsOnlyBuilder;
+  execute: (interaction: ChatInputCommandInteraction) => Promise<void> | void;
+}
+
 export class Discord {
   private token: string;
   private clientId: string;
   private guildId: string;
-  private commands: Collection<string, SlashCommandBuilder>;
+  private commands: Collection<string, DiscordCommand>;
   private bot: TalkingBot;
   private client: Client;
   private channel: TextChannel;
@@ -30,12 +42,15 @@ export class Discord {
   private discordFile: BunFile = Bun.file(
     __dirname + "/../config/discord.json",
   );
+
   constructor(bot: TalkingBot) {
     this.bot = bot;
   }
+
   public cleanUp() {
     this.client.destroy();
   }
+
   public sendStreamPing(stream?: streamInfo) {
     if (stream === undefined) {
       this.channel.send({
@@ -84,6 +99,7 @@ export class Discord {
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildPresences,
+        GatewayIntentBits.MessageContent,
       ],
       allowedMentions: { parse: ["users", "roles"] },
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
@@ -95,10 +111,12 @@ export class Discord {
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
     });
-    this.client.once(Events.Error, (error: Error) => {
+
+    this.client.on(Events.Error, (error: Error) => {
       console.error(error);
     });
-    this.client.on(Events.MessageCreate, (message) => {
+
+    this.client.on(Events.MessageCreate, async (message) => {
       console.log(
         "\x1b[34m%s\x1b[0m",
         `Discord - got message from ${message.author.displayName}`,
@@ -108,9 +126,25 @@ export class Discord {
         message.react("1255212339406573641");
         this.bot.database.hapbooReaction(message.author.id);
       }
+
+      if (message.partial) {
+        await message.fetch();
+      }
+      const emotes = this.findEmotes(message.content);
+      if (emotes == null) return;
+      emotes.forEach((emote) => {
+        this.bot.database.emoteUsage(message.author.id, emote);
+      });
     });
 
-    //this.client.on(Events.MessageReactionAdd, (reaction) => {});
+    this.client.on(Events.MessageReactionAdd, async (reaction, user) => {
+      console.log(
+        "\x1b[34m%s\x1b[0m",
+        `${user.id} reacted with ${reaction.emoji.toString()}`,
+      );
+
+      this.bot.database.reaction(user.id, reaction.emoji.toString());
+    });
 
     this.client.on(
       Events.VoiceStateUpdate,
@@ -146,9 +180,7 @@ export class Discord {
       const command = this.commands.get(interaction.commandName);
       if (!command) return;
       try {
-        await interaction.reply(
-          "HAPBOO HAPBOOG PHAPBPO HAPĞBPP HAPBPP HAPBPP HAPBPPO",
-        );
+        await command.execute(interaction);
       } catch (e) {
         console.error("\x1b[34m%s\x1b[0m", e);
       }
@@ -156,36 +188,128 @@ export class Discord {
     this.client.login(this.token);
     this.commands = new Collection();
 
-    this.commands.set(
-      "hapboo",
-      new SlashCommandBuilder()
-        .setName("hapboo")
-        .setDescription("See who got hapbooed the most."),
-    );
-    const commandsArray = this.commands.map((value) => {
-      return value.toJSON();
+    const discordCommands: DiscordCommand[] = [
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("hapboo")
+          .setDescription("HAPBOOO")
+          .addUserOption((option) =>
+            option.setName("target").setDescription("The user"),
+          ),
+        execute: async (interaction) => {
+          const target = interaction.options.getUser("target");
+          if (target == null) {
+            await interaction.reply({
+              embeds: [
+                {
+                  title: "HAPBOO",
+                  thumbnail: {
+                    url: "https://talkingpanda.dev/hapboo.gif",
+                  },
+
+                  fields: [
+                    {
+                      name: "Top 10 Hapbooed people",
+                      value: this.bot.database
+                        .getTopHapbooReactions()
+                        .map((value) => {
+                          return `<@${value.userId}> : ${value.times}`;
+                        })
+                        .join("\n"),
+                    },
+                  ],
+                },
+              ],
+            });
+            return;
+          }
+          const hapbooReaction = this.bot.database.getHapbooReaction.get(
+            target.id,
+          ) as HapbooReaction;
+          if (hapbooReaction == null) {
+            interaction.reply({
+              embeds: [
+                {
+                  title: "HAPBOO",
+                  thumbnail: {
+                    url: "https://talkingpanda.dev/hapboo.gif",
+                  },
+                  description: `<@${target.id}> has not been hapbooed yet.`,
+                },
+              ],
+            });
+            return;
+          }
+          interaction.reply({
+            embeds: [
+              {
+                title: "HAPBOO",
+                thumbnail: {
+                  url: "https://talkingpanda.dev/hapboo.gif",
+                },
+                description: `<@${target.id}> has been hapbooed ${hapbooReaction.times} times.`,
+              },
+            ],
+          });
+        },
+      },
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("emotestats")
+          .setDescription("See emtoe statistics")
+          .addUserOption((option) =>
+            option.setName("target").setDescription("The user"),
+          ),
+        execute: async (interaction) => {
+          interaction.reply({
+            embeds: [
+              {
+                title: "Emote Statistics",
+                thumbnail: {
+                  url: "https://talkingpanda.dev/hapboo.gif",
+                },
+
+                fields: [
+                  {
+                    name: "Top 10 emotes",
+                    value: (
+                      this.bot.database.getTopEmotes.all() as {
+                        emoteId: string;
+                        totalUsage: number;
+                      }[]
+                    )
+                      .map((value) => {
+                        return `${value.emoteId} : ${value.totalUsage}`;
+                      })
+                      .join("\n"),
+                  },
+                ],
+              },
+            ],
+          });
+        },
+      },
+    ];
+    discordCommands.forEach((value) => {
+      this.commands.set(value.commandBuilder.name, value);
     });
+
+    const commandsArray = this.commands.map((value) => {
+      return value.commandBuilder.toJSON();
+    });
+
     const rest = new REST().setToken(this.token);
 
-    (async () => {
-      try {
-        console.log(
-          "\x1b[34m%s\x1b[0m",
-          `Started refreshing ${commandsArray.length} application (/) commands.`,
-        );
-
-        const data = (await rest.put(
-          Routes.applicationGuildCommands(this.clientId, this.guildId),
-          { body: commandsArray },
-        )) as Array<any>;
-
-        console.log(
-          "\x1b[34m%s\x1b[0m",
-          `Successfully reloaded ${data.length} application (/) commands.`,
-        );
-      } catch (error) {
-        console.error(error);
-      }
-    })();
+    try {
+      await rest.put(
+        Routes.applicationGuildCommands(this.clientId, this.guildId),
+        { body: commandsArray },
+      );
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  private findEmotes(message: string): string[] {
+    return message.match(/<a?:.+?:\d+>/gu);
   }
 }
