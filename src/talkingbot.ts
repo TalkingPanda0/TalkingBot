@@ -486,21 +486,32 @@ export class TalkingBot {
         command: "!watchtime",
         commandFunction: async (data) => {
           if (data.platform != Platform.twitch) return;
-          const watchTime = this.database.getWatchTime(
-            data.context.userInfo.userId,
-          );
-					if(watchTime == null){
-						data.reply("Can't find watchtime.",true);
-						return;
-					}
-          if (data.message === "offline") {
+          const args = data.message.toLowerCase().split(" ");
+          let userName = args[0];
+          const isOffline = userName === "offline";
+          let userId = data.context.userInfo.userId;
+          if (userName != null && userName.startsWith("@")) {
+            const user = await this.twitch.apiClient.users.getUserByName(
+              userName.trim().replace("@", ""),
+            );
+            if (user != null) userId = user.id;
+          } else {
+            userName = `${data.user}`;
+          }
+          const watchTime = this.database.getWatchTime(userId);
+
+          if (watchTime == null) {
+            data.reply("Can't find watchtime.", true);
+            return;
+          }
+          if (isOffline) {
             data.reply(
-              `@${data.user} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
               false,
             );
           } else {
             data.reply(
-              `@${data.user} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
               false,
             );
           }
@@ -905,7 +916,7 @@ export class TalkingBot {
 
           switch (args[0]) {
             case "add":
-              const newTags = args.slice(1);
+              const newTags = stream.tags.concat(args.slice(1));
               if (newTags.length >= 10) {
                 data.reply("Reached maxiumum amount of tags", true);
                 break;
@@ -913,7 +924,7 @@ export class TalkingBot {
               try {
                 await this.twitch.apiClient.channels.updateChannelInfo(
                   this.twitch.channel.id,
-                  { tags: stream.tags.concat(newTags) },
+                  { tags: newTags },
                 );
               } catch (e) {
                 data.reply(e, true);

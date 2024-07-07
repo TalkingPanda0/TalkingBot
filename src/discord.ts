@@ -17,6 +17,7 @@ import {
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
+import { randomInt } from "crypto";
 export interface streamInfo {
   game: string;
   title: string;
@@ -125,7 +126,7 @@ export class Discord {
         `Discord - got message from ${message.author.displayName}`,
       );
 
-      if (Math.random() < 0.01) {
+      if (randomInt(100) === 0 ) {
         message.react("1255212339406573641");
         this.bot.database.hapbooReaction(message.author.id);
       }
