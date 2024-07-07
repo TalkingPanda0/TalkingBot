@@ -13,9 +13,10 @@ import {
   ChatInputCommandInteraction,
   SlashCommandSubcommandsOnlyBuilder,
   SlashCommandOptionsOnlyBuilder,
+  SlashCommandSubcommandBuilder,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
-import { HapbooReaction } from "./db";
+import { EmoteStat, HapbooReaction } from "./db";
 export interface streamInfo {
   game: string;
   title: string;
@@ -26,7 +27,8 @@ interface DiscordCommand {
   commandBuilder:
     | SlashCommandBuilder
     | SlashCommandSubcommandsOnlyBuilder
-    | SlashCommandOptionsOnlyBuilder;
+    | SlashCommandOptionsOnlyBuilder
+    | SlashCommandSubcommandBuilder;
   execute: (interaction: ChatInputCommandInteraction) => Promise<void> | void;
 }
 
@@ -117,6 +119,7 @@ export class Discord {
     });
 
     this.client.on(Events.MessageCreate, async (message) => {
+      if (message.author.bot) return;
       console.log(
         "\x1b[34m%s\x1b[0m",
         `Discord - got message from ${message.author.displayName}`,
@@ -138,6 +141,7 @@ export class Discord {
     });
 
     this.client.on(Events.MessageReactionAdd, async (reaction, user) => {
+      if (user.bot) return;
       console.log(
         "\x1b[34m%s\x1b[0m",
         `${user.id} reacted with ${reaction.emoji.toString()}`,
@@ -182,7 +186,10 @@ export class Discord {
       try {
         await command.execute(interaction);
       } catch (e) {
-        console.error("\x1b[34m%s\x1b[0m", e);
+        console.error(
+          "\x1b[34m%s\x1b[0m",
+          `Error when executing command ${interaction.commandName}: ${e}`,
+        );
       }
     });
     this.client.login(this.token);
@@ -255,12 +262,184 @@ export class Discord {
       },
       {
         commandBuilder: new SlashCommandBuilder()
-          .setName("emotestats")
-          .setDescription("See emtoe statistics")
+          .setName("user")
+          .setDescription("See emote usage of somebody")
           .addUserOption((option) =>
-            option.setName("target").setDescription("The user"),
+            option.setName("user").setDescription("The user").setRequired(true),
+          )
+          .addStringOption((option) =>
+            option.setName("filter").setDescription("The filter").addChoices(
+              {
+                name: "Messages",
+                value: "emotes",
+              },
+              { name: "Reactions", value: "reactions" },
+              { name: "Both", value: "both" },
+            ),
           ),
         execute: async (interaction) => {
+          const filter = interaction.options.getString("filter");
+          const user = interaction.options.getUser("user");
+          if (user == null) return;
+          let suffix = "";
+          let emotes: EmoteStat[];
+          switch (filter) {
+            case "emotes":
+              emotes = this.bot.database.getUserEmoteStat.all(
+                user.id,
+              ) as EmoteStat[];
+              suffix = "messages";
+              break;
+            case "reactions":
+              emotes = this.bot.database.getUserReactionStat.all(
+                user.id,
+              ) as EmoteStat[];
+
+              suffix = "reactions";
+              break;
+            case "both":
+            default:
+              emotes = this.bot.database.getUserTotalStat.all(
+                user.id,
+              ) as EmoteStat[];
+              suffix = "messages and reactions";
+              break;
+          }
+          if (emotes == null) {
+            await interaction.reply("Can't find emote.");
+            return;
+          }
+
+          interaction.reply({
+            embeds: [
+              {
+                title: "User Statistics",
+                thumbnail: {
+                  url: "https://talkingpanda.dev/hapboo.gif",
+                },
+
+                fields: [
+                  {
+                    name: `Top 10 emotes of ${user.displayName} in ${suffix}.`,
+                    value: emotes
+                      .map((value) => {
+                        if (value.totaltimes != null)
+                          return `${value.emoteId} : ${value.totaltimes}`;
+                        else return `${value.emoteId} : ${value.times}`;
+                      })
+                      .join("\n"),
+                  },
+                ],
+              },
+            ],
+          });
+        },
+      },
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("users")
+          .setDescription("See user statistics")
+          .addStringOption((option) =>
+            option.setName("filter").setDescription("The filter").addChoices(
+              {
+                name: "Messages",
+                value: "emotes",
+              },
+              { name: "Reactions", value: "reactions" },
+              { name: "Both", value: "both" },
+            ),
+          ),
+
+        execute: async (interaction) => {
+          const filter = interaction.options.getString("filter");
+          let suffix = "";
+          let emotes: EmoteStat[];
+          switch (filter) {
+            case "emotes":
+              emotes = this.bot.database.getTopEmoteUsers.all() as EmoteStat[];
+              suffix = "messages";
+              break;
+            case "reactions":
+              emotes =
+                this.bot.database.getTopReactionUsers.all() as EmoteStat[];
+
+              suffix = "reactions";
+              break;
+            case "both":
+            default:
+              emotes = this.bot.database.getTopTotalUsers.all() as EmoteStat[];
+              suffix = "messages and reactions";
+              break;
+          }
+          if (emotes == null) {
+            await interaction.reply("Can't find emote.");
+            return;
+          }
+
+          interaction.reply({
+            embeds: [
+              {
+                title: "User Statistics",
+                thumbnail: {
+                  url: "https://talkingpanda.dev/hapboo.gif",
+                },
+
+                fields: [
+                  {
+                    name: `Top 10 people in ${suffix}`,
+                    value: emotes
+                      .map((value) => {
+                        return `<@${value.userId}> : ${value.totalUsage}`;
+                      })
+                      .join("\n"),
+                  },
+                ],
+              },
+            ],
+          });
+        },
+      },
+
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("emotes")
+          .setDescription("See emtoe statistics")
+          .addStringOption((option) =>
+            option.setName("filter").setDescription("The filter").addChoices(
+              {
+                name: "Messages",
+                value: "emotes",
+              },
+              { name: "Reactions", value: "reactions" },
+              { name: "Both", value: "both" },
+            ),
+          ),
+
+        execute: async (interaction) => {
+          const filter = interaction.options.getString("filter");
+          let suffix = "";
+          let emotes: EmoteStat[];
+          switch (filter) {
+            case "emotes":
+              emotes = this.bot.database.getTopEmotes.all() as EmoteStat[];
+              suffix = "messages";
+              break;
+            case "reactions":
+              emotes = this.bot.database.getTopReactions.all() as EmoteStat[];
+
+              suffix = "reactions";
+              break;
+            case "both":
+            default:
+              emotes = this.bot.database.getTopTotal.all() as EmoteStat[];
+              suffix = "messages and reactions";
+              break;
+          }
+          if (emotes == null) {
+            await interaction.reply("Can't find emote.");
+            return;
+          }
+
           interaction.reply({
             embeds: [
               {
@@ -271,15 +450,89 @@ export class Discord {
 
                 fields: [
                   {
-                    name: "Top 10 emotes",
-                    value: (
-                      this.bot.database.getTopEmotes.all() as {
-                        emoteId: string;
-                        totalUsage: number;
-                      }[]
-                    )
+                    name: `Top 10 emotes in ${suffix}`,
+                    value: emotes
                       .map((value) => {
                         return `${value.emoteId} : ${value.totalUsage}`;
+                      })
+                      .join("\n"),
+                  },
+                ],
+              },
+            ],
+          });
+        },
+      },
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("emote")
+          .setDescription("Find statistics about an emote")
+          .addStringOption((option) =>
+            option
+              .setName("emote")
+              .setDescription("The emote")
+              .setRequired(true),
+          )
+          .addStringOption((option) =>
+            option.setName("filter").setDescription("The filter").addChoices(
+              {
+                name: "Messages",
+                value: "emotes",
+              },
+              { name: "Reactions", value: "reactions" },
+              { name: "Both", value: "both" },
+            ),
+          ),
+        execute: async (interaction) => {
+          const emote = interaction.options.getString("emote");
+          const filter = interaction.options.getString("filter");
+          if (emote == null) {
+            return;
+          }
+          let suffix = "";
+          let emotes: EmoteStat[];
+          switch (filter) {
+            case "emotes":
+              emotes = this.bot.database.getEmoteEmoteStat.all(
+                emote,
+              ) as EmoteStat[];
+              suffix = "messages";
+
+              break;
+            case "reactions":
+              emotes = this.bot.database.getEmoteReactionStat.all(
+                emote,
+              ) as EmoteStat[];
+              suffix = "reactions";
+              break;
+            case "both":
+            default:
+              emotes = this.bot.database.getEmoteTotalStat.all(
+                emote,
+              ) as EmoteStat[];
+              suffix = "messages and reactions";
+              break;
+          }
+          if (emotes == null) {
+            await interaction.reply("Can't find emote.");
+            return;
+          }
+          await interaction.reply({
+            embeds: [
+              {
+                title: "Emote Statistics",
+                thumbnail: {
+                  url: "https://talkingpanda.dev/hapboo.gif",
+                },
+
+                fields: [
+                  {
+                    name: `Top 10 ${emote} users in ${suffix}.`,
+                    value: emotes
+                      .map((value) => {
+                        if (value.totaltimes != null)
+                          return `<@${value.userId}> : ${value.totaltimes}`;
+                        else return `<@${value.userId}> : ${value.times}`;
                       })
                       .join("\n"),
                   },

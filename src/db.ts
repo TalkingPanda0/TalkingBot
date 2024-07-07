@@ -8,10 +8,12 @@ interface WatchTime {
   chatTime: number; // in ms
   inChat: number; // 0: not in chat, 1: in offline chat, 2: watching
 }
-interface EmoteStat {
+export interface EmoteStat {
   userId: string;
   emoteId: string;
   times: number;
+  totaltimes?: number;
+  totalUsage?: number;
 }
 export interface HapbooReaction {
   userId: string;
@@ -33,11 +35,19 @@ export class DB {
   private insertReactionStat: CallableFunction;
 
   public getEmoteStat: Statement;
+  public getUserEmoteStat: Statement;
   public getTopEmotes: Statement;
   public getTopEmoteUsers: Statement;
   public getReactionStat: Statement;
+  public getEmoteReactionStat: Statement;
+  public getEmoteEmoteStat: Statement;
+  public getEmoteTotalStat: Statement;
+  public getUserReactionStat: Statement;
+  public getUserTotalStat: Statement;
   public getTopReactions: Statement;
   public getTopReactionUsers: Statement;
+  public getTopTotalUsers: Statement;
+  public getTopTotal: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -69,7 +79,7 @@ export class DB {
       .run();
     this.database
       .query(
-        "CREATE VIEW IF NOT EXISTS combinedemotestats AS SELECT emotestats.userId,emotestats.emoteId,(IFNULL(emotestats.times,0) + IFNULL(reactionstats.times,0)) AS totaltimes FROM emotestats LEFT JOIN reactionstats UNION SELECT reactionstats.userId,reactionstats.emoteId,(IFNULL(emotestats.times,0) + IFNULL(reactionstats.times,0)) AS totaltimes FROM reactionstats LEFT JOIN emotestats USING(userId,emoteId);",
+        "CREATE VIEW IF NOT EXISTS combinedemotestats AS SELECT COALESCE(emotestats.userId, reactionstats.userId) AS userId, COALESCE(emotestats.emoteId, reactionstats.emoteId) AS emoteId, (IFNULL(emotestats.times, 0) + IFNULL(reactionstats.times, 0)) AS totaltimes FROM emotestats FULL OUTER JOIN reactionstats ON emotestats.userId = reactionstats.userId AND emotestats.emoteId = reactionstats.emoteId WHERE emotestats.userId IS NOT NULL OR reactionstats.userId IS NOT NULL;",
       )
       .run();
 
@@ -104,7 +114,7 @@ export class DB {
       "SELECT * FROM hapboo WHERE userId = ?1;",
     );
     this.getHapbooReactionSorted = this.database.query(
-      "SELECT * FROM hapboo ORDER BY times DESC LIMIT 10",
+      "SELECT * FROM hapboo ORDER BY times DESC LIMIT 10;",
     );
 
     const insertEmoteStatQuery = this.database.prepare(
@@ -116,11 +126,17 @@ export class DB {
     this.getEmoteStat = this.database.query(
       "SELECT * FROM emotestats WHERE userId = ?1 AND emoteId = ?2;",
     );
+    this.getUserEmoteStat = this.database.query(
+      "SELECT * FROM emotestats WHERE userId = ?1 ORDER BY times DESC;",
+    );
     this.getTopEmotes = this.database.query(
       "SELECT emoteId, SUM(times) as totalUsage FROM emotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
     );
     this.getTopEmoteUsers = this.database.query(
       "SELECT userId,SUM(times) as totalUsage FROM emotestats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10",
+    );
+    this.getEmoteEmoteStat = this.database.query(
+      "SELECT * FROM emotestats WHERE emoteId = ?1 ORDER BY times DESC;",
     );
     const insertreactionStatQuery = this.database.prepare(
       "INSERT OR REPLACE INTO reactionstats (userId,emoteId,times) VALUES($userId,$emoteId,$times);",
@@ -128,14 +144,33 @@ export class DB {
     this.insertReactionStat = this.database.transaction((reactionStat) => {
       insertreactionStatQuery.run(reactionStat);
     });
+    this.getUserReactionStat = this.database.query(
+      "SELECT * FROM reactionstats WHERE userId = ?1 ORDER BY times DESC;",
+    );
+    this.getUserTotalStat = this.database.query(
+      "SELECT * FROM combinedemotestats WHERE userId = ?1 ORDER BY totaltimes DESC;",
+    );
+
     this.getReactionStat = this.database.query(
       "SELECT * FROM reactionstats WHERE userId = ?1 AND emoteId = ?2;",
     );
+    this.getEmoteReactionStat = this.database.query(
+      "SELECT * FROM reactionstats WHERE emoteId = ?1 ORDER BY times DESC;",
+    );
     this.getTopReactions = this.database.query(
-      "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
+      "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10;",
     );
     this.getTopReactionUsers = this.database.query(
-      "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10",
+      "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10;",
+    );
+    this.getTopTotalUsers = this.database.query(
+      "SELECT userId,SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10;",
+    );
+    this.getEmoteTotalStat = this.database.query(
+      "SELECT * FROM combinedemotestats WHERE emoteId = ?1 ORDER BY totaltimes DESC;",
+    );
+    this.getTopTotal = this.database.query(
+      "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
     );
   }
   public updateDataBase(inChat: number) {
