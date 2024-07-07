@@ -179,7 +179,7 @@ export class DB {
     toUpdate.forEach((watchTime) => {
       if (inChat == 1) {
         const lastSeen = new Date(watchTime.lastSeen);
-        watchTime.watchTime += date.getTime() - lastSeen.getTime();
+        watchTime.chatTime += date.getTime() - lastSeen.getTime();
         watchTime.lastSeen = date.toJSON();
       } else {
         const lastSeenOnStream = new Date(watchTime.lastSeenOnStream);
