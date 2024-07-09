@@ -2,6 +2,7 @@ import WebSocket from "ws";
 import { Platform, Poll, TalkingBot } from "./talkingbot";
 import { HelixPoll } from "@twurple/api";
 import DOMPurify from "isomorphic-dompurify";
+import { CommandData } from "./commands";
 
 const kickEmotePrefix = /sweetbabooo-o/g;
 
@@ -128,34 +129,37 @@ export class Kick {
               return;
             }
 
-            for (let i = 0; i < this.bot.commandList.length; i++) {
-              let command = this.bot.commandList[i];
-              if (!text.startsWith(command.command)) continue;
-              command.commandFunction({
-                user: user,
-                userColor: jsonDataSub.sender.identity.color,
-                isUserMod:
-                  firstBadgeType === "moderator" ||
-                  firstBadgeType === "broadcaster",
+            const commandName = text.split(" ")[0];
+            const data: CommandData = {
+              user: user,
+              userColor: jsonDataSub.sender.identity.color,
+              isUserMod:
+                firstBadgeType === "moderator" ||
+                firstBadgeType === "broadcaster",
 
-								reply: (message: string, replyToUser: boolean) => {},
-                platform: Platform.kick,
-                message: text.replace(command.command, "").trim(),
-              });
-              if (!command.showOnChat) return;
-              this.bot.iochat.emit("message", {
-                text: await this.bot.parseClips(parseKickEmotes(text)),
-                sender: jsonDataSub.sender.username,
-                senderId: "kick-" + jsonDataSub.sender.id,
-                badges: badges,
-                color: jsonDataSub.sender.identity.color,
-                id: "kick-" + jsonDataSub.id,
-                platform: "kick",
-                isFirst: false,
-                replyTo: replyTo,
-                replyId: "kick-" + replyId,
-              });
-            }
+              reply: (message: string, replyToUser: boolean) => {},
+              platform: Platform.kick,
+              message: text.replace(commandName, "").trim(),
+            };
+            const showOnChat = await this.bot.commandHandler.handleCommand(
+              commandName,
+              data,
+            );
+
+            if (!showOnChat) return;
+            this.bot.iochat.emit("message", {
+              text: await this.bot.parseClips(parseKickEmotes(text)),
+              sender: jsonDataSub.sender.username,
+              senderId: "kick-" + jsonDataSub.sender.id,
+              badges: badges,
+              color: jsonDataSub.sender.identity.color,
+              id: "kick-" + jsonDataSub.id,
+              platform: "kick",
+              isFirst: false,
+              replyTo: replyTo,
+              replyId: "kick-" + replyId,
+            });
+
             break;
           case "App\\Events\\MessageDeletedEvent":
             this.bot.iochat.emit(

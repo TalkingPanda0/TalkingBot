@@ -34,6 +34,7 @@ import {
   replaceAsync,
 } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
+import { CommandData } from "./commands";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -104,12 +105,12 @@ export class Twitch {
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
   public isStreamOnline = false;
   public cheerEmotes: HelixCheermoteList;
+  public badges = new Map<string, string>();
 
   private channelName: string;
   private eventListener: EventSubWsListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
-  private badges = new Map<string, string>();
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
@@ -634,109 +635,40 @@ export class Twitch {
             this.sendToChatList(msg, false, false);
             return;
           }
-          this.sendToChatList(msg, true, false);
+
           const name = msg.userInfo.displayName;
           const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
-          let commandName = text.split(" ")[0];
-          for (let i = 0; i < this.bot.aliasCommands.length; i++) {
-            const alias = this.bot.aliasCommands[i];
-            if (commandName != alias.alias) continue;
-            text = text.replace(alias.alias, alias.command);
-            commandName = alias.command;
-          }
-
-          for (let i = 0; i < this.bot.commandList.length; i++) {
-            const command = this.bot.commandList[i];
-            if (commandName != command.command) continue;
-            command.commandFunction({
-              user: name,
-              userColor: this.getUserColor(msg),
-              isUserMod: isMod,
-              platform: Platform.twitch,
-              message: text.replace(command.command, "").trim(),
-              reply: (message: string, replyToUser: boolean) => {
-                const replyId = replyToUser ? msg.id : null;
-                this.chatClient.say(channel, message, { replyTo: replyId });
-                this.bot.iochat.emit("message", {
-                  badges: [this.badges.get("moderator")],
-                  text: message,
-                  sender: "TalkingBotO_o",
-                  senderId: "twitch-" + "bot",
-                  color: "#008000",
-                  id: undefined,
-                  platform: "twitch",
-                  isFirst: false,
-                  replyTo: replyToUser ? name : "",
-                  replyId: "twitch-" + msg.userInfo.userId,
-                  isCommand: true,
-                });
-              },
-              context: msg,
-            });
-
-            if (command.showOnChat) this.sendToChatList(msg, false, false);
-            return;
-          }
-          for (let i = 0; i < this.bot.customCommands.length; i++) {
-            const command = this.bot.customCommands[i];
-            if (commandName != command.command) continue;
-            const message = text.replace(command.command, "").trim();
-            const modonly = command.response.includes("(modonly)");
-            const doReply = command.response.includes("(reply)");
-            let response = (
-              await replaceAsync(
-                command.response,
-                /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
-
-                async (
-                  message: string,
-                  command: string,
-                  url: string,
-                  key: string,
-                ) => {
-                  url = url
-                    .replace(/\$user/g, name)
-                    .replace(/\$args/g, message);
-                  const req = await fetch(url);
-                  if (command.startsWith("!")) return "";
-                  if (key === undefined) {
-                    return await req.text();
-                  } else {
-                    const json = await req.json();
-                    return json[key];
-                  }
-                },
-              )
-            )
-              .replace(
-                /suffix\((\d+)\)/g,
-                (message: string, number: string) => {
-                  return getSuffix(parseInt(number));
-                },
-              )
-              .replace(/\$user/g, name)
-              .replace(/\$args/g, message)
-              .replace(/\(modonly\)/g, "")
-              .replace(/\(reply\)/g, "");
-
-            if (modonly && !isMod) return;
-            this.chatClient.say(channel, response, {
-              replyTo: doReply ? msg.id : null,
-            });
-            this.bot.iochat.emit("message", {
-              badges: [this.badges.get("moderator")],
-              text: response,
-              sender: "TalkingBotO_o",
-              senderId: "twitch-" + "bot",
-              color: "#008000",
-              id: undefined,
-              platform: "twitch",
-              isFirst: false,
-              replyTo: doReply ? name : "",
-              replyId: "twitch-" + msg.userInfo.userId,
-              isCommand: true,
-            });
-          }
+          const commandName = text.split(" ")[0];
+          const data: CommandData = {
+            user: name,
+            userColor: this.getUserColor(msg),
+            isUserMod: isMod,
+            platform: Platform.twitch,
+            message: text.replace(commandName, "").trim(),
+            reply: (message: string, replyToUser: boolean) => {
+              const replyId = replyToUser ? msg.id : null;
+              this.chatClient.say(channel, message, { replyTo: replyId });
+              this.bot.iochat.emit("message", {
+                badges: [this.badges.get("moderator")],
+                text: message,
+                sender: "TalkingBotO_o",
+                senderId: "twitch-" + "bot",
+                color: "#008000",
+                id: undefined,
+                platform: "twitch",
+                isFirst: false,
+                replyTo: replyToUser ? name : "",
+                replyId: "twitch-" + msg.userInfo.userId,
+                isCommand: true,
+              });
+            },
+            context: msg,
+          };
+          const showOnChat = await this.bot.commandHandler.handleCommand(
+            commandName,
+            data,
+          );
+          this.sendToChatList(msg, !showOnChat, false);
         } catch (e) {
           console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
         }

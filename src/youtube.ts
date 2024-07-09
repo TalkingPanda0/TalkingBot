@@ -2,6 +2,7 @@ import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
 import { MessageFragments } from "tubechat/lib/types/Client";
+import { CommandData } from "./commands";
 export function parseYTMessage(message: MessageFragments[]): string {
   let text = "";
   for (let i = 0; i < message.length; i++) {
@@ -97,45 +98,37 @@ export class YouTube {
             });
             return;
           }
-          let commandName = text.split(" ")[0];
-          for (let i = 0; i < this.bot.aliasCommands.length; i++) {
-            const alias = this.bot.aliasCommands[i];
-            if (commandName != alias.alias) continue;
-            text = text.replace(alias.alias, alias.command);
-            commandName = alias.command;
-          }
-
-          for (let i = 0; i < this.bot.commandList.length; i++) {
-            const command = this.bot.commandList[i];
-            if (commandName != command.command) continue;
-
-            command.commandFunction({
-              user: name,
-              userColor: this.getColor(name),
-              isUserMod: isMod,
-              message: text.replace(command.command, "").trim(),
-              platform: Platform.youtube,
-              context: message,
-							reply: (message: string, replyToUser: boolean) => {},
+          const commandName = text.split(" ")[0];
+          const data: CommandData = {
+            user: name,
+            userColor: this.getColor(name),
+            isUserMod: isMod,
+            message: text.replace(commandName, "").trim(),
+            platform: Platform.youtube,
+            context: message,
+            reply: (message: string, replyToUser: boolean) => {},
+          };
+          const showOnChat = await this.bot.commandHandler.handleCommand(
+            commandName,
+            data,
+          );
+          if (showOnChat) {
+            color = this.getColor(name);
+            this.bot.iochat.emit("message", {
+              badges: ["https://www.youtube.com/favicon.ico"],
+              text: parseYTMessage(message),
+              sender: name,
+              senderId: "youtube",
+              color: color,
+              id: "youtube-" + id,
+              platform: "youtube",
+              isFirst: false,
+              replyTo: "",
+              replyId: "",
             });
-            if (command.showOnChat) {
-              color = this.getColor(name);
-              this.bot.iochat.emit("message", {
-                badges: ["https://www.youtube.com/favicon.ico"],
-                text: parseYTMessage(message),
-                sender: name,
-                senderId: "youtube",
-                color: color,
-                id: "youtube-" + id,
-                platform: "youtube",
-                isFirst: false,
-                replyTo: "",
-                replyId: "",
-              });
-            }
-
-            return;
           }
+
+          return;
         } catch (e) {
           console.log(e);
         }

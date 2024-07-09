@@ -200,8 +200,28 @@ export class DB {
     }
     return this.getTopWatchTimeQuery.all() as WatchTime[];
   }
+  public addToUser(userId: string, time: number) {
+    const watchTime = this.getWatchTime(userId);
+    const date = new Date();
+    if (watchTime == null) {
+      const newWatchTime: WatchTime = {
+        userId: userId,
+        lastSeenOnStream: null,
+        watchTime: time,
+        lastSeen: date.toJSON(),
+        chatTime: 0,
+        inChat: 0,
+      };
+      this.insertWatchTime(newWatchTime);
+      return;
+    }
+    watchTime.watchTime += time;
+    this.insertWatchTime(watchTime);
+    return;
+  }
 
   public userLeave(id: string, isStreamOnline: boolean) {
+    if (id === "400510439") return;
     try {
       const watchTime = this.getWatchTime(id);
       const date = new Date();
@@ -238,6 +258,7 @@ export class DB {
   }
 
   public userJoin(id: string, isStreamOnline: boolean) {
+    if (id === "400510439") return;
     try {
       const newStatus = isStreamOnline ? 2 : 1;
       const watchTime = this.getWatchTime(id);
