@@ -497,8 +497,8 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: (data) => {
-          let custom = this.customCommandMap.keys();
-          let builtin = this.commandMap.keys();
+          const custom = Array.from(this.customCommandMap.keys()).join(", ");
+          const builtin = Array.from(this.commandMap.keys()).join(", ");
           data.reply(
             `Builtin Commands: ${builtin}, Custom Commands: ${custom}`,
             true,
@@ -957,7 +957,7 @@ export class CommandHandler {
     const customCommands: CustomCommand[] = [];
     const commandAlias: CommandAlias[] = [];
     this.customCommandMap.forEach((value, key) => {
-      customCommands.push({ command: value, response: key });
+      customCommands.push({ command: key, response: value });
     });
     Bun.write(this.commandsFile, JSON.stringify(customCommands));
     this.commandAliasMap.forEach((value, key) => {
