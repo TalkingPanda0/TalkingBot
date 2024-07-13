@@ -102,7 +102,10 @@
 				console.log("broke");
 				return mention;
 			});
-      textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
+			if(text.startsWith(")") || text.startsWith("("))
+				textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
+			else 
+				textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
 
       spanElement.appendChild(badgesElement);
       spanElement.appendChild(textElement);
