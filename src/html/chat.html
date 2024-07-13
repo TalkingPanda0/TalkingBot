@@ -7,6 +7,7 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
+		const mentionRegex = /@(\w+)/g
 		const platformIcons = {
 			"Bot": "https://talkingpanda.dev/bot.png",
 			"Twitch": "https://twitch.tv/favicon.ico",
@@ -78,8 +79,30 @@
       const textElement = document.createElement("span");
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
+			let text = message.text.trim();
+			text = text.replaceAll(mentionRegex,(mention,user) => {
+			do {
+					console.log("a");
+					const elements = document.querySelectorAll('.sender');
+					if(elements == null){
+						console.log("can't find elements");
+						break;
+					} 
 
-      textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${message.text.trim()}</span>`;
+					const targetElement = Array.from(elements).find(element => element.innerText.includes(`${user}`));
+					if(targetElement == null) {
+						console.log(`${user}:`);
+						break;
+					}
+					const color = targetElement.style.color;
+					console.log(color);
+					return `<span style="color:${color}">${mention}</span>`
+					
+				} while(false);
+				console.log("broke");
+				return mention;
+			});
+      textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
 
       spanElement.appendChild(badgesElement);
       spanElement.appendChild(textElement);
