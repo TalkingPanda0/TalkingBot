@@ -712,6 +712,14 @@ export class CommandHandler {
           }
           const args = data.message.split(" ");
           switch (args[0]) {
+            case "chat":
+              if (args[1] == null) break;
+              data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
+              setTimeout(() => {
+                const result = this.bot.wheel.spinInChat();
+                data.reply(`${args[1]} won ${result}!!!`, false);
+              }, 5000);
+              break;
             case "spin":
               this.bot.wheel.spinWheel();
               data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);

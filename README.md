@@ -34,6 +34,7 @@ Mods can always use `!tts` and disable or enable it for non-mods using `!modtts 
 - `!wheel spin` will spin the wheel.
 - `!wheel weights` will show the current rewards and their weights.
 - `!wheel` will show the current rewards and their percentages.
+- `!wheel chat @user` will spin the wheel for `user`.
 # Tags
 `[tags]` can have more than one tag seperated by a space.
 `!tags` will show the current stream tags.

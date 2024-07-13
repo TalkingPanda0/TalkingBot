@@ -84,14 +84,22 @@ export class Wheel {
   public spinWheel() {
     this.iowheel.emit("spinWheel");
   }
+  public spinInChat(): string {
+    const wheel = this.calculateWheel();
+    let index = -1;
+    let remanining = Math.random() * 360;
+    do {
+      index++;
+      remanining -= wheel[index].size;
+    } while (remanining > 0);
+    return wheel[index].text;
+  }
   public toString(weights: boolean): string {
     const calculatedSegments = this.calculateWheel();
     return calculatedSegments
       .map((value) => {
-				if(weights)
-					return `${value.text}: ${value.weight}`;
-				else
-					return `${value.text}: ${Math.round((value.size / 360) * 100)}%`;
+        if (weights) return `${value.text}: ${value.weight}`;
+        else return `${value.text}: ${Math.round((value.size / 360) * 100)}%`;
       })
       .join(", ");
   }
