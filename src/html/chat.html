@@ -49,7 +49,7 @@
 
         const replyElement = document.createElement("span");
         replyElement.classList.add("reply");
-        replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}</span>`;
+				replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}:</span> ${message.replyText}`;
         messageElement.appendChild(replyElement);
         messageElement.appendChild(document.createElement("br"));
       }
@@ -79,7 +79,7 @@
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
 
-      textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${message.text.trim()}</span>`;
+      textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${message.text.trim()}</span>`;
 
       spanElement.appendChild(badgesElement);
       spanElement.appendChild(textElement);
@@ -247,7 +247,20 @@
       margin-left: 4px;
       margin-bottom: 5px;
       display: inline-table;
+			white-space: nowrap;
     }
+		.replyText {
+			color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+			height: 15px;
+			overflow: hidden;
+		  white-space: nowrap; 
+		  text-overflow: ellipsis;
+		} 
+		}
 		.redeem {
       color: #a5a5a5;
       font-size: 20px;

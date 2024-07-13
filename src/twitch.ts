@@ -147,6 +147,7 @@ export class Twitch {
     let badges = ["https://twitch.tv/favicon.ico"];
     let replyTo = "";
     let replyId = "";
+    let replyText = "";
     let text = parseTwitchEmotes(
       message.text,
       message.emoteOffsets,
@@ -175,6 +176,7 @@ export class Twitch {
       );
       replyTo = message.parentMessageUserDisplayName;
       replyId = message.parentMessageUserId;
+      replyText = message.parentMessageText;
     }
 
     if (message.isHighlight) {
@@ -200,6 +202,7 @@ export class Twitch {
       isFirst: message.isFirst,
       replyTo: replyTo,
       replyId: "twitch-" + replyId,
+      replyText: replyText,
       isCommand: isCommand,
       rewardName: rewardName,
       isOld: isOld,

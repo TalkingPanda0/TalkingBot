@@ -108,10 +108,12 @@ export class Kick {
             );
             let replyTo = "";
             let replyId = "";
+            let replyText = "";
             // is a reply
             if (jsonDataSub.metadata != undefined) {
               replyTo = jsonDataSub.metadata.original_sender.username;
               replyId = jsonDataSub.metadata.original_sender.id;
+							replyText = jsonDataSub.metadata.original_message.content;
             }
             if (!text.startsWith("!")) {
               this.bot.iochat.emit("message", {
@@ -125,6 +127,7 @@ export class Kick {
                 isFirst: false,
                 replyTo: replyTo,
                 replyId: "kick-" + replyId,
+								replyText: replyText,
               });
               return;
             }

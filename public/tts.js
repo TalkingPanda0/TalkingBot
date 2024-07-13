@@ -10,6 +10,7 @@ const emoteSoundEffects = {
   HapBoo: "yippe.mp3",
   HapFlat: "squish.mp3",
   HabPoo: "habpoo.mp3",
+	Heheh: "hehe.mp3",
   aids: "aids.mp3",
   HNNNGH: "hnhg.mp3",
   Skrunk: "huh.mp3",
