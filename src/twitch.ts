@@ -698,6 +698,9 @@ export class Twitch {
     // Apis ready
     this.isStreamOnline =
       (await this.apiClient.streams.getStreamByUserId(this.channel.id)) != null;
+		if(this.isStreamOnline){
+			this.bot.pet.init(false);
+		}
   }
 
   public say(message: string) {
