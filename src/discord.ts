@@ -126,9 +126,9 @@ export class Discord {
         `Discord - got message from ${message.author.displayName}`,
       );
 
-      if (randomInt(100) === 0 ) {
-        //message.react("1255212339406573641");
-				console.log("HAPBOOO");
+      if (randomInt(100) === 0) {
+        message.react("1255212339406573641");
+        console.log("HAPBOOO");
         this.bot.database.hapbooReaction(message.author.id);
       }
 

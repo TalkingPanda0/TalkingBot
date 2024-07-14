@@ -87,7 +87,10 @@ export class CommandHandler {
             data.message.toLowerCase().includes("furry") &&
             data.message.toLowerCase().includes("sweet")
           ) {
-            data.reply("Yes.", false);
+            data.reply(
+              getRandomElement(eightballMessages.slice(27, 34)),
+              false,
+            );
             return;
           }
           data.reply(getRandomElement(eightballMessages), false);
@@ -1101,12 +1104,9 @@ const eightballMessages: string[] = [
   "Better not tell you now.",
   "Cannot predict now.",
   "Go for it!",
-  "Yes, in due time.",
   "You will have to wait.",
   "Ask again later.",
-  "Yeah, for sure.",
   "Concentrate and ask again.",
-  "Probably.",
   "Never going to happen!",
   "The odds of that happening are pretty slim.",
   "My reply is no.",
@@ -1118,17 +1118,19 @@ const eightballMessages: string[] = [
   "Forget about it.",
   "Don't bet on it.",
   "Who knows?",
-  "Signs point to yes.",
-  "It is certain.",
   "Without a doubt.",
-  "Yes definitely.",
   "You may rely on it.",
-  "As I see it, yes.",
-  "Most likely.",
   "Outlook good.",
-  "Yes.",
-  "Signs point to yes.",
+  "Probably.",
+  "Most likely.",
   "This is not the Bot you're looking for ༼ﾉ۞⌂۞༽ﾉ",
   "There's a pretty good chance.",
   "No, don't even think about.",
+  "Yes, in due time.",
+  "It is certain.",
+  "Signs point to yes.",
+  "Yes definitely.",
+  "As I see it, yes.",
+  "Yes.",
+  "Signs point to yes.",
 ];

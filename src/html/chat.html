@@ -89,7 +89,7 @@
 						break;
 					} 
 
-					const targetElement = Array.from(elements).find(element => element.innerText.includes(`${user}`));
+					const targetElement = Array.from(elements).find(element => element.innerText.startsWith(`${user}`));
 					if(targetElement == null) {
 						console.log(`${user}:`);
 						break;
