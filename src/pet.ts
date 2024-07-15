@@ -3,8 +3,8 @@ import { TalkingBot } from "./talkingbot";
 import { getTimeDifference } from "./util";
 
 const emotes = [
-  "sweetb35Stunky he is getting hungry",
-  "sweetb35Shy",
+  "sweetb35Stunky he is getting hungry. Please feed him using !pet feed",
+  "sweetb35Shy. Feed him using !pet feed",
   "sweetb35Sexy",
   "sweetb35Heheh",
   "sweetb35HNNNGH he is a bit too full",
@@ -285,7 +285,7 @@ export class Pet {
   }
 
   public init(hatch: boolean) {
-    if (this.timer != null || !this.bot.twitch.isStreamOnline) return;
+    if (this.timer != null) return;
     this.bot.twitch.updateShieldReedem(false);
     if (hatch) {
       switch (this.status) {
@@ -315,8 +315,7 @@ export class Pet {
         () => {
           this.tick();
         },
-        15 * 60 * 1000, // 15 minutes
-      );
+        15 * 60 * 1000,       );
     this.sayStatus(StatusReason.tick);
     this.writePet();
   }
@@ -394,6 +393,12 @@ export class Pet {
       return;
     }
     this.stomach--;
+		if(this.stomach == 0){
+			setTimeout(() => {
+				this.bot.twitch.say(`Hapboo #${this.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`)
+
+			}, 14 * 60 * 1000)
+		}
     this.sayStatus(StatusReason.tick);
   }
 }

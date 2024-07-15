@@ -792,10 +792,6 @@ export class CommandHandler {
             case "pet":
               this.bot.pet.pet(data.user);
               break;
-            case "wakeup":
-              this.bot.pet.init(true);
-              break;
-
             case "start":
               if (data.isUserMod) {
                 this.bot.pet.init(true);

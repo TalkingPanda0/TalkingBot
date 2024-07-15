@@ -321,6 +321,7 @@ export class Twitch {
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
         this.isStreamOnline = true;
+				this.bot.pet.init(true);
         try {
           const stream = await event.getStream();
           const thumbnail = stream.getThumbnailUrl(1280, 720);
