@@ -675,7 +675,7 @@ export class CommandHandler {
         commandFunction: async (data) => {
           if (!data.isUserMod) return;
           data.reply(`Sniping ${data.message}`, true);
-          const songs: String[] = await kill(data.message);
+          const songs = await kill(data.message);
           if (songs.length === 0) {
             data.reply("Couldn't find songs", true);
           }
