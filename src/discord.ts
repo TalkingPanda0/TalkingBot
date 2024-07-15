@@ -126,7 +126,11 @@ export class Discord {
         `Discord - got message from ${message.author.displayName}`,
       );
 
-      if (randomInt(100) === 0) {
+			const hapbooReactions = this.bot.database.getHapbooReaction.get(message.author.id) as HapbooReaction;
+			let currentHapboos = 0;
+			if(hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
+
+      if (randomInt(100 + currentHapboos) === 0) {
         message.react("1255212339406573641");
         console.log("HAPBOOO");
         this.bot.database.hapbooReaction(message.author.id);
