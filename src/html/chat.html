@@ -82,27 +82,24 @@
 			let text = message.text.trim();
 			text = text.replaceAll(mentionRegex,(mention,user) => {
 			do {
-					console.log("a");
 					const elements = document.querySelectorAll('.sender');
 					if(elements == null){
-						console.log("can't find elements");
 						break;
 					} 
 
 					const targetElement = Array.from(elements).find(element => element.innerText.startsWith(`${user}`));
 					if(targetElement == null) {
-						console.log(`${user}:`);
 						break;
 					}
 					const color = targetElement.style.color;
-					console.log(color);
 					return `<span style="color:${color}">${mention}</span>`
 					
 				} while(false);
-				console.log("broke");
 				return mention;
 			});
-			if(text.startsWith(")") || text.startsWith("("))
+			const faceChars = [")","(","3","}","{","@","[","]","D","O","/","\\","$","X","&","E","P","p","b"];
+			const firstChar = text.charAt(0);
+			if( firstChar != null && faceChars.includes(firstChar))
 				textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
 			else 
 				textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
