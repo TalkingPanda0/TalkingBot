@@ -2,7 +2,7 @@ import { Server } from "socket.io";
 import * as http from "http";
 import { BunFile } from "bun";
 import { userColors } from "./twitch";
-import { getRandomElement } from "./talkingbot";
+import { getRandomElement } from "./util";
 
 interface WheelSegment {
   weight: number;

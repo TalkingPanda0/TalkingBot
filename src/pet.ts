@@ -1,5 +1,6 @@
 import { BunFile } from "bun";
-import { TalkingBot, getTimeDifference } from "./talkingbot";
+import { TalkingBot } from "./talkingbot";
+import { getTimeDifference } from "./util";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry",

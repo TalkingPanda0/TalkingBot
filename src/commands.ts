@@ -1,12 +1,13 @@
+import { Platform, TalkingBot } from "./talkingbot";
 import {
   getRandomElement,
   getSuffix,
   getTimeDifference,
   milliSecondsToString,
-  Platform,
   replaceAsync,
-  TalkingBot,
-} from "./talkingbot";
+  removeByIndexToUppercase,
+} from "./util";
+
 import { kill } from "./beatsniper.js";
 import { MessageFragments } from "tubechat/lib/types/Client";
 import { ChatMessage } from "@twurple/chat";
@@ -977,24 +978,7 @@ export class CommandHandler {
     Bun.write(this.aliasesFile, JSON.stringify(commandAlias));
   }
 }
-function removeByIndex(str: string, index: number): string {
-  return str.slice(0, index) + str.slice(index + 1);
-}
 
-function removeByIndexToUppercase(str: string, indexes: number[]): string {
-  let deletedChars = 0;
-  indexes.forEach((index) => {
-    let i = index - deletedChars;
-    while (
-      !isNaN(parseInt(str.charAt(i), 10)) ||
-      str.charAt(i) !== str.charAt(i).toUpperCase()
-    ) {
-      str = removeByIndex(str, i);
-      deletedChars++;
-    }
-  });
-  return str;
-}
 const selfKillMessages: string[] = [
   "$1 managed to kill themself.",
   "$1 died from an unknown cause.",
