@@ -11,7 +11,6 @@ import {
 import { kill } from "./beatsniper.js";
 import { MessageFragments } from "tubechat/lib/types/Client";
 import { ChatMessage } from "@twurple/chat";
-import { parseTwitchEmotes } from "./twitch";
 import { parseKickEmotes, removeKickEmotes } from "./kick";
 import { StatusReason } from "./pet";
 import { parseYTMessage } from "./youtube";
@@ -197,10 +196,9 @@ export class CommandHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           if (data.platform == Platform.twitch) {
-            data.message = parseTwitchEmotes(
+            data.message = this.bot.twitch.parseTwitchEmotes(
               "!modtext " + data.message,
               data.context.emoteOffsets,
-              this.bot.twitch.cheerEmotes,
             );
             data.message = data.message.replace("!modtext", "");
           } else if (data.platform == Platform.kick) {
@@ -640,11 +638,12 @@ export class CommandHandler {
                 text: msg,
                 sender: data.user,
                 color: data.userColor,
-                parsedText: parseTwitchEmotes(
-                  "!tts " + data.message,
-                  data.context.emoteOffsets,
-                  this.bot.twitch.cheerEmotes,
-                ).replace("!tts ", ""),
+                parsedText: this.bot.twitch
+                  .parseTwitchEmotes(
+                    "!tts " + data.message,
+                    data.context.emoteOffsets,
+                  )
+                  .replace("!tts ", ""),
               });
 
               break;

@@ -33,6 +33,7 @@ import {
 } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { CommandData } from "./commands";
+import { getBTTVEmotes } from "./bttv";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -53,44 +54,6 @@ export const userColors = [
   "#00ff7f",
 ];
 
-export function parseTwitchEmotes(
-  text: string,
-  emoteOffsets: Map<string, string[]>,
-  cheerEmotes: HelixCheermoteList,
-): string {
-  let parsed = "";
-  const parsedParts = parseChatMessage(
-    text,
-    emoteOffsets,
-    cheerEmotes?.getPossibleNames(),
-  );
-  parsedParts.forEach((parsedPart: ParsedMessagePart) => {
-    switch (parsedPart.type) {
-      case "text":
-        parsed += DOMPurify.sanitize(parsedPart.text);
-        break;
-      case "cheer":
-        const cheermote = cheerEmotes.getCheermoteDisplayInfo(
-          parsedPart.name,
-          parsedPart.amount,
-          { background: "dark", state: "animated", scale: "4" },
-        );
-        parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${parsedPart.amount} </span>`;
-        break;
-      case "emote":
-        const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
-          size: "3.0",
-          backgroundType: "dark",
-          animationSettings: "default",
-        });
-        parsed += ` <img src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
-        break;
-    }
-  });
-
-  return parsed;
-}
-
 export class Twitch {
   public clientId = "";
   public clientSecret = "";
@@ -103,6 +66,7 @@ export class Twitch {
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
   public isStreamOnline = false;
   public cheerEmotes: HelixCheermoteList;
+  public BTTVEmotes = new Map<string, string>();
   public badges = new Map<string, string>();
 
   private channelName: string;
@@ -146,11 +110,7 @@ export class Twitch {
     let replyTo = "";
     let replyId = "";
     let replyText = "";
-    let text = parseTwitchEmotes(
-      message.text,
-      message.emoteOffsets,
-      this.cheerEmotes,
-    );
+    let text = this.parseTwitchEmotes(message.text, message.emoteOffsets);
     let rewardName = "";
 
     text = await this.bot.parseClips(text);
@@ -313,6 +273,8 @@ export class Twitch {
     });
     this.cheerEmotes = await this.apiClient.bits.getCheermotes(this.channel.id);
 
+    this.BTTVEmotes = await getBTTVEmotes(this.channel.id);
+
     this.eventListener = new EventSubWsListener({
       apiClient: this.apiClient,
     });
@@ -321,7 +283,7 @@ export class Twitch {
       this.channel.id,
       async (event: EventSubStreamOnlineEvent) => {
         this.isStreamOnline = true;
-				this.bot.pet.init(true);
+        this.bot.pet.init(true);
         try {
           const stream = await event.getStream();
           const thumbnail = stream.getThumbnailUrl(1280, 720);
@@ -810,5 +772,46 @@ export class Twitch {
         );
       }
     });
+  }
+  public parseTwitchEmotes(
+    text: string,
+    emoteOffsets: Map<string, string[]>,
+  ): string {
+    let parsed = "";
+    const parsedParts = parseChatMessage(
+      text,
+      emoteOffsets,
+      this.cheerEmotes?.getPossibleNames(),
+    );
+    parsedParts.forEach((parsedPart: ParsedMessagePart) => {
+      switch (parsedPart.type) {
+        case "text":
+          const bttvemote = this.BTTVEmotes.get(text);
+          if (bttvemote != null) {
+            parsed += ` <img src="https://cdn.betterttv.net/emote/${bttvemote}/1x" class="emote"> `;
+            break;
+          }
+          parsed += DOMPurify.sanitize(parsedPart.text);
+          break;
+        case "cheer":
+          const cheermote = this.cheerEmotes.getCheermoteDisplayInfo(
+            parsedPart.name,
+            parsedPart.amount,
+            { background: "dark", state: "animated", scale: "4" },
+          );
+          parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${parsedPart.amount} </span>`;
+          break;
+        case "emote":
+          const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
+            size: "3.0",
+            backgroundType: "dark",
+            animationSettings: "default",
+          });
+          parsed += ` <img src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+          break;
+      }
+    });
+
+    return parsed;
   }
 }
