@@ -34,6 +34,7 @@ import {
 import DOMPurify from "isomorphic-dompurify";
 import { CommandData } from "./commands";
 import { getBTTVEmotes } from "./bttv";
+import { parse } from "path";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -786,12 +787,17 @@ export class Twitch {
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
-          const bttvemote = this.BTTVEmotes.get(text);
-          if (bttvemote != null) {
-            parsed += ` <img src="https://cdn.betterttv.net/emote/${bttvemote}/1x" class="emote"> `;
-            break;
-          }
-          parsed += DOMPurify.sanitize(parsedPart.text);
+          parsedPart.text
+            .trim()
+            .split(" ")
+            .forEach((text) => {
+              const bttvemote = this.BTTVEmotes.get(text);
+              if (bttvemote != null) {
+                parsed += ` <img src="https://cdn.betterttv.net/emote/${bttvemote}/1x" class="emote"> `;
+                return;
+              }
+              parsed += DOMPurify.sanitize(parsedPart.text);
+            });
           break;
         case "cheer":
           const cheermote = this.cheerEmotes.getCheermoteDisplayInfo(
