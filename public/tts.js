@@ -11,11 +11,11 @@ const emoteSoundEffects = {
   HapFlat: "squish.mp3",
   HabPoo: "habpoo.mp3",
 	Heheh: "hehe.mp3",
+  TeeHee: "hehe.mp3",
   aids: "aids.mp3",
   HNNNGH: "hnhg.mp3",
   Skrunk: "huh.mp3",
   Pixel: "pixel.mp3",
-  TeeHee: "hehe.mp3",
   Silly: "silly.mp3",
   realBoo: "realboo.mp3",
   Shy: "uwu.mp3",
@@ -23,8 +23,11 @@ const emoteSoundEffects = {
   Stunky: "stunky.mp3",
   BanBan: "borf.mp3",
 	EatsDrywall: "eat.mp3",
+	Drywall: "eat.mp3",
 	HeartSweet: "kiss.mp3",
+	Heart: "kiss.mp3",
 	Trol: "troll.mp3",
+	TrollNuked: "troll.mp3",
 };
 
 let queue = [];
