@@ -9,6 +9,14 @@ const emotes = [
   "sweetb35Heheh",
   "sweetb35HNNNGH he is a bit too full",
 ];
+const campfires = [
+  "",
+  "He is getting too cold. Please add fuel to the campfire using !pet fuel",
+  "Add fuel to the campfire using !pet fuel",
+  "",
+  "",
+  "He is getting a bit too warm",
+];
 const eggs = ["🥚", "🐣"];
 
 export enum Status {
@@ -191,7 +199,7 @@ export class Pet {
       case Status.egg:
       case Status.hatching:
         message += ` is ${eggs[this.status]} The campfire is at ${this.campfire}/5 🔥 `;
-        if (this.campfire > 4) message += "He is getting a bit too warm";
+        message += campfires[this.campfire];
         break;
       default:
         return;
@@ -315,7 +323,8 @@ export class Pet {
         () => {
           this.tick();
         },
-        15 * 60 * 1000,       );
+        15 * 60 * 1000,
+      );
     this.sayStatus(StatusReason.tick);
     this.writePet();
   }
@@ -374,7 +383,16 @@ export class Pet {
   public tick() {
     if (this.status <= Status.hatching) {
       this.campfire--;
-      if (this.campfire <= 0) {
+      if (this.campfire == 1) {
+        setTimeout(
+          () => {
+            this.bot.twitch.say(
+              `Hapboo #${this.name}: PLEEASSE IM COLD PLEAAASEEEE KEEP ME WARM PLEASEEEEEEEEEEEEEEE USING !pet fuel.`,
+            );
+          },
+          14 * 60 * 1000,
+        );
+      } else if (this.campfire <= 0) {
         this.bot.twitch.say(
           `The campfire got too cold. Habpoo #${this.name} is now dead`,
         );
@@ -384,6 +402,7 @@ export class Pet {
       }
       this.sayStatus(StatusReason.tick);
       this.writePet();
+
       return;
     }
     if (this.status === Status.alive && this.stomach === 0) {
@@ -393,12 +412,16 @@ export class Pet {
       return;
     }
     this.stomach--;
-		if(this.stomach == 0){
-			setTimeout(() => {
-				this.bot.twitch.say(`Hapboo #${this.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`)
-
-			}, 14 * 60 * 1000)
-		}
+    if (this.stomach == 0) {
+      setTimeout(
+        () => {
+          this.bot.twitch.say(
+            `Hapboo #${this.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`,
+          );
+        },
+        14 * 60 * 1000,
+      );
+    }
     this.sayStatus(StatusReason.tick);
   }
 }
