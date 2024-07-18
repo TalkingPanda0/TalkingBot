@@ -25,6 +25,10 @@ app.get("/poll", (req: Request, res: Response) => {
 app.get("/chat", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/chat.html");
 });
+app.get("/chatControl", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/html/chatcontrol.html");
+});
+
 app.get("/setup", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/setup.html");
 });
