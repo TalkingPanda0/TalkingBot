@@ -12,6 +12,7 @@ import {
   ParsedMessagePart,
   buildEmoteImageUrl,
   parseTwitchMessage,
+  ParsedMessageCheerPart,
 } from "@twurple/chat";
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
@@ -797,18 +798,15 @@ export class Twitch {
       emoteOffsets,
       this.cheerEmotes?.getPossibleNames(),
     );
+
+    const cheers: ParsedMessageCheerPart[] = [];
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
           parsed += this.replaceBTTVEmotes(parsedPart.text);
           break;
         case "cheer":
-          const cheermote = this.cheerEmotes.getCheermoteDisplayInfo(
-            parsedPart.name,
-            parsedPart.amount,
-            { background: "dark", state: "animated", scale: "4" },
-          );
-          parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${parsedPart.amount} </span>`;
+          cheers.push(parsedPart);
           break;
         case "emote":
           const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
@@ -820,6 +818,14 @@ export class Twitch {
           break;
       }
     });
+    if (this.cheerEmotes == null || cheers.length == 0) return parsed;
+    const totalBits = cheers.reduce((sum, cheer) => sum + cheer.amount, 0);
+    const cheermote = this.cheerEmotes.getCheermoteDisplayInfo(
+      cheers[0].name,
+      totalBits,
+      { background: "dark", state: "animated", scale: "4" },
+    );
+    parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${totalBits} </span>`;
 
     return parsed;
   }
