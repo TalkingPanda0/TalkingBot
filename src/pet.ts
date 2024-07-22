@@ -386,6 +386,7 @@ export class Pet {
       if (this.campfire == 1) {
         setTimeout(
           () => {
+						if(this.campfire != 1) return;
             this.bot.twitch.say(
               `Hapboo #${this.name}: PLEEASSE IM COLD PLEAAASEEEE KEEP ME WARM PLEASEEEEEEEEEEEEEEE USING !pet fuel.`,
             );
@@ -415,6 +416,7 @@ export class Pet {
     if (this.stomach == 0) {
       setTimeout(
         () => {
+					if(this.stomach != 0) return;
           this.bot.twitch.say(
             `Hapboo #${this.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`,
           );
