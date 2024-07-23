@@ -1,5 +1,0 @@
-import { pick } from "./pick.mjs";
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function omit(obj, keys) {
-    return pick(obj, Object.keys(obj).filter(function (key) { return !keys.includes(key); }));
-}
