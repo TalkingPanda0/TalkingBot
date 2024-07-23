@@ -1,12 +1,17 @@
-import { TubeChat } from "tubechat";
 import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
-import { MessageFragments } from "tubechat/lib/types/Client";
 import { CommandData } from "./commands";
-export function parseYTMessage(message: MessageFragments[]): string {
+import { OAuth2Client } from "google-auth-library";
+import { google, youtube_v3 } from "googleapis";
+import { youtube } from "googleapis/build/src/apis/youtube";
+
+const SCOPES = ["https://www.googleapis.com/auth/youtube.force-ssl"];
+const channelId = "UCpvMRWN1QWeFaR-W_B96GnA";
+
+export function parseYTMessage(message: any): string {
   let text = "";
   for (let i = 0; i < message.length; i++) {
-    const fragment: MessageFragments = message.at(i);
+    const fragment: any = message.at(i);
     if (fragment.text !== undefined) {
       text += fragment.text;
     } else if (fragment.emoji !== undefined) {
@@ -20,8 +25,10 @@ export class YouTube {
   public isConnected: boolean = false;
 
   private bot: TalkingBot;
-  private chat: TubeChat;
   private channelName: string;
+  private youtubeClient: youtube_v3.Youtube;
+  private oAuth2Client: OAuth2Client;
+  private tokenFile = Bun.file(__dirname + "/../config/yt.json");
   private getColor(username: string): string {
     let hash = 0,
       i: number,
@@ -33,112 +40,69 @@ export class YouTube {
     }
     return userColors[Math.abs(hash % userColors.length)];
   }
-  public cleanUp() {
-    this.chat.disconnect(this.channelName);
-  }
+  public cleanUp() {}
 
   public async initBot() {
-    this.chat.connect(this.channelName);
+    const credentials = await this.tokenFile.json();
+    this.oAuth2Client = new google.auth.OAuth2(
+      credentials.clientId,
+      credentials.clientSecret,
+      "http://localhost",
+    );
+    google.options({ auth: this.oAuth2Client });
+    if (credentials.token == null) {
+      const authUrl = this.oAuth2Client.generateAuthUrl({
+        access_type: "offline",
+        scope: SCOPES,
+      });
 
-    this.chat.on("disconnect", () => {
-      this.bot.iochat.emit("chatDisconnect", "YouTube");
-      this.isConnected = false;
-      console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
+      console.log("Authorize this app by visiting this url:", authUrl);
+
+      process.stdout.write("Enter the code from that page here: ");
+      for await (const code of console) {
+        this.oAuth2Client.getToken(code, (err, token) => {
+          if (err) return console.error("Error retrieving access token", err);
+          console.log(token);
+          this.oAuth2Client.setCredentials(token);
+          credentials.code = token;
+        });
+        if (credentials.code != null) break;
+      }
+      Bun.write(this.tokenFile, JSON.stringify(credentials));
+    }
+
+    this.oAuth2Client.setCredentials(credentials.token);
+    this.youtubeClient = google.youtube({ version: "v3" });
+    const liveId = (
+      await this.youtubeClient.search.list({
+        auth: this.oAuth2Client,
+        channelId: channelId,
+        part: ["snippet"],
+        eventType: "live",
+        type: ["video"],
+      })
+    ).data.items[0].id.videoId;
+    console.log(liveId);
+    const chatId = (
+      await this.youtubeClient.videos.list({
+        auth: this.oAuth2Client,
+        id: [liveId],
+        part: ["liveStreamingDetails"],
+      })
+    ).data.items[0].liveStreamingDetails.activeLiveChatId;
+    console.log(chatId);
+    const messages = await this.youtubeClient.liveChatMessages.list({
+      auth: this.oAuth2Client,
+      liveChatId: chatId,
+      part: ["snippet", "authorDetails"],
     });
-
-    this.chat.on("chat_connected", (channel, videoId) => {
-      this.bot.iochat.emit("chatConnect", "YouTube");
-      this.isConnected = true;
-      console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
-    });
-
-    this.chat.on(
-      "message",
-      async ({
-        badges,
-        channel,
-        channelId,
-        color,
-        id,
-        isMembership,
-        isModerator,
-        isNewMember,
-        isOwner,
-        isVerified,
-        message,
-        name,
-        thumbnail,
-        timestamp,
-      }) => {
-        try {
-          let text = message
-            .map((messageFragment) => {
-              return messageFragment.text;
-            })
-            .join("");
-          const isMod = isModerator || isOwner;
-          //if (text == null) return;
-          if (name === "BotRix") return;
-          console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
-
-          if (text === undefined || !text.startsWith("!")) {
-            // not a command!
-            color = this.getColor(name);
-            this.bot.iochat.emit("message", {
-              badges: ["https://www.youtube.com/favicon.ico"],
-              text: parseYTMessage(message),
-              sender: name,
-              senderId: "youtube",
-              color: color,
-              id: "youtube-" + id,
-              platform: "youtube",
-              isFirst: false,
-              replyTo: "",
-              replyId: "",
-            });
-            return;
-          }
-          const commandName = text.split(" ")[0];
-          const data: CommandData = {
-            user: name,
-            userColor: this.getColor(name),
-            isUserMod: isMod,
-            message: text.replace(commandName, "").trim(),
-            platform: Platform.youtube,
-            context: message,
-            reply: (message: string, replyToUser: boolean) => {},
-          };
-          const showOnChat = await this.bot.commandHandler.handleCommand(
-            commandName,
-            data,
-          );
-          if (showOnChat) {
-            color = this.getColor(name);
-            this.bot.iochat.emit("message", {
-              badges: ["https://www.youtube.com/favicon.ico"],
-              text: parseYTMessage(message),
-              sender: name,
-              senderId: "youtube",
-              color: color,
-              id: "youtube-" + id,
-              platform: "youtube",
-              isFirst: false,
-              replyTo: "",
-              replyId: "",
-            });
-          }
-
-          return;
-        } catch (e) {
-          console.log(e);
-        }
-      },
+    console.log(
+      `${messages.data.items[0].authorDetails.displayName}: ${messages.data.items[0].snippet.displayMessage}`,
     );
   }
+
   constructor(channelName: string, bot: TalkingBot) {
     this.channelName = channelName;
     this.bot = bot;
-
-    this.chat = new TubeChat();
   }
 }
