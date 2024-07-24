@@ -3,6 +3,7 @@ import { TalkingBot, Platform } from "./talkingbot";
 import { userColors } from "./twitch";
 import { MessageFragments } from "tubechat/lib/types/Client";
 import { CommandData } from "./commands";
+import { YouTubeAPI } from "./youtubeapi";
 export function parseYTMessage(message: MessageFragments[]): string {
   let text = "";
   for (let i = 0; i < message.length; i++) {
@@ -18,8 +19,10 @@ export function parseYTMessage(message: MessageFragments[]): string {
 
 export class YouTube {
   public isConnected: boolean = false;
+  public api: YouTubeAPI;
 
   private bot: TalkingBot;
+  private videoId: string;
   private chat: TubeChat;
   private channelName: string;
   private getColor(username: string): string {
@@ -38,38 +41,27 @@ export class YouTube {
   }
 
   public async initBot() {
+    this.api.setupAPI();
     this.chat.connect(this.channelName);
 
     this.chat.on("disconnect", () => {
       this.bot.iochat.emit("chatDisconnect", "YouTube");
       this.isConnected = false;
+      this.videoId = null;
       console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
     });
 
     this.chat.on("chat_connected", (channel, videoId) => {
       this.bot.iochat.emit("chatConnect", "YouTube");
       this.isConnected = true;
+      this.videoId = videoId;
+      this.api.getChatId(videoId);
       console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
     });
 
     this.chat.on(
       "message",
-      async ({
-        badges,
-        channel,
-        channelId,
-        color,
-        id,
-        isMembership,
-        isModerator,
-        isNewMember,
-        isOwner,
-        isVerified,
-        message,
-        name,
-        thumbnail,
-        timestamp,
-      }) => {
+      async ({ color, id, isModerator, isOwner, message, name }) => {
         try {
           let text = message
             .map((messageFragment) => {
@@ -81,11 +73,16 @@ export class YouTube {
           if (name === "BotRix") return;
           console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
 
+          const badges = ["https://www.youtube.com/favicon.ico"];
+          if (isModerator) {
+            badges.push("/ytmod.svg");
+          }
+
           if (text === undefined || !text.startsWith("!")) {
             // not a command!
             color = this.getColor(name);
             this.bot.iochat.emit("message", {
-              badges: ["https://www.youtube.com/favicon.ico"],
+              badges: badges,
               text: parseYTMessage(message),
               sender: name,
               senderId: "youtube",
@@ -106,7 +103,9 @@ export class YouTube {
             message: text.replace(commandName, "").trim(),
             platform: Platform.youtube,
             context: message,
-            reply: (message: string, replyToUser: boolean) => {},
+            reply: (message: string, replyToUser: boolean) => {
+              this.api.sendMessage(message);
+            },
           };
           const showOnChat = await this.bot.commandHandler.handleCommand(
             commandName,
@@ -140,5 +139,6 @@ export class YouTube {
     this.bot = bot;
 
     this.chat = new TubeChat();
+    this.api = new YouTubeAPI();
   }
 }

@@ -9,12 +9,13 @@ import {
 } from "./util";
 
 import { kill } from "./beatsniper.js";
-import { MessageFragments } from "tubechat/lib/types/Client";
 import { ChatMessage } from "@twurple/chat";
 import { parseKickEmotes, removeKickEmotes } from "./kick";
 import { StatusReason } from "./pet";
 import { parseYTMessage } from "./youtube";
 import { HelixGame } from "@twurple/api";
+import { youtube_v3 } from "googleapis";
+import { MessageFragments } from "tubechat/lib/types/Client";
 export interface TwitchCommandData {
   platform: Platform.twitch;
   user: string;
@@ -519,6 +520,8 @@ export class CommandHandler {
             this.bot.twitch.channel.id,
             { title: data.message },
           );
+          await this.bot.youTube.setTitle(data.message);
+
           // TODO change title in kick
 
           data.reply(`Title has been changed to "${data.message}"`, true);

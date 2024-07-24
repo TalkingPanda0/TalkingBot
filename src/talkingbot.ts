@@ -131,6 +131,9 @@ export class TalkingBot {
 
     this.kickId = kickId;
 
+    this.commandHandler = new CommandHandler(this);
+    this.commandHandler.readCustomCommands();
+
     this.pet = new Pet(this);
     this.wheel = new Wheel(this.server);
     this.database = new DB();
@@ -138,21 +141,18 @@ export class TalkingBot {
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord(this);
-    this.commandHandler = new CommandHandler(this);
-    this.commandHandler.readCustomCommands();
   }
 
-  public initBot() {
-    this.database.init();
-    this.discord.initBot();
+  public async initBot() {
+    //this.database.init();
+    //this.discord.initBot();
+    await this.twitch.initBot();
+    //this.kick.initBot();
     this.youTube.initBot();
-    this.twitch.initBot();
-    this.kick.initBot();
   }
 
   public async cleanUp() {
-    await this.twitch.cleanUp();
-    this.youTube.cleanUp();
+    //await this.twitch.cleanUp();
     this.kick.cleanUp();
     this.discord.cleanUp();
     this.database.cleanUp();
