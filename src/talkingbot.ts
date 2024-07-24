@@ -144,15 +144,15 @@ export class TalkingBot {
   }
 
   public async initBot() {
-    //this.database.init();
-    //this.discord.initBot();
+    this.database.init();
+    this.discord.initBot();
     await this.twitch.initBot();
-    //this.kick.initBot();
+    this.kick.initBot();
     this.youTube.initBot();
   }
 
   public async cleanUp() {
-    //await this.twitch.cleanUp();
+    await this.twitch.cleanUp();
     this.kick.cleanUp();
     this.discord.cleanUp();
     this.database.cleanUp();
