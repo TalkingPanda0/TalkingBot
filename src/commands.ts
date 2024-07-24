@@ -15,6 +15,7 @@ import { StatusReason } from "./pet";
 import { parseYTMessage } from "./youtube";
 import { HelixGame } from "@twurple/api";
 import { youtube_v3 } from "googleapis";
+import { MessageFragments } from "tubechat/lib/types/Client";
 export interface TwitchCommandData {
   platform: Platform.twitch;
   user: string;
@@ -31,7 +32,7 @@ export interface YoutubeCommandData {
   message: string;
   platform: Platform.youtube;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  context: youtube_v3.Schema$LiveChatMessage;
+  context: MessageFragments[];
 }
 export interface KickComamndData {
   user: string;

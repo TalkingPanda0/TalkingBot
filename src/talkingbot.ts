@@ -139,20 +139,20 @@ export class TalkingBot {
     this.database = new DB();
     this.twitch = new Twitch(this);
     this.kick = new Kick(this.kickId, this);
-    this.youTube = new YouTube(this);
+    this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord(this);
   }
 
   public async initBot() {
-    this.database.init();
-    this.discord.initBot();
+    //this.database.init();
+    //this.discord.initBot();
     await this.twitch.initBot();
-    this.kick.initBot();
+    //this.kick.initBot();
     this.youTube.initBot();
   }
 
   public async cleanUp() {
-    await this.twitch.cleanUp();
+    //await this.twitch.cleanUp();
     this.kick.cleanUp();
     this.discord.cleanUp();
     this.database.cleanUp();
