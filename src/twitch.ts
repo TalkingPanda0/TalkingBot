@@ -315,7 +315,7 @@ export class Twitch {
     this.eventListener.onStreamOffline(this.channel.id, async (event) => {
       this.isStreamOnline = false;
       this.bot.pet.sleep();
-			this.bot.youTube.onStreamEnd();
+      this.bot.youTube.onStreamEnd();
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {
@@ -803,7 +803,7 @@ export class Twitch {
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
-          parsed += this.replaceBTTVEmotes( DOMPurify.sanitize(parsedPart.text));
+          parsed += this.replaceBTTVEmotes(DOMPurify.sanitize(parsedPart.text));
           break;
         case "cheer":
           cheers.push(parsedPart);

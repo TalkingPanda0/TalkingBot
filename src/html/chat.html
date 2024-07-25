@@ -1,19 +1,37 @@
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Emoji:wght@300..700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
   <body id="body">
     <div id="message-list"></div>
-		<div id="disconnect-list" style="position: fixed;top: 10px;right: 10px;filter: grayscale(1);display: flex;"></div>
+    <div
+      id="disconnect-list"
+      style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        filter: grayscale(1);
+        display: flex;
+      "
+    ></div>
     <div id="a"></div>
   </body>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
-		const mentionRegex = /@(\w+)/g
-		const platformIcons = {
-			"Bot": "https://talkingpanda.dev/bot.png",
-			"Twitch": "https://twitch.tv/favicon.ico",
-			"Kick": "https://kick.com/favicon.ico",
-			"YouTube":	"https://www.youtube.com/favicon.ico"
-		};
+    const mentionRegex = /@(\w+)/g;
+    const platformIcons = {
+      Bot: "https://talkingpanda.dev/bot.png",
+      Twitch: "https://twitch.tv/favicon.ico",
+      Kick: "https://kick.com/favicon.ico",
+      YouTube: "https://www.youtube.com/favicon.ico",
+    };
 
     const messageList = document.getElementById("message-list");
     const disconnectList = document.getElementById("disconnect-list");
@@ -50,7 +68,7 @@
 
         const replyElement = document.createElement("span");
         replyElement.classList.add("reply");
-				replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}:</span> ${message.replyText}`;
+        replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}:</span> ${message.replyText}`;
         messageElement.appendChild(replyElement);
         messageElement.appendChild(document.createElement("br"));
       }
@@ -60,12 +78,12 @@
         rewardElement.innerHTML = `Redeemed ${message.rewardName}`;
         messageElement.appendChild(rewardElement);
         messageElement.appendChild(document.createElement("br"));
-        if(message.rewardName === "Highlight My Message")
+        if (message.rewardName === "Highlight My Message")
           messageElement.style.background = "#755ebc";
       }
-			if(message.isOld)	{
-				messageElement.style.opacity = "75%";
-			}
+      if (message.isOld) {
+        messageElement.style.opacity = "75%";
+      }
 
       const badgesElement = document.createElement("span");
       badgesElement.classList.add("badges");
@@ -79,30 +97,51 @@
       const textElement = document.createElement("span");
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
-			let text = message.text.trim();
-			text = text.replaceAll(mentionRegex,(mention,user) => {
-			do {
-					const elements = document.querySelectorAll('.sender');
-					if(elements == null){
-						break;
-					} 
+      let text = message.text.trim();
+      text = text.replaceAll(mentionRegex, (mention, user) => {
+        do {
+          const elements = document.querySelectorAll(".sender");
+          if (elements == null) {
+            break;
+          }
 
-					const targetElement = Array.from(elements).find(element => element.innerText.startsWith(`${user}`));
-					if(targetElement == null) {
-						break;
-					}
-					const color = targetElement.style.color;
-					return `<span style="color:${color}">${mention}</span>`
-					
-				} while(false);
-				return mention;
-			});
-			const faceChars = [")","(","3","}","{","@","[","]","D","O","/","\\","$","X","&","E","P","p","b"];
-			const firstChar = text.charAt(0);
-			if( firstChar != null && faceChars.includes(firstChar))
-				textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
-			else 
-				textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
+          const targetElement = Array.from(elements).find((element) =>
+            element.innerText.startsWith(`${user}`),
+          );
+          if (targetElement == null) {
+            break;
+          }
+          const color = targetElement.style.color;
+          return `<span style="color:${color}">${mention}</span>`;
+        } while (false);
+        return mention;
+      });
+      const faceChars = [
+        ")",
+        "(",
+        "3",
+        "}",
+        "{",
+        "@",
+        "[",
+        "]",
+        "D",
+        "O",
+        "/",
+        "\\",
+        "$",
+        "X",
+        "&",
+        "E",
+        "P",
+        "p",
+        "b",
+      ];
+      const firstChar = text.charAt(0);
+      if (firstChar != null && faceChars.includes(firstChar))
+        textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
+      else
+        textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
 
       spanElement.appendChild(badgesElement);
       spanElement.appendChild(textElement);
@@ -114,38 +153,38 @@
         inline: "nearest",
       });
     }
-		function addToDisconnectList(id){
-			if( document.getElementById(id) != null) return;
+    function addToDisconnectList(id) {
+      if (document.getElementById(id) != null) return;
 
-			const disconnectElement = document.createElement("img");
-			disconnectElement.src = platformIcons[id];
-			disconnectElement.classList.add("badge");
-			disconnectElement.id = id;
-			disconnectList.appendChild(disconnectElement);
-		}
+      const disconnectElement = document.createElement("img");
+      disconnectElement.src = platformIcons[id];
+      disconnectElement.classList.add("badge");
+      disconnectElement.id = id;
+      disconnectList.appendChild(disconnectElement);
+    }
 
-		function removeFromDisconnectList(id){
-			const elementToRemove = document.getElementById(id);
-			if(elementToRemove != null)	elementToRemove.remove();
-		}
+    function removeFromDisconnectList(id) {
+      const elementToRemove = document.getElementById(id);
+      if (elementToRemove != null) elementToRemove.remove();
+    }
 
-		function emptyDisconnectList(){
-			disconnectList.innerHTML = "";
-		}
+    function emptyDisconnectList() {
+      disconnectList.innerHTML = "";
+    }
 
     var socket = io("/", { path: "/chat/" });
 
     socket.on("connect", () => {
-			console.log("Connected");
-			emptyDisconnectList();
-			removeFromDisconnectList("Bot");
-		});
+      console.log("Connected");
+      emptyDisconnectList();
+      removeFromDisconnectList("Bot");
+    });
 
     socket.on("disconnect", () => {
-			console.log("Disconnected");
-			emptyDisconnectList();
-			addToDisconnectList("Bot");
-		});
+      console.log("Disconnected");
+      emptyDisconnectList();
+      addToDisconnectList("Bot");
+    });
 
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
@@ -166,7 +205,7 @@
     });
 
     socket.on("clearChat", (platform) => {
-			console.log(`Clear chat for ${platform}`)
+      console.log(`Clear chat for ${platform}`);
       Array.from(document.getElementsByClassName(platform)).forEach(
         (message) => {
           message.remove();
@@ -174,133 +213,132 @@
       );
     });
     socket.on("banUser", (user) => {
-			console.log(`banuser: ${user}`);
+      console.log(`banuser: ${user}`);
       Array.from(document.getElementsByClassName(user)).forEach((message) => {
         message.remove();
       });
     });
     socket.on("chatDisconnect", (chat) => {
-			console.log(`Chat disconnect: ${chat}`);
-			addToDisconnectList(chat);
-    })
+      console.log(`Chat disconnect: ${chat}`);
+      addToDisconnectList(chat);
+    });
     socket.on("chatConnect", (chat) => {
-			console.log(`Chat connect: ${chat}`);
-			removeFromDisconnectList(chat);
+      console.log(`Chat connect: ${chat}`);
+      removeFromDisconnectList(chat);
     });
 
-		socket.on("redeem",(redeem) => {
-			console.log(`Got redeem ${redeem}`);
+    socket.on("redeem", (redeem) => {
+      console.log(`Got redeem ${redeem}`);
       if (document.getElementById(redeem.id)) return;
-			const rewardElement = document.createElement("span");
-			rewardElement.id = redeem.id;
+      const rewardElement = document.createElement("span");
+      rewardElement.id = redeem.id;
       rewardElement.classList.add("redeem");
       rewardElement.classList.add("message");
-			rewardElement.innerHTML = `@${redeem.user} Redeemed ${redeem.title}`;
-			messageList.appendChild(rewardElement);
-			messageList.scrollIntoView({
+      rewardElement.innerHTML = `@${redeem.user} Redeemed ${redeem.title}`;
+      messageList.appendChild(rewardElement);
+      messageList.scrollIntoView({
         behavior: "smooth",
         block: "end",
         inline: "nearest",
       });
     });
-
   </script>
   <style>
-    #message-list {
-      background-color: rgba(0, 0, 0, 0.5);
-      display: table;
-      bottom: 0;
-      left: 0;
-      table-layout: fixed;
-      overflow-y: scroll;
-      width: 100%;
-    }
+      #message-list {
+        background-color: rgba(0, 0, 0, 0.5);
+        display: table;
+        bottom: 0;
+        left: 0;
+        table-layout: fixed;
+        overflow-y: scroll;
+        width: 100%;
+      }
 
-    body::-webkit-scrollbar {
-      width: 0;
-      /* WebKit (Safari, Chrome) */
-    }
-    .message {
-      padding-left: 4px;
-      border-radius: 2px;
-      margin: 2px;
-      padding-bottom: 7px;
-      padding-top: 7px;
-      overflow-wrap: break-word;
-    }
+      body::-webkit-scrollbar {
+        width: 0;
+        /* WebKit (Safari, Chrome) */
+      }
+      .message {
+        padding-left: 4px;
+        border-radius: 2px;
+        margin: 2px;
+        padding-bottom: 7px;
+        padding-top: 7px;
+        overflow-wrap: break-word;
+      }
 
-    .text {
-      color: white;
-    }
-    .sender {
-      vertical-align: middle;
-    }
-    .badge {
-      display: inline-table;
-      vertical-align: middle;
-      height: 25px;
-      width: 25px;
+      .text {
+        color: white;
+      }
+      .sender {
+        vertical-align: middle;
+      }
+      .badge {
+        display: inline-table;
+        vertical-align: middle;
+        height: 25px;
+        width: 25px;
 
-      margin: 2px;
-      filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
-        drop-shadow(0 0 0 #000);
+        margin: 2px;
+        filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+          drop-shadow(0 0 0 #000);
+      }
+      .badges {
+        display: inline-table;
+        padding: 2px;
+        margin-right: 4px;
+      }
+      * {
+        color: #fff;
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 25px;
+        font-weight: 700;
+        line-height: 1em;
+      }
+      .emote {
+        height: 28px;
+        min-width: 28px;
+        vertical-align: middle;
+        padding-left: 5px;
+        padding-right: 5px;
+      }
+      .reply {
+        color: #a5a5a5;
+        font-size: 15px;
+        margin-left: 4px;
+        margin-bottom: 5px;
+        display: inline-table;
+    	white-space: nowrap;
+      }
+    .replyText {
+    	color: #a5a5a5;
+        font-size: 15px;
+        margin-left: 4px;
+        margin-bottom: 5px;
+        display: inline-table;
+    	height: 15px;
+    	overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
-    .badges {
-      display: inline-table;
-      padding: 2px;
-      margin-right: 4px;
     }
-    * {
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 25px;
-      font-weight: 700;
-      line-height: 1em;
-    }
-    .emote {
-      height: 28px;
-      min-width: 28px;
-      vertical-align: middle;
-      padding-left: 5px;
-      padding-right: 5px;
-    }
-    .reply {
-      color: #a5a5a5;
-      font-size: 15px;
-      margin-left: 4px;
-      margin-bottom: 5px;
-      display: inline-table;
-			white-space: nowrap;
-    }
-		.replyText {
-			color: #a5a5a5;
-      font-size: 15px;
-      margin-left: 4px;
-      margin-bottom: 5px;
-      display: inline-table;
-			height: 15px;
-			overflow: hidden;
-		  white-space: nowrap; 
-		  text-overflow: ellipsis;
-		} 
-		}
-		.redeem {
-      color: #a5a5a5;
-      font-size: 20px;
-      margin-left: 4px;
-      margin-bottom: 5px;
-      display: inline-table;
-    }
-    body {
-      margin: 0px;
-      background-color: #2b2e38;
-    }
-		.redeem {
-      color: #a5a5a5;
-      font-size: 20px;
-      margin-left: 4px;
-      margin-bottom: 5px;
-      display: inline-table;
-    }
+    .redeem {
+        color: #a5a5a5;
+        font-size: 20px;
+        margin-left: 4px;
+        margin-bottom: 5px;
+        display: inline-table;
+      }
+      body {
+        margin: 0px;
+        background-color: #2b2e38;
+      }
+    .redeem {
+        color: #a5a5a5;
+        font-size: 20px;
+        margin-left: 4px;
+        margin-bottom: 5px;
+        display: inline-table;
+      }
   </style>
 </html>
