@@ -204,6 +204,8 @@ export class CommandHandler {
             data.message = data.message.replace("!modtext", "");
           } else if (data.platform == Platform.kick) {
             data.message = parseKickEmotes(data.message);
+          } else {
+            data.message = parseYTMessage(data.context.message.slice(1));
           }
           this.bot.modtext = data.message;
           this.bot.iomodtext.emit(
@@ -695,7 +697,7 @@ export class CommandHandler {
                 text: data.message,
                 sender: data.user,
                 color: data.userColor,
-                parsedText: parseYTMessage(data.context),
+                parsedText: parseYTMessage(data.context.message.slice(1)),
               });
               break;
           }
