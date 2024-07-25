@@ -47,7 +47,7 @@ Mods can always use `!tts` and disable or enable it for non-mods using `!modtts 
 `[title]` can have `fetch(url)` and `suffix(n)` see [Response syntax](#Response-syntax).
 ## Permtitle
 `!permtitle [title]` will change the title to `[title]`. 
-after the stream is over the youtbe title will be set to `[title] (game)`.
+after the stream is over the YouTube title will be set to `[title] (game)`.
 # Counter
 `!counter` will show the current counter.
 `!conter n` will set the counter to n.
