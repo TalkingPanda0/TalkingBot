@@ -29,7 +29,7 @@ Mods can always use `!tts` and disable or enable it for non-mods using `!modtts 
 # Wheeeel
 - `!wheel add [rewardname] [rewardweight] [rewardcolor]` adds a reward to the wheel with name `[rewardname]`, weight `[rewardweight]`, and color `[rewardcolor]`.
   `[rewardcolor]` is an [html color name](https://www.w3schools.com/colors/colors_names.asp) like `red` or an hex color like `#048ac7`.
-  `[rewardcolor]` is optional if not provided the reward will have a random color.
+  `[rewardcolor]` is optional if not provided the reward will be pink. 
 - `!wheel remove [rewardname]` will remove reward `[rewardname]`.
 - `!wheel spin` will spin the wheel.
 - `!wheel weights` will show the current rewards and their weights.
@@ -42,9 +42,12 @@ Mods can always use `!tts` and disable or enable it for non-mods using `!modtts 
 `!tags remove [tags]` will remove the `[tags]` from the stream tags.
 # Title 
 `!settitle [title]` will set the stream title to `[title]`.
-# Dyntitle
+## Dyntitle 
 `!dyntitle [title]` will update the stream title with `[title]` every minute.
 `[title]` can have `fetch(url)` and `suffix(n)` see [Response syntax](#Response-syntax).
+## Permtitle
+`!permtitle [title]` will change the title to `[title]`. 
+after the stream is over the youtbe title will be set to `[title] (game)`.
 # Counter
 `!counter` will show the current counter.
 `!conter n` will set the counter to n.

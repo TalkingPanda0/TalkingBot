@@ -538,27 +538,23 @@ export class CommandHandler {
         showOnChat: false,
         commandFunction: async (data) => {
           if (!data.isUserMod || data.message.length == 0) return;
+
           await this.bot.twitch.apiClient.channels.updateChannelInfo(
             this.bot.twitch.channel.id,
             { title: data.message },
           );
-          let ytTitle = data.message;
-          const twitchInfo =
+          this.bot.broadcastMessage(
+            `Title has been changed to "${data.message}"`,
+          );
+          await this.bot.youTube.api.setTitle(data.message);
+          const streamInfo =
             await this.bot.twitch.apiClient.streams.getStreamByUserId(
               this.bot.twitch.channel.id,
             );
-          if (twitchInfo != null) {
-            ytTitle += ` (${twitchInfo.gameName})`;
-          }
-          await this.bot.youTube.api.setTitle(ytTitle);
-          this.bot.youTube.permTitle = ytTitle;
+          if (streamInfo != null)
+            this.bot.youTube.permTitle = `${data.message} (${streamInfo.gameName})`;
 
           // TODO change title in kick
-
-          this.bot.twitch.say(`Title has been changed to "${data.message}"`);
-          this.bot.youTube.api.sendMessage(
-            `Title has been changed to "${ytTitle}"`,
-          );
         },
       },
     ],
@@ -820,13 +816,6 @@ export class CommandHandler {
       },
     ],
     [
-      "!permtitle",
-      {
-        showOnChat: false,
-        commandFunction: () => {},
-      },
-    ],
-    [
       "!pet",
       {
         showOnChat: false,
@@ -1039,6 +1028,7 @@ export class CommandHandler {
           title: title,
         },
       );
+      this.bot.youTube.api.setTitle(title);
       this.lastDynamicTitle = title;
     }
   }
