@@ -224,4 +224,9 @@ export class TalkingBot {
     }
     return text;
   }
+
+  public broadcastMessage(message: string) {
+    this.twitch.say(message);
+    this.youTube.api.sendMessage(message);
+  }
 }

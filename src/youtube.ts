@@ -20,6 +20,7 @@ export function parseYTMessage(message: MessageFragments[]): string {
 export class YouTube {
   public isConnected: boolean = false;
   public api: YouTubeAPI;
+  public permTitle: string;
 
   private bot: TalkingBot;
   private videoId: string;
@@ -36,8 +37,13 @@ export class YouTube {
     }
     return userColors[Math.abs(hash % userColors.length)];
   }
+
   public cleanUp() {
     this.chat.disconnect(this.channelName);
+  }
+
+  public onStreamEnd() {
+    if (this.permTitle) this.api.setTitle(this.permTitle);
   }
 
   public async initBot() {
@@ -59,80 +65,77 @@ export class YouTube {
       console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
     });
 
-    this.chat.on(
-      "message",
-      async ({ color, id, isModerator, isOwner, message, name }) => {
-        try {
-          let text = message
-            .map((messageFragment) => {
-              return messageFragment.text;
-            })
-            .join("");
-          const isMod = isModerator || isOwner;
-          //if (text == null) return;
-          if (name === "BotRix") return;
-          console.log("\x1b[31m%s\x1b[0m", `YouTube - ${name}: ${text}`);
+    this.chat.on("message", async (event) => {
+      try {
+        let text = event.message
+          .map((messageFragment) => {
+            return messageFragment.text;
+          })
+          .join("");
+        const isMod = event.isModerator || event.isOwner;
+        //if (text == null) return;
+        if (event.name === "BotRix" || event.name == "Talking Bot") return;
+        console.log("\x1b[31m%s\x1b[0m", `YouTube - ${event.name}: ${text}`);
 
-          const badges = ["https://www.youtube.com/favicon.ico"];
-          if (isModerator) {
-            badges.push("/ytmod.svg");
-          }
-
-          if (text === undefined || !text.startsWith("!")) {
-            // not a command!
-            color = this.getColor(name);
-            this.bot.iochat.emit("message", {
-              badges: badges,
-              text: parseYTMessage(message),
-              sender: name,
-              senderId: "youtube",
-              color: color,
-              id: "youtube-" + id,
-              platform: "youtube",
-              isFirst: false,
-              replyTo: "",
-              replyId: "",
-            });
-            return;
-          }
-          const commandName = text.split(" ")[0];
-          const data: CommandData = {
-            user: name,
-            userColor: this.getColor(name),
-            isUserMod: isMod,
-            message: text.replace(commandName, "").trim(),
-            platform: Platform.youtube,
-            context: message,
-            reply: (message: string, replyToUser: boolean) => {
-              this.api.sendMessage(message);
-            },
-          };
-          const showOnChat = await this.bot.commandHandler.handleCommand(
-            commandName,
-            data,
-          );
-          if (showOnChat) {
-            color = this.getColor(name);
-            this.bot.iochat.emit("message", {
-              badges: ["https://www.youtube.com/favicon.ico"],
-              text: parseYTMessage(message),
-              sender: name,
-              senderId: "youtube",
-              color: color,
-              id: "youtube-" + id,
-              platform: "youtube",
-              isFirst: false,
-              replyTo: "",
-              replyId: "",
-            });
-          }
-
-          return;
-        } catch (e) {
-          console.log(e);
+        const badges = ["https://www.youtube.com/favicon.ico"];
+        if (event.isModerator) {
+          badges.push("/ytmod.svg");
         }
-      },
-    );
+
+        if (text === undefined || !text.startsWith("!")) {
+          // not a command!
+          const color = this.getColor(event.name);
+          this.bot.iochat.emit("message", {
+            badges: badges,
+            text: parseYTMessage(event.message),
+            sender: event.name,
+            senderId: "youtube-" + event.channelId,
+            color: color,
+            id: "youtube-" + event.id,
+            platform: "youtube",
+            isFirst: false,
+            replyTo: "",
+            replyId: "",
+          });
+          return;
+        }
+        const commandName = text.split(" ")[0];
+        const data: CommandData = {
+          user: event.name,
+          userColor: this.getColor(event.name),
+          isUserMod: isMod,
+          message: text.replace(commandName, "").trim(),
+          platform: Platform.youtube,
+          context: event,
+          reply: (message: string, replyToUser: boolean) => {
+            this.api.sendMessage(message);
+          },
+        };
+        const showOnChat = await this.bot.commandHandler.handleCommand(
+          commandName,
+          data,
+        );
+        if (showOnChat) {
+          const color = this.getColor(event.name);
+          this.bot.iochat.emit("message", {
+            badges: ["https://www.youtube.com/favicon.ico"],
+            text: parseYTMessage(event.message),
+            sender: event.name,
+            senderId: "youtube",
+            color: color,
+            id: "youtube-" + event.id,
+            platform: "youtube",
+            isFirst: false,
+            replyTo: "",
+            replyId: "",
+          });
+        }
+
+        return;
+      } catch (e) {
+        console.log(e);
+      }
+    });
   }
   constructor(channelName: string, bot: TalkingBot) {
     this.channelName = channelName;

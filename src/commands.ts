@@ -15,7 +15,7 @@ import { StatusReason } from "./pet";
 import { parseYTMessage } from "./youtube";
 import { HelixGame } from "@twurple/api";
 import { youtube_v3 } from "googleapis";
-import { MessageFragments } from "tubechat/lib/types/Client";
+import { IChatYTMessage, MessageFragments } from "tubechat/lib/types/Client";
 export interface TwitchCommandData {
   platform: Platform.twitch;
   user: string;
@@ -32,7 +32,7 @@ export interface YoutubeCommandData {
   message: string;
   platform: Platform.youtube;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  context: MessageFragments[];
+  context: IChatYTMessage;
 }
 export interface KickComamndData {
   user: string;
@@ -520,11 +520,43 @@ export class CommandHandler {
             this.bot.twitch.channel.id,
             { title: data.message },
           );
-          await this.bot.youTube.setTitle(data.message);
+          await this.bot.youTube.api.setTitle(data.message);
 
           // TODO change title in kick
 
-          data.reply(`Title has been changed to "${data.message}"`, true);
+          this.bot.broadcastMessage(
+            `Title has been changed to "${data.message}"`,
+          );
+        },
+      },
+    ],
+    [
+      "!permtitle",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          if (!data.isUserMod || data.message.length == 0) return;
+          await this.bot.twitch.apiClient.channels.updateChannelInfo(
+            this.bot.twitch.channel.id,
+            { title: data.message },
+          );
+          let ytTitle = data.message;
+          const twitchInfo =
+            await this.bot.twitch.apiClient.streams.getStreamByUserId(
+              this.bot.twitch.channel.id,
+            );
+          if (twitchInfo != null) {
+            ytTitle += ` (${twitchInfo.gameName})`;
+          }
+          await this.bot.youTube.api.setTitle(ytTitle);
+          this.bot.youTube.permTitle = ytTitle;
+
+          // TODO change title in kick
+
+          this.bot.twitch.say(`Title has been changed to "${data.message}"`);
+          this.bot.youTube.api.sendMessage(
+            `Title has been changed to "${ytTitle}"`,
+          );
         },
       },
     ],
@@ -786,15 +818,40 @@ export class CommandHandler {
       },
     ],
     [
+      "!permtitle",
+      {
+        showOnChat: false,
+        commandFunction: () => {},
+      },
+    ],
+    [
       "!pet",
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
+          if (data.platform == Platform.kick) return;
           const args = data.message.split(" ");
           switch (args[0]) {
             case "feed":
-              this.bot.pet.feed(data.context.userInfo.userId);
+              if (this.bot.pet.feed()) {
+                switch (data.platform) {
+                  case Platform.twitch:
+                    this.bot.twitch.apiClient.moderation.banUser(
+                      this.bot.twitch.channel.id,
+                      {
+                        user: data.context.userInfo.userId,
+                        reason: "Hapboo Shield",
+                        duration: 10 * 60,
+                      },
+                    );
+                    break;
+                  case Platform.youtube:
+                    this.bot.youTube.api.banUser(
+                      data.context.channelId,
+                      10 * 60,
+                    );
+                }
+              }
               break;
             case "status":
               this.bot.pet.sayStatus(StatusReason.command);
@@ -803,7 +860,26 @@ export class CommandHandler {
               this.bot.pet.graveyard(args[1]);
               break;
             case "fuel":
-              this.bot.pet.fuel(data.context.userInfo.userId);
+              if (this.bot.pet.fuel()) {
+                switch (data.platform) {
+                  case Platform.twitch:
+                    this.bot.twitch.apiClient.moderation.banUser(
+                      this.bot.twitch.channel.id,
+                      {
+                        user: data.context.userInfo.userId,
+                        reason: "Hapboo Shield",
+                        duration: 10 * 60,
+                      },
+                    );
+                    break;
+                  case Platform.youtube:
+                    this.bot.youTube.api.banUser(
+                      data.context.channelId,
+                      10 * 60,
+                    );
+                }
+              }
+
               break;
             case "pet":
               this.bot.pet.pet(data.user);

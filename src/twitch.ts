@@ -35,7 +35,6 @@ import {
 import DOMPurify from "isomorphic-dompurify";
 import { CommandData } from "./commands";
 import { getBTTVEmotes } from "./bttv";
-import { parse } from "path";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -286,7 +285,6 @@ export class Twitch {
       async (event: EventSubStreamOnlineEvent) => {
         this.isStreamOnline = true;
         this.bot.pet.init(true);
-        this.bot.youTube.connectToChat();
         try {
           const stream = await event.getStream();
           const thumbnail = stream.getThumbnailUrl(1280, 720);
@@ -317,6 +315,7 @@ export class Twitch {
     this.eventListener.onStreamOffline(this.channel.id, async (event) => {
       this.isStreamOnline = false;
       this.bot.pet.sleep();
+			this.bot.youTube.onStreamEnd();
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {
@@ -804,7 +803,7 @@ export class Twitch {
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
-          parsed += this.replaceBTTVEmotes(parsedPart.text);
+          parsed += this.replaceBTTVEmotes( DOMPurify.sanitize(parsedPart.text));
           break;
         case "cheer":
           cheers.push(parsedPart);

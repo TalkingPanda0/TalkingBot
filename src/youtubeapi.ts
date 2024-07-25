@@ -7,6 +7,7 @@ export class YouTubeAPI {
   private youtubeClient: youtube_v3.Youtube;
   private oAuth2Client: OAuth2Client;
   private editoroAuth2Client: OAuth2Client;
+  private permTitle: string;
   private tokenFile = Bun.file(__dirname + "/../config/yt.json");
 
   private log(message: any) {
@@ -85,6 +86,23 @@ export class YouTubeAPI {
           },
         },
         part: ["snippet"],
+      });
+    } catch (e) {
+      this.error(e);
+    }
+  }
+  public async banUser(userId: string, seconds?: number) {
+    try {
+      this.youtubeClient.liveChatBans.insert({
+        auth: this.editoroAuth2Client,
+        requestBody: {
+          snippet: {
+            type: seconds == null ? "permanant" : "temporary",
+            liveChatId: this.chatId,
+            bannedUserDetails: { channelId: userId },
+            banDurationSeconds: seconds.toString(),
+          },
+        },
       });
     } catch (e) {
       this.error(e);

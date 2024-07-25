@@ -93,7 +93,7 @@ export class Pet {
 
   public graveyard(hapboo?: string) {
     if (this.deadPets.length === 0) {
-      this.bot.twitch.say("The graveyard is empty for now...");
+      this.bot.broadcastMessage("The graveyard is empty for now...");
       return;
     }
     if (hapboo == null) {
@@ -136,36 +136,38 @@ export class Pet {
           }
         })
         .join(",");
-      this.bot.twitch.say(
+      this.bot.broadcastMessage(
         `Hapboos lost: ${this.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}.`,
       );
       return;
     }
     if (hapboo === "3") {
-      this.bot.twitch.say("[REDACTED]");
+      this.bot.broadcastMessage("[REDACTED]");
       return;
     }
     const pet = this.deadPets.find((value, index, obj) => {
       return value.name === parseInt(hapboo);
     });
     if (pet == null) {
-      this.bot.twitch.say(`Couldn't find hapboo #${hapboo} in the graveyard`);
+      this.bot.broadcastMessage(
+        `Couldn't find hapboo #${hapboo} in the graveyard`,
+      );
       return;
     }
     switch (pet.deathReason) {
       case DeathReason.omelete:
-        this.bot.twitch.say(`Hapboo #${pet.name} became a 🍳.`);
+        this.bot.broadcastMessage(`Hapboo #${pet.name} became a 🍳.`);
         return;
       case DeathReason.failed:
-        this.bot.twitch.say(`Hapboo #${pet.name} couldn't hatch.`);
+        this.bot.broadcastMessage(`Hapboo #${pet.name} couldn't hatch.`);
         return;
       case DeathReason.overfed:
-        this.bot.twitch.say(
+        this.bot.broadcastMessage(
           `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams.`,
         );
         return;
       case DeathReason.starved:
-        this.bot.twitch.say(
+        this.bot.broadcastMessage(
           `Hapboo #${pet.name} starved at the age of ${pet.age} streams.`,
         );
         return;
@@ -207,12 +209,12 @@ export class Pet {
     if (this.status !== Status.dead && this.timer == null)
       message += " He is sleeping.";
     if (this.shield) message += " He is being protected.";
-    this.bot.twitch.say(message);
+    this.bot.broadcastMessage(message);
   }
 
-  public feed(userId: string) {
+  public feed(): boolean {
     if (this.timeout || this.timer == null || this.status !== Status.alive)
-      return;
+      return false;
 
     this.startTimeout();
     this.stomach++;
@@ -221,24 +223,17 @@ export class Pet {
     if (this.stomach >= emotes.length) {
       if (this.shield) {
         this.stomach = 4;
-        this.bot.twitch.apiClient.moderation.banUser(
-          this.bot.twitch.channel.id,
-          {
-            user: userId,
-            reason: "Hapboo Shield",
-            duration: 10 * 60,
-          },
-        );
         this.shield = false;
         this.bot.twitch.updateShieldReedem(false);
-        return;
+        return true;
       }
-      this.bot.twitch.say(`Hapboo #${this.name} became too fat.`);
+      this.bot.broadcastMessage(`Hapboo #${this.name} became too fat.`);
       this.die(DeathReason.overfed);
-      return;
+      return false;
     }
     this.sayStatus(StatusReason.fed);
     this.restartTickTimer();
+    return false;
   }
 
   public activateShield(): boolean {
@@ -246,7 +241,7 @@ export class Pet {
 
     this.shield = true;
     this.bot.twitch.updateShieldReedem(true);
-    this.bot.twitch.say(`Hapboo ${this.name} is now being protected.`);
+    this.bot.broadcastMessage(`Hapboo ${this.name} is now being protected.`);
 
     return true;
   }
@@ -255,33 +250,29 @@ export class Pet {
     this.bot.twitch.updateShieldReedem(true);
     this.shield = false;
     if (this.status !== Status.dead)
-      this.bot.twitch.say(`Hapboo #${this.name} is going to sleep!`);
+      this.bot.broadcastMessage(`Hapboo #${this.name} is going to sleep!`);
     clearInterval(this.timer);
     this.timer = null;
     this.writePet();
   }
 
-  public fuel(userId: string) {
+  public fuel(): boolean {
     if (this.timeout || this.timer == null || this.status > Status.hatching)
-      return;
+      return false;
     this.startTimeout();
     this.campfire++;
     if (this.campfire > 5) {
       if (this.shield) {
         this.campfire = 5;
-        this.bot.twitch.apiClient.moderation.banUser(
-          this.bot.twitch.channel.id,
-          { user: userId, reason: "Hapboo Shield", duration: 10 * 60 },
-        );
         this.shield = false;
         this.bot.twitch.updateShieldReedem(false);
-        return;
+        return true;
       }
-      this.bot.twitch.say(
+      this.bot.broadcastMessage(
         `The campfire got too hot. Habpoo #${this.name} is now 🍳`,
       );
       this.die(DeathReason.omelete);
-      return;
+      return false;
     }
     this.sayStatus(StatusReason.fed);
     this.restartTickTimer();
@@ -289,7 +280,7 @@ export class Pet {
 
   public pet(user: string) {
     if (this.status !== Status.alive) return;
-    this.bot.twitch.say(`${user} petted Hapboo #${this.name}.`);
+    this.bot.broadcastMessage(`${user} petted Hapboo #${this.name}.`);
   }
 
   public init(hatch: boolean) {
@@ -386,15 +377,15 @@ export class Pet {
       if (this.campfire == 1) {
         setTimeout(
           () => {
-						if(this.campfire != 1) return;
-            this.bot.twitch.say(
+            if (this.campfire != 1) return;
+            this.bot.broadcastMessage(
               `Hapboo #${this.name}: PLEEASSE IM COLD PLEAAASEEEE KEEP ME WARM PLEASEEEEEEEEEEEEEEE USING !pet fuel.`,
             );
           },
           14 * 60 * 1000,
         );
       } else if (this.campfire <= 0) {
-        this.bot.twitch.say(
+        this.bot.broadcastMessage(
           `The campfire got too cold. Habpoo #${this.name} is now dead`,
         );
         this.die(DeathReason.failed);
@@ -407,7 +398,7 @@ export class Pet {
       return;
     }
     if (this.status === Status.alive && this.stomach === 0) {
-      this.bot.twitch.say(`Hapboo #${this.name} has starved.`);
+      this.bot.broadcastMessage(`Hapboo #${this.name} has starved.`);
       this.die(DeathReason.starved);
       this.writePet();
       return;
@@ -416,8 +407,8 @@ export class Pet {
     if (this.stomach == 0) {
       setTimeout(
         () => {
-					if(this.stomach != 0) return;
-          this.bot.twitch.say(
+          if (this.stomach != 0) return;
+          this.bot.broadcastMessage(
             `Hapboo #${this.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`,
           );
         },
