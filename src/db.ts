@@ -29,6 +29,7 @@ export class DB {
   private getTopWatchTimeQuery: Statement;
   private getTopWatchTimeQueryOffline: Statement;
   private inChatQuery: Statement;
+	private notOfflineQuery: Statement; 
   private insertHapbooReaction: CallableFunction;
   private getHapbooReactionSorted: Statement;
   private insertEmoteStat: CallableFunction;
@@ -102,6 +103,9 @@ export class DB {
     this.inChatQuery = this.database.query(
       "SELECT * FROM watchtimes where inChat == ?1;",
     );
+		this.notOfflineQuery = this.database.query(
+      "SELECT * FROM watchtimes where inChat != 0;",
+    );
 
     const insertHapbooReactionQuery = this.database.prepare(
       "INSERT OR REPLACE INTO hapboo (userId,times) VALUES($userId,$times);",
@@ -172,6 +176,7 @@ export class DB {
     this.getTopTotal = this.database.query(
       "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
     );
+		this.cleanDataBase();
   }
   public updateDataBase(inChat: number) {
     const toUpdate = this.inChatQuery.all(inChat) as WatchTime[];
@@ -186,6 +191,14 @@ export class DB {
         watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
         watchTime.lastSeenOnStream = date.toJSON();
       }
+      this.insertWatchTime(watchTime);
+    });
+  }
+  public cleanDataBase() {
+    const toUpdate = this.notOfflineQuery.all() as WatchTime[];
+    toUpdate.forEach((watchTime) => {
+			watchTime.inChat = 0;
+     
       this.insertWatchTime(watchTime);
     });
   }
