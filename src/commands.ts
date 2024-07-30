@@ -16,6 +16,7 @@ import { parseYTMessage } from "./youtube";
 import { HelixGame } from "@twurple/api";
 import { youtube_v3 } from "googleapis";
 import { IChatYTMessage, MessageFragments } from "tubechat/lib/types/Client";
+import { ChatMessageInstance } from "kient";
 export interface TwitchCommandData {
   platform: Platform.twitch;
   user: string;
@@ -34,18 +35,19 @@ export interface YoutubeCommandData {
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   context: IChatYTMessage;
 }
-export interface KickComamndData {
+export interface KickCommandData {
   user: string;
   userColor: string;
   isUserMod: boolean;
   message: string;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   platform: Platform.kick;
+  context: ChatMessageInstance;
 }
 export type CommandData =
   | TwitchCommandData
   | YoutubeCommandData
-  | KickComamndData;
+  | KickCommandData;
 
 interface CustomCommand {
   command: string;
@@ -293,7 +295,6 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
           const stream =
             await this.bot.twitch.apiClient.streams.getStreamByUserId(
               this.bot.twitch.channel.id,
@@ -820,7 +821,6 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform == Platform.kick) return;
           const args = data.message.split(" ");
           switch (args[0]) {
             case "feed":
@@ -841,6 +841,13 @@ export class CommandHandler {
                       data.context.channelId,
                       10 * 60,
                     );
+                    break;
+                  case Platform.kick:
+                    this.bot.kick.banUser(
+                      data.context.data.sender.username,
+                      10,
+                    );
+                    break;
                 }
               }
               break;
@@ -868,9 +875,15 @@ export class CommandHandler {
                       data.context.channelId,
                       10 * 60,
                     );
+                    break;
+                  case Platform.kick:
+                    this.bot.kick.banUser(
+                      data.context.data.sender.username,
+                      10,
+                    );
+                    break;
                 }
               }
-
               break;
             case "pet":
               this.bot.pet.pet(data.user);

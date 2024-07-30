@@ -39,7 +39,7 @@ app.get("/wheel", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/wheel.html");
 });
 
-const bot: TalkingBot = new TalkingBot("17587561", server);
+const bot: TalkingBot = new TalkingBot(server);
 
 bot.initBot();
 server.listen(3000, () => {

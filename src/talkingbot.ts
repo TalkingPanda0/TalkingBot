@@ -57,10 +57,9 @@ export class TalkingBot {
   public modtext: string;
   public iotts: Server;
 
-  private kickId: string;
   private server: http.Server;
 
-  constructor(kickId: string, server: http.Server) {
+  constructor(server: http.Server) {
     this.server = server;
 
     this.iomodtext = new Server(this.server, {
@@ -129,8 +128,6 @@ export class TalkingBot {
       });
     });
 
-    this.kickId = kickId;
-
     this.commandHandler = new CommandHandler(this);
     this.commandHandler.readCustomCommands();
 
@@ -138,7 +135,7 @@ export class TalkingBot {
     this.wheel = new Wheel(this.server);
     this.database = new DB();
     this.twitch = new Twitch(this);
-    this.kick = new Kick(this.kickId, this);
+    this.kick = new Kick(this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord(this);
   }
