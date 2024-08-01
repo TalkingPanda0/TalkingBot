@@ -76,13 +76,13 @@ export class Kick {
       this.chat.send(
         JSON.stringify({
           event: "pusher:subscribe",
-          data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
+          data: { auth: "", channel: `channel.17843348` },
         }),
       );
       this.chat.send(
         JSON.stringify({
           event: "pusher:subscribe",
-          data: { auth: "", channel: `channel.17843348` },
+          data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
         }),
       );
     });
@@ -109,9 +109,15 @@ export class Kick {
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
           case "pusher_internal:subscription_succeeded":
-            this.bot.iochat.emit("chatConnect", "kick");
-            this.isConnected = true;
-            console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
+            const channel: string = jsonData.channel;
+            if (channel.startsWith("chatrooms")) {
+              this.bot.iochat.emit("chatConnect", "kick");
+              this.isConnected = true;
+              console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
+            } else {
+              console.log("\x1b[32m%s\x1b[0m", "Connected to channel");
+            }
+
             break;
           case "App\\Events\\ChatMessageEvent":
             const event: ChatMessage = jsonDataSub;
