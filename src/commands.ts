@@ -830,7 +830,7 @@ export class MessageHandler {
     try {
       if (!data.message.startsWith("!")) return false;
       let commandName = data.message.split(" ")[0];
-      data.message = data.message.replace(commandName, "");
+      data.message = data.message.replace(commandName, "").trim();
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) commandName = commandAlias;
 
