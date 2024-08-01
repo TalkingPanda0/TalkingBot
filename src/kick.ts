@@ -1,8 +1,8 @@
 import WebSocket from "ws";
-import { Platform, Poll, TalkingBot } from "./talkingbot";
+import { Poll, TalkingBot } from "./talkingbot";
 import { HelixPoll } from "@twurple/api";
 import DOMPurify from "isomorphic-dompurify";
-import { CommandData } from "./commands";
+import { MessageData } from "./commands";
 
 const kickEmotePrefix = /sweetbabooo-o/g;
 
@@ -23,7 +23,35 @@ export function parseKickEmotes(message: string) {
       `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
   );
 }
-
+interface ChatMessage {
+  id: string;
+  chatroom_id: number;
+  content: string;
+  type: string;
+  created_at: Date;
+  sender: {
+    id: number;
+    username: string;
+    slug?: string;
+    identity: {
+      color: string;
+      badges: Array<{
+        type: string;
+        text: string;
+        count?: number;
+      }>;
+    };
+  };
+  metadata: {
+    original_sender: {
+      id: number;
+      username: string;
+    };
+    original_message: {
+      content: string;
+    };
+  };
+}
 export class Kick {
   public currentPoll: Poll;
   public isConnected: boolean = false;
@@ -57,7 +85,7 @@ export class Kick {
     this.chat.on("error", console.error);
 
     this.chat.on("close", () => {
-      this.bot.iochat.emit("chatDisconnect", "Kick");
+      this.bot.iochat.emit("chatDisconnect", "kick");
       this.isConnected = false;
       console.log(
         "\x1b[32m%s\x1b[0m",
@@ -69,29 +97,26 @@ export class Kick {
 
     this.chat.on("message", async (data: WebSocket.Data) => {
       try {
-        const badges = ["https://kick.com/favicon.ico"];
+        const badges = [];
         const dataString = data.toString();
         const jsonData = JSON.parse(dataString);
         if (jsonData.event === "pusher:error") return;
         const jsonDataSub = JSON.parse(jsonData.data);
         switch (jsonData.event) {
           case "pusher_internal:subscription_succeeded":
-            this.bot.iochat.emit("chatConnect", "Kick");
+            this.bot.iochat.emit("chatConnect", "kick");
             this.isConnected = true;
             console.log("\x1b[32m%s\x1b[0m", "Kick setup complete");
             break;
           case "App\\Events\\ChatMessageEvent":
-            const text = DOMPurify.sanitize(jsonDataSub.content);
-            const user = jsonDataSub.sender.username;
-
-            const userBadges = jsonDataSub.sender.identity.badges;
-
-            if (user === "BotRix") return;
+            const event: ChatMessage = jsonDataSub;
+            const text = DOMPurify.sanitize(event.content);
+            const userBadges = event.sender.identity.badges;
 
             let firstBadgeType = "";
             if (userBadges.length != 0) {
               firstBadgeType = userBadges[0].type;
-              const jsonBadges = jsonDataSub.sender.identity.badges;
+              const jsonBadges = event.sender.identity.badges;
 
               jsonBadges.forEach((element: { type: string }) => {
                 if (element.type === "moderator") {
@@ -104,63 +129,39 @@ export class Kick {
 
             console.log(
               "\x1b[32m%s\x1b[0m",
-              `Kick - ${jsonDataSub.sender.username}: ${text}`,
+              `Kick - ${event.sender.username}: ${text}`,
             );
             let replyTo = "";
             let replyId = "";
             let replyText = "";
             // is a reply
             if (jsonDataSub.metadata != undefined) {
-              replyTo = jsonDataSub.metadata.original_sender.username;
-              replyId = jsonDataSub.metadata.original_sender.id;
-							replyText = jsonDataSub.metadata.original_message.content;
-            }
-            if (!text.startsWith("!")) {
-              this.bot.iochat.emit("message", {
-                text: await this.bot.parseClips(parseKickEmotes(text)),
-                sender: jsonDataSub.sender.username,
-                senderId: "kick-" + jsonDataSub.sender.id,
-                badges: badges,
-                color: jsonDataSub.sender.identity.color,
-                id: "kick-" + jsonDataSub.id,
-                platform: "kick",
-                isFirst: false,
-                replyTo: replyTo,
-                replyId: "kick-" + replyId,
-								replyText: replyText,
-              });
-              return;
+              replyTo = event.metadata.original_sender.username;
+              replyId = event.metadata.original_sender.id.toString();
+              replyText = event.metadata.original_message.content;
             }
 
-            const commandName = text.split(" ")[0];
-            const data: CommandData = {
-              user: user,
-              userColor: jsonDataSub.sender.identity.color,
+            this.bot.commandHandler.handleMessage({
+              badges: badges,
+              message: removeKickEmotes(text),
+              parsedMessage: parseKickEmotes(text),
+              sender: event.sender.username,
+              isCommand: event.sender.username == "BotRix",
+              id: event.id,
+              banUser: () => {},
+              isOld: false,
+              rewardName: "",
+              replyTo: replyTo,
+              replyId: replyId,
+              replyText: replyText,
+              isFirst: false,
+              senderId: event.sender.id.toString(),
+              color: event.sender.identity.color,
+              platform: "kick",
+              reply(message, replyToUser) {},
               isUserMod:
                 firstBadgeType === "moderator" ||
                 firstBadgeType === "broadcaster",
-
-              reply: (message: string, replyToUser: boolean) => {},
-              platform: Platform.kick,
-              message: text.replace(commandName, "").trim(),
-            };
-            const showOnChat = await this.bot.commandHandler.handleCommand(
-              commandName,
-              data,
-            );
-
-            if (!showOnChat) return;
-            this.bot.iochat.emit("message", {
-              text: await this.bot.parseClips(parseKickEmotes(text)),
-              sender: jsonDataSub.sender.username,
-              senderId: "kick-" + jsonDataSub.sender.id,
-              badges: badges,
-              color: jsonDataSub.sender.identity.color,
-              id: "kick-" + jsonDataSub.id,
-              platform: "kick",
-              isFirst: false,
-              replyTo: replyTo,
-              replyId: "kick-" + replyId,
             });
 
             break;

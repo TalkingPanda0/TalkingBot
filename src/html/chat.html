@@ -27,10 +27,10 @@
   <script>
     const mentionRegex = /@(\w+)/g;
     const platformIcons = {
-      Bot: "https://talkingpanda.dev/bot.png",
-      Twitch: "https://twitch.tv/favicon.ico",
-      Kick: "https://kick.com/favicon.ico",
-      YouTube: "https://www.youtube.com/favicon.ico",
+      bot: "https://talkingpanda.dev/bot.png",
+      twitch: "https://twitch.tv/favicon.ico",
+      kick: "https://kick.com/favicon.ico",
+      youtube: "https://www.youtube.com/favicon.ico",
     };
 
     const messageList = document.getElementById("message-list");
@@ -46,14 +46,16 @@
       if (message.id !== undefined && document.getElementById(message.id))
         return;
 
+      message.badges.unshift(platformIcons[message.platform]);
+
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
       if (message.isFirst)
         messageElement.style = "background: rgba(176, 11, 105, 0.5)";
-      messageElement.id = message.id;
+      messageElement.id = `${message.platform}-${message.id}`;
       messageElement.classList.add("message");
       messageElement.classList.add(message.platform);
-      messageElement.classList.add(message.senderId);
+      messageElement.classList.add(`${message.platform}-${message.senderId}`);
       // message is a reply
       if (message.replyTo != null && message.replyTo != "") {
         let replyColor = "#a5a5a5";
@@ -97,7 +99,7 @@
       const textElement = document.createElement("span");
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
-      let text = message.text.trim();
+      let text = message.parsedMessage.trim();
       text = text.replaceAll(mentionRegex, (mention, user) => {
         do {
           const elements = document.querySelectorAll(".sender");
@@ -177,13 +179,13 @@
     socket.on("connect", () => {
       console.log("Connected");
       emptyDisconnectList();
-      removeFromDisconnectList("Bot");
+      removeFromDisconnectList("bot");
     });
 
     socket.on("disconnect", () => {
       console.log("Disconnected");
       emptyDisconnectList();
-      addToDisconnectList("Bot");
+      addToDisconnectList("bot");
     });
 
     socket.on("message", (message) => {

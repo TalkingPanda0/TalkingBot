@@ -1,4 +1,4 @@
-import { Platform, TalkingBot } from "./talkingbot";
+import { TalkingBot } from "./talkingbot";
 import {
   getRandomElement,
   getSuffix,
@@ -9,43 +9,29 @@ import {
 } from "./util";
 
 import { kill } from "./beatsniper.js";
-import { ChatMessage } from "@twurple/chat";
-import { parseKickEmotes, removeKickEmotes } from "./kick";
 import { StatusReason } from "./pet";
-import { parseYTMessage } from "./youtube";
 import { HelixGame } from "@twurple/api";
-import { youtube_v3 } from "googleapis";
-import { IChatYTMessage, MessageFragments } from "tubechat/lib/types/Client";
-export interface TwitchCommandData {
-  platform: Platform.twitch;
-  user: string;
-  userColor: string;
+
+export interface MessageData {
+  badges: string[];
   isUserMod: boolean;
   message: string;
+  parsedMessage: string;
+  sender: string;
+  senderId: string;
+  color: string;
+  id: string;
+  platform: string;
+  isFirst: boolean;
+  replyTo: string;
+  replyId: string;
+  replyText: string;
+  isCommand: boolean;
+  rewardName: string;
+  isOld: boolean;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  context: ChatMessage;
+  banUser: (reason: string, duration?: number) => void | Promise<void>;
 }
-export interface YoutubeCommandData {
-  user: string;
-  userColor: string;
-  isUserMod: boolean;
-  message: string;
-  platform: Platform.youtube;
-  reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  context: IChatYTMessage;
-}
-export interface KickComamndData {
-  user: string;
-  userColor: string;
-  isUserMod: boolean;
-  message: string;
-  reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  platform: Platform.kick;
-}
-export type CommandData =
-  | TwitchCommandData
-  | YoutubeCommandData
-  | KickComamndData;
 
 interface CustomCommand {
   command: string;
@@ -59,10 +45,10 @@ interface CommandAlias {
 
 interface BuiltinCommand {
   showOnChat: boolean;
-  commandFunction: (data: CommandData) => void | Promise<void>;
+  commandFunction: (data: MessageData) => void | Promise<void>;
 }
 
-export class CommandHandler {
+export class MessageHandler {
   private bot: TalkingBot;
   private counter: number = 0;
   private ttsEnabled: Boolean = false;
@@ -103,7 +89,7 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
+          if (data.platform != "twitch") return;
           const isOffline = data.message === "offline";
           this.bot.database.updateDataBase(isOffline ? 1 : 2);
           const users = this.bot.database.getTopWatchTime(isOffline);
@@ -136,18 +122,18 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
+          if (data.platform != "twitch") return;
           const args = data.message.toLowerCase().split(" ");
           let userName = args[0];
           const isOffline = userName === "offline";
-          let userId = data.context.userInfo.userId;
+          let userId = data.senderId;
           if (userName != null && userName.startsWith("@")) {
             const user = await this.bot.twitch.apiClient.users.getUserByName(
               userName.trim().replace("@", ""),
             );
             if (user != null) userId = user.id;
           } else {
-            userName = `${data.user}`;
+            userName = `${data.sender}`;
           }
           const watchTime = this.bot.database.getWatchTime(userId);
 
@@ -176,13 +162,13 @@ export class CommandHandler {
         commandFunction: (data) => {
           if (data.message === "" || data.message === undefined) {
             data.reply(
-              getRandomElement(selfKillMessages).replaceAll("$1", data.user),
+              getRandomElement(selfKillMessages).replaceAll("$1", data.sender),
               false,
             );
           } else {
             data.reply(
               getRandomElement(killOtherMessages)
-                .replaceAll("$1", data.user)
+                .replaceAll("$1", data.sender)
                 .replaceAll("$2", data.message),
               false,
             );
@@ -196,18 +182,7 @@ export class CommandHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          if (data.platform == Platform.twitch) {
-            data.message = this.bot.twitch.parseTwitchEmotes(
-              "!modtext " + data.message,
-              data.context.emoteOffsets,
-            );
-            data.message = data.message.replace("!modtext", "");
-          } else if (data.platform == Platform.kick) {
-            data.message = parseKickEmotes(data.message);
-          } else {
-            data.message = parseYTMessage(data.context.message);
-          }
-          this.bot.modtext = data.message;
+          this.bot.modtext = data.parsedMessage;
           this.bot.iomodtext.emit(
             "message",
             this.bot.modtext.replaceAll("$counter", this.counter.toString()),
@@ -293,7 +268,6 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
           const stream =
             await this.bot.twitch.apiClient.streams.getStreamByUserId(
               this.bot.twitch.channel.id,
@@ -318,7 +292,6 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
           const stream =
             await this.bot.twitch.apiClient.streams.getStreamByUserId(
               this.bot.twitch.channel.id,
@@ -342,11 +315,11 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform != Platform.twitch) return;
+          if (data.platform != "twitch") return;
           const followed =
             await this.bot.twitch.apiClient.channels.getChannelFollowers(
               this.bot.twitch.channel.id,
-              data.context.userInfo.userId,
+              data.senderId,
             );
 
           // User is not following
@@ -361,7 +334,7 @@ export class CommandHandler {
               new Date(),
             );
             data.reply(
-              `@${data.user} has been following ${this.bot.twitch.channel.displayName} for ${timeString}`,
+              `@${data.sender} has been following ${this.bot.twitch.channel.displayName} for ${timeString}`,
               false,
             );
           }
@@ -575,7 +548,7 @@ export class CommandHandler {
             this.bot.twitch.channel.id,
             { gameId: game.id },
           );
-          // TODO change game in kick
+          // TODO change game in yt
 
           data.reply(`Game has been changed to "${game.name}"`, true);
         },
@@ -586,7 +559,7 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (!data.isUserMod || data.platform !== Platform.twitch) return;
+          if (!data.isUserMod) return;
           const stream =
             await this.bot.twitch.apiClient.streams.getStreamByUserId(
               this.bot.twitch.channel.id,
@@ -640,7 +613,7 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: (data): void | Promise<void> => {
-          if (data.platform == Platform.twitch) return;
+          if (data.platform == "twitch") return;
           this.bot.twitch.chatClient.say(
             this.bot.twitch.channel.name,
             `!bsr ${data.message}`,
@@ -655,48 +628,13 @@ export class CommandHandler {
         commandFunction: (data): void | Promise<void> => {
           if (data.message.trim() == "") return;
           if (!data.isUserMod && !this.ttsEnabled) return;
-          switch (data.platform) {
-            case Platform.twitch:
-              if (data.context == null) break;
-              let msg = data.message.trim();
 
-              var indexes: number[] = [];
-              data.context.emoteOffsets.forEach((emote) => {
-                emote.forEach((index) => {
-                  indexes.push(parseInt(index) - "!tts ".length);
-                });
-              });
-              msg = removeByIndexToUppercase(msg, indexes);
-              this.bot.iotts.emit("message", {
-                text: msg,
-                sender: data.user,
-                color: data.userColor,
-                parsedText: this.bot.twitch
-                  .parseTwitchEmotes(
-                    "!tts " + data.message,
-                    data.context.emoteOffsets,
-                  )
-                  .replace("!tts ", ""),
-              });
-
-              break;
-            case Platform.kick:
-              this.bot.iotts.emit("message", {
-                text: removeKickEmotes(data.message),
-                sender: data.user,
-                color: data.userColor,
-                parsedText: parseKickEmotes(data.message),
-              });
-              break;
-            case Platform.youtube:
-              this.bot.iotts.emit("message", {
-                text: data.message,
-                sender: data.user,
-                color: data.userColor,
-                parsedText: parseYTMessage(data.context.message),
-              });
-              break;
-          }
+          this.bot.iotts.emit("message", {
+            text: data.message,
+            sender: data.sender,
+            color: data.color,
+            parsedText: data.parsedMessage,
+          });
         },
       },
     ],
@@ -820,28 +758,12 @@ export class CommandHandler {
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (data.platform == Platform.kick) return;
+          if (data.platform == "kick") return;
           const args = data.message.split(" ");
           switch (args[0]) {
             case "feed":
               if (this.bot.pet.feed()) {
-                switch (data.platform) {
-                  case Platform.twitch:
-                    this.bot.twitch.apiClient.moderation.banUser(
-                      this.bot.twitch.channel.id,
-                      {
-                        user: data.context.userInfo.userId,
-                        reason: "Hapboo Shield",
-                        duration: 10 * 60,
-                      },
-                    );
-                    break;
-                  case Platform.youtube:
-                    this.bot.youTube.api.banUser(
-                      data.context.channelId,
-                      10 * 60,
-                    );
-                }
+                data.banUser("Hapboo Shield", 10 * 60);
               }
               break;
             case "status":
@@ -852,28 +774,11 @@ export class CommandHandler {
               break;
             case "fuel":
               if (this.bot.pet.fuel()) {
-                switch (data.platform) {
-                  case Platform.twitch:
-                    this.bot.twitch.apiClient.moderation.banUser(
-                      this.bot.twitch.channel.id,
-                      {
-                        user: data.context.userInfo.userId,
-                        reason: "Hapboo Shield",
-                        duration: 10 * 60,
-                      },
-                    );
-                    break;
-                  case Platform.youtube:
-                    this.bot.youTube.api.banUser(
-                      data.context.channelId,
-                      10 * 60,
-                    );
-                }
+                data.banUser("Hapboo Shield", 10 * 60);
               }
-
               break;
             case "pet":
-              this.bot.pet.pet(data.user);
+              this.bot.pet.pet(data.sender);
               break;
             case "start":
               if (data.isUserMod) {
@@ -920,11 +825,12 @@ export class CommandHandler {
       },
     ],
   ]);
-  public async handleCommand(
-    commandName: string,
-    data: CommandData,
-  ): Promise<boolean> {
+  // returns true if isCommand
+  private async handleCommand(data: MessageData): Promise<boolean> {
     try {
+      if (!data.message.startsWith("!")) return false;
+      let commandName = data.message.split(" ")[0];
+      data.message = data.message.replace(commandName, "");
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) commandName = commandAlias;
 
@@ -945,7 +851,7 @@ export class CommandHandler {
               key: string,
             ) => {
               url = url
-                .replace(/\$user/g, data.user)
+                .replace(/\$user/g, data.sender)
                 .replace(/\$args/g, message);
               const req = await fetch(url);
               if (command.startsWith("!")) return "";
@@ -961,35 +867,20 @@ export class CommandHandler {
           .replace(/suffix\((\d+)\)/g, (message: string, number: string) => {
             return getSuffix(parseInt(number));
           })
-          .replace(/\$user/g, data.user)
+          .replace(/\$user/g, data.sender)
           .replace(/\$args/g, message)
           .replace(/\(modonly\)/g, "")
           .replace(/\(reply\)/g, "");
 
         if (modonly && !data.isUserMod) return false;
         data.reply(response, doReply);
-
-        if (data.platform == Platform.twitch)
-          this.bot.iochat.emit("message", {
-            badges: [this.bot.twitch.badges.get("moderator")],
-            text: response,
-            sender: "TalkingBotO_o",
-            senderId: "twitch-" + "bot",
-            color: "#008000",
-            id: undefined,
-            platform: "twitch",
-            isFirst: false,
-            replyTo: doReply ? data.user : "",
-            replyId: "twitch-" + data.context.userInfo.userId,
-            isCommand: true,
-          });
-        return false;
+        return true;
       }
 
       const builtinCommand = this.commandMap.get(commandName);
       if (builtinCommand != null) {
         builtinCommand.commandFunction(data);
-        return builtinCommand.showOnChat;
+        return !builtinCommand.showOnChat;
       }
       return true;
     } catch (e) {
@@ -997,6 +888,17 @@ export class CommandHandler {
       return false;
     }
   }
+
+  private sendToChatList(data: MessageData) {
+    this.bot.iochat.emit("message", data);
+  }
+
+  public async handleMessage(data: MessageData) {
+    data.isCommand = (await this.handleCommand(data)) ? true : data.isCommand;
+
+    this.sendToChatList(data);
+  }
+
   private async setDynamicTitle() {
     if (this.dynamicTitle == null) return;
     const title = (

@@ -25,16 +25,11 @@ import {
   EventSubChannelPollEndEvent,
   EventSubChannelCheerEvent,
 } from "@twurple/eventsub-base";
-import {
-  AuthSetup,
-  Platform,
-  Poll,
-  TalkingBot,
-  pollOption,
-} from "./talkingbot";
+import { AuthSetup, Poll, TalkingBot, pollOption } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
-import { CommandData } from "./commands";
+import { MessageData } from "./commands";
 import { getBTTVEmotes } from "./bttv";
+import { removeByIndexToUppercase } from "./util";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -107,7 +102,7 @@ export class Twitch {
     isOld: Boolean,
   ): Promise<void> {
     let color = message.userInfo.color;
-    let badges = ["https://twitch.tv/favicon.ico"];
+    let badges = [];
     let replyTo = "";
     let replyId = "";
     let replyText = "";
@@ -153,6 +148,7 @@ export class Twitch {
     this.bot.iochat.emit("message", {
       badges: badges,
       text: text,
+      parsedMessage: text,
       sender: message.userInfo.displayName,
       senderId: "twitch-" + message.userInfo.userId,
       color: color,
@@ -589,52 +585,100 @@ export class Twitch {
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
         try {
-          if (user === "botrixoficial") return;
-
           console.log(
             "\x1b[35m%s\x1b[0m",
             `Twitch - ${msg.userInfo.displayName}: ${text}`,
           );
+          let badges = [];
 
-          // not a command
-          if (!text.startsWith("!")) {
-            this.sendToChatList(msg, false, false);
-            return;
+          const parsedMessage = await this.bot.parseClips(
+            this.parseTwitchEmotes(msg.text, msg.emoteOffsets),
+          );
+          if (msg.userInfo.isMod) {
+            badges.push(this.badges.get("moderator"));
+          } else if (msg.userInfo.isBroadcaster) {
+            badges.push(this.badges.get("broadcaster"));
           }
 
-          const name = msg.userInfo.displayName;
-          const isMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
-          const commandName = text.split(" ")[0];
-          const data: CommandData = {
-            user: name,
-            userColor: this.getUserColor(msg),
-            isUserMod: isMod,
-            platform: Platform.twitch,
-            message: text.replace(commandName, "").trim(),
+          const badge = msg.userInfo.badges.get("subscriber");
+          if (badge != undefined) {
+            badges.push(this.badges.get(badge));
+          }
+          let replyTo = "";
+          let replyId = "";
+          let replyText = "";
+          let rewardName = "";
+          if (msg.isReply) {
+            text = text.replace(
+              new RegExp(`@${msg.parentMessageUserDisplayName}`, "i"),
+              "",
+            );
+            replyTo = msg.parentMessageUserDisplayName;
+            replyId = msg.parentMessageUserId;
+            replyText = msg.parentMessageText;
+          }
+
+          if (msg.isHighlight) {
+            rewardName = "Highlight My message";
+          }
+
+          if (msg.isRedemption) {
+            const reward =
+              await this.apiClient.channelPoints.getCustomRewardById(
+                this.channel.id,
+                msg.rewardId,
+              );
+            rewardName = reward.title;
+          }
+          const indexes: number[] = [];
+          msg.emoteOffsets.forEach((emote) => {
+            emote.forEach((index) => {
+              indexes.push(parseInt(index));
+            });
+          });
+
+          this.bot.commandHandler.handleMessage({
+            badges: badges,
+            sender: msg.userInfo.displayName,
+            senderId: msg.userInfo.userId,
+            color: this.getUserColor(msg),
+            isUserMod: msg.userInfo.isMod || msg.userInfo.isBroadcaster,
+            platform: "twitch",
+            message: removeByIndexToUppercase(text, indexes),
+            parsedMessage: parsedMessage,
+            isFirst: msg.isFirst,
+            replyText: replyText,
+            replyId: replyId,
+            replyTo: replyTo,
+            rewardName: rewardName,
+            isOld: false,
+            isCommand: user == "botrixoficial" || user == "talkingboto_o",
+            id: msg.id,
             reply: (message: string, replyToUser: boolean) => {
               const replyId = replyToUser ? msg.id : null;
               this.chatClient.say(channel, message, { replyTo: replyId });
               this.bot.iochat.emit("message", {
-                badges: [this.badges.get("moderator")],
                 text: message,
-                sender: "TalkingBotO_o",
-                senderId: "twitch-" + "bot",
-                color: "#008000",
+                parsedMessage: message,
+                sender: "TalkingBot",
+                senderId: "bot",
+                color: "green",
                 id: undefined,
                 platform: "twitch",
                 isFirst: false,
-                replyTo: replyToUser ? name : "",
-                replyId: "twitch-" + msg.userInfo.userId,
                 isCommand: true,
               });
             },
-            context: msg,
-          };
-          const showOnChat = await this.bot.commandHandler.handleCommand(
-            commandName,
-            data,
-          );
-          this.sendToChatList(msg, !showOnChat, false);
+            banUser: async (message: string, duration: number) => {
+              try {
+                await this.apiClient.moderation.banUser(this.channel.id, {
+                  user: msg.userInfo.userId,
+                  reason: message,
+                  duration: duration,
+                });
+              } catch (e) {}
+            },
+          });
         } catch (e) {
           console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
         }
@@ -668,20 +712,8 @@ export class Twitch {
 
   public say(message: string) {
     this.chatClient.say(this.channel.name, message);
-    this.bot.iochat.emit("message", {
-      badges: [this.badges.get("moderator")],
-      text: message,
-      sender: "TalkingBotO_o",
-      senderId: "twitch-" + "bot",
-      color: "#008000",
-      id: undefined,
-      platform: "twitch",
-      isFirst: false,
-      replyTo: "",
-      replyId: "",
-      isCommand: false,
-    });
   }
+
   public async handleRedeemQueue(accept?: Boolean) {
     try {
       const redeem = this.redeemQueue.shift();

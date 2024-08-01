@@ -9,13 +9,7 @@ import * as http from "http";
 import { Pet } from "./pet";
 
 import { Wheel } from "./wheel";
-import { CommandHandler } from "./commands";
-
-export enum Platform {
-  twitch,
-  kick,
-  youtube,
-}
+import { MessageHandler } from "./commands";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -52,7 +46,7 @@ export class TalkingBot {
   public connectedtoOverlay: Boolean = false;
   public pet: Pet;
   public database: DB;
-  public commandHandler: CommandHandler;
+  public commandHandler: MessageHandler;
   public wheel: Wheel;
   public modtext: string;
   public iotts: Server;
@@ -86,13 +80,13 @@ export class TalkingBot {
           this.twitch.chatClient != null &&
           !this.twitch.chatClient.isConnected
         ) {
-          this.iochat.emit("chatDisconnect", "Twitch");
+          this.iochat.emit("chatDisconnect", "twitch");
         }
         if (!this.kick.isConnected) {
-          this.iochat.emit("chatDisconnect", "Kick");
+          this.iochat.emit("chatDisconnect", "kick");
         }
         if (!this.youTube.isConnected) {
-          this.iochat.emit("chatDisconnect", "YouTube");
+          this.iochat.emit("chatDisconnect", "youtube");
         }
         this.connectedtoOverlay = true;
       } catch (e) {
@@ -131,7 +125,7 @@ export class TalkingBot {
 
     this.kickId = kickId;
 
-    this.commandHandler = new CommandHandler(this);
+    this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
     this.pet = new Pet(this);

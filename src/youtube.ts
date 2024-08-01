@@ -1,8 +1,8 @@
 import { TubeChat } from "tubechat";
-import { TalkingBot, Platform } from "./talkingbot";
+import { TalkingBot } from "./talkingbot";
 import { userColors } from "./twitch";
 import { MessageFragments } from "tubechat/lib/types/Client";
-import { CommandData } from "./commands";
+import { MessageData } from "./commands";
 import { YouTubeAPI } from "./youtubeapi";
 export function parseYTMessage(message: MessageFragments[]): string {
   let text = "";
@@ -51,14 +51,14 @@ export class YouTube {
     this.chat.connect(this.channelName);
 
     this.chat.on("disconnect", () => {
-      this.bot.iochat.emit("chatDisconnect", "YouTube");
+      this.bot.iochat.emit("chatDisconnect", "youtube");
       this.isConnected = false;
       this.videoId = null;
       console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
     });
 
     this.chat.on("chat_connected", (channel, videoId) => {
-      this.bot.iochat.emit("chatConnect", "YouTube");
+      this.bot.iochat.emit("chatConnect", "youtube");
       this.isConnected = true;
       this.videoId = videoId;
       this.api.getChatId(videoId);
@@ -72,64 +72,44 @@ export class YouTube {
             return messageFragment.text;
           })
           .join("");
-        const isMod = event.isModerator || event.isOwner;
-        //if (text == null) return;
-        if (event.name === "BotRix" || event.name == "Talking Bot") return;
         console.log("\x1b[31m%s\x1b[0m", `YouTube - ${event.name}: ${text}`);
 
-        const badges = ["https://www.youtube.com/favicon.ico"];
+        const badges = [];
         if (event.isModerator) {
           badges.push("/ytmod.svg");
         }
-
-        if (text === undefined || !text.startsWith("!")) {
-          // not a command!
-          const color = this.getColor(event.name);
-          this.bot.iochat.emit("message", {
-            badges: badges,
-            text: parseYTMessage(event.message),
-            sender: event.name,
-            senderId: "youtube-" + event.channelId,
-            color: color,
-            id: "youtube-" + event.id,
-            platform: "youtube",
-            isFirst: false,
-            replyTo: "",
-            replyId: "",
-          });
-          return;
-        }
-        const commandName = text.split(" ")[0];
-        const data: CommandData = {
-          user: event.name,
-          userColor: this.getColor(event.name),
-          isUserMod: isMod,
-          message: text.replace(commandName, "").trim(),
-          platform: Platform.youtube,
-          context: event,
-          reply: (message: string, replyToUser: boolean) => {
-            this.api.sendMessage(message);
+        this.bot.commandHandler.handleMessage({
+          badges: badges,
+          isUserMod: event.isModerator || event.isOwner,
+          reply: async (message, replyToUser) => {
+            try {
+              await this.api.sendMessage(message);
+            } catch (e) {
+              console.error(e);
+            }
           },
-        };
-        const showOnChat = await this.bot.commandHandler.handleCommand(
-          commandName,
-          data,
-        );
-        if (showOnChat) {
-          const color = this.getColor(event.name);
-          this.bot.iochat.emit("message", {
-            badges: ["https://www.youtube.com/favicon.ico"],
-            text: parseYTMessage(event.message),
-            sender: event.name,
-            senderId: "youtube",
-            color: color,
-            id: "youtube-" + event.id,
-            platform: "youtube",
-            isFirst: false,
-            replyTo: "",
-            replyId: "",
-          });
-        }
+          message: text,
+          parsedMessage: parseYTMessage(event.message),
+          banUser: async (reason, duration) => {
+            try {
+              this.api.banUser(event.channelId, duration);
+            } catch (e) {
+              console.error(e);
+            }
+          },
+          platform: "youtube",
+          color: this.getColor(event.name),
+          sender: event.name,
+          id: event.id,
+          senderId: event.channelId,
+          isFirst: false,
+          replyText: "",
+          replyId: "",
+          replyTo: "",
+          rewardName: "",
+          isOld: false,
+          isCommand: event.name === "BotRix" || event.name == "Talking Bot",
+        });
 
         return;
       } catch (e) {
