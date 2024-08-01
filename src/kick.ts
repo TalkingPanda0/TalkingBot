@@ -2,7 +2,6 @@ import WebSocket from "ws";
 import { Poll, TalkingBot } from "./talkingbot";
 import { HelixPoll } from "@twurple/api";
 import DOMPurify from "isomorphic-dompurify";
-import { MessageData } from "./commands";
 
 const kickEmotePrefix = /sweetbabooo-o/g;
 
@@ -78,6 +77,12 @@ export class Kick {
         JSON.stringify({
           event: "pusher:subscribe",
           data: { auth: "", channel: `chatrooms.${this.channelId}.v2` },
+        }),
+      );
+      this.chat.send(
+        JSON.stringify({
+          event: "pusher:subscribe",
+          data: { auth: "", channel: `channel.17843348` },
         }),
       );
     });
@@ -220,6 +225,30 @@ export class Kick {
             );
             this.bot.iopoll.emit("deletePoll");
             break;
+          case "App\\Events\\FollowersUpdated":
+            if (!jsonDataSub.followed || jsonDataSub.username == null) return;
+            this.bot.ioalert.emit("alert", {
+              follower: jsonDataSub.username,
+            });
+          case "App\\Events\\ChannelSubscriptionEvent":
+            this.bot.ioalert.emit("alert", {
+              name: jsonDataSub.username,
+              message: "",
+              plan: "",
+              months: jsonDataSub.months,
+              gift: false,
+            });
+          case "App\\Events\\LuckyUsersWhoGotGiftSubscriptionsEvent":
+            jsonDataSub.gifted_usernames.forEach((gifted: string) => {
+              this.bot.ioalert.emit("alert", {
+                name: jsonDataSub.gifter_username,
+                gifted: gifted,
+                message: "",
+                plan: "",
+                months: 1,
+                gift: true,
+              });
+            });
           /*default:
             console.log(dataString);
             break;*/
