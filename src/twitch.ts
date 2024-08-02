@@ -809,6 +809,7 @@ export class Twitch {
   }
   private replaceBTTVEmotes(input: string): string {
     // Create a regular expression from the map keys
+		if(this.BTTVEmotes.size == 0) return input;
     const pattern = Array.from(this.BTTVEmotes.keys()).join("|");
     const regex = new RegExp(`\\b(${pattern})\\b`, "g");
 
