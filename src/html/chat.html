@@ -52,10 +52,10 @@
       const spanElement = document.createElement("span");
       if (message.isFirst)
         messageElement.style = "background: rgba(176, 11, 105, 0.5)";
-      messageElement.id = `${message.platform}-${message.id}`;
+      messageElement.id = message.id;
       messageElement.classList.add("message");
       messageElement.classList.add(message.platform);
-      messageElement.classList.add(`${message.platform}-${message.senderId}`);
+      messageElement.classList.add(message.senderId);
       // message is a reply
       if (message.replyTo != null && message.replyTo != "") {
         let replyColor = "#a5a5a5";

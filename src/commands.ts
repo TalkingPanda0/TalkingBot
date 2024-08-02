@@ -896,6 +896,10 @@ export class MessageHandler {
   public async handleMessage(data: MessageData) {
     data.isCommand = (await this.handleCommand(data)) ? true : data.isCommand;
 
+		data.id = `${data.platform}-${data.id}`;
+		data.senderId = `${data.platform}-${data.senderId}`;
+		data.replyId = `${data.platform}-${data.replyId}`;
+
     this.sendToChatList(data);
   }
 

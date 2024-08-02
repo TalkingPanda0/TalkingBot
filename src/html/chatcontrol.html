@@ -25,10 +25,10 @@
   <script>
     const mentionRegex = /@(\w+)/g;
     const platformIcons = {
-      Bot: "https://talkingpanda.dev/bot.png",
-      Twitch: "https://twitch.tv/favicon.ico",
-      Kick: "https://kick.com/favicon.ico",
-      YouTube: "https://www.youtube.com/favicon.ico",
+      bot: "https://talkingpanda.dev/bot.png",
+      twitch: "https://twitch.tv/favicon.ico",
+      kick: "https://kick.com/favicon.ico",
+      youtube: "https://www.youtube.com/favicon.ico",
     };
 
     const messageList = document.getElementById("message-list");
@@ -90,7 +90,7 @@
       const textElement = document.createElement("span");
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
-      let text = message.text.trim();
+      let text = message.parsedMessage.trim();
       text = text.replaceAll(mentionRegex, (mention, user) => {
         do {
           const elements = document.querySelectorAll(".sender");
