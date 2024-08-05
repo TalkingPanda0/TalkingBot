@@ -654,20 +654,23 @@ export class Twitch {
             isOld: false,
             isCommand: user == "botrixoficial" || user == "talkingboto_o",
             id: msg.id,
-            reply: (message: string, replyToUser: boolean) => {
+            reply: async (message: string, replyToUser: boolean) => {
+							console.log(`TalkingBot - ${message}`);
               const replyId = replyToUser ? msg.id : null;
-              this.chatClient.say(channel, message, { replyTo: replyId });
+              await this.chatClient.say(channel, message, { replyTo: replyId });
               this.bot.iochat.emit("message", {
+								badges: [],
                 text: message,
                 parsedMessage: message,
                 sender: "TalkingBot",
                 senderId: "bot",
                 color: "green",
                 id: undefined,
-                platform: "twitch",
+                platform: "bot",
                 isFirst: false,
                 isCommand: true,
               });
+							console.log(`TalkingBot - ${message}`);
             },
             banUser: async (message: string, duration: number) => {
               try {
@@ -676,7 +679,9 @@ export class Twitch {
                   reason: message,
                   duration: duration,
                 });
-              } catch (e) {}
+              } catch (e) {
+								console.error(e);
+							}
             },
           });
         } catch (e) {

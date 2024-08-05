@@ -5,7 +5,6 @@ import {
   getTimeDifference,
   milliSecondsToString,
   replaceAsync,
-  removeByIndexToUppercase,
 } from "./util";
 
 import { kill } from "./beatsniper.js";
