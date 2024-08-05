@@ -655,7 +655,6 @@ export class Twitch {
             isCommand: user == "botrixoficial" || user == "talkingboto_o",
             id: msg.id,
             reply: async (message: string, replyToUser: boolean) => {
-							console.log(`TalkingBot - ${message}`);
               const replyId = replyToUser ? msg.id : null;
               await this.chatClient.say(channel, message, { replyTo: replyId });
               this.bot.iochat.emit("message", {
