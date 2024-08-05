@@ -126,9 +126,11 @@ export class Discord {
         `Discord - got message from ${message.author.displayName}`,
       );
 
-			const hapbooReactions = this.bot.database.getHapbooReaction.get(message.author.id) as HapbooReaction;
-			let currentHapboos = 0;
-			if(hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
+      const hapbooReactions = this.bot.database.getHapbooReaction.get(
+        message.author.id,
+      ) as HapbooReaction;
+      let currentHapboos = 0;
+      if (hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
 
       if (randomInt(100 + currentHapboos) === 0) {
         message.react("1255212339406573641");
@@ -202,6 +204,20 @@ export class Discord {
     this.commands = new Collection();
 
     const discordCommands: DiscordCommand[] = [
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("bump")
+          .setDescription("Bump the server"),
+        execute: async (interaction) => {
+          try {
+            await interaction.reply({
+              content: "<:baboo_trollbab:905083275264032798>",
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        },
+      },
       {
         commandBuilder: new SlashCommandBuilder()
           .setName("hapboo")
