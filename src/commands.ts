@@ -181,7 +181,7 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          this.bot.modtext = data.parsedMessage;
+          this.bot.modtext = data.parsedMessage.split(" ").slice(1).join(" ");
           this.bot.iomodtext.emit(
             "message",
             this.bot.modtext.replaceAll("$counter", this.counter.toString()),
@@ -632,7 +632,7 @@ export class MessageHandler {
             text: data.message,
             sender: data.sender,
             color: data.color,
-            parsedText: data.parsedMessage,
+            parsedText: data.parsedMessage.split(" ").slice(1).join(" "),
           });
         },
       },
