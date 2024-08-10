@@ -27,7 +27,6 @@ import {
 } from "@twurple/eventsub-base";
 import { AuthSetup, Poll, TalkingBot, pollOption } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
-import { MessageData } from "./commands";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase } from "./util";
 
@@ -568,7 +567,7 @@ export class Twitch {
       this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.chatClient.say(
         this.channelName,
-        `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever." : "."}`,
+        `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever" : ""}.`,
       );
     });
 
@@ -697,11 +696,13 @@ export class Twitch {
       }
     });
     this.chatClient.onDisconnect((manually: boolean, reason?: Error) => {
+			if(manually) return;
       this.bot.iochat.emit("chatDisconnect", "Twitch");
       console.error(
         "\x1b[35m%s\x1b[0m",
         `Disconnected from twitch, trying to reconnect: ${reason}, ${manually}`,
       );
+
       this.chatClient.reconnect();
     });
     this.chatClient.connect();
