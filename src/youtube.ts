@@ -2,7 +2,6 @@ import { TubeChat } from "tubechat";
 import { TalkingBot } from "./talkingbot";
 import { userColors } from "./twitch";
 import { MessageFragments } from "tubechat/lib/types/Client";
-import { MessageData } from "./commands";
 import { YouTubeAPI } from "./youtubeapi";
 export function parseYTMessage(message: MessageFragments[]): string {
   let text = "";
@@ -116,6 +115,19 @@ export class YouTube {
         console.log(e);
       }
     });
+
+		this.chat.on("deleted_message", (event) => {
+        this.bot.iochat.emit("deleteMessage", "youtube-" + event.commentId);
+		});
+
+		this.chat.on("deleted_message_author", (event) => {
+      this.bot.iochat.emit("banUser", `youtube-${event.externalChannelId}`);
+		});
+
+
+		this.chat.on("unkown", (event) => {
+			console.log("unknwoı event: " + event);
+		})
   }
   constructor(channelName: string, bot: TalkingBot) {
     this.channelName = channelName;
