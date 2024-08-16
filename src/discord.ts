@@ -133,7 +133,11 @@ export class Discord {
       if (hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
 
       if (randomInt(100 + currentHapboos) === 0) {
-        message.react("1255212339406573641");
+				try {
+					await message.react("1255212339406573641");
+				} catch (e){
+					console.error(e);
+				}
         console.log("HAPBOOO");
         this.bot.database.hapbooReaction(message.author.id);
       }
