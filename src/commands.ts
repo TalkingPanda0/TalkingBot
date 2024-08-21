@@ -94,19 +94,16 @@ export class MessageHandler {
           const isOffline = data.message === "offline";
           this.bot.database.updateDataBase(isOffline ? 1 : 2);
           const users = this.bot.database.getTopWatchTime(isOffline);
+					const helixUsers = await this.bot.twitch.apiClient.users.getUsersByIds(users.map((watchtime) => watchtime.userId));
           data.reply(
             (
               await Promise.all(
-                users.map(async (watchTime) => {
+                users.map(async (watchTime,index) => {
                   try {
-                    const user =
-                      await this.bot.twitch.apiClient.users.getUserById(
-                        watchTime.userId,
-                      );
                     if (isOffline)
-                      return `@${user.displayName} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
+                      return `@${helixUsers[index].displayName} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
                     else
-                      return `@${user.displayName} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`;
+                      return `@${helixUsers[index].displayName} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`;
                   } catch (e) {
                     return e;
                   }
