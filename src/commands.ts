@@ -44,11 +44,13 @@ interface CommandAlias {
 
 interface BuiltinCommand {
   showOnChat: boolean;
+  timeout?: number; // in ms
   commandFunction: (data: MessageData) => void | Promise<void>;
 }
 
 export class MessageHandler {
-	private keys: any;
+  private keys: any;
+  private timeout = new Set();
   private bot: TalkingBot;
   private counter: number = 0;
   private ttsEnabled: Boolean = false;
@@ -88,17 +90,21 @@ export class MessageHandler {
     [
       "!toptime",
       {
+        timeout: 120 * 1000,
         showOnChat: false,
         commandFunction: async (data) => {
           if (data.platform != "twitch") return;
           const isOffline = data.message === "offline";
           this.bot.database.updateDataBase(isOffline ? 1 : 2);
           const users = this.bot.database.getTopWatchTime(isOffline);
-					const helixUsers = await this.bot.twitch.apiClient.users.getUsersByIds(users.map((watchtime) => watchtime.userId));
+          const helixUsers =
+            await this.bot.twitch.apiClient.users.getUsersByIds(
+              users.map((watchtime) => watchtime.userId),
+            );
           data.reply(
             (
               await Promise.all(
-                users.map(async (watchTime,index) => {
+                users.map(async (watchTime, index) => {
                   try {
                     if (isOffline)
                       return `@${helixUsers[index].displayName} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
@@ -118,6 +124,7 @@ export class MessageHandler {
     [
       "!watchtime",
       {
+        timeout: 60 * 1000,
         showOnChat: false,
         commandFunction: async (data) => {
           if (data.platform != "twitch") return;
@@ -264,6 +271,7 @@ export class MessageHandler {
     [
       "!uptime",
       {
+        timeout: 60 * 1000,
         showOnChat: false,
         commandFunction: async (data) => {
           const stream =
@@ -288,6 +296,7 @@ export class MessageHandler {
     [
       "!status",
       {
+        timeout: 60 * 1000,
         showOnChat: false,
         commandFunction: async (data) => {
           const stream =
@@ -311,6 +320,7 @@ export class MessageHandler {
     [
       "!followage",
       {
+        timeout: 60,
         showOnChat: false,
         commandFunction: async (data) => {
           if (data.platform != "twitch") return;
@@ -640,6 +650,7 @@ export class MessageHandler {
       "!snipe",
       {
         showOnChat: false,
+        timeout: 60 * 1000,
         commandFunction: async (data) => {
           if (!data.isUserMod) return;
           data.reply(`Sniping ${data.message}`, true);
@@ -653,21 +664,29 @@ export class MessageHandler {
         },
       },
     ],
-		[
-			"!bs",
-			{
-				showOnChat: false,
-				commandFunction: async (data) => {
-					const response = await( await fetch(`http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json`)).json();
-					const games: {appid: number ,playtime_forever: number}[] = response.response.games;
-					const minutes = games.find((game) => {
-						return game.appid == 620980;
-					}).playtime_forever;
-					data.reply(`SweetBabooO_o has ${Math.floor(minutes / 60)} hours ${minutes % 60} minutes on Beat Saber.`,true);
-
-				}
-			}
-		],
+    [
+      "!bs",
+      {
+        timeout: 60 * 1000,
+        showOnChat: false,
+        commandFunction: async (data) => {
+          const response = await (
+            await fetch(
+              `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json`,
+            )
+          ).json();
+          const games: { appid: number; playtime_forever: number }[] =
+            response.response.games;
+          const minutes = games.find((game) => {
+            return game.appid == 620980;
+          }).playtime_forever;
+          data.reply(
+            `SweetBabooO_o has ${Math.floor(minutes / 60)} hours ${minutes % 60} minutes on Beat Saber.`,
+            true,
+          );
+        },
+      },
+    ],
     [
       "!modtts",
       {
@@ -843,6 +862,7 @@ export class MessageHandler {
     try {
       if (!data.message.startsWith("!")) return false;
       let commandName = data.message.split(" ")[0];
+      if (this.timeout.has(commandName)) return true;
       data.message = data.message.replace(commandName, "").trim();
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) commandName = commandAlias;
@@ -885,17 +905,27 @@ export class MessageHandler {
           .replace(/\(modonly\)/g, "")
           .replace(/\(reply\)/g, "");
 
+        if (customCommand.includes("fetch")) {
+          this.timeout.add(commandName);
+          setTimeout(() => {
+            this.timeout.delete(commandName);
+          }, 60 * 1000);
+        }
         if (modonly && !data.isUserMod) return false;
         data.reply(response, doReply);
         return true;
       }
 
       const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand != null) {
-        builtinCommand.commandFunction(data);
-        return !builtinCommand.showOnChat;
+      if (builtinCommand == null) return false;
+      builtinCommand.commandFunction(data);
+      if (builtinCommand.timeout) {
+        this.timeout.add(commandName);
+        setTimeout(() => {
+          this.timeout.delete(commandName);
+        }, builtinCommand.timeout);
       }
-      return true;
+      return !builtinCommand.showOnChat;
     } catch (e) {
       console.error(e);
       return false;
@@ -909,9 +939,9 @@ export class MessageHandler {
   public async handleMessage(data: MessageData) {
     data.isCommand = (await this.handleCommand(data)) ? true : data.isCommand;
 
-		data.id = `${data.platform}-${data.id}`;
-		data.senderId = `${data.platform}-${data.senderId}`;
-		data.replyId = `${data.platform}-${data.replyId}`;
+    data.id = `${data.platform}-${data.id}`;
+    data.senderId = `${data.platform}-${data.senderId}`;
+    data.replyId = `${data.platform}-${data.replyId}`;
 
     this.sendToChatList(data);
   }
@@ -962,9 +992,7 @@ export class MessageHandler {
     commandAlias.forEach((value) => {
       this.commandAliasMap.set(value.alias, value.command);
     });
-		this.keys = await this.keysFile.json();
-
-
+    this.keys = await this.keysFile.json();
   }
 
   private writeCustomCommands() {

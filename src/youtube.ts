@@ -116,18 +116,17 @@ export class YouTube {
       }
     });
 
-		this.chat.on("deleted_message", (event) => {
-        this.bot.iochat.emit("deleteMessage", "youtube-" + event.commentId);
-		});
+    this.chat.on("deleted_message", (event) => {
+      this.bot.iochat.emit("deleteMessage", "youtube-" + event.commentId);
+    });
 
-		this.chat.on("deleted_message_author", (event) => {
+    this.chat.on("deleted_message_author", (event) => {
       this.bot.iochat.emit("banUser", `youtube-${event.externalChannelId}`);
-		});
+    });
 
-
-		this.chat.on("unkown", (event) => {
-			console.log("unknwoı event: " + event);
-		})
+    this.chat.on("unkown", (event) => {
+      console.log("unknwoı event: " + event);
+    });
   }
   constructor(channelName: string, bot: TalkingBot) {
     this.channelName = channelName;

@@ -736,7 +736,7 @@ export class Twitch {
                 {
                   title: question,
                   duration: 60,
-                  choices: options,
+                  choices: options.filter((value) => value != ""),
                 },
               );
               this.chatClient.say(
