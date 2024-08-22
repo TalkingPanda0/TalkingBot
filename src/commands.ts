@@ -823,7 +823,7 @@ export class MessageHandler {
           const args = data.message.split(" ");
           switch (args[0]) {
             case "feed":
-              if (this.bot.pet.feed()) {
+              if (this.bot.pet.feed(data.sender)) {
                 data.banUser("Hapboo Shield", 10 * 60);
               }
               break;
@@ -834,12 +834,15 @@ export class MessageHandler {
               this.bot.pet.graveyard(args[1]);
               break;
             case "fuel":
-              if (this.bot.pet.fuel()) {
+              if (this.bot.pet.fuel(data.sender)) {
                 data.banUser("Hapboo Shield", 10 * 60);
               }
               break;
             case "pet":
               this.bot.pet.pet(data.sender);
+              break;
+            case "murderers":
+              this.bot.pet.murdererList();
               break;
             case "start":
               if (data.isUserMod) {
@@ -876,6 +879,7 @@ export class MessageHandler {
                 this.bot.pet.activateShield();
                 break;
               }
+
             default:
               data.reply(
                 "Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info",

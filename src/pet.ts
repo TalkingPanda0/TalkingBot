@@ -51,24 +51,22 @@ interface CurrentPet {
   stomach: number;
   status: Status;
   age: number;
+  murderers: string[];
+  slaughterers: string[];
 }
 
 export class Pet {
   private bot: TalkingBot;
-  private stomach: number = 1;
+  private currentPet: CurrentPet;
   private timer: Timer;
-  private name = 0;
-  private status: Status;
   private shield = false;
   private lastFed: Date;
   private campfire: number = 2;
-  private age: number = 0;
   private timeout: boolean = false;
   private petFile: BunFile = Bun.file(__dirname + "/../config/pet.json");
   private createHapbooFile: BunFile = Bun.file(
     __dirname + "/../config/createHapboo",
   );
-  private deadPets: DeadPet[] = [];
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -91,13 +89,19 @@ export class Pet {
     );
   }
 
+  public murdererList() {
+    this.bot.broadcastMessage(
+      `Hapboo murderers: @${this.currentPet.murderers.join(", @")}, Hapbooslaughterers: @${this.currentPet.slaughterers.join(", @")}`,
+    );
+  }
+
   public graveyard(hapboo?: string) {
-    if (this.deadPets.length === 0) {
+    if (this.currentPet.deadPets.length === 0) {
       this.bot.broadcastMessage("The graveyard is empty for now...");
       return;
     }
     if (hapboo == null) {
-      const longestSurvivingHapboos = this.deadPets
+      const longestSurvivingHapboos = this.currentPet.deadPets
         .toSorted((a, b) => {
           if (
             a.deathReason < DeathReason.omelete &&
@@ -137,7 +141,7 @@ export class Pet {
         })
         .join(",");
       this.bot.broadcastMessage(
-        `Hapboos lost: ${this.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}.`,
+        `Hapboos lost: ${this.currentPet.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}.`,
       );
       return;
     }
@@ -145,7 +149,7 @@ export class Pet {
       this.bot.broadcastMessage("[REDACTED]");
       return;
     }
-    const pet = this.deadPets.find((value, index, obj) => {
+    const pet = this.currentPet.deadPets.find((value, index, obj) => {
       return value.name === parseInt(hapboo);
     });
     if (pet == null) {
@@ -175,23 +179,23 @@ export class Pet {
   }
 
   public sayStatus(reason: StatusReason) {
-    let message = `Hapboo #${this.name}`;
-    switch (this.status) {
+    let message = `Hapboo #${this.currentPet.name}`;
+    switch (this.currentPet.status) {
       case Status.alive:
         switch (reason) {
           case StatusReason.fed:
-            message += ` has been given a candy. He is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
+            message += ` has been given a candy. He is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
             break;
           case StatusReason.tick:
-            message += ` is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
+            message += ` is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
             break;
           case StatusReason.command:
             if (this.lastFed == null) {
-              message += ` is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
+              message += ` is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
               break;
             }
-            message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.stomach]} . ${this.stomach + 1}/5`;
-            message += ` He is ${this.age} streams old.`;
+            message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
+            message += ` He is ${this.currentPet.age} streams old.`;
             break;
         }
         break;
@@ -200,35 +204,41 @@ export class Pet {
         break;
       case Status.egg:
       case Status.hatching:
-        message += ` is ${eggs[this.status]} The campfire is at ${this.campfire}/5 🔥 `;
+        message += ` is ${eggs[this.currentPet.status]} The campfire is at ${this.campfire}/5 🔥 `;
         message += campfires[this.campfire];
         break;
       default:
         return;
     }
-    if (this.status !== Status.dead && this.timer == null)
+    if (this.currentPet.status !== Status.dead && this.timer == null)
       message += " He is sleeping.";
     if (this.shield) message += " He is being protected.";
     this.bot.broadcastMessage(message);
   }
 
-  public feed(): boolean {
-    if (this.timeout || this.timer == null || this.status !== Status.alive)
+  public feed(userName: string): boolean {
+    if (
+      this.timeout ||
+      this.timer == null ||
+      this.currentPet.status !== Status.alive
+    )
       return false;
 
     this.startTimeout();
-    this.stomach++;
+    this.currentPet.stomach++;
     this.lastFed = new Date();
 
-    if (this.stomach >= emotes.length) {
+    if (this.currentPet.stomach >= emotes.length) {
       if (this.shield) {
-        this.stomach = 4;
+        this.currentPet.stomach = 4;
         this.shield = false;
         this.bot.twitch.updateShieldReedem(false);
         return true;
       }
-      this.bot.broadcastMessage(`Hapboo #${this.name} became too fat.`);
-      this.die(DeathReason.overfed);
+      this.bot.broadcastMessage(
+        `Hapboo #${this.currentPet.name} became too fat.`,
+      );
+      this.die(DeathReason.overfed, userName);
       return false;
     }
     this.sayStatus(StatusReason.fed);
@@ -241,7 +251,9 @@ export class Pet {
 
     this.shield = true;
     this.bot.twitch.updateShieldReedem(true);
-    this.bot.broadcastMessage(`Hapboo ${this.name} is now being protected.`);
+    this.bot.broadcastMessage(
+      `Hapboo ${this.currentPet.name} is now being protected.`,
+    );
 
     return true;
   }
@@ -249,15 +261,21 @@ export class Pet {
   public sleep() {
     this.bot.twitch.updateShieldReedem(true);
     this.shield = false;
-    if (this.status !== Status.dead)
-      this.bot.broadcastMessage(`Hapboo #${this.name} is going to sleep!`);
+    if (this.currentPet.status !== Status.dead)
+      this.bot.broadcastMessage(
+        `Hapboo #${this.currentPet.name} is going to sleep!`,
+      );
     clearInterval(this.timer);
     this.timer = null;
     this.writePet();
   }
 
-  public fuel(): boolean {
-    if (this.timeout || this.timer == null || this.status > Status.hatching)
+  public fuel(userName: string): boolean {
+    if (
+      this.timeout ||
+      this.timer == null ||
+      this.currentPet.status > Status.hatching
+    )
       return false;
     this.startTimeout();
     this.campfire++;
@@ -269,9 +287,9 @@ export class Pet {
         return true;
       }
       this.bot.broadcastMessage(
-        `The campfire got too hot. Habpoo #${this.name} is now 🍳`,
+        `The campfire got too hot. Habpoo #${this.currentPet.name} is now 🍳`,
       );
-      this.die(DeathReason.omelete);
+      this.die(DeathReason.omelete, userName);
       return false;
     }
     this.sayStatus(StatusReason.fed);
@@ -279,33 +297,35 @@ export class Pet {
   }
 
   public pet(user: string) {
-    if (this.status !== Status.alive) return;
-    this.bot.broadcastMessage(`${user} petted Hapboo #${this.name}.`);
+    if (this.currentPet.status !== Status.alive) return;
+    this.bot.broadcastMessage(
+      `${user} petted Hapboo #${this.currentPet.name}.`,
+    );
   }
 
   public init(hatch: boolean) {
     if (this.timer != null) return;
     this.bot.twitch.updateShieldReedem(false);
     if (hatch) {
-      switch (this.status) {
+      switch (this.currentPet.status) {
         case Status.hatching:
-          this.status = Status.alive;
+          this.currentPet.status = Status.alive;
           Bun.write(this.createHapbooFile, "a");
-          this.stomach = 2;
-          this.age = 0;
+          this.currentPet.stomach = 2;
+          this.currentPet.age = 0;
           break;
         case Status.egg:
-          this.status = Status.hatching;
+          this.currentPet.status = Status.hatching;
           Bun.write(this.createHapbooFile, "e");
           break;
         case undefined:
         case Status.dead:
-          this.name++;
-          this.status = Status.egg;
+          this.currentPet.name++;
+          this.currentPet.status = Status.egg;
           Bun.write(this.createHapbooFile, "e");
           break;
         case Status.alive:
-          this.age++;
+          this.currentPet.age++;
           break;
       }
     }
@@ -320,73 +340,74 @@ export class Pet {
     this.writePet();
   }
 
-  public die(reason: DeathReason) {
+  public die(reason: DeathReason, userName?: string) {
     clearInterval(this.timer);
     this.timer = null;
-    this.stomach = 0;
+    this.currentPet.stomach = 0;
     this.campfire = 2;
-    this.status = Status.dead;
-    this.deadPets.push({ name: this.name, deathReason: reason, age: this.age });
+    this.currentPet.status = Status.dead;
+    this.currentPet.deadPets.push({
+      name: this.currentPet.name,
+      deathReason: reason,
+      age: this.currentPet.age,
+    });
     this.writePet();
     switch (reason) {
       case DeathReason.starved:
         Bun.write(
           this.createHapbooFile,
-          `#${this.name} Starved at the age of ${this.age}`,
+          `#${this.currentPet.name} Starved at the age of ${this.currentPet.age}`,
         );
         break;
       case DeathReason.overfed:
         Bun.write(
           this.createHapbooFile,
-          `#${this.name} became too fat at the age of ${this.age}`,
+          `#${this.currentPet.name} became too fat at the age of ${this.currentPet.age}`,
         );
         break;
       case DeathReason.failed:
-        Bun.write(this.createHapbooFile, `#${this.name} Couldn't hatch`);
+        Bun.write(
+          this.createHapbooFile,
+          `#${this.currentPet.name} Couldn't hatch`,
+        );
         break;
       case DeathReason.omelete:
-        Bun.write(this.createHapbooFile, `#${this.name} Became an 🍳`);
+        Bun.write(
+          this.createHapbooFile,
+          `#${this.currentPet.name} Became an 🍳`,
+        );
         break;
     }
+    if (userName) this.currentPet.murderers.push(userName);
   }
 
   public async readPet() {
     if (!(await this.petFile.exists())) return;
-    const pet: CurrentPet = await this.petFile.json();
-    this.status = pet.status;
-    this.name = pet.name;
-    this.stomach = pet.stomach;
-    this.deadPets = pet.deadPets;
-    if (pet.age != null) this.age = pet.age;
+    this.currentPet = await this.petFile.json();
+
+    if (this.currentPet.age == null) this.currentPet.age = 0;
   }
 
   public async writePet() {
-    const currentPet: CurrentPet = {
-      name: this.name,
-      status: this.status,
-      stomach: this.stomach,
-      deadPets: this.deadPets,
-      age: this.age,
-    };
-    Bun.write(this.petFile, JSON.stringify(currentPet));
+    Bun.write(this.petFile, JSON.stringify(this.currentPet));
   }
 
   public tick() {
-    if (this.status <= Status.hatching) {
+    if (this.currentPet.status <= Status.hatching) {
       this.campfire--;
       if (this.campfire == 1) {
         setTimeout(
           () => {
             if (this.campfire != 1) return;
             this.bot.broadcastMessage(
-              `Hapboo #${this.name}: PLEEASSE IM COLD PLEAAASEEEE KEEP ME WARM PLEASEEEEEEEEEEEEEEE USING !pet fuel.`,
+              `Hapboo #${this.currentPet.name}: PLEEASSE IM COLD PLEAAASEEEE KEEP ME WARM PLEASEEEEEEEEEEEEEEE USING !pet fuel.`,
             );
           },
           14 * 60 * 1000,
         );
       } else if (this.campfire <= 0) {
         this.bot.broadcastMessage(
-          `The campfire got too cold. Habpoo #${this.name} is now dead`,
+          `The campfire got too cold. Habpoo #${this.currentPet.name} is now dead`,
         );
         this.die(DeathReason.failed);
         this.writePet();
@@ -397,19 +418,22 @@ export class Pet {
 
       return;
     }
-    if (this.status === Status.alive && this.stomach === 0) {
-      this.bot.broadcastMessage(`Hapboo #${this.name} has starved.`);
+    if (
+      this.currentPet.status === Status.alive &&
+      this.currentPet.stomach === 0
+    ) {
+      this.bot.broadcastMessage(`Hapboo #${this.currentPet.name} has starved.`);
       this.die(DeathReason.starved);
       this.writePet();
       return;
     }
-    this.stomach--;
-    if (this.stomach == 0) {
+    this.currentPet.stomach--;
+    if (this.currentPet.stomach == 0) {
       setTimeout(
         () => {
-          if (this.stomach != 0) return;
+          if (this.currentPet.stomach != 0) return;
           this.bot.broadcastMessage(
-            `Hapboo #${this.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`,
+            `Hapboo #${this.currentPet.name}: PLEEASSE IM HUNGRY PLEAAASEEEE FEED ME PLEASEEEEEEEEEEEEEEE USING !pet feed.`,
           );
         },
         14 * 60 * 1000,
