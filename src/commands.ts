@@ -182,6 +182,35 @@ export class MessageHandler {
       },
     ],
     [
+      "!tempmodtext",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          const oldModText = this.bot.modtext;
+          this.bot.modtext = data.parsedMessage.split(" ").slice(1).join(" ");
+          this.bot.iomodtext.emit(
+            "message",
+            this.bot.modtext.replaceAll("$counter", this.counter.toString()),
+          );
+          setTimeout(
+            () => {
+              this.bot.modtext = oldModText;
+              this.bot.iomodtext.emit(
+                "message",
+                this.bot.modtext.replaceAll(
+                  "$counter",
+                  this.counter.toString(),
+                ),
+              );
+            },
+            15 * 60 * 1000,
+          );
+        },
+      },
+    ],
+
+    [
       "!modtext",
       {
         showOnChat: false,
