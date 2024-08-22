@@ -48,7 +48,7 @@
       messageElement.classList.add(message.platform);
       messageElement.classList.add(message.senderId);
       // message is a reply
-      if (message.replyTo != "") {
+      if (message.replyTo != null && message.replyTo != "") {
         let replyColor = "#a5a5a5";
         const messagesOfParentSender = document.querySelectorAll(
           `.${message.replyId} .sender`,
