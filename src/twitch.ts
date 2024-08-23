@@ -657,7 +657,7 @@ export class Twitch {
               const replyId = replyToUser ? msg.id : null;
               await this.chatClient.say(channel, message, { replyTo: replyId });
               this.bot.iochat.emit("message", {
-								badges: [],
+                badges: [],
                 text: message,
                 parsedMessage: message,
                 sender: "TalkingBot",
@@ -668,7 +668,7 @@ export class Twitch {
                 isFirst: false,
                 isCommand: true,
               });
-							console.log(`TalkingBot - ${message}`);
+              console.log(`TalkingBot - ${message}`);
             },
             banUser: async (message: string, duration: number) => {
               try {
@@ -678,8 +678,8 @@ export class Twitch {
                   duration: duration,
                 });
               } catch (e) {
-								console.error(e);
-							}
+                console.error(e);
+              }
             },
           });
         } catch (e) {
@@ -696,7 +696,7 @@ export class Twitch {
       }
     });
     this.chatClient.onDisconnect((manually: boolean, reason?: Error) => {
-			if(manually) return;
+      if (manually) return;
       this.bot.iochat.emit("chatDisconnect", "Twitch");
       console.error(
         "\x1b[35m%s\x1b[0m",
@@ -717,6 +717,18 @@ export class Twitch {
 
   public say(message: string) {
     this.chatClient.say(this.channel.name, message);
+    this.bot.iochat.emit("message", {
+      badges: [],
+      text: message,
+      parsedMessage: message,
+      sender: "TalkingBot",
+      senderId: "bot",
+      color: "green",
+      id: undefined,
+      platform: "bot",
+      isFirst: false,
+      isCommand: true,
+    });
   }
 
   public async handleRedeemQueue(accept?: Boolean) {
@@ -814,7 +826,7 @@ export class Twitch {
   }
   private replaceBTTVEmotes(input: string): string {
     // Create a regular expression from the map keys
-		if(this.BTTVEmotes.size == 0) return input;
+    if (this.BTTVEmotes.size == 0) return input;
     const pattern = Array.from(this.BTTVEmotes.keys()).join("|");
     const regex = new RegExp(`\\b(${pattern})\\b`, "g");
 
