@@ -73,6 +73,11 @@ export class YouTubeAPI {
     this.youtubeClient = google.youtube({ version: "v3" });
   }
 
+	public onStreamEnd(){
+		this.videoId = null;
+		this.chatId = null;
+	}
+
   public async setTitle(title: string) {
     try {
       await this.youtubeClient.videos.update({

@@ -22,7 +22,6 @@ export class YouTube {
   public permTitle: string;
 
   private bot: TalkingBot;
-  private videoId: string;
   private chat: TubeChat;
   private channelName: string;
   private getColor(username: string): string {
@@ -52,16 +51,16 @@ export class YouTube {
     this.chat.on("disconnect", () => {
       this.bot.iochat.emit("chatDisconnect", "youtube");
       this.isConnected = false;
-      this.videoId = null;
       console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
     });
 
-    this.chat.on("chat_connected", (channel, videoId) => {
+    this.chat.on("chat_connected", async (channel, videoId) => {
       this.bot.iochat.emit("chatConnect", "youtube");
       this.isConnected = true;
-      this.videoId = videoId;
       this.api.getChatId(videoId);
       console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
+      const title = await this.bot.twitch.getCurrentTitle();
+      if (title != null) this.api.setTitle(title);
     });
 
     this.chat.on("message", async (event) => {

@@ -702,8 +702,6 @@ export class Twitch {
         "\x1b[35m%s\x1b[0m",
         `Disconnected from twitch, trying to reconnect: ${reason}, ${manually}`,
       );
-
-      this.chatClient.reconnect();
     });
     this.chatClient.connect();
     this.eventListener.start();
@@ -713,6 +711,14 @@ export class Twitch {
     if (this.isStreamOnline) {
       this.bot.pet.init(false);
     }
+  }
+
+  public async getCurrentTitle(): Promise<string> {
+    const stream = await this.bot.twitch.apiClient.streams.getStreamByUserId(
+      this.bot.twitch.channel.id,
+    );
+    if (stream == null) return null;
+    return stream.title;
   }
 
   public say(message: string) {
