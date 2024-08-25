@@ -67,6 +67,7 @@ export class YouTube {
       try {
         let text = event.message
           .map((messageFragment) => {
+						if(messageFragment.textEmoji) return messageFragment.textEmoji;
             return messageFragment.text;
           })
           .join("");
