@@ -105,11 +105,12 @@ export class MessageHandler {
             (
               await Promise.all(
                 users.map(async (watchTime, index) => {
+									const user = helixUsers.find((user) => user.id == watchTime.userId).displayName;
                   try {
                     if (isOffline)
-                      return `@${helixUsers[index].displayName} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
+                      return `@${user} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
                     else
-                      return `@${helixUsers[index].displayName} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`;
+                      return `@${user} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`;
                   } catch (e) {
                     return e;
                   }
