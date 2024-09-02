@@ -6,11 +6,11 @@ const voicesRegex =
 const messageList = document.getElementById("message-list");
 
 const emoteSoundEffects = {
-	ShyTwerk: "twerk.mp3",
+  ShyTwerk: "twerk.mp3",
   HapBoo: "yippe.mp3",
   HapFlat: "squish.mp3",
   HabPoo: "habpoo.mp3",
-	Heheh: "hehe.mp3",
+  Heheh: "hehe.mp3",
   TeeHee: "hehe.mp3",
   aids: "aids.mp3",
   HNNNGH: "hnhg.mp3",
@@ -22,12 +22,12 @@ const emoteSoundEffects = {
   Sexy: "sexy.mp3",
   Stunky: "stunky.mp3",
   BanBan: "borf.mp3",
-	EatsDrywall: "eat.mp3",
-	Drywall: "eat.mp3",
-	HeartSweet: "kiss.mp3",
-	Heart: "kiss.mp3",
-	Trol: "troll.mp3",
-	TrollNuked: "troll.mp3",
+  EatsDrywall: "eat.mp3",
+  Drywall: "eat.mp3",
+  HeartSweet: "kiss.mp3",
+  Heart: "kiss.mp3",
+  Trol: "troll.mp3",
+  TrollNuked: "troll.mp3",
 };
 
 let queue = [];
@@ -72,9 +72,9 @@ function createPopup(message) {
   var popupElement = `<span class="sender"><span style="color: ${message.color}">${message.sender}</span> says:</span><br/><span class="text">${message.parsedText}</span class="text"></span><div></div>`;
   messageList.innerHTML = popupElement;
   messageList.style.opacity = 1;
-  /*if (Math.floor(Math.random() * 20) == 0) {
+  if (Math.floor(Math.random() * 100) == 0) {
     messageList.appendChild(HAPBOO());
-  }*/
+  }
 }
 
 function removePopup() {

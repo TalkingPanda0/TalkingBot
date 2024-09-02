@@ -8,6 +8,7 @@
     />
   </head>
   <body id="body">
+    <div id="emote-wall"></div>
     <div id="message-list"></div>
     <div
       id="disconnect-list"
@@ -19,13 +20,13 @@
         display: flex;
       "
     ></div>
-    <div id="a"></div>
   </body>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
     const mentionRegex = /@(\w+)/g;
+    const emoteWallRegex = /<img\b[^>]*?\bsrc\s*=\s*["']?([^"'\s>]+)["']?/gi;
     const platformIcons = {
       bot: "https://talkingpanda.dev/bot.png",
       twitch: "https://twitch.tv/favicon.ico",
@@ -35,9 +36,83 @@
 
     const messageList = document.getElementById("message-list");
     const disconnectList = document.getElementById("disconnect-list");
+    const emoteWall = document.getElementById("emote-wall");
     const queryString = window.location.search;
     const searchParams = new URLSearchParams(queryString);
     const showCommands = searchParams.get("showcmd") === "yes";
+    const showEmoteWall = searchParams.get("emotewall") === "sure";
+
+    const currentEmotes = [];
+
+    let lastTimeStamp;
+
+    function getRandomArbitrary(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function animateEmoteWall(timeStamp) {
+      if (lastTimeStamp === undefined) {
+        lastTimeStamp = timeStamp;
+      }
+
+      const deltaTime = timeStamp - lastTimeStamp;
+      lastTimeStamp = timeStamp;
+
+      currentEmotes.forEach((emote) => {
+        emote.remainingTime -= deltaTime;
+
+        if (emote.remainingTime <= 0) {
+          emote.img.style.opacity = "0%";
+          setTimeout(() => {
+            emote.img.remove();
+            delete emote;
+          }, 1000);
+        }
+        if (
+          emote.x + emote.img.clientWidth + 5 >= window.innerWidth ||
+          emote.x <= 0
+        )
+          emote.vx *= -1;
+
+        if (
+          emote.y + emote.img.clientHeight + 5 >= window.innerHeight ||
+          emote.y <= 0
+        )
+          emote.vy *= -1;
+
+        emote.x += emote.vx * deltaTime;
+        emote.y += emote.vy * deltaTime;
+        emote.img.style.left = emote.x + "px";
+        emote.img.style.top = emote.y + "px";
+      });
+      window.requestAnimationFrame(animateEmoteWall);
+    }
+
+    async function addToEmoteWall(text) {
+      text.replaceAll(emoteWallRegex, (text, emote) => {
+        const img = new Image();
+        img.src = emote;
+        img.classList.add("emote-wall-emote");
+        emoteWall.appendChild(img);
+
+        const reverseX = Math.random() < 0.5;
+        const reverseY = Math.random() < 0.5;
+        currentEmotes.push({
+          img: img,
+          vx: reverseX ? -0.25 : 0.25,
+          vy: reverseY ? -0.25 : 0.25,
+          x: getRandomArbitrary(
+            10 + img.clientWidth,
+            window.innerWidth - img.clientWidth - 10,
+          ),
+          y: getRandomArbitrary(
+            10 + img.clientWidth,
+            window.innerHeight - img.clientHeight - 10,
+          ),
+          remainingTime: 5 * 1000,
+        });
+      });
+    }
 
     function addToMessageList(message) {
       if (message.isCommand && !showCommands) return;
@@ -45,6 +120,9 @@
       // Don't add if a message with the same id already exits or if it's from the bot
       if (message.id !== undefined && document.getElementById(message.id))
         return;
+
+      if (showEmoteWall && !message.isOld)
+        addToEmoteWall(message.parsedMessage);
 
       message.badges.unshift(platformIcons[message.platform]);
 
@@ -100,6 +178,7 @@
       textElement.classList.add("sender");
       textElement.style = `color:${message.color}`;
       let text = message.parsedMessage.trim();
+
       text = text.replaceAll(mentionRegex, (mention, user) => {
         do {
           const elements = document.querySelectorAll(".sender");
@@ -244,103 +323,120 @@
         inline: "nearest",
       });
     });
+    if (showEmoteWall) window.requestAnimationFrame(animateEmoteWall);
   </script>
   <style>
-      #message-list {
-        background-color: rgba(0, 0, 0, 0.5);
-        display: table;
-        bottom: 0;
-        left: 0;
-        table-layout: fixed;
-        overflow-y: scroll;
-        width: 100%;
-      }
+    	#emote-wall {
+    		position: fixed;
+    	}
 
-      body::-webkit-scrollbar {
-        width: 0;
-        /* WebKit (Safari, Chrome) */
-      }
-      .message {
-        padding-left: 4px;
-        border-radius: 2px;
-        margin: 2px;
-        padding-bottom: 7px;
-        padding-top: 7px;
-        overflow-wrap: break-word;
-      }
-
-      .text {
-        color: white;
-      }
-      .sender {
-        vertical-align: middle;
-      }
-      .badge {
-        display: inline-table;
-        vertical-align: middle;
-        height: 25px;
-        width: 25px;
-
-        margin: 2px;
-        filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
-          drop-shadow(0 0 0 #000);
-      }
-      .badges {
-        display: inline-table;
-        padding: 2px;
-        margin-right: 4px;
-      }
-      * {
-        color: #fff;
-        font-family: Arial, Helvetica, sans-serif;
-        font-size: 25px;
-        font-weight: 700;
-        line-height: 1em;
-      }
-      .emote {
-        height: 28px;
-        min-width: 28px;
+    	.emote-wall-emote {
+    		position: absolute;
+     height: 28px;
+    min-width: 28px;
         vertical-align: middle;
         padding-left: 5px;
         padding-right: 5px;
+    transition: opacity 1s ease-in-out;
+    	}
+
+        #message-list {
+          background-color: rgba(0, 0, 0, 0.5);
+          display: table;
+          bottom: 0;
+          left: 0;
+          table-layout: fixed;
+          overflow-y: scroll;
+          width: 100%;
+        }
+
+        body::-webkit-scrollbar {
+          width: 0;
+          /* WebKit (Safari, Chrome) */
+        }
+        .message {
+          padding-left: 4px;
+          border-radius: 2px;
+          margin: 2px;
+          padding-bottom: 7px;
+          padding-top: 7px;
+          overflow-wrap: break-word;
+        }
+
+        .text {
+          color: white;
+        }
+        .sender {
+          vertical-align: middle;
+        }
+        .badge {
+          display: inline-table;
+          vertical-align: middle;
+          height: 25px;
+          width: 25px;
+
+          margin: 2px;
+          filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+            drop-shadow(0 0 0 #000);
+        }
+        .badges {
+          display: inline-table;
+          padding: 2px;
+          margin-right: 4px;
+        }
+        * {
+          color: #fff;
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 25px;
+          font-weight: 700;
+          line-height: 1em;
+        }
+        .emote {
+          height: 28px;
+          min-width: 28px;
+          vertical-align: middle;
+          padding-left: 5px;
+          padding-right: 5px;
+    		top: 0px;
+    		left: 0px;
+        }
+        .reply {
+          color: #a5a5a5;
+          font-size: 15px;
+          margin-left: 4px;
+          margin-bottom: 5px;
+          display: inline-table;
+      	white-space: nowrap;
+        }
+      .replyText {
+      	color: #a5a5a5;
+          font-size: 15px;
+          margin-left: 4px;
+          margin-bottom: 5px;
+          display: inline-table;
+      	height: 15px;
+      	overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
       }
-      .reply {
-        color: #a5a5a5;
-        font-size: 15px;
-        margin-left: 4px;
-        margin-bottom: 5px;
-        display: inline-table;
-    	white-space: nowrap;
       }
-    .replyText {
-    	color: #a5a5a5;
-        font-size: 15px;
-        margin-left: 4px;
-        margin-bottom: 5px;
-        display: inline-table;
-    	height: 15px;
-    	overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    }
-    .redeem {
-        color: #a5a5a5;
-        font-size: 20px;
-        margin-left: 4px;
-        margin-bottom: 5px;
-        display: inline-table;
-      }
-      body {
-        margin: 0px;
-        background-color: #2b2e38;
-      }
-    .redeem {
-        color: #a5a5a5;
-        font-size: 20px;
-        margin-left: 4px;
-        margin-bottom: 5px;
-        display: inline-table;
-      }
+      .redeem {
+          color: #a5a5a5;
+          font-size: 20px;
+          margin-left: 4px;
+          margin-bottom: 5px;
+          display: inline-table;
+        }
+        body {
+          margin: 0px;
+          background-color: #2b2e38;
+        }
+      .redeem {
+          color: #a5a5a5;
+          font-size: 20px;
+          margin-left: 4px;
+          margin-bottom: 5px;
+          display: inline-table;
+        }
   </style>
 </html>
