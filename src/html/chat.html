@@ -108,7 +108,7 @@
           }
 
           const targetElement = Array.from(elements).find((element) =>
-            element.innerText.startsWith(`${user}`),
+            element.innerText.toLowerCase().startsWith(`${user.toLowerCase()}`),
           );
           if (targetElement == null) {
             break;
