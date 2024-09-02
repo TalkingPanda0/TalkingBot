@@ -815,6 +815,26 @@ export class MessageHandler {
         },
       },
     ],
+		[
+			"!testwheel",
+			{
+				showOnChat: false,
+				commandFunction: async (data) => {
+					if(!data.isUserMod) return;
+					let results = new Map<string,number>();
+					for(var i=0;i<100000000;i++){
+						const result = this.bot.wheel.spinInChat();
+						const savedResult = results.get(result);
+						if(savedResult) results.set(result,savedResult+1);
+						else results.set(result,1);
+					}
+					const sum = Array.from(results.values()).reduce((pv,cv) => pv += cv);
+					results.forEach((value,key) => {
+						console.log(`${key}: ${value * (100/sum)}`);
+					});
+				}
+			}
+		],
     [
       "!pet",
       {

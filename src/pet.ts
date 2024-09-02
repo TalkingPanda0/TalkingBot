@@ -43,9 +43,12 @@ interface DeadPet {
   name: number;
   deathReason: DeathReason;
   age?: number;
+	deathDate?: string;
+	birthDate?: string; 
 }
 
 interface CurrentPet {
+	birthDate?: string; 
   deadPets: DeadPet[];
   name: number;
   stomach: number;
@@ -149,7 +152,7 @@ export class Pet {
       this.bot.broadcastMessage("[REDACTED]");
       return;
     }
-    const pet = this.currentPet.deadPets.find((value, index, obj) => {
+    const pet = this.currentPet.deadPets.find((value) => {
       return value.name === parseInt(hapboo);
     });
     if (pet == null) {
@@ -160,19 +163,19 @@ export class Pet {
     }
     switch (pet.deathReason) {
       case DeathReason.omelete:
-        this.bot.broadcastMessage(`Hapboo #${pet.name} became a 🍳.`);
+        this.bot.broadcastMessage(`Hapboo #${pet.name} became a 🍳. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`);
         return;
       case DeathReason.failed:
-        this.bot.broadcastMessage(`Hapboo #${pet.name} couldn't hatch.`);
+        this.bot.broadcastMessage(`Hapboo #${pet.name} couldn't hatch. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`);
         return;
       case DeathReason.overfed:
         this.bot.broadcastMessage(
-          `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams.`,
+          `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
         );
         return;
       case DeathReason.starved:
         this.bot.broadcastMessage(
-          `Hapboo #${pet.name} starved at the age of ${pet.age} streams.`,
+          `Hapboo #${pet.name} starved at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
         );
         return;
     }
@@ -323,6 +326,7 @@ export class Pet {
           this.currentPet.name++;
           this.currentPet.status = Status.egg;
           Bun.write(this.createHapbooFile, "e");
+					this.currentPet.birthDate = new Date().toJSON();
           break;
         case Status.alive:
           this.currentPet.age++;
@@ -350,6 +354,8 @@ export class Pet {
       name: this.currentPet.name,
       deathReason: reason,
       age: this.currentPet.age,
+			birthDate: this.currentPet.birthDate,
+			deathDate: new Date().toJSON(),
     });
     this.writePet();
     switch (reason) {
