@@ -34,6 +34,7 @@
       youtube: "https://www.youtube.com/favicon.ico",
     };
 
+		
     const messageList = document.getElementById("message-list");
     const disconnectList = document.getElementById("disconnect-list");
     const emoteWall = document.getElementById("emote-wall");
@@ -97,10 +98,11 @@
 
         const reverseX = Math.random() < 0.5;
         const reverseY = Math.random() < 0.5;
+				const speed = emote == "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3c2386e9c7064294811122aff92173c6/default/dark/3.0" ? 1 : 0.25; 
         currentEmotes.push({
           img: img,
-          vx: reverseX ? -0.25 : 0.25,
-          vy: reverseY ? -0.25 : 0.25,
+          vx: reverseX ? -speed : speed,
+          vy: reverseY ? -speed: speed,
           x: getRandomArbitrary(
             10 + img.clientWidth,
             window.innerWidth - img.clientWidth - 10,
@@ -332,8 +334,8 @@
 
     	.emote-wall-emote {
     		position: absolute;
-     height: 28px;
-    min-width: 28px;
+     height: 56px;
+    min-width: 56px;
         vertical-align: middle;
         padding-left: 5px;
         padding-right: 5px;
