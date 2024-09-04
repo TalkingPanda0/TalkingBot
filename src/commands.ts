@@ -971,13 +971,13 @@ export class MessageHandler {
             this.timeout.delete(commandName);
           }, 60 * 1000);
         }
-        if (modonly && !data.isUserMod) return false;
+        if (modonly && !data.isUserMod) return true;
         data.reply(response, doReply);
         return true;
       }
 
       const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand == null) return false;
+      if (builtinCommand == null) return true;
       builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
