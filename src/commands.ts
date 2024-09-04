@@ -647,19 +647,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!bsr",
-      {
-        showOnChat: false,
-        commandFunction: (data): void | Promise<void> => {
-          if (data.platform == "twitch") return;
-          this.bot.twitch.chatClient.say(
-            this.bot.twitch.channel.name,
-            `!bsr ${data.message}`,
-          );
-        },
-      },
-    ],
-    [
       "!tts",
       {
         showOnChat: true,
