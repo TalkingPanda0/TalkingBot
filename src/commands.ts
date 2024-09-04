@@ -652,10 +652,13 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data): void | Promise<void> => {
           if (data.platform == "twitch") return;
-          this.bot.twitch.chatClient.say(
-            this.bot.twitch.channel.name,
+          this.bot.twitch.say(
             `!bsr ${data.message}`,
           );
+					this.bot.twitch.say(
+            `!songmsg ${data.message} Requested by @${data.sender}`,
+          );
+
         },
       },
     ],
