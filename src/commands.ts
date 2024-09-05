@@ -855,10 +855,10 @@ export class MessageHandler {
               }
               break;
             case "status":
-              this.bot.pet.sayStatus(StatusReason.command);
+              data.reply(this.bot.pet.sayStatus(StatusReason.command), true);
               break;
             case "graveyard":
-              this.bot.pet.graveyard(args[1]);
+              data.reply(this.bot.pet.graveyard(args[1]), true);
               break;
             case "fuel":
               if (this.bot.pet.fuel(data.sender)) {
@@ -866,10 +866,10 @@ export class MessageHandler {
               }
               break;
             case "pet":
-              this.bot.pet.pet(data.sender);
+              data.reply(this.bot.pet.pet(data.sender), true);
               break;
             case "murderers":
-              this.bot.pet.murdererList();
+              data.reply(this.bot.pet.murdererList(), true);
               break;
             case "start":
               if (data.isUserMod) {
@@ -907,10 +907,11 @@ export class MessageHandler {
                 break;
               }
             default:
-							if(args[0].startsWith('f')){
-								if(this.bot.pet.feedOrFuel(data.sender)) data.banUser("Hapboo Shield", 10 * 60);
-								return;
-							} 
+              if (args[0].startsWith("f")) {
+                if (this.bot.pet.feedOrFuel(data.sender))
+                  data.banUser("Hapboo Shield", 10 * 60);
+                return;
+              }
               data.reply(
                 "Usage !pet feed|fuel|status|pet|graveyard|murderers. Use !petinfo for more info.",
                 true,

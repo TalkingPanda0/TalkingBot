@@ -106,7 +106,7 @@
         const speed =
           emote ==
           "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3c2386e9c7064294811122aff92173c6/default/dark/3.0"
-            ? 1
+            ? 0.5
             : 0.25;
         currentEmotes.push({
           img: img,
@@ -120,7 +120,7 @@
             10 + img.clientWidth,
             window.innerHeight - img.clientHeight - 10,
           ),
-          remainingTime: 100 * 1000,
+          remainingTime: 5 * 1000,
         });
       });
     }

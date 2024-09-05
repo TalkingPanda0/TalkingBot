@@ -92,13 +92,16 @@ export class Pet {
     );
   }
 
-  public murdererList(): string {
-    return `Hapboo murderers: @${this.currentPet.murderers.join(", @")}, Hapbooslaughterers: @${this.currentPet.slaughterers.join(", @")}`;
+  public murdererList() {
+    this.bot.broadcastMessage(
+      `Hapboo murderers: @${this.currentPet.murderers.join(", @")}, Hapbooslaughterers: @${this.currentPet.slaughterers.join(", @")}`,
+    );
   }
 
-  public graveyard(hapboo?: string): string {
+  public graveyard(hapboo?: string) {
     if (this.currentPet.deadPets.length === 0) {
-      return "The graveyard is empty for now...";
+      this.bot.broadcastMessage("The graveyard is empty for now...");
+      return;
     }
     if (hapboo == null) {
       const longestSurvivingHapboos = this.currentPet.deadPets
@@ -140,26 +143,45 @@ export class Pet {
           }
         })
         .join(",");
-      return `Hapboos lost: ${this.currentPet.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}.`;
+      this.bot.broadcastMessage(
+        `Hapboos lost: ${this.currentPet.deadPets.length}, longest living Hapboos: ${longestSurvivingHapboos}.`,
+      );
+      return;
     }
     if (hapboo === "3") {
-      return "[REDACTED]";
+      this.bot.broadcastMessage("[REDACTED]");
+      return;
     }
     const pet = this.currentPet.deadPets.find((value) => {
       return value.name === parseInt(hapboo);
     });
     if (pet == null) {
-      return `Couldn't find hapboo #${hapboo} in the graveyard`;
+      this.bot.broadcastMessage(
+        `Couldn't find hapboo #${hapboo} in the graveyard`,
+      );
+      return;
     }
     switch (pet.deathReason) {
       case DeathReason.omelete:
-        return `Hapboo #${pet.name} became a 🍳. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`;
+        this.bot.broadcastMessage(
+          `Hapboo #${pet.name} became a 🍳. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
+        );
+        return;
       case DeathReason.failed:
-        return `Hapboo #${pet.name} couldn't hatch. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`;
+        this.bot.broadcastMessage(
+          `Hapboo #${pet.name} couldn't hatch. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
+        );
+        return;
       case DeathReason.overfed:
-        return `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`;
+        this.bot.broadcastMessage(
+          `Hapboo #${pet.name} became too fat at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
+        );
+        return;
       case DeathReason.starved:
-        return `Hapboo #${pet.name} starved at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`;
+        this.bot.broadcastMessage(
+          `Hapboo #${pet.name} starved at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
+        );
+        return;
     }
   }
 
@@ -215,7 +237,7 @@ export class Pet {
     if (this.currentPet.status !== Status.dead && this.timer == null)
       message += " He is sleeping.";
     if (this.shield) message += " He is being protected.";
-    return message;
+    this.bot.broadcastMessage(message);
   }
 
   public feed(userName: string): boolean {
@@ -298,10 +320,11 @@ export class Pet {
     this.restartTickTimer();
   }
 
-  public pet(user: string): string {
+  public pet(user: string) {
     if (this.currentPet.status !== Status.alive) return;
-
-    return `${user} petted Hapboo #${this.currentPet.name}.`;
+    this.bot.broadcastMessage(
+      `${user} petted Hapboo #${this.currentPet.name}.`,
+    );
   }
 
   public init(hatch: boolean) {
