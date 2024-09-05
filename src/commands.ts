@@ -906,10 +906,13 @@ export class MessageHandler {
                 this.bot.pet.activateShield();
                 break;
               }
-
             default:
+							if(args[0].startsWith('f')){
+								if(this.bot.pet.feedOrFuel(data.sender)) data.banUser("Hapboo Shield", 10 * 60);
+								return;
+							} 
               data.reply(
-                "Usage !pet feed|fuel|status|graveyard. Use !petinfo for more info",
+                "Usage !pet feed|fuel|status|pet|graveyard|murderers. Use !petinfo for more info.",
                 true,
               );
           }

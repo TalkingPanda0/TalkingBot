@@ -4,7 +4,7 @@ import { getTimeDifference } from "./util";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry. Please feed him using !pet feed",
-  "sweetb35Shy. Feed him using !pet feed",
+  "sweetb35Shy feed him using !pet feed",
   "sweetb35Sexy",
   "sweetb35Heheh",
   "sweetb35HNNNGH he is a bit too full",
@@ -43,12 +43,12 @@ interface DeadPet {
   name: number;
   deathReason: DeathReason;
   age?: number;
-	deathDate?: string;
-	birthDate?: string; 
+  deathDate?: string;
+  birthDate?: string;
 }
 
 interface CurrentPet {
-	birthDate?: string; 
+  birthDate?: string;
   deadPets: DeadPet[];
   name: number;
   stomach: number;
@@ -163,10 +163,14 @@ export class Pet {
     }
     switch (pet.deathReason) {
       case DeathReason.omelete:
-        this.bot.broadcastMessage(`Hapboo #${pet.name} became a 🍳. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`);
+        this.bot.broadcastMessage(
+          `Hapboo #${pet.name} became a 🍳. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
+        );
         return;
       case DeathReason.failed:
-        this.bot.broadcastMessage(`Hapboo #${pet.name} couldn't hatch. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`);
+        this.bot.broadcastMessage(
+          `Hapboo #${pet.name} couldn't hatch. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
+        );
         return;
       case DeathReason.overfed:
         this.bot.broadcastMessage(
@@ -178,6 +182,23 @@ export class Pet {
           `Hapboo #${pet.name} starved at the age of ${pet.age} streams. ${new Date(pet.birthDate).toLocaleString()} - ${new Date(pet.deathDate).toLocaleString()}`,
         );
         return;
+    }
+  }
+
+  public feedOrFuel(userName: string) {
+    if (this.currentPet.status !== Status.dead && this.timer == null) {
+      this.sayStatus(StatusReason.command);
+      return false;
+    }
+    switch (this.currentPet.status) {
+      case Status.alive:
+        return this.feed(userName);
+      case Status.egg:
+      case Status.hatching:
+        return this.fuel(userName);
+      default:
+        this.sayStatus(StatusReason.command);
+        return false;
     }
   }
 
@@ -326,7 +347,7 @@ export class Pet {
           this.currentPet.name++;
           this.currentPet.status = Status.egg;
           Bun.write(this.createHapbooFile, "e");
-					this.currentPet.birthDate = new Date().toJSON();
+          this.currentPet.birthDate = new Date().toJSON();
           break;
         case Status.alive:
           this.currentPet.age++;
@@ -354,8 +375,8 @@ export class Pet {
       name: this.currentPet.name,
       deathReason: reason,
       age: this.currentPet.age,
-			birthDate: this.currentPet.birthDate,
-			deathDate: new Date().toJSON(),
+      birthDate: this.currentPet.birthDate,
+      deathDate: new Date().toJSON(),
     });
     this.writePet();
     switch (reason) {

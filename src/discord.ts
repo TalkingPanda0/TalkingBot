@@ -108,6 +108,7 @@ export class Discord {
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
+
     this.client.once(Events.ClientReady, (readyClient) => {
       console.log("\x1b[34m%s\x1b[0m", `Discord setup complete`);
       this.channel = this.client.guilds.cache
