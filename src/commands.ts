@@ -1176,7 +1176,7 @@ const killOtherMessages: string[] = [
   "$1 sent $2 to an awesome farm in the country.",
 ];
 
-const eightballMessages: string[] = [
+export const eightballMessages: string[] = [
   "Reply hazy try again.",
   "Ask again later.",
   "Better not tell you now.",

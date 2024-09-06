@@ -18,6 +18,8 @@ import {
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
+import { getRandomElement } from "./util";
+import { eightballMessages } from "./commands";
 export interface streamInfo {
   game: string;
   title: string;
@@ -108,7 +110,6 @@ export class Discord {
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
-
     this.client.once(Events.ClientReady, (readyClient) => {
       console.log("\x1b[34m%s\x1b[0m", `Discord setup complete`);
       this.channel = this.client.guilds.cache
@@ -134,11 +135,11 @@ export class Discord {
       if (hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
 
       if (randomInt(100 + currentHapboos) === 0) {
-				try {
-					await message.react("1255212339406573641");
-				} catch (e){
-					console.error(e);
-				}
+        try {
+          await message.react("1255212339406573641");
+        } catch (e) {
+          console.error(e);
+        }
         console.log("HAPBOOO");
         this.bot.database.hapbooReaction(message.author.id);
       }
@@ -209,6 +210,42 @@ export class Discord {
     this.commands = new Collection();
 
     const discordCommands: DiscordCommand[] = [
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("8ball")
+          .setDescription("ball")
+          .addStringOption((option) =>
+            option.setName("question").setDescription("The Question."),
+          ),
+        execute: async (interaction) => {
+          const question = interaction.options.getString("question");
+          let answer = "";
+          if (
+            question &&
+            question.toLowerCase().includes("furry") &&
+            question.toLowerCase().includes("sweet")
+          ) {
+            answer = getRandomElement(eightballMessages.slice(27, 34));
+          } else answer = getRandomElement(eightballMessages);
+          interaction.reply({
+            embeds: [
+              {
+                title: "8Balls",
+                fields: [
+                  {
+                    name: "Question",
+                    value: question,
+                  },
+                  {
+                    name: "Answer",
+                    value: answer,
+                  },
+                ],
+              },
+            ],
+          });
+        },
+      },
       {
         commandBuilder: new SlashCommandBuilder()
           .setName("bump")
