@@ -165,7 +165,7 @@ export class Pet {
 
   public feedOrFuel(userName: string) {
     if (this.currentPet.status !== Status.dead && this.timer == null) {
-      this.sayStatus(StatusReason.command);
+      this.bot.broadcastMessage(this.sayStatus(StatusReason.command));
       return false;
     }
     switch (this.currentPet.status) {
@@ -175,7 +175,7 @@ export class Pet {
       case Status.hatching:
         return this.fuel(userName);
       default:
-        this.sayStatus(StatusReason.command);
+        this.bot.broadcastMessage(this.sayStatus(StatusReason.command));
         return false;
     }
   }
@@ -243,7 +243,8 @@ export class Pet {
       this.die(DeathReason.overfed, userName);
       return false;
     }
-    this.sayStatus(StatusReason.fed);
+    this.bot.broadcastMessage(this.sayStatus(StatusReason.fed));
+
     this.restartTickTimer();
     return false;
   }
@@ -294,7 +295,8 @@ export class Pet {
       this.die(DeathReason.omelete, userName);
       return false;
     }
-    this.sayStatus(StatusReason.fed);
+
+    this.bot.broadcastMessage(this.sayStatus(StatusReason.fed));
     this.restartTickTimer();
   }
 
@@ -338,7 +340,8 @@ export class Pet {
         },
         15 * 60 * 1000,
       );
-    this.sayStatus(StatusReason.tick);
+
+    this.bot.broadcastMessage(this.sayStatus(StatusReason.tick));
     this.writePet();
   }
 
@@ -417,7 +420,7 @@ export class Pet {
         this.writePet();
         return;
       }
-      this.sayStatus(StatusReason.tick);
+      this.bot.broadcastMessage(this.sayStatus(StatusReason.tick));
       this.writePet();
 
       return;
@@ -443,6 +446,6 @@ export class Pet {
         14 * 60 * 1000,
       );
     }
-    this.sayStatus(StatusReason.tick);
+    this.bot.broadcastMessage(this.sayStatus(StatusReason.tick));
   }
 }
