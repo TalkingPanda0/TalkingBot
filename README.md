@@ -42,6 +42,7 @@ Mods can always use `!tts` and disable or enable it for non-mods using `!modtts 
 `!tags remove [tags]` will remove the `[tags]` from the stream tags.
 # Title 
 `!settitle [title]` will set the stream title to `[title]`.
+`!tempsettitle [title]` will set the stream title to `[title]` after 15 minutes will change it back.
 ## Dyntitle 
 `!dyntitle [title]` will update the stream title with `[title]` every minute.
 `[title]` can have `fetch(url)` and `suffix(n)` see [Response syntax](#Response-syntax).
@@ -55,6 +56,7 @@ after the stream is over the YouTube title will be set to `[title] (game)`.
 `!counter -n` will subtract n from the counter.
 # Modtext
 `!modtext [text]` will change the modtext to `[text]`.
+`!tempmodtext [text]` will change the modtext to `[text]` after 15 minutes will change it back.
 `[text]` can have `$counter` which will show the current counter.
 `!hapboo` will improve the stream.
 # Snipe
