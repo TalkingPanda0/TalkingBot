@@ -185,6 +185,39 @@ export class MessageHandler {
       },
     ],
     [
+      "!tempsettitle",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          if (!data.isUserMod || data.message.length == 0) return;
+
+          const oldTitle = await this.bot.twitch.getCurrentTitle();
+          await this.bot.twitch.apiClient.channels.updateChannelInfo(
+            this.bot.twitch.channel.id,
+            { title: data.message },
+          );
+          await this.bot.youTube.api.setTitle(data.message);
+
+          // TODO change title in kick
+
+          this.bot.broadcastMessage(
+            `Title has been changed to "${data.message}"`,
+          );
+
+          setTimeout(
+            async () => {
+              await this.bot.twitch.apiClient.channels.updateChannelInfo(
+                this.bot.twitch.channel.id,
+                { title: oldTitle },
+              );
+              await this.bot.youTube.api.setTitle(oldTitle);
+            },
+            15 * 60 * 1000,
+          );
+        },
+      },
+    ],
+    [
       "!tempmodtext",
       {
         showOnChat: false,
