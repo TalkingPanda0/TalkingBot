@@ -38,6 +38,10 @@ app.get("/control", (req: Request, res: Response) => {
 app.get("/wheel", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/wheel.html");
 });
+app.get("/login", (req: Request, res: Response) => {
+
+});
+
 
 const bot: TalkingBot = new TalkingBot("17587561", server);
 

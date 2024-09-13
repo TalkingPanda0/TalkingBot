@@ -54,6 +54,7 @@ export class Twitch {
   public clientSecret = "";
   public apiClient: ApiClient;
   public channel: HelixUser;
+  public publicClientId: string;
   public currentPoll: Poll;
   public chatClient: ChatClient;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
@@ -221,6 +222,7 @@ export class Twitch {
     this.clientId = fileContent.clientId;
     this.clientSecret = fileContent.clientSecret;
     this.channelName = fileContent.channelName;
+    this.publicClientId = fileContent.publicApikey;
   }
 
   async initBot(): Promise<void> {

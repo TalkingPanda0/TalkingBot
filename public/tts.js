@@ -32,6 +32,8 @@ const emoteSoundEffects = {
 
 let queue = [];
 let isPlaying = false;
+let playing;
+let currentUser;
 
 const audio = new Audio();
 
@@ -79,6 +81,7 @@ function createPopup(message) {
 
 function removePopup() {
   messageList.style.opacity = 0;
+  currentUser = null;
   setTimeout(() => {
     messageList.innerHTML = "";
   }, 1e3);
@@ -94,24 +97,17 @@ function handleQueue() {
     return;
   var message = queue.shift();
   var text = message.text.trim();
-  var playing;
   var interval;
   isPlaying = true;
   interval = setTimeout(() => {
-    if (playing != null) {
-      playing.pause();
-      playing.currentTime = 0;
-      playing = null;
-      isPlaying = false;
-      setTimeout(removePopup, 10000);
-    }
-  }, 30 * 1000);
+    if (playing != null) stopCurrentTTS();
+  }, 20 * 1000);
   createPopup(message);
+  currentUser = message.sender;
   for (const key in emoteSoundEffects) {
     const index = text.indexOf(key);
     if (index !== -1) {
       let tempqueue = [];
-      console.log("GOT " + index);
 
       if (index != 0) {
         message.text = text.slice(0, index);
@@ -224,6 +220,14 @@ function ttSay(message) {
   queue.push(message);
 }
 
+function stopCurrentTTS() {
+  playing.pause();
+  playing.currentTime = 0;
+  playing = null;
+  isPlaying = false;
+  setTimeout(removePopup, 1000);
+}
+
 function listen() {
   const socket = io("/", { path: "/tts/" });
 
@@ -235,6 +239,18 @@ function listen() {
     }
     ttSay(message);
     handleQueue();
+  });
+  socket.on("skip", (user) => {
+    if (user == null) {
+      stopCurrentTTS();
+      console.log(`Skipping current message`);
+      return;
+    }
+    user = user.replace(/^@/, "").toLowerCase();
+    console.log(`Skipping ${user}`);
+    if (currentUser != null && currentUser.toLowerCase() === user)
+      stopCurrentTTS();
+    queue = queue.filter((message) => message.sender.toLowerCase() != user);
   });
   setInterval(handleQueue, 1e3);
 }

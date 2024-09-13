@@ -760,15 +760,19 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          if (data.message == "enable") {
-            this.ttsEnabled = true;
-            data.reply("TTS command has been enabled", true);
-            return;
-          }
-          if (data.message == "disable") {
-            this.ttsEnabled = false;
-            data.reply("TTS command has been disabled", true);
-            return;
+          const args = data.message.split(" ");
+          switch (args[0]) {
+            case "enable":
+              this.ttsEnabled = true;
+              data.reply("TTS command has been enabled", true);
+              return;
+            case "disable":
+              this.ttsEnabled = false;
+              data.reply("TTS command has been disabled", true);
+              return;
+            case "skip":
+              this.bot.iotts.emit("skip", args[1]);
+              return;
           }
         },
       },

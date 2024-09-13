@@ -25,7 +25,9 @@ Channel point redeems that require mod approval will be put on a queue. These co
 `!reedem reject` will refund the channel points.
 `!reedem scam` will mark the redeem as complete but won't approve the redeem.
 # TTS
-Mods can always use `!tts` and disable or enable it for non-mods using `!modtts enable` or `!modtts disable`
+- Moderators can always use `!tts` and disable or enable it for normal people using `!modtts enable` or `!modtts disable` 
+- `!modtts skip` will skip the current tts being played.
+- `!modtts skip [user]` will skip every message by `[user]` in the queue.
 # Wheeeel
 - `!wheel add [rewardname] [rewardweight] [rewardcolor]` adds a reward to the wheel with name `[rewardname]`, weight `[rewardweight]`, and color `[rewardcolor]`.
   `[rewardcolor]` is an [html color name](https://www.w3schools.com/colors/colors_names.asp) like `red` or an hex color like `#048ac7`.
