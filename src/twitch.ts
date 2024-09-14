@@ -125,7 +125,7 @@ export class Twitch {
 
     if (message.isReply) {
       text = text.replace(
-        new RegExp(`@${message.parentMessageUserDisplayName}`, "i"),
+        new RegExp(`^@${message.parentMessageUserDisplayName}`, "i"),
         "",
       );
       replyTo = message.parentMessageUserDisplayName;
@@ -592,7 +592,7 @@ export class Twitch {
           );
           let badges = [];
 
-          const parsedMessage = await this.bot.parseClips(
+          let parsedMessage = await this.bot.parseClips(
             this.parseTwitchEmotes(msg.text, msg.emoteOffsets),
           );
           if (msg.userInfo.isMod) {
@@ -610,8 +610,8 @@ export class Twitch {
           let replyText = "";
           let rewardName = "";
           if (msg.isReply) {
-            text = text.replace(
-              new RegExp(`@${msg.parentMessageUserDisplayName}`, "i"),
+            parsedMessage = parsedMessage.replace(
+              new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
               "",
             );
             replyTo = msg.parentMessageUserDisplayName;

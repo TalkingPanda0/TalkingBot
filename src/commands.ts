@@ -1034,7 +1034,7 @@ export class MessageHandler {
   }
 
   private sendToChatList(data: MessageData) {
-    this.bot.iochat.emit("message", data);
+	    this.bot.iochat.emit("message", data);
   }
 
   public async handleMessage(data: MessageData) {
