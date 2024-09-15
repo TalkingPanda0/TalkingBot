@@ -322,14 +322,19 @@ export class MessageHandler {
             } else {
               this.counter = parseInt(data.message);
             }
-            data.reply(`The counter has been set to ${this.counter}`, true);
-            this.bot.iomodtext.emit(
-              "message",
-              this.bot.modtext.replaceAll("$counter", this.counter.toString()),
-            );
+            data.reply(`The counter is now ${this.counter}.`, true);
+
+            if (this.bot.modtext)
+              this.bot.iomodtext.emit(
+                "message",
+                this.bot.modtext.replaceAll(
+                  "$counter",
+                  this.counter.toString(),
+                ),
+              );
             return;
           }
-          data.reply(`The counter is at ${this.counter}`, true);
+          data.reply(`The counter is at ${this.counter}.`, true);
         },
       },
     ],
@@ -1034,11 +1039,11 @@ export class MessageHandler {
   }
 
   private sendToChatList(data: MessageData) {
-	    this.bot.iochat.emit("message", data);
+    this.bot.iochat.emit("message", data);
   }
 
   public async handleMessage(data: MessageData) {
-    data.isCommand = (await this.handleCommand(data)) ? true : data.isCommand;
+    data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     data.id = `${data.platform}-${data.id}`;
     data.senderId = `${data.platform}-${data.senderId}`;
