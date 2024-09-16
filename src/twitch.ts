@@ -166,13 +166,8 @@ export class Twitch {
   public async cleanUp() {
     this.chatClient.quit();
     this.eventListener.stop();
-    const chatters = await this.apiClient.chat.getChatters(this.channel.id);
-    chatters.data.forEach((chatter) => {
-      if (chatter.userId == "736013381" || chatter.userId == "646848961")
-        return;
-      console.log("\x1b[35m%s\x1b[0m", `Twitch - ${chatter.userName} left.`);
-      this.bot.database.userLeave(chatter.userId, this.isStreamOnline);
-    });
+		this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
+		this.bot.database.cleanDataBase();
   }
 
   public updateShieldReedem(status: boolean) {

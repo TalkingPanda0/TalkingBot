@@ -93,6 +93,8 @@ export class MessageHandler {
         timeout: 120 * 1000,
         showOnChat: false,
         commandFunction: async (data) => {
+					try {
+
           if (data.platform != "twitch") return;
           const isOffline = data.message === "offline";
           this.bot.database.updateDataBase(isOffline ? 1 : 2);
@@ -121,8 +123,11 @@ export class MessageHandler {
             ).join(" "),
             false,
           );
-        },
+        } catch(e){
+					console.error(e);
+				}
       },
+			}
     ],
     [
       "!watchtime",
@@ -133,7 +138,7 @@ export class MessageHandler {
           if (data.platform != "twitch") return;
           const args = data.message.toLowerCase().split(" ");
           let userName = args[0];
-          const isOffline = userName === "offline";
+          const isOffline = userName === "offline" || args[1] == "offline";
           let userId = data.senderId;
           if (userName != null && userName.startsWith("@")) {
             const user = await this.bot.twitch.apiClient.users.getUserByName(
@@ -968,7 +973,7 @@ export class MessageHandler {
     try {
       if (!data.message.startsWith("!")) return false;
       let commandName = data.message.split(" ")[0];
-      if (this.timeout.has(commandName)) return true;
+      if (this.timeout.has(commandName) && !data.isUserMod) return true;
       data.message = data.message.replace(commandName, "").trim();
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) commandName = commandAlias;

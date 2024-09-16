@@ -139,6 +139,7 @@ export class TalkingBot {
 
   public async initBot() {
     this.database.init();
+		this.database.cleanDataBase();
     this.discord.initBot();
     await this.twitch.initBot();
     this.kick.initBot();
