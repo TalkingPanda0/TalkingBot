@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from "express";
+import bodyParser from "body-parser";
 import * as http from "http";
 
 import { TalkingBot } from "./talkingbot";
@@ -7,6 +8,7 @@ const app: Express = express();
 const server = http.createServer(app);
 
 app.use(express.static("public"));
+app.use(bodyParser.text());
 
 app.get("/tts", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/tts.html");
@@ -32,16 +34,26 @@ app.get("/chatControl", (req: Request, res: Response) => {
 app.get("/setup", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/setup.html");
 });
+app.put("/control", (req: Request, res: Response) => {
+  console.log(req.body);
+  if (!req.body) {
+    res.sendStatus(400);
+    return;
+  }
+  // AUTH
+  bot.modtext = req.body;
+  bot.updateModText();
+  res.sendStatus(200);
+});
 app.get("/control", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/control.html");
 });
 app.get("/wheel", (req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/wheel.html");
 });
-app.get("/login", (req: Request, res: Response) => {
-
+app.get("/modtextedit", (req: Request, res: Response) => {
+  res.sendFile(__dirname + "/html/modtextedit.html");
 });
-
 
 const bot: TalkingBot = new TalkingBot("17587561", server);
 

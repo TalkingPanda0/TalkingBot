@@ -62,7 +62,7 @@ export class TalkingBot {
     });
 
     this.iomodtext.on("connection", (socket) => {
-      socket.emit("message", this.modtext);
+      this.updateModText();
     });
 
     this.iotts = new Server(this.server, {
@@ -111,7 +111,8 @@ export class TalkingBot {
             this.iochat.emit(data.target, data.message);
             break;
           case "modtext":
-            this.iomodtext.emit(data.target, data.message);
+            this.modtext = data.message;
+            this.updateModText();
             break;
           case "tts":
             this.iotts.emit(data.target, data.message);
@@ -139,7 +140,7 @@ export class TalkingBot {
 
   public async initBot() {
     this.database.init();
-		this.database.cleanDataBase();
+    this.database.cleanDataBase();
     this.discord.initBot();
     await this.twitch.initBot();
     this.kick.initBot();
@@ -223,5 +224,12 @@ export class TalkingBot {
   public broadcastMessage(message: string) {
     this.twitch.say(message);
     this.youTube.api.sendMessage(message);
+  }
+  public updateModText() {
+    if (!this.modtext) return;
+    this.iomodtext.emit(
+      "message",
+      `<p>${this.modtext.replaceAll("$counter", this.commandHandler.counter.toString())}</p>`,
+    );
   }
 }

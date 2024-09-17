@@ -3,9 +3,12 @@
   <head>
     <link rel="stylesheet" type="text/css" href="content-tools.min.css" />
   </head>
+
   <body>
-    <div id="text"></div>
+    <div data-editable data-name="main-content" id="text"></div>
   </body>
+  <script src="content-tools.min.js"></script>
+  <script src="editor.js"></script>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
@@ -37,11 +40,11 @@
       font-weight: 700;
       line-height: 1em;
     }
-    iframe,
-    image,
-    [data-ce-tag="img"],
-    img,
-    video {
+    [data-editable] iframe,
+    [data-editable] image,
+    [data-editable] [data-ce-tag="img"],
+    [data-editable] img,
+    [data-editable] video {
       clear: both;
       display: block;
       margin-left: auto;
@@ -50,29 +53,29 @@
     }
 
     /* Left align */
-    .align-left {
+    [data-editable] .align-left {
       clear: initial;
       float: left;
       margin-right: 0.5em;
     }
 
     /* Right align */
-    .align-right {
+    [data-editable].align-right {
       clear: initial;
       float: right;
       margin-left: 0.5em;
     }
 
     /* Alignment styles for text in editable regions */
-    .text-center {
+    [data-editable] .text-center {
       text-align: center;
     }
 
-    .text-left {
+    [data-editable] .text-left {
       text-align: left;
     }
 
-    .text-right {
+    [data-editable] .text-right {
       text-align: right;
     }
   </style>
