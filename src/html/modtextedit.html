@@ -19,7 +19,7 @@
 
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
-      text.innerHTML = message;
+      text.innerHTML = message.text;
     });
   </script>
   <style>

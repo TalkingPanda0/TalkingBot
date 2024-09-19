@@ -14,7 +14,7 @@ RUN mkdir ./src
 COPY src ./src
 
 RUN mkdir ./public
-COPY public ./public
+COPY --chown=bun public ./public
 
 RUN bun install --frozen-lockfile --verbose
 

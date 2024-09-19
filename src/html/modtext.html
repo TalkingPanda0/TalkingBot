@@ -16,7 +16,7 @@
 
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
-      text.innerHTML = message;
+      text.innerHTML = message.text.replaceAll("$counter",message.counter);
     });
   </script>
   <style>
@@ -33,7 +33,7 @@
     * {
       color: #fff;
       font-family: Arial, Helvetica, sans-serif;
-      font-size: 25px;
+      font-size: 40px;
       font-weight: 700;
       line-height: 1em;
     }

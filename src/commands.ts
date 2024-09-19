@@ -50,6 +50,7 @@ interface BuiltinCommand {
 
 export class MessageHandler {
   public counter: number = 0;
+  public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
   private keys: any;
   private timeout = new Set();
@@ -66,6 +67,10 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+		this.counterFile.json().then((value) => {
+			if(value.counter) this.counter = value.counter;
+			else this.counter = 0;
+		})
   }
 
   private commandMap: Map<string, BuiltinCommand> = new Map([
@@ -248,7 +253,7 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          this.bot.modtext = data.parsedMessage.split(" ").slice(1).join(" ");
+          this.bot.modtext = `<p>${data.parsedMessage.split(" ").slice(1).join(" ")}</p>`;
           this.bot.updateModText();
         },
       },
@@ -303,6 +308,30 @@ export class MessageHandler {
         },
       },
     ],
+		[
+			"!c--",
+			{
+				showOnChat: false,
+				commandFunction: (data) => {
+					if(!data.isUserMod) return;
+					this.counter--;
+					this.bot.updateModText();
+          data.reply(`The counter is now ${this.counter}.`, true);
+				}
+			}
+		],
+		[
+			"!c++",
+			{
+				showOnChat: false,
+				commandFunction: (data) => {
+					if(!data.isUserMod) return;
+					this.counter++;
+					this.bot.updateModText();
+          data.reply(`The counter is now ${this.counter}.`, true);
+				}
+			}
+		],
     [
       "!counter",
       {

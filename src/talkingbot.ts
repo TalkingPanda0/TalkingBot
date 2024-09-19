@@ -10,6 +10,7 @@ import { Pet } from "./pet";
 
 import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
+import { json } from "body-parser";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -226,10 +227,14 @@ export class TalkingBot {
     this.youTube.api.sendMessage(message);
   }
   public updateModText() {
-    if (!this.modtext) return;
+		Bun.write(this.commandHandler.counterFile,JSON.stringify({counter: this.commandHandler.counter}));
+		if (!this.modtext) return;
     this.iomodtext.emit(
       "message",
-      `<p>${this.modtext.replaceAll("$counter", this.commandHandler.counter.toString())}</p>`,
+			{
+				text: this.modtext,
+				counter: this.commandHandler.counter,
+			}
     );
   }
 }
