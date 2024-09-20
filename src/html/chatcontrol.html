@@ -24,6 +24,7 @@
       <option value="kick">Kick</option>
       <option value="youtube">YouTube</option>
     </select>
+			<input type="checkbox" id="command-input" name="iscommand" value="false" />
 			<input id="badges-input" placeholder="Badges"></input>
 			<input id="name-input" placeholder="Name"></input>
 			<input id="color-input" placeholder="Color"></input>
@@ -51,12 +52,14 @@
     const nameInput = document.getElementById("name-input");
     const colorInput = document.getElementById("color-input");
     const messageInput = document.getElementById("message-input");
+    const commandInput = document.getElementById("command-input");
 
 		function sendMessage(){
 			const platform = platformInput.value;
 			const color = colorInput.value;
 			const text = messageInput.value;
 			const user = nameInput.value;
+			const command = commandInput.checked;
 			const badges = JSON.parse(badgesInput.value);
 			const message = {
 			  "badges": badges,
@@ -73,7 +76,7 @@
 			  "replyTo": "",
 			  "rewardName": "",
 			  "isOld": false,
-			  "isCommand": false,
+			  "isCommand": command,
 			  "id": undefined 
 			}
 		
@@ -212,6 +215,7 @@
 				nameInput.value = message.sender;
 				colorInput.value = message.color;
 				messageInput.value = message.parsedMessage;
+				commandInput.checked = message.isCommand;
       });
       const banElement = document.createElement("div");
       banElement.classList.add("material-icons");
