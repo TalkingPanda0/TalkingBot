@@ -132,7 +132,8 @@
       if (showEmoteWall && !message.isOld)
         addToEmoteWall(message.parsedMessage);
 
-      message.badges.unshift(platformIcons[message.platform]);
+			if(message.isFake && showCommands) message.badges.unshift(platformIcons["bot"]);
+			else message.badges.unshift(platformIcons[message.platform]);
 
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
