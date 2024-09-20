@@ -166,7 +166,7 @@
         rewardElement.innerHTML = `Redeemed ${message.rewardName}`;
         messageElement.appendChild(rewardElement);
         messageElement.appendChild(document.createElement("br"));
-        if (message.rewardName === "Highlight My Message")
+        if (message.rewardName.toLowerCase() === "highlight my message")
           messageElement.style.background = "#755ebc";
       }
       if (message.isOld) {
