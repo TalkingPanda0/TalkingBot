@@ -70,6 +70,7 @@ export class MessageHandler {
 		this.counterFile.json().then((value) => {
 			if(value.counter) this.counter = value.counter;
 			else this.counter = 0;
+			this.bot.modtext = value.modtext;
 		})
   }
 

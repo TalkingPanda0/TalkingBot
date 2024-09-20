@@ -16,7 +16,7 @@
 
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
-      text.innerHTML = message.text.replaceAll("$counter",message.counter);
+      text.innerHTML = message.text.replaceAll("$counter", message.counter);
     });
   </script>
   <style>
@@ -74,6 +74,9 @@
 
     .text-right {
       text-align: right;
+    }
+    p {
+      margin: 0;
     }
   </style>
 </html>

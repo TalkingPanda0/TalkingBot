@@ -113,6 +113,7 @@ export class TalkingBot {
             break;
           case "modtext":
             this.modtext = data.message;
+
             this.updateModText();
             break;
           case "tts":
@@ -227,14 +228,17 @@ export class TalkingBot {
     this.youTube.api.sendMessage(message);
   }
   public updateModText() {
-		Bun.write(this.commandHandler.counterFile,JSON.stringify({counter: this.commandHandler.counter}));
-		if (!this.modtext) return;
-    this.iomodtext.emit(
-      "message",
-			{
-				text: this.modtext,
-				counter: this.commandHandler.counter,
-			}
+    Bun.write(
+      this.commandHandler.counterFile,
+      JSON.stringify({
+        counter: this.commandHandler.counter,
+        modtext: this.modtext,
+      }),
     );
+    if (!this.modtext) return;
+    this.iomodtext.emit("message", {
+      text: this.modtext,
+      counter: this.commandHandler.counter,
+    });
   }
 }
