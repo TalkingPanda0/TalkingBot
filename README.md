@@ -2,8 +2,8 @@
 # Custom Commands
 `[commandname]` and `[aliasname]` must start with a `!` and can't have a space in them.
 ## Adding Commands
-`!addcmd [commandname] [response]` 
-this will create a command called `[commandname]` that will respond with `[response]` when used.
+`!addcmd [commandname] [response]` this will create a command called `[commandname]` that will respond with `[response]` when used.
+`!editcmd [commandname] [response]` this will edit the command `[commandname]` to respond with `[response]`.
 ### Response syntax
 - `$user` will be replaced by the user's name who used the command.
 - `$args` will be replaced by everything the user put after the command.
@@ -56,6 +56,9 @@ after the stream is over the YouTube title will be set to `[title] (game)`.
 `!conter n` will set the counter to n.
 `!counter +n` will add n to the counter.
 `!counter -n` will subtract n from the counter.
+`!c++` will increase the counter.
+`!c--` will decrease the counter.
+
 # Modtext
 `!modtext [text]` will change the modtext to `[text]`.
 `!tempmodtext [text]` will change the modtext to `[text]` after 15 minutes will change it back.

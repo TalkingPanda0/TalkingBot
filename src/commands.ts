@@ -67,11 +67,11 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-		this.counterFile.json().then((value) => {
-			if(value.counter) this.counter = value.counter;
-			else this.counter = 0;
-			this.bot.modtext = value.modtext;
-		})
+    this.counterFile.json().then((value) => {
+      if (value.counter) this.counter = value.counter;
+      else this.counter = 0;
+      this.bot.modtext = value.modtext;
+    });
   }
 
   private commandMap: Map<string, BuiltinCommand> = new Map([
@@ -309,30 +309,30 @@ export class MessageHandler {
         },
       },
     ],
-		[
-			"!c--",
-			{
-				showOnChat: false,
-				commandFunction: (data) => {
-					if(!data.isUserMod) return;
-					this.counter--;
-					this.bot.updateModText();
+    [
+      "!c--",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          this.counter--;
+          this.bot.updateModText();
           data.reply(`The counter is now ${this.counter}.`, true);
-				}
-			}
-		],
-		[
-			"!c++",
-			{
-				showOnChat: false,
-				commandFunction: (data) => {
-					if(!data.isUserMod) return;
-					this.counter++;
-					this.bot.updateModText();
+        },
+      },
+    ],
+    [
+      "!c++",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          this.counter++;
+          this.bot.updateModText();
           data.reply(`The counter is now ${this.counter}.`, true);
-				}
-			}
-		],
+        },
+      },
+    ],
     [
       "!counter",
       {
@@ -432,6 +432,37 @@ export class MessageHandler {
               false,
             );
           }
+        },
+      },
+    ],
+    [
+      "!editcmd",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          const splitMessage = data.message.split(" ");
+          let commandName = splitMessage[0];
+          const response = data.message.substring(
+            data.message.indexOf(" ") + 1,
+            data.message.length,
+          );
+
+          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
+          let command = this.customCommandMap.get(commandName);
+          if (!command) {
+            data.reply(`Command ${commandName} does not exist!`, true);
+            return;
+          }
+          if (splitMessage.length <= 1) {
+            data.reply("No command response given", true);
+            return;
+          }
+
+          this.customCommandMap.set(commandName, response);
+
+          data.reply(`Command ${commandName} has been added`, true);
+          this.writeCustomCommands();
         },
       },
     ],
