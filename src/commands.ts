@@ -341,9 +341,9 @@ export class MessageHandler {
           const regex = /[+|-]/g;
           if (data.isUserMod && data.message != "") {
             if (regex.test(data.message)) {
-              this.counter += parseInt(data.message);
+              this.counter += parseFloat(data.message);
             } else {
-              this.counter = parseInt(data.message);
+              this.counter = parseFloat(data.message);
             }
             data.reply(`The counter is now ${this.counter}.`, true);
             this.bot.updateModText();
