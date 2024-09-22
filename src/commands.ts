@@ -461,7 +461,7 @@ export class MessageHandler {
 
           this.customCommandMap.set(commandName, response);
 
-          data.reply(`Command ${commandName} has been added`, true);
+          data.reply(`Command ${commandName} has been editted`, true);
           this.writeCustomCommands();
         },
       },
@@ -528,26 +528,6 @@ export class MessageHandler {
           } else {
             data.reply(`${commandName} is not a command`, true);
           }
-        },
-      },
-    ],
-    [
-      "!editcmd",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          const commandName = data.message.split(" ")[0];
-          const response = data.message.substring(
-            data.message.indexOf(" ") + 1,
-            data.message.length,
-          );
-          if (this.customCommandMap.has(commandName)) {
-            this.customCommandMap.set(commandName, response);
-            this.writeCustomCommands();
-            return;
-          }
-          data.reply(`${commandName} is not a command`, true);
         },
       },
     ],
