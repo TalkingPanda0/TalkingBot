@@ -61,6 +61,8 @@ export class MessageHandler {
   private lastDynamicTitle: string;
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
+  private argMap = new Map<string, string>();
+  private argsFile = Bun.file(__dirname + "/../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../config/commands.json");
   private aliasesFile = Bun.file(__dirname + "/../config/aliases.json");
   private keysFile = Bun.file(__dirname + "/../config/keys.json");
@@ -467,6 +469,38 @@ export class MessageHandler {
       },
     ],
     [
+      "!addarg",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          const splitMessage = data.message.split(" ");
+          let commandName = `${splitMessage[0]} ${splitMessage[1]}`;
+
+          if (!this.customCommandMap.has(splitMessage[0])) {
+            data.reply(`Command ${commandName} does not exist!`, true);
+            return;
+          }
+          if (splitMessage.length <= 2) {
+            data.reply("No command response given", true);
+            return;
+          }
+
+          const response = data.message.substring(
+            data.message.indexOf(" ") + 2,
+            data.message.length,
+          );
+
+          this.argMap.set(commandName, response);
+          console.log(this.argMap);
+
+          data.reply(`argument ${commandName} has been added`, true);
+
+          this.writeCustomCommands();
+        },
+      },
+    ],
+    [
       "!addcmd",
       {
         showOnChat: false,
@@ -580,10 +614,11 @@ export class MessageHandler {
       {
         showOnChat: false,
         commandFunction: (data) => {
+          const aliases = Array.from(this.commandAliasMap.keys()).join(", ");
           const custom = Array.from(this.customCommandMap.keys()).join(", ");
           const builtin = Array.from(this.commandMap.keys()).join(", ");
           data.reply(
-            `Builtin Commands: ${builtin}, Custom Commands: ${custom}`,
+            `Builtin Commands: ${builtin}, Custom Commands: ${custom},${aliases}`,
             true,
           );
         },
@@ -724,7 +759,7 @@ export class MessageHandler {
             this.bot.twitch.say(
               `!songmsg ${data.message} Requested by @${data.sender}`,
             );
-          }, 500);
+          }, 1000);
         },
       },
     ],
@@ -999,9 +1034,13 @@ export class MessageHandler {
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) commandName = commandAlias;
 
-      const customCommand = this.customCommandMap.get(commandName);
+      let customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
         const message = data.message;
+        const arg = this.argMap.get(
+          `${commandName} ${data.message.split(" ")[0]}`,
+        );
+        if (arg) customCommand = arg;
         const modonly = customCommand.includes("(modonly)");
         const doReply = customCommand.includes("(reply)");
         let response = (
@@ -1124,12 +1163,19 @@ export class MessageHandler {
     commandAlias.forEach((value) => {
       this.commandAliasMap.set(value.alias, value.command);
     });
+    if (!(await this.argsFile.exists())) return;
+    const arg: CommandAlias[] = await this.argsFile.json();
+    arg.forEach((value) => {
+      this.argMap.set(value.alias, value.command);
+    });
+
     this.keys = await this.keysFile.json();
   }
 
   private writeCustomCommands() {
     const customCommands: CustomCommand[] = [];
     const commandAlias: CommandAlias[] = [];
+    const args: CommandAlias[] = [];
     this.customCommandMap.forEach((value, key) => {
       customCommands.push({ command: key, response: value });
     });
@@ -1138,6 +1184,10 @@ export class MessageHandler {
       commandAlias.push({ alias: key, command: value });
     });
     Bun.write(this.aliasesFile, JSON.stringify(commandAlias));
+    this.argMap.forEach((value, key) => {
+      args.push({ alias: key, command: value });
+    });
+    Bun.write(this.argsFile, JSON.stringify(args));
   }
 }
 
