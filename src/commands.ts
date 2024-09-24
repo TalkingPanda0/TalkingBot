@@ -53,6 +53,7 @@ export class MessageHandler {
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
   private keys: any;
+  private beefage: number = 0;
   private timeout = new Set();
   private bot: TalkingBot;
   private ttsEnabled: Boolean = false;
@@ -336,6 +337,39 @@ export class MessageHandler {
       },
     ],
     [
+      "!beefage",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          data.reply(`Current beefage: ${this.beefage}`, true);
+        },
+      },
+    ],
+    [
+      "!beef",
+      {
+        showOnChat: false,
+        timeout: 60 * 1000,
+        commandFunction: (data) => {
+          if (this.timeout.has("!pork")) return;
+          this.beefage++;
+          data.reply(`Beefage is now: ${this.beefage}`, true);
+        },
+      },
+    ],
+    [
+      "!pork",
+      {
+        showOnChat: false,
+        timeout: 60 * 1000,
+        commandFunction: (data) => {
+          if (this.timeout.has("!beef")) return;
+          this.beefage--;
+          data.reply(`Beefage is now: ${this.beefage}`, true);
+        },
+      },
+    ],
+    [
       "!counter",
       {
         showOnChat: false,
@@ -487,7 +521,7 @@ export class MessageHandler {
           }
 
           const response = data.message.substring(
-            data.message.indexOf(" ") + 2,
+            data.message.indexOf(" ") + 1,
             data.message.length,
           );
 
@@ -588,8 +622,12 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          const commandName = splitMessage[1];
           const alias = splitMessage[0];
+          const commandName = data.message.substring(
+            data.message.indexOf(" ") + 1,
+            data.message.length,
+          );
+
           if (
             this.commandAliasMap.has(alias) ||
             this.customCommandMap.has(alias)
@@ -1030,9 +1068,12 @@ export class MessageHandler {
       if (!data.message.startsWith("!")) return false;
       let commandName = data.message.split(" ")[0];
       if (this.timeout.has(commandName) && !data.isUserMod) return true;
-      data.message = data.message.replace(commandName, "").trim();
       const commandAlias = this.commandAliasMap.get(commandName);
-      if (commandAlias != null) commandName = commandAlias;
+      if (commandAlias != null) {
+        data.message = data.message.replace(commandName, commandAlias);
+        commandName = data.message.split(" ")[0];
+      }
+      data.message = data.message.replace(commandName, "").trim();
 
       let customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
