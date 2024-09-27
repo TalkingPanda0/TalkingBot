@@ -42,6 +42,7 @@ export class YouTube {
 
   public onStreamEnd() {
     if (this.permTitle) this.api.setTitle(this.permTitle);
+		this.api.onStreamEnd();
   }
 
   public async initBot() {
