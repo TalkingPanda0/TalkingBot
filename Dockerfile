@@ -1,8 +1,5 @@
-# use the official Bun image
-# see all versions at https://hub.docker.com/r/oven/bun/tags
-FROM oven/bun:1.1.22
-# install dependencies into temp directory
-# this will cache them and speed up future builds
+FROM oven/bun:alpine
+
 USER bun
 
 RUN mkdir /home/bun/talkingbot
@@ -16,7 +13,7 @@ COPY src ./src
 RUN mkdir ./public
 COPY --chown=bun public ./public
 
-RUN bun install --frozen-lockfile --verbose
+RUN bun install --frozen-lockfile --verbose --production
 
 EXPOSE 3000/tcp
 ENTRYPOINT [ "bun", "run", "src/app.ts" ]

@@ -54,6 +54,7 @@ export class MessageHandler {
 
   private keys: any;
   private beefage: number = 0;
+  private beefageDecayTimer: Timer;
   private timeout = new Set();
   private bot: TalkingBot;
   private ttsEnabled: Boolean = false;
@@ -75,6 +76,27 @@ export class MessageHandler {
       else this.counter = 0;
       this.bot.modtext = value.modtext;
     });
+    this.beefageDecayTimer = setInterval(
+      () => {
+        this.beefageDecay();
+      },
+      5 * 60 * 1000,
+    );
+  }
+
+  private resetBeefageDecay() {
+    clearInterval(this.beefageDecayTimer);
+    this.beefageDecayTimer = setInterval(
+      () => {
+        this.beefageDecay();
+      },
+      5 * 60 * 1000,
+    );
+  }
+
+  private beefageDecay() {
+    if (this.beefage > 0) this.beefage--;
+    else if (this.beefage < 0) this.beefage++;
   }
 
   private commandMap: Map<string, BuiltinCommand> = new Map([
@@ -351,9 +373,10 @@ export class MessageHandler {
         showOnChat: false,
         timeout: 60 * 1000,
         commandFunction: (data) => {
-          if (this.timeout.has("!pork")) return;
+          if (this.timeout.has("!pork") && !data.isUserMod) return;
           this.beefage++;
           data.reply(`Beefage is now: ${this.beefage}`, true);
+          this.resetBeefageDecay();
         },
       },
     ],
@@ -363,9 +386,10 @@ export class MessageHandler {
         showOnChat: false,
         timeout: 60 * 1000,
         commandFunction: (data) => {
-          if (this.timeout.has("!beef")) return;
+          if (this.timeout.has("!beef") && !data.isUserMod) return;
           this.beefage--;
           data.reply(`Beefage is now: ${this.beefage}`, true);
+          this.resetBeefageDecay();
         },
       },
     ],
