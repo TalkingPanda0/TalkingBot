@@ -235,8 +235,8 @@
       if (firstChar != null && faceChars.includes(firstChar))
         textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
       else if (message.isAction) {
-        text = text.replace(/\u0001ACTION/, "");
-        textElement.innerHTML = `${message.sender.trim()}:<span class="text" style='color: ${message.color}'> ${text}</span>`;
+        text = text.replace(/ACTION/, "").replaceAll("\u0001","");
+        textElement.innerHTML = `${message.sender.trim()}<span class="text" style='color: ${message.color}'> ${text}</span>`;
       } else
         textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
 

@@ -823,7 +823,6 @@ export class Twitch {
     recentMessages.messages.forEach((element: string) => {
       try {
         if (!element.includes("PRIVMSG")) return;
-        console.log(element);
         const message = parseTwitchMessage(element) as ChatMessage;
         if (message.userInfo.userName === "botrixoficial") return;
 
