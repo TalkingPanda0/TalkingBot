@@ -2,7 +2,10 @@
   <head>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body id="body">
     <div id="emote-wall"></div>
@@ -132,8 +135,9 @@
       if (showEmoteWall && !message.isOld)
         addToEmoteWall(message.parsedMessage);
 
-			if(message.isFake && showCommands) message.badges.unshift(platformIcons["bot"]);
-			else message.badges.unshift(platformIcons[message.platform]);
+      if (message.isFake && showCommands)
+        message.badges.unshift(platformIcons["bot"]);
+      else message.badges.unshift(platformIcons[message.platform]);
 
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
@@ -230,7 +234,10 @@
       const firstChar = text.charAt(0);
       if (firstChar != null && faceChars.includes(firstChar))
         textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
-      else
+      else if (message.isAction) {
+        text = text.replace(/\u0001ACTION/, "");
+        textElement.innerHTML = `${message.sender.trim()}:<span class="text" style='color: ${message.color}'> ${text}</span>`;
+      } else
         textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
 
       spanElement.appendChild(badgesElement);
@@ -335,120 +342,120 @@
     if (showEmoteWall) window.requestAnimationFrame(animateEmoteWall);
   </script>
   <style>
-    	#emote-wall {
-    		position: fixed;
-	z-index: 1;
-    	}
+       	#emote-wall {
+       		position: fixed;
+    z-index: 1;
+       	}
 
-    	.emote-wall-emote {
-    		position: absolute;
-     height: 56px;
-    min-width: 56px;
-        vertical-align: middle;
-        padding-left: 5px;
-        padding-right: 5px;
-    transition: opacity 1s ease-in-out;
-	z-index: 2;
-    	}
+       	.emote-wall-emote {
+       		position: absolute;
+        height: 56px;
+       min-width: 56px;
+           vertical-align: middle;
+           padding-left: 5px;
+           padding-right: 5px;
+       transition: opacity 1s ease-in-out;
+    z-index: 2;
+       	}
 
-        #message-list {
-          background-color: rgba(0, 0, 0, 0.5);
-          display: table;
-          bottom: 0;
-          left: 0;
-          table-layout: fixed;
-          overflow-y: scroll;
-          width: 100%;
-        }
+           #message-list {
+             background-color: rgba(0, 0, 0, 0.5);
+             display: table;
+             bottom: 0;
+             left: 0;
+             table-layout: fixed;
+             overflow-y: scroll;
+             width: 100%;
+           }
 
-        body::-webkit-scrollbar {
-          width: 0;
-          /* WebKit (Safari, Chrome) */
-        }
-        .message {
-          padding-left: 4px;
-          border-radius: 2px;
-          margin: 2px;
-          padding-bottom: 7px;
-          padding-top: 7px;
-          overflow-wrap: break-word;
-        }
+           body::-webkit-scrollbar {
+             width: 0;
+             /* WebKit (Safari, Chrome) */
+           }
+           .message {
+             padding-left: 4px;
+             border-radius: 2px;
+             margin: 2px;
+             padding-bottom: 7px;
+             padding-top: 7px;
+             overflow-wrap: break-word;
+           }
 
-        .text {
-          color: white;
-        }
-        .sender {
-          vertical-align: middle;
-        }
-        .badge {
-          display: inline-table;
-          vertical-align: middle;
-          height: 25px;
-          width: 25px;
+           .text {
+             color: white;
+           }
+           .sender {
+             vertical-align: middle;
+           }
+           .badge {
+             display: inline-table;
+             vertical-align: middle;
+             height: 25px;
+             width: 25px;
 
-          margin: 2px;
-          filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
-            drop-shadow(0 0 0 #000);
-        }
-        .badges {
-          display: inline-table;
-          padding: 2px;
-          margin-right: 4px;
-					z-index: 1;
-        }
-        * {
-          color: #fff;
-          font-family: Arial, Helvetica, sans-serif,'Noto Color Emoji';
-          font-size: 25px;
-          font-weight: 700;
-          line-height: 1em;
-        }
-        .emote {
-          height: 28px;
-          min-width: 28px;
-          vertical-align: middle;
-          padding-left: 5px;
-          padding-right: 5px;
-    		top: 0px;
-    		left: 0px;
-        }
-        .reply {
-          color: #a5a5a5;
-          font-size: 15px;
-          margin-left: 4px;
-          margin-bottom: 5px;
-          display: inline-table;
-      	white-space: nowrap;
-        }
-      .replyText {
-      	color: #a5a5a5;
-          font-size: 15px;
-          margin-left: 4px;
-          margin-bottom: 5px;
-          display: inline-table;
-      	height: 15px;
-      	overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-      }
-      .redeem {
-          color: #a5a5a5;
-          font-size: 20px;
-          margin-left: 4px;
-          margin-bottom: 5px;
-          display: inline-table;
-        }
-        body {
-          margin: 0px;
-          background-color: #2b2e38;
-        }
-      .redeem {
-          color: #a5a5a5;
-          font-size: 20px;
-          margin-left: 4px;
-          margin-bottom: 5px;
-          display: inline-table;
-        }
+             margin: 2px;
+             filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+               drop-shadow(0 0 0 #000);
+           }
+           .badges {
+             display: inline-table;
+             padding: 2px;
+             margin-right: 4px;
+    				z-index: 1;
+           }
+           * {
+             color: #fff;
+             font-family: Arial, Helvetica, sans-serif,'Noto Color Emoji';
+             font-size: 25px;
+             font-weight: 700;
+             line-height: 1em;
+           }
+           .emote {
+             height: 28px;
+             min-width: 28px;
+             vertical-align: middle;
+             padding-left: 5px;
+             padding-right: 5px;
+       		top: 0px;
+       		left: 0px;
+           }
+           .reply {
+             color: #a5a5a5;
+             font-size: 15px;
+             margin-left: 4px;
+             margin-bottom: 5px;
+             display: inline-table;
+         	white-space: nowrap;
+           }
+         .replyText {
+         	color: #a5a5a5;
+             font-size: 15px;
+             margin-left: 4px;
+             margin-bottom: 5px;
+             display: inline-table;
+         	height: 15px;
+         	overflow: hidden;
+           white-space: nowrap;
+           text-overflow: ellipsis;
+         }
+         }
+         .redeem {
+             color: #a5a5a5;
+             font-size: 20px;
+             margin-left: 4px;
+             margin-bottom: 5px;
+             display: inline-table;
+           }
+           body {
+             margin: 0px;
+             background-color: #2b2e38;
+           }
+         .redeem {
+             color: #a5a5a5;
+             font-size: 20px;
+             margin-left: 4px;
+             margin-bottom: 5px;
+             display: inline-table;
+           }
   </style>
 </html>

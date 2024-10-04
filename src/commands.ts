@@ -11,6 +11,12 @@ import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 
+export enum Permissons {
+  Mod = 1,
+  Vip = 1 << 1,
+  Sub = 1 << 2,
+}
+
 export interface MessageData {
   badges: string[];
   isUserMod: boolean;
@@ -28,6 +34,7 @@ export interface MessageData {
   isCommand: boolean;
   rewardName: string;
   isOld: boolean;
+  isAction?: boolean;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   banUser: (reason: string, duration?: number) => void | Promise<void>;
 }

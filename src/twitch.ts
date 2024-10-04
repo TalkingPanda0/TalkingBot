@@ -161,13 +161,14 @@ export class Twitch {
       isCommand: isCommand,
       rewardName: rewardName,
       isOld: isOld,
+      isAction: text.startsWith("\u0001ACTION"),
     });
   }
   public async cleanUp() {
     this.chatClient.quit();
     this.eventListener.stop();
-		this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
-		this.bot.database.cleanDataBase();
+    this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
+    this.bot.database.cleanDataBase();
   }
 
   public updateShieldReedem(status: boolean) {
@@ -218,6 +219,116 @@ export class Twitch {
     this.clientSecret = fileContent.clientSecret;
     this.channelName = fileContent.channelName;
     this.publicClientId = fileContent.publicApikey;
+  }
+  private async handleMessage(
+    channel: string,
+    user: string,
+    text: string,
+    msg: ChatMessage,
+    isAction: boolean,
+  ) {
+    try {
+      console.log(
+        "\x1b[35m%s\x1b[0m",
+        `Twitch - ${msg.userInfo.displayName}: ${text}`,
+      );
+      let badges = [];
+
+      let parsedMessage = await this.bot.parseClips(
+        this.parseTwitchEmotes(msg.text, msg.emoteOffsets),
+      );
+      if (msg.userInfo.isMod) {
+        badges.push(this.badges.get("moderator"));
+      } else if (msg.userInfo.isBroadcaster) {
+        badges.push(this.badges.get("broadcaster"));
+      }
+
+      const badge = msg.userInfo.badges.get("subscriber");
+      if (badge != undefined) {
+        badges.push(this.badges.get(badge));
+      }
+      let replyTo = "";
+      let replyId = "";
+      let replyText = "";
+      let rewardName = "";
+      if (msg.isReply) {
+        parsedMessage = parsedMessage.replace(
+          new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
+          "",
+        );
+        replyTo = msg.parentMessageUserDisplayName;
+        replyId = msg.parentMessageUserId;
+        replyText = msg.parentMessageText;
+      }
+
+      if (msg.isHighlight) {
+        rewardName = "Highlight My message";
+      }
+
+      if (msg.isRedemption) {
+        const reward = await this.apiClient.channelPoints.getCustomRewardById(
+          this.channel.id,
+          msg.rewardId,
+        );
+        rewardName = reward.title;
+      }
+      const indexes: number[] = [];
+      msg.emoteOffsets.forEach((emote) => {
+        emote.forEach((index) => {
+          indexes.push(parseInt(index));
+        });
+      });
+
+      this.bot.commandHandler.handleMessage({
+        badges: badges,
+        sender: msg.userInfo.displayName,
+        senderId: msg.userInfo.userId,
+        color: this.getUserColor(msg),
+        isUserMod: msg.userInfo.isMod || msg.userInfo.isBroadcaster,
+        platform: "twitch",
+        message: removeByIndexToUppercase(text, indexes),
+        parsedMessage: parsedMessage,
+        isFirst: msg.isFirst,
+        replyText: replyText,
+        replyId: replyId,
+        replyTo: replyTo,
+        rewardName: rewardName,
+        isOld: false,
+        isAction: isAction,
+        isCommand: user == "botrixoficial" || user == "talkingboto_o",
+        id: msg.id,
+        reply: async (message: string, replyToUser: boolean) => {
+          const replyId = replyToUser ? msg.id : null;
+          await this.chatClient.say(channel, message, { replyTo: replyId });
+          this.bot.iochat.emit("message", {
+            badges: [],
+            text: message,
+            parsedMessage: message,
+            sender: "TalkingBot",
+            senderId: "bot",
+            color: "green",
+            id: undefined,
+            platform: "bot",
+            isFirst: false,
+            isCommand: true,
+          });
+          console.log(`TalkingBot - ${message}`);
+        },
+        banUser: async (message: string, duration: number) => {
+          try {
+            await this.apiClient.moderation.banUser(this.channel.id, {
+              user: msg.userInfo.userId,
+              reason: message,
+              duration: duration,
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        },
+      });
+    } catch (e) {
+      console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
+    }
   }
 
   async initBot(): Promise<void> {
@@ -563,7 +674,7 @@ export class Twitch {
     this.eventListener.onChannelBan(this.channel.id, (event) => {
       this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.say(
-        `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever" : ""}.`
+        `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever" : ""}.`,
       );
     });
 
@@ -579,110 +690,13 @@ export class Twitch {
 
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
-        try {
-          console.log(
-            "\x1b[35m%s\x1b[0m",
-            `Twitch - ${msg.userInfo.displayName}: ${text}`,
-          );
-          let badges = [];
-
-          let parsedMessage = await this.bot.parseClips(
-            this.parseTwitchEmotes(msg.text, msg.emoteOffsets),
-          );
-          if (msg.userInfo.isMod) {
-            badges.push(this.badges.get("moderator"));
-          } else if (msg.userInfo.isBroadcaster) {
-            badges.push(this.badges.get("broadcaster"));
-          }
-
-          const badge = msg.userInfo.badges.get("subscriber");
-          if (badge != undefined) {
-            badges.push(this.badges.get(badge));
-          }
-          let replyTo = "";
-          let replyId = "";
-          let replyText = "";
-          let rewardName = "";
-          if (msg.isReply) {
-            parsedMessage = parsedMessage.replace(
-              new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
-              "",
-            );
-            replyTo = msg.parentMessageUserDisplayName;
-            replyId = msg.parentMessageUserId;
-            replyText = msg.parentMessageText;
-          }
-
-          if (msg.isHighlight) {
-            rewardName = "Highlight My message";
-          }
-
-          if (msg.isRedemption) {
-            const reward =
-              await this.apiClient.channelPoints.getCustomRewardById(
-                this.channel.id,
-                msg.rewardId,
-              );
-            rewardName = reward.title;
-          }
-          const indexes: number[] = [];
-          msg.emoteOffsets.forEach((emote) => {
-            emote.forEach((index) => {
-              indexes.push(parseInt(index));
-            });
-          });
-
-          this.bot.commandHandler.handleMessage({
-            badges: badges,
-            sender: msg.userInfo.displayName,
-            senderId: msg.userInfo.userId,
-            color: this.getUserColor(msg),
-            isUserMod: msg.userInfo.isMod || msg.userInfo.isBroadcaster,
-            platform: "twitch",
-            message: removeByIndexToUppercase(text, indexes),
-            parsedMessage: parsedMessage,
-            isFirst: msg.isFirst,
-            replyText: replyText,
-            replyId: replyId,
-            replyTo: replyTo,
-            rewardName: rewardName,
-            isOld: false,
-            isCommand: user == "botrixoficial" || user == "talkingboto_o",
-            id: msg.id,
-            reply: async (message: string, replyToUser: boolean) => {
-              const replyId = replyToUser ? msg.id : null;
-              await this.chatClient.say(channel, message, { replyTo: replyId });
-              this.bot.iochat.emit("message", {
-                badges: [],
-                text: message,
-                parsedMessage: message,
-                sender: "TalkingBot",
-                senderId: "bot",
-                color: "green",
-                id: undefined,
-                platform: "bot",
-                isFirst: false,
-                isCommand: true,
-              });
-              console.log(`TalkingBot - ${message}`);
-            },
-            banUser: async (message: string, duration: number) => {
-              try {
-                await this.apiClient.moderation.banUser(this.channel.id, {
-                  user: msg.userInfo.userId,
-                  reason: message,
-                  duration: duration,
-                });
-              } catch (e) {
-                console.error(e);
-              }
-            },
-          });
-        } catch (e) {
-          console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
-        }
+        this.handleMessage(channel, user, text, msg, false);
       },
     );
+
+    this.chatClient.onAction((channel, user, text, msg) => {
+      this.handleMessage(channel, user, text, msg, true);
+    });
 
     this.chatClient.onConnect(() => {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
@@ -809,10 +823,10 @@ export class Twitch {
     recentMessages.messages.forEach((element: string) => {
       try {
         if (!element.includes("PRIVMSG")) return;
+        console.log(element);
         const message = parseTwitchMessage(element) as ChatMessage;
         if (message.userInfo.userName === "botrixoficial") return;
 
-        // find a better way to get bot's id
         const isCommand =
           message.text.startsWith("!") ||
           message.userInfo.userId === "736013381";
