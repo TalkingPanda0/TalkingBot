@@ -10,6 +10,7 @@ import {
 import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
+import { shouldUseGlobalFetchAndWebSocket } from "discord.js";
 
 export enum Permissons {
   Mod = 1,
@@ -988,28 +989,6 @@ export class MessageHandler {
               data.reply(this.bot.wheel.toString(false), true);
               break;
           }
-        },
-      },
-    ],
-    [
-      "!testwheel",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          let results = new Map<string, number>();
-          for (var i = 0; i < 100000000; i++) {
-            const result = this.bot.wheel.spinInChat();
-            const savedResult = results.get(result);
-            if (savedResult) results.set(result, savedResult + 1);
-            else results.set(result, 1);
-          }
-          const sum = Array.from(results.values()).reduce(
-            (pv, cv) => (pv += cv),
-          );
-          results.forEach((value, key) => {
-            console.log(`${key}: ${value * (100 / sum)}`);
-          });
         },
       },
     ],

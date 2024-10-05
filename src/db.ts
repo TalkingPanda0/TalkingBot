@@ -29,11 +29,12 @@ export class DB {
   private getTopWatchTimeQuery: Statement;
   private getTopWatchTimeQueryOffline: Statement;
   private inChatQuery: Statement;
-	private notOfflineQuery: Statement; 
+  private notOfflineQuery: Statement;
   private insertHapbooReaction: CallableFunction;
   private getHapbooReactionSorted: Statement;
   private insertEmoteStat: CallableFunction;
   private insertReactionStat: CallableFunction;
+  private setConfigQuery: CallableFunction;
 
   public getEmoteStat: Statement;
   public getUserEmoteStat: Statement;
@@ -49,6 +50,7 @@ export class DB {
   public getTopReactionUsers: Statement;
   public getTopTotalUsers: Statement;
   public getTopTotal: Statement;
+  public getConfig: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -58,6 +60,11 @@ export class DB {
   }
 
   public init() {
+    this.database
+      .query(
+        "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY,value BLOB);",
+      )
+      .run();
     this.database
       .query(
         "CREATE TABLE IF NOT EXISTS watchtimes (userId TEXT PRIMARY KEY,lastSeenOnStream TEXT,watchTime INT,lastSeen TEXT,chatTime INT,inChat INT);",
@@ -103,7 +110,7 @@ export class DB {
     this.inChatQuery = this.database.query(
       "SELECT * FROM watchtimes where inChat == ?1;",
     );
-		this.notOfflineQuery = this.database.query(
+    this.notOfflineQuery = this.database.query(
       "SELECT * FROM watchtimes where inChat != 0;",
     );
 
@@ -174,9 +181,20 @@ export class DB {
       "SELECT * FROM combinedemotestats WHERE emoteId = ?1 ORDER BY totaltimes DESC;",
     );
     this.getTopTotal = this.database.query(
-      "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
+      "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10;",
     );
-		this.cleanDataBase();
+
+    this.getConfig = this.database.query(
+      "SELECT * FROM config WHERE key = ?1;",
+    );
+    const setConfigQuery = this.database.prepare(
+      "INSERT OR REPLACE INTO config (key,value) VALUES($key,$value);",
+    );
+    this.setConfigQuery = this.database.transaction((config) => {
+      setConfigQuery.run(config);
+    });
+
+    this.cleanDataBase();
   }
   public updateDataBase(inChat: number) {
     const toUpdate = this.inChatQuery.all(inChat) as WatchTime[];
@@ -197,10 +215,21 @@ export class DB {
   public cleanDataBase() {
     const toUpdate = this.notOfflineQuery.all() as WatchTime[];
     toUpdate.forEach((watchTime) => {
-			watchTime.inChat = 0;
-     
+      watchTime.inChat = 0;
+
       this.insertWatchTime(watchTime);
     });
+  }
+
+  public getOrSetConfig(key: string, defaultValue: any): any {
+    const config = this.getConfig.get(key) as { key: string; value: any };
+    if (config) return config.value;
+    this.setConfigQuery({ key: key, value: defaultValue });
+    return defaultValue;
+  }
+
+  public setConfig(key: string, value: any) {
+    this.setConfigQuery({ key: key, value: value });
   }
 
   public getWatchTime(id: string): WatchTime {
