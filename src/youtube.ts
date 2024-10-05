@@ -42,7 +42,7 @@ export class YouTube {
 
   public onStreamEnd() {
     if (this.permTitle) this.api.setTitle(this.permTitle);
-		this.api.onStreamEnd();
+    this.api.onStreamEnd();
   }
 
   public async initBot() {
@@ -55,7 +55,7 @@ export class YouTube {
       console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
     });
 
-    this.chat.on("chat_connected", async (channel, videoId) => {
+    this.chat.on("chat_connected", async (_channel, videoId) => {
       this.bot.iochat.emit("chatConnect", "youtube");
       this.isConnected = true;
       this.api.getChatId(videoId);
@@ -68,7 +68,7 @@ export class YouTube {
       try {
         let text = event.message
           .map((messageFragment) => {
-						if(messageFragment.textEmoji) return messageFragment.textEmoji;
+            if (messageFragment.textEmoji) return messageFragment.textEmoji;
             return messageFragment.text;
           })
           .join("");
@@ -81,7 +81,7 @@ export class YouTube {
         this.bot.commandHandler.handleMessage({
           badges: badges,
           isUserMod: event.isModerator || event.isOwner,
-          reply: async (message, replyToUser) => {
+          reply: async (message, _replyToUser) => {
             try {
               await this.api.sendMessage(message);
             } catch (e) {
@@ -90,7 +90,7 @@ export class YouTube {
           },
           message: text,
           parsedMessage: parseYTMessage(event.message),
-          banUser: async (reason, duration) => {
+          banUser: async (_reason, duration) => {
             try {
               this.api.banUser(event.channelId, duration);
             } catch (e) {
@@ -122,7 +122,10 @@ export class YouTube {
     });
 
     this.chat.on("deleted_message_author", (event) => {
-      this.bot.iochat.emit("banUser", `youtube-${event.externalChannelId}`);
+      this.bot.iochat.emit(
+        "banUser",
+        `youtube-${event.externalChannelId}`,
+      );
     });
 
     this.chat.on("unkown", (event) => {

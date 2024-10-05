@@ -10,7 +10,6 @@ import {
 import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
-import { shouldUseGlobalFetchAndWebSocket } from "discord.js";
 
 export enum Permissons {
   Mod = 1,
@@ -145,7 +144,7 @@ export class MessageHandler {
             data.reply(
               (
                 await Promise.all(
-                  users.map(async (watchTime, index) => {
+                  users.map(async (watchTime) => {
                     const user = helixUsers.find(
                       (user) => user.id == watchTime.userId,
                     ).displayName;
@@ -700,18 +699,23 @@ export class MessageHandler {
         showOnChat: false,
 
         commandFunction: async (data) => {
-          if (!data.isUserMod || data.message.length == 0) return;
-          await this.bot.twitch.apiClient.channels.updateChannelInfo(
-            this.bot.twitch.channel.id,
-            { title: data.message },
-          );
-          await this.bot.youTube.api.setTitle(data.message);
+          try {
+            if (!data.isUserMod || data.message.length == 0) return;
+            await this.bot.twitch.apiClient.channels.updateChannelInfo(
+              this.bot.twitch.channel.id,
+              { title: data.message },
+            );
+            await this.bot.youTube.api.setTitle(data.message);
 
-          // TODO change title in kick
+            // TODO change title in kick
 
-          this.bot.broadcastMessage(
-            `Title has been changed to "${data.message}"`,
-          );
+            this.bot.broadcastMessage(
+              `Title has been changed to "${data.message}"`,
+            );
+          } catch (e) {
+            this.bot.broadcastMessage("Couldn't change title");
+            console.error(e);
+          }
         },
       },
     ],
@@ -1119,7 +1123,7 @@ export class MessageHandler {
             },
           )
         )
-          .replace(/suffix\((\d+)\)/g, (message: string, number: string) => {
+          .replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
             return getSuffix(parseInt(number));
           })
           .replace(/\$user/g, data.sender)
@@ -1175,7 +1179,12 @@ export class MessageHandler {
         this.dynamicTitle,
         /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
 
-        async (message: string, command: string, url: string, key: string) => {
+        async (
+          _message: string,
+          _command: string,
+          url: string,
+          key: string,
+        ) => {
           const req = await fetch(url);
           if (key === undefined) {
             return await req.text();
@@ -1185,7 +1194,7 @@ export class MessageHandler {
           }
         },
       )
-    ).replace(/suffix\((\d+)\)/g, (message: string, number: string) => {
+    ).replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
       return getSuffix(parseInt(number));
     });
     if (title != this.lastDynamicTitle) {

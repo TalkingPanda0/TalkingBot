@@ -1,6 +1,8 @@
 import { BunFile } from "bun";
 import { TalkingBot } from "./talkingbot";
 import { getTimeDifference } from "./util";
+import sharp from "sharp";
+import seedrandom from "seedrandom";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry. Please feed him using !pet feed",
@@ -127,7 +129,7 @@ export class Pet {
           }
         })
         .splice(-3)
-        .map((value, index, array) => {
+        .map((value, _index, _array) => {
           switch (value.deathReason) {
             case DeathReason.omelete:
               return `Hapboo #${value.name} became a 🍳`;
@@ -447,5 +449,33 @@ export class Pet {
       );
     }
     this.bot.broadcastMessage(this.sayStatus(StatusReason.tick));
+  }
+
+  public async generateSprite(): Promise<string> {
+    const rng = seedrandom(this.currentPet.name.toString());
+    const baseImg = sharp({
+      create: { width: 640, height: 896, channels: 4, background: "#00000000" },
+    }).png();
+    const composites: sharp.OverlayOptions[] = [];
+    for (let i = 0; i < 5; i++) {
+      const spriteImg = sharp(__dirname + "/../public/Sprite.png");
+      composites.push({
+        top: 0,
+        left: 128 * i,
+        input: await spriteImg
+          .extract({ top: 0, left: 128 * i, width: 128, height: 896 })
+          .modulate({
+            hue: i == 0 ? 0 : Math.floor(rng.quick() * (20 - -20 + 1) + -20),
+          })
+          .toBuffer(),
+      });
+    }
+
+    const img = baseImg.composite(composites);
+
+    img.toFile("/dev/shm/output.png");
+    const imgBuffer = await img.toBuffer();
+
+    return `data:image/png;base64,${imgBuffer.toString("base64")}`;
   }
 }

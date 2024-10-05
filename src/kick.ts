@@ -8,7 +8,7 @@ const kickEmotePrefix = /sweetbabooo-o/g;
 export function removeKickEmotes(message: string): string {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message
-    .replace(regex, (match, id, name) => {
+    .replace(regex, (_match, _id, name) => {
       return name + " ";
     })
     .replace(kickEmotePrefix, "");
@@ -18,7 +18,7 @@ export function parseKickEmotes(message: string) {
   const regex = /\[emote:(\d+):([^\]]+)\]/g;
   return message.replace(
     regex,
-    (match, id, name) =>
+    (_match, id, _name) =>
       `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
   );
 }
@@ -169,7 +169,7 @@ export class Kick {
               senderId: event.sender.id.toString(),
               color: event.sender.identity.color,
               platform: "kick",
-              reply(message, replyToUser) {},
+              reply(_message, _replyToUser) {},
               isUserMod:
                 firstBadgeType === "moderator" ||
                 firstBadgeType === "broadcaster",
@@ -191,7 +191,7 @@ export class Kick {
           case "App\\Events\\PollUpdateEvent":
             this.currentPoll = jsonDataSub.poll;
             if (
-              jsonDataSub.poll.options.some((e) => {
+              jsonDataSub.poll.options.some((e: { votes: number }) => {
                 console.log(e);
                 return e.votes != 0;
               })

@@ -10,28 +10,28 @@ const server = http.createServer(app);
 app.use(express.static("public"));
 app.use(bodyParser.text());
 
-app.get("/tts", (req: Request, res: Response) => {
+app.get("/tts", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/tts.html");
 });
-app.get("/modtext", (req: Request, res: Response) => {
+app.get("/modtext", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/modtext.html");
 });
-app.get("/alerts", (req: Request, res: Response) => {
+app.get("/alerts", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/alerts.html");
 });
 
-app.get("/poll", (req: Request, res: Response) => {
+app.get("/poll", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/poll.html");
 });
 
-app.get("/chat", (req: Request, res: Response) => {
+app.get("/chat", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/chat.html");
 });
-app.get("/chatControl", (req: Request, res: Response) => {
+app.get("/chatControl", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/chatcontrol.html");
 });
 
-app.get("/setup", (req: Request, res: Response) => {
+app.get("/setup", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/setup.html");
 });
 app.put("/control", (req: Request, res: Response) => {
@@ -45,14 +45,19 @@ app.put("/control", (req: Request, res: Response) => {
   bot.updateModText();
   res.sendStatus(200);
 });
-app.get("/control", (req: Request, res: Response) => {
+app.get("/control", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/control.html");
 });
-app.get("/wheel", (req: Request, res: Response) => {
+app.get("/wheel", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/wheel.html");
 });
-app.get("/modtextedit", (req: Request, res: Response) => {
+app.get("/modtextedit", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/modtextedit.html");
+});
+
+app.get("/hapboo", async (_req: Request, res: Response) => {
+	res.send(`<!DOCTYPE	html> <HTML><body><img src="${await bot.pet.generateSprite()}"></img></body></HTML>`);
+
 });
 
 const bot: TalkingBot = new TalkingBot("17587561", server);

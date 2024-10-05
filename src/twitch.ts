@@ -17,14 +17,7 @@ import {
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
 import { EventSubWsListener } from "@twurple/eventsub-ws";
-import {
-  EventSubChannelRedemptionAddEvent,
-  EventSubChannelFollowEvent,
-  EventSubChannelPollProgressEvent,
-  EventSubStreamOnlineEvent,
-  EventSubChannelPollEndEvent,
-  EventSubChannelCheerEvent,
-} from "@twurple/eventsub-base";
+import { EventSubChannelRedemptionAddEvent } from "@twurple/eventsub-base";
 import { AuthSetup, Poll, TalkingBot, pollOption } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
@@ -339,7 +332,7 @@ export class Twitch {
       redirectUri: "http://localhost:3000/oauth",
     });
 
-    this.authProvider.onRefresh(async (userId, newTokenData) => {
+    this.authProvider.onRefresh(async (_userId, newTokenData) => {
       let isBroadcaster: Boolean =
         newTokenData.scope[0].startsWith("bits:read");
       Bun.write(
@@ -383,39 +376,31 @@ export class Twitch {
       apiClient: this.apiClient,
     });
 
-    this.eventListener.onStreamOnline(
-      this.channel.id,
-      async (event: EventSubStreamOnlineEvent) => {
-        this.isStreamOnline = true;
-        this.bot.pet.init(true);
-        try {
-          const stream = await event.getStream();
-          const thumbnail = stream.getThumbnailUrl(1280, 720);
-          this.bot.discord.sendStreamPing({
-            title: stream.title,
-            game: stream.gameName,
-            thumbnailUrl: thumbnail,
-          });
-          const chatters = await this.apiClient.chat.getChatters(
-            this.channel.id,
-          );
-          chatters.data.forEach((chatter) => {
-            if (chatter.userId == "736013381" || chatter.userId == "646848961")
-              return;
-            this.bot.database.userLeave(chatter.userId, false);
-            this.bot.database.userJoin(chatter.userId, true);
-          });
-        } catch (e) {
-          console.error(
-            "\x1b[35m%s\x1b[0m",
-            `Failed getting stream info: ${e}`,
-          );
-          this.bot.discord.sendStreamPing();
-        }
-      },
-    );
+    this.eventListener.onStreamOnline(this.channel.id, async (event) => {
+      this.isStreamOnline = true;
+      this.bot.pet.init(true);
+      try {
+        const stream = await event.getStream();
+        const thumbnail = stream.getThumbnailUrl(1280, 720);
+        this.bot.discord.sendStreamPing({
+          title: stream.title,
+          game: stream.gameName,
+          thumbnailUrl: thumbnail,
+        });
+        const chatters = await this.apiClient.chat.getChatters(this.channel.id);
+        chatters.data.forEach((chatter) => {
+          if (chatter.userId == "736013381" || chatter.userId == "646848961")
+            return;
+          this.bot.database.userLeave(chatter.userId, false);
+          this.bot.database.userJoin(chatter.userId, true);
+        });
+      } catch (e) {
+        console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
+        this.bot.discord.sendStreamPing();
+      }
+    });
 
-    this.eventListener.onStreamOffline(this.channel.id, async (event) => {
+    this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
       this.isStreamOnline = false;
       this.bot.pet.sleep();
       this.bot.youTube.onStreamEnd();
@@ -432,7 +417,7 @@ export class Twitch {
     this.eventListener.onChannelFollow(
       this.channel.id,
       this.channel.id,
-      (event: EventSubChannelFollowEvent) => {
+      (event) => {
         this.bot.ioalert.emit("alert", {
           follower: event.userDisplayName,
         });
@@ -470,127 +455,115 @@ export class Twitch {
       });
     });
 
-    this.eventListener.onChannelPollProgress(
-      this.channel.id,
-      (data: EventSubChannelPollProgressEvent) => {
-        const options: pollOption[] = [];
-        data.choices.forEach((choice, i) => {
-          options.push({
-            label: choice.title,
-            id: i.toString(),
-            votes: choice.totalVotes,
+    this.eventListener.onChannelPollProgress(this.channel.id, (data) => {
+      const options: pollOption[] = [];
+      data.choices.forEach((choice, i) => {
+        options.push({
+          label: choice.title,
+          id: i.toString(),
+          votes: choice.totalVotes,
+        });
+      });
+      this.currentPoll = { title: data.title, options: options, id: data.id };
+      this.bot.updatePoll();
+    });
+    this.eventListener.onChannelPollEnd(this.channel.id, (_data) => {
+      this.currentPoll = null;
+    });
+    this.eventListener.onChannelRedemptionAdd(this.channel.id, async (data) => {
+      try {
+        console.log(
+          `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
+        );
+        let completed: Boolean;
+        if (data.input === "") {
+          this.bot.iochat.emit("redeem", {
+            id: data.id,
+            user: data.userDisplayName,
+            title: data.rewardTitle,
           });
-        });
-        this.currentPoll = { title: data.title, options: options, id: data.id };
-        this.bot.updatePoll();
-      },
-    );
-    this.eventListener.onChannelPollEnd(
-      this.channel.id,
-      (data: EventSubChannelPollEndEvent) => {
-        this.currentPoll = null;
-      },
-    );
-    this.eventListener.onChannelRedemptionAdd(
-      this.channel.id,
-      async (data: EventSubChannelRedemptionAddEvent) => {
-        try {
-          console.log(
-            `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
-          );
-          let completed: Boolean;
-          if (data.input === "") {
-            this.bot.iochat.emit("redeem", {
-              id: data.id,
-              user: data.userDisplayName,
-              title: data.rewardTitle,
-            });
-          }
-          switch (data.rewardId) {
-            case this.selftimeoutid:
-              const modlist = await this.apiClient.moderation.getModerators(
-                this.channel.id,
-                { userId: data.userId },
-              );
-              if (modlist.data.length == 1) {
-                completed = false;
-                break;
-              }
-              this.apiClient.moderation.banUser(this.channel.id, {
-                duration: 300,
-                reason: "Self Timeout Request",
-                user: data.userId,
-              });
-              completed = true;
-              break;
-            case this.timeoutid:
-              const username = data.input.split(" ")[0].replace("@", "");
-              const user: HelixUser =
-                await this.apiClient.users.getUserByName(username);
-
-              if (user == null || user.id == data.broadcasterId) {
-                completed = false;
-                this.chatClient.say(
-                  this.channelName,
-                  `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
-                );
-                break;
-              }
-              const mods = await this.apiClient.moderation.getModerators(
-                this.channel.id,
-                { userId: user.id },
-              );
-              if (mods.data.length == 1) {
-                completed = false;
-                this.chatClient.say(
-                  this.channelName,
-                  `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
-                );
-                break;
-              }
-              this.apiClient.moderation.banUser(this.channel.id, {
-                duration: 60,
-                reason: `Timeout request by ${data.userDisplayName}`,
-                user: user.id,
-              });
-              completed = true;
-              break;
-            case this.pollid:
-              // message like Which is better?: hapboo, realboo, habpoo, hapflat
-              this.redeemQueue.push(data);
-              break;
-            case this.titleid:
-              this.redeemQueue.push(data);
-              break;
-            case this.shieldid:
-              completed = this.bot.pet.activateShield();
-              break;
-            default:
-              return;
-          }
-          if (completed == null) return;
-          this.apiClient.channelPoints.updateRedemptionStatusByIds(
-            this.channel.id,
-            data.rewardId,
-            [data.id],
-            completed ? "FULFILLED" : "CANCELED",
-          );
-        } catch (e) {
-          console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
         }
-      },
-    );
+        switch (data.rewardId) {
+          case this.selftimeoutid:
+            const modlist = await this.apiClient.moderation.getModerators(
+              this.channel.id,
+              { userId: data.userId },
+            );
+            if (modlist.data.length == 1) {
+              completed = false;
+              break;
+            }
+            this.apiClient.moderation.banUser(this.channel.id, {
+              duration: 300,
+              reason: "Self Timeout Request",
+              user: data.userId,
+            });
+            completed = true;
+            break;
+          case this.timeoutid:
+            const username = data.input.split(" ")[0].replace("@", "");
+            const user: HelixUser =
+              await this.apiClient.users.getUserByName(username);
 
-    this.eventListener.onChannelCheer(
-      this.channel.id,
-      (event: EventSubChannelCheerEvent) => {
-        this.bot.ioalert.emit("alert", {
-          bits: event.bits,
-          user: event.userDisplayName,
-          message: event.message,
-        });
-      },
-    );
+            if (user == null || user.id == data.broadcasterId) {
+              completed = false;
+              this.chatClient.say(
+                this.channelName,
+                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
+              );
+              break;
+            }
+            const mods = await this.apiClient.moderation.getModerators(
+              this.channel.id,
+              { userId: user.id },
+            );
+            if (mods.data.length == 1) {
+              completed = false;
+              this.chatClient.say(
+                this.channelName,
+                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
+              );
+              break;
+            }
+            this.apiClient.moderation.banUser(this.channel.id, {
+              duration: 60,
+              reason: `Timeout request by ${data.userDisplayName}`,
+              user: user.id,
+            });
+            completed = true;
+            break;
+          case this.pollid:
+            // message like Which is better?: hapboo, realboo, habpoo, hapflat
+            this.redeemQueue.push(data);
+            break;
+          case this.titleid:
+            this.redeemQueue.push(data);
+            break;
+          case this.shieldid:
+            completed = this.bot.pet.activateShield();
+            break;
+          default:
+            return;
+        }
+        if (completed == null) return;
+        this.apiClient.channelPoints.updateRedemptionStatusByIds(
+          this.channel.id,
+          data.rewardId,
+          [data.id],
+          completed ? "FULFILLED" : "CANCELED",
+        );
+      } catch (e) {
+        console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
+      }
+    });
+
+    this.eventListener.onChannelCheer(this.channel.id, (event) => {
+      this.bot.ioalert.emit("alert", {
+        bits: event.bits,
+        user: event.userDisplayName,
+        message: event.message,
+      });
+    });
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
       channels: [this.channelName],
@@ -600,10 +573,10 @@ export class Twitch {
     });
     this.chatClient.onSub(
       (
-        channel: string,
-        user: string,
+        _channel: string,
+        _user: string,
         subInfo: ChatSubInfo,
-        msg: UserNotice,
+        _msg: UserNotice,
       ) => {
         this.bot.ioalert.emit("alert", {
           name: subInfo.displayName,
@@ -616,10 +589,10 @@ export class Twitch {
     );
     this.chatClient.onSubGift(
       (
-        channel: string,
-        user: string,
+        _channel: string,
+        _user: string,
         subInfo: ChatSubGiftInfo,
-        msg: UserNotice,
+        _msg: UserNotice,
       ) => {
         this.bot.ioalert.emit("alert", {
           name: subInfo.gifter,
@@ -634,10 +607,10 @@ export class Twitch {
 
     this.chatClient.onRaid(
       (
-        channel: string,
-        user: string,
+        _channel: string,
+        _user: string,
         raidInfo: ChatRaidInfo,
-        msg: UserNotice,
+        _msg: UserNotice,
       ) => {
         this.bot.ioalert.emit("alert", {
           raider: raidInfo.displayName,
@@ -646,7 +619,7 @@ export class Twitch {
       },
     );
 
-    this.chatClient.onJoin(async (channel: string, user: string) => {
+    this.chatClient.onJoin(async (_channel: string, user: string) => {
       if (
         user.toLowerCase() == "talkingboto_o" ||
         user.toLowerCase() == "botrixoficial"
@@ -658,7 +631,7 @@ export class Twitch {
       this.bot.database.userJoin(userInfo.id, this.isStreamOnline);
     });
 
-    this.chatClient.onPart(async (channel: string, user: string) => {
+    this.chatClient.onPart(async (_channel: string, user: string) => {
       if (
         user.toLowerCase() == "talkingboto_o" ||
         user.toLowerCase() == "botrixoficial"
@@ -679,12 +652,12 @@ export class Twitch {
     });
 
     this.chatClient.onMessageRemove(
-      (channel: string, messageId: string, msg: ClearMsg) => {
+      (_channel: string, messageId: string, _msg: ClearMsg) => {
         this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
       },
     );
 
-    this.chatClient.onChatClear((channel: string, msg: ClearChat) => {
+    this.chatClient.onChatClear((_channel: string, _msg: ClearChat) => {
       this.bot.iochat.emit("clearChat", "twitch");
     });
 
@@ -759,14 +732,11 @@ export class Twitch {
               const options = matches[2]
                 .split(",")
                 .map((word: string) => word.trim());
-              const poll = await this.apiClient.polls.createPoll(
-                this.channel.id,
-                {
-                  title: question,
-                  duration: 60,
-                  choices: options.filter((value) => value != ""),
-                },
-              );
+              await this.apiClient.polls.createPoll(this.channel.id, {
+                title: question,
+                duration: 60,
+                choices: options.filter((value) => value != ""),
+              });
               this.chatClient.say(
                 this.channelName,
                 `Created poll: ${redeem.input} requested by @${redeem.userName}`,

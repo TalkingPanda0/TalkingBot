@@ -61,7 +61,7 @@ export class TalkingBot {
       path: "/modtext/",
     });
 
-    this.iomodtext.on("connection", (socket) => {
+    this.iomodtext.on("connection", () => {
       this.updateModText();
     });
 
