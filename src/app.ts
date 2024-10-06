@@ -55,11 +55,6 @@ app.get("/modtextedit", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/modtextedit.html");
 });
 
-app.get("/hapboo", async (_req: Request, res: Response) => {
-	res.send(`<!DOCTYPE	html> <HTML><body><img src="${await bot.pet.generateSprite()}"></img></body></HTML>`);
-
-});
-
 const bot: TalkingBot = new TalkingBot("17587561", server);
 
 bot.initBot();

@@ -1,5 +1,7 @@
 FROM oven/bun:alpine
 
+RUN apk update && apk upgrade	
+
 USER bun
 
 RUN mkdir /home/bun/talkingbot

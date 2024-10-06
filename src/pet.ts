@@ -1,8 +1,6 @@
 import { BunFile } from "bun";
 import { TalkingBot } from "./talkingbot";
 import { getTimeDifference } from "./util";
-import sharp from "sharp";
-import seedrandom from "seedrandom";
 
 const emotes = [
   "sweetb35Stunky he is getting hungry. Please feed him using !pet feed",
@@ -186,6 +184,10 @@ export class Pet {
     let message = `Hapboo #${this.currentPet.name}`;
     switch (this.currentPet.status) {
       case Status.alive:
+        this.bot.iochat.emit("hapboo", {
+          name: this.currentPet.name,
+          status: this.currentPet.stomach,
+        });
         switch (reason) {
           case StatusReason.fed:
             message += ` has been given a candy. He is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
@@ -208,6 +210,10 @@ export class Pet {
         break;
       case Status.egg:
       case Status.hatching:
+        this.bot.iochat.emit("hapboo", {
+          name: this.currentPet.name,
+          status: this.campfire,
+        });
         message += ` is ${eggs[this.currentPet.status]} The campfire is at ${this.campfire}/5 🔥 `;
         message += campfires[this.campfire];
         break;
@@ -449,33 +455,5 @@ export class Pet {
       );
     }
     this.bot.broadcastMessage(this.sayStatus(StatusReason.tick));
-  }
-
-  public async generateSprite(): Promise<string> {
-    const rng = seedrandom(this.currentPet.name.toString());
-    const baseImg = sharp({
-      create: { width: 640, height: 896, channels: 4, background: "#00000000" },
-    }).png();
-    const composites: sharp.OverlayOptions[] = [];
-    for (let i = 0; i < 5; i++) {
-      const spriteImg = sharp(__dirname + "/../public/Sprite.png");
-      composites.push({
-        top: 0,
-        left: 128 * i,
-        input: await spriteImg
-          .extract({ top: 0, left: 128 * i, width: 128, height: 896 })
-          .modulate({
-            hue: i == 0 ? 0 : Math.floor(rng.quick() * (20 - -20 + 1) + -20),
-          })
-          .toBuffer(),
-      });
-    }
-
-    const img = baseImg.composite(composites);
-
-    img.toFile("/dev/shm/output.png");
-    const imgBuffer = await img.toBuffer();
-
-    return `data:image/png;base64,${imgBuffer.toString("base64")}`;
   }
 }

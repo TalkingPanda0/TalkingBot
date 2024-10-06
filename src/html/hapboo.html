@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HAPBOO</title>
+  </head>
+  <body>
+    <div
+      height="128px"
+      width="128px"
+      style="position: absolute"
+      id="parent"
+    ></div>
+    <script src="/spriteRenderer.js"></script>
+    <script>
+      const parent = document.getElementById("parent");
+      let renderer = new SpriteRenderer(
+        parent,
+        "/hapbooSprite.png",
+        5,
+        7,
+        80,
+        ["", "", "", "", ""],
+        128,
+        128,
+      );
+      renderer.start();
+    </script>
+  </body>
+</html>
