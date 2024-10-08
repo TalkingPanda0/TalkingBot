@@ -184,7 +184,7 @@ export class Pet {
     let message = `Hapboo #${this.currentPet.name}`;
     switch (this.currentPet.status) {
       case Status.alive:
-        this.bot.iochat.emit("hapboo", {
+        if(reason != StatusReason.command) this.bot.iochat.emit("hapboo", {
           name: this.currentPet.name,
           status: this.currentPet.stomach,
         });
@@ -210,7 +210,7 @@ export class Pet {
         break;
       case Status.egg:
       case Status.hatching:
-        this.bot.iochat.emit("hapboo", {
+        if(reason != StatusReason.command) this.bot.iochat.emit("hapboo", {
           name: this.currentPet.name,
           status: this.campfire,
         });
