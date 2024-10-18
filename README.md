@@ -12,6 +12,16 @@
 - `suffix(n)` will add a ordinal suffix after n for example `suffix(791)` becomes `791st` can be used with `fetch()`.
 - `fetch[url]` will perform a get request on `url` and return the result.
 - `fetch[url]{key}` will perform a get request on `url`, return the json value of `key`.
+#### Script
+`script()` can be used to run JS code
+##### Variables
+- `user`  the username of the person who used the command.
+- `args`  array of the arguments the user gave.
+- `platform` the platform command was used in (twitch/youtube/kick).
+##### Functions
+- `say([message],[reply])` will say `[message]` in chat, replies to the user if `[reply]` is true.
+- `broadcast([message])` will say `[message]` in every chat.
+- `fetch()` https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch
 ## Removing Commands
 `!delcmd [commandname]` will remove the command `[commandname]` if it exists.
 ## Aliasing Commands
@@ -52,12 +62,10 @@ Channel point redeems that require mod approval will be put on a queue. These co
 `!permtitle [title]` will change the title to `[title]`. 
 after the stream is over the YouTube title will be set to `[title] (game)`.
 # Counter
-`!counter` will show the current counter.
-`!conter n` will set the counter to n.
-`!counter +n` will add n to the counter.
-`!counter -n` will subtract n from the counter.
-`!c++` will increase the counter.
-`!c--` will decrease the counter.
+`!counter [name]` will show the value of the counter `[name]`.
+`!counter [name] n` will set the counter `[name]` to n.
+`!counter [name] +n` will add n to the counter `[name]`.
+`!counter [name] -n` will subtract n from the counter `[name]`.
 
 # Modtext
 `!modtext [text]` will change the modtext to `[text]`.

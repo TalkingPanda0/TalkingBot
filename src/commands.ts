@@ -10,6 +10,7 @@ import {
 import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
+import { Counter } from "./counter";
 
 export enum Permissons {
   Mod = 1,
@@ -56,7 +57,7 @@ interface BuiltinCommand {
 }
 
 export class MessageHandler {
-  public counter: number = 0;
+  public counter: Counter; 
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
   private keys: any;
@@ -78,11 +79,6 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-    this.counterFile.json().then((value) => {
-      if (value.counter) this.counter = value.counter;
-      else this.counter = 0;
-      this.bot.modtext = value.modtext;
-    });
     this.beefageDecayTimer = setInterval(
       () => {
         this.beefageDecay();
@@ -90,6 +86,10 @@ export class MessageHandler {
       5 * 60 * 1000,
     );
   }
+
+	public init() {
+		this.counter = new Counter(this.bot.database);
+	}
 
   private resetBeefageDecay() {
     clearInterval(this.beefageDecayTimer);
@@ -342,30 +342,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!c--",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          this.counter--;
-          this.bot.updateModText();
-          data.reply(`The counter is now ${this.counter}.`, true);
-        },
-      },
-    ],
-    [
-      "!c++",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          this.counter++;
-          this.bot.updateModText();
-          data.reply(`The counter is now ${this.counter}.`, true);
-        },
-      },
-    ],
-    [
       "!beefage",
       {
         showOnChat: false,
@@ -405,19 +381,22 @@ export class MessageHandler {
       {
         showOnChat: false,
         commandFunction: (data) => {
+          const args = data.message.toLowerCase().split(" ");
           const regex = /[+|-]/g;
-          if (data.isUserMod && data.message != "") {
-            if (regex.test(data.message)) {
-              this.counter += parseFloat(data.message);
+
+          if (data.isUserMod && args[1] != null) {
+						console.log(args[1]);
+            if (regex.test(args[1])) {
+              this.counter.addToCounter(args[0],parseFloat(args[1]));
             } else {
-              this.counter = parseFloat(data.message);
+              this.counter.setCounter(args[0],parseFloat(args[1]));
             }
-            data.reply(`The counter is now ${this.counter}.`, true);
+            data.reply(`${args[0]} is now ${this.counter.getCounter(args[0])}.`, true);
             this.bot.updateModText();
 
             return;
           }
-          data.reply(`The counter is at ${this.counter}.`, true);
+          data.reply(`${args[0]} is at ${this.counter.getCounter(args[0])}.`, true);
         },
       },
     ],

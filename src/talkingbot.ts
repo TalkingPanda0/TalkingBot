@@ -74,6 +74,7 @@ export class TalkingBot {
     });
 
     this.iochat.on("connect", () => {
+			console.log("ConnECTED!!!");
       try {
         this.twitch.sendRecentMessages();
         if (
@@ -105,7 +106,7 @@ export class TalkingBot {
     });
     this.iocontrol.on("connect", (socket) => {
       socket.on("control", (data: controlMessage) => {
-        console.log(data);
+        console.log(data.overlay);
         switch (data.overlay) {
           case "chat":
             this.iochat.emit(data.target, data.message);
@@ -146,6 +147,7 @@ export class TalkingBot {
     await this.twitch.initBot();
     this.kick.initBot();
     this.youTube.initBot();
+		this.commandHandler.init();
   }
 
   public async cleanUp() {
