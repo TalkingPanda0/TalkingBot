@@ -57,7 +57,7 @@ interface BuiltinCommand {
 }
 
 export class MessageHandler {
-  public counter: Counter; 
+  public counter: Counter;
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
   private keys: any;
@@ -87,9 +87,9 @@ export class MessageHandler {
     );
   }
 
-	public init() {
-		this.counter = new Counter(this.bot.database);
-	}
+  public init() {
+    this.counter = new Counter(this.bot.database);
+  }
 
   private resetBeefageDecay() {
     clearInterval(this.beefageDecayTimer);
@@ -385,18 +385,24 @@ export class MessageHandler {
           const regex = /[+|-]/g;
 
           if (data.isUserMod && args[1] != null) {
-						console.log(args[1]);
+            console.log(args[1]);
             if (regex.test(args[1])) {
-              this.counter.addToCounter(args[0],parseFloat(args[1]));
+              this.counter.addToCounter(args[0], parseFloat(args[1]));
             } else {
-              this.counter.setCounter(args[0],parseFloat(args[1]));
+              this.counter.setCounter(args[0], parseFloat(args[1]));
             }
-            data.reply(`${args[0]} is now ${this.counter.getCounter(args[0])}.`, true);
+            data.reply(
+              `${args[0]} is now ${this.counter.getCounter(args[0])}.`,
+              true,
+            );
             this.bot.updateModText();
 
             return;
           }
-          data.reply(`${args[0]} is at ${this.counter.getCounter(args[0])}.`, true);
+          data.reply(
+            `${args[0]} is at ${this.counter.getCounter(args[0])}.`,
+            true,
+          );
         },
       },
     ],
@@ -1109,6 +1115,13 @@ export class MessageHandler {
           .replace(/\$args/g, message)
           .replace(/\(modonly\)/g, "")
           .replace(/\(reply\)/g, "");
+        response = await replaceAsync(
+          response,
+          /script\((.+)\)/g,
+          async (_message: string, script: string) => {
+            return await this.runScript(script, data);
+          },
+        );
 
         if (customCommand.includes("fetch")) {
           this.timeout.add(commandName);
@@ -1227,6 +1240,42 @@ export class MessageHandler {
       args.push({ alias: key, command: value });
     });
     Bun.write(this.argsFile, JSON.stringify(args));
+  }
+
+  private async runScript(script: string, data: MessageData): Promise<string> {
+    console.log(script);
+    const context = Object.create(null);
+
+    context.result = "";
+    context.user = data.sender;
+    context.args = data.message.split(" ");
+    context.platform = data.platform;
+
+    context.fetch = fetch;
+    context.say = (message: string, reply: boolean) => {
+      data.reply(message, reply);
+    };
+    context.broadcast = (message: string) => {
+      this.bot.broadcastMessage(message);
+    };
+
+    const func = new Function(
+      "context",
+      `
+    return (async () => {
+      with(context) {
+        ${script}
+      }
+    })();
+  `,
+    );
+    try {
+      await func(context);
+      return context.result;
+    } catch (error) {
+      console.error("Error executing custom code:", error);
+      return "";
+    }
   }
 }
 

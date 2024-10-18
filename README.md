@@ -15,13 +15,16 @@
 #### Script
 `script()` can be used to run JS code
 ##### Variables
-- `user`  the username of the person who used the command.
+- `user` the username of the person who used the command. 
 - `args`  array of the arguments the user gave.
 - `platform` the platform command was used in (twitch/youtube/kick).
+- `result` `script()` will be replaced with `result`.
 ##### Functions
 - `say([message],[reply])` will say `[message]` in chat, replies to the user if `[reply]` is true.
 - `broadcast([message])` will say `[message]` in every chat.
 - `fetch()` https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch
+##### Example
+- `!addcmd !sr script( const categories = await (await fetch(\`https://www.speedrun.com/api/v1/games/${args[0]}/categories\`)).json();const leaderboards = await (await fetch(categories.data[0].links[5].uri)).json();const player =  await (await fetch(leaderboards.data.runs[0].run.players[0].uri)).json();result = \`World record holder in game ${args[0]} is ${player.data.names.international};\`)`
 ## Removing Commands
 `!delcmd [commandname]` will remove the command `[commandname]` if it exists.
 ## Aliasing Commands
