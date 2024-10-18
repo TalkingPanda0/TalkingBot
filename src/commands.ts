@@ -1258,6 +1258,7 @@ export class MessageHandler {
     context.broadcast = (message: string) => {
       this.bot.broadcastMessage(message);
     };
+    context.milliSecondsToString = milliSecondsToString;
 
     const func = new Function(
       "context",
@@ -1274,7 +1275,7 @@ export class MessageHandler {
       return context.result;
     } catch (error) {
       console.error("Error executing custom code:", error);
-      return "";
+      return error;
     }
   }
 }
