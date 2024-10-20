@@ -551,6 +551,39 @@ export class MessageHandler {
       },
     ],
     [
+      "!addtocmd",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          const splitMessage = data.message.split(" ");
+          let commandName = splitMessage[0];
+          const response = data.message.substring(
+            data.message.indexOf(" ") + 1,
+            data.message.length,
+          );
+
+          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
+          if (!this.customCommandMap.has(commandName)) {
+            data.reply(`Command ${commandName} does not exist!`, true);
+            return;
+          }
+          if (splitMessage.length <= 1) {
+            data.reply("No command response given", true);
+            return;
+          }
+
+          this.customCommandMap.set(
+            commandName,
+            this.customCommandMap.get(commandName) + response,
+          );
+
+          data.reply(`Command ${commandName} has been added to`, true);
+          this.writeCustomCommands();
+        },
+      },
+    ],
+    [
       "!addcmd",
       {
         showOnChat: false,

@@ -4,6 +4,7 @@
 ## Adding Commands
 `!addcmd [commandname] [response]` this will create a command called `[commandname]` that will respond with `[response]` when used.
 `!editcmd [commandname] [response]` this will edit the command `[commandname]` to respond with `[response]`.
+`!addtocmd [commandname] [response]` this will add `[response]` to the end of `[commandname]`'s current respone. This can be used to create a command longer than the 500 characther limit on twitch.
 ### Response syntax
 - `$user` will be replaced by the user's name who used the command.
 - `$args` will be replaced by everything the user put after the command.
