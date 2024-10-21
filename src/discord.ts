@@ -14,12 +14,18 @@ import {
   SlashCommandSubcommandsOnlyBuilder,
   SlashCommandOptionsOnlyBuilder,
   SlashCommandSubcommandBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  ComponentType,
+  BaseMessageOptions,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
 import { getRandomElement } from "./util";
 import { eightballMessages } from "./commands";
+
 export interface streamInfo {
   game: string;
   title: string;
@@ -194,18 +200,21 @@ export class Discord {
       },
     );
     this.client.on(Events.InteractionCreate, async (interaction) => {
-      if (!interaction.isChatInputCommand()) return;
-      const command = this.commands.get(interaction.commandName);
-      if (!command) return;
-      try {
-        await command.execute(interaction);
-      } catch (e) {
-        console.error(
-          "\x1b[34m%s\x1b[0m",
-          `Error when executing command ${interaction.commandName}: ${e}`,
-        );
+      if (interaction.isChatInputCommand()) {
+        const command = this.commands.get(interaction.commandName);
+        if (!command) return;
+        try {
+          await command.execute(interaction);
+        } catch (e) {
+          console.error(
+            "\x1b[34m%s\x1b[0m",
+            `Error when executing command ${interaction.commandName}: ${e}`,
+          );
+        }
+        return;
       }
     });
+
     this.client.login(this.token);
     this.commands = new Collection();
 
@@ -373,29 +382,71 @@ export class Discord {
             await interaction.reply("Can't find emote.");
             return;
           }
+          const prev = new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel("Previous")
+            .setCustomId("prev");
 
-          interaction.reply({
-            embeds: [
-              {
-                title: "User Statistics",
-                thumbnail: {
-                  url: "https://talkingpanda.dev/hapboo.gif",
-                },
+          const next = new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel("Next")
+            .setCustomId("next");
 
-                fields: [
-                  {
-                    name: `Top 10 emotes of ${user.displayName} in ${suffix}.`,
-                    value: emotes
-                      .map((value) => {
-                        if (value.totaltimes != null)
-                          return `${value.emoteId} : ${value.totaltimes}`;
-                        else return `${value.emoteId} : ${value.times}`;
-                      })
-                      .join("\n"),
-                  },
-                ],
+          const row = new ActionRowBuilder().addComponents(prev, next);
+
+          let page = 0;
+          const pageCount = Math.ceil(emotes.length / 10);
+
+          const genereateEmbed = (page: number) => {
+            const start = page * 10;
+            return {
+              title: "User Statistics",
+              thumbnail: {
+                url: "https://talkingpanda.dev/hapboo.gif",
               },
-            ],
+              fields: [
+                {
+                  name: `Top ${start + 10} emotes of ${user.displayName} in ${suffix}. (${page + 1}/${pageCount})`,
+                  value: emotes
+                    .slice(start, start + 10)
+                    .map((value, index) => {
+                      if (value.totaltimes != null)
+                        return `${index + start + 1}: ${value.emoteId} : ${value.totaltimes}`;
+                      else
+                        return `${index + start + 1}: ${value.emoteId} : ${value.times}`;
+                    })
+                    .join("\n"),
+                },
+              ],
+            };
+          };
+
+          const response = await interaction.reply({
+            components: [row],
+            embeds: [genereateEmbed(page)],
+          });
+
+          const collector = response.createMessageComponentCollector({
+            filter: (i) => i.user.id == interaction.user.id,
+            componentType: ComponentType.Button,
+            time: 1 * 60 * 1000,
+          });
+
+          collector.on("collect", async (i) => {
+            console.log(pageCount);
+            if (i.customId == "next") {
+              page++;
+              page = page >= pageCount ? 0 : page;
+            } else {
+              page--;
+              page = page < 0 ? pageCount - 1 : page;
+            }
+            await i.update({ embeds: [genereateEmbed(page)] });
+            console.log(page);
+          });
+
+          collector.on("end", () => {
+            response.edit({ components: [] });
           });
         },
       },

@@ -159,7 +159,7 @@ export class DB {
       "SELECT * FROM reactionstats WHERE userId = ?1 ORDER BY times DESC;",
     );
     this.getUserTotalStat = this.database.query(
-      "SELECT * FROM combinedemotestats WHERE userId = ?1 ORDER BY totaltimes DESC LIMIT 10;",
+      "SELECT * FROM combinedemotestats WHERE userId = ?1 ORDER BY totaltimes DESC;",
     );
 
     this.getReactionStat = this.database.query(
