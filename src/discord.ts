@@ -620,7 +620,7 @@ export class Discord {
                   value: emotes
                     .slice(start, start + 10)
                     .map((value, index) => {
-                      return `${value.emoteId} : ${value.totalUsage}`;
+                      return `${index + start + 1}: ${value.emoteId} : ${value.totalUsage}`;
                     })
                     .join("\n"),
                 },
@@ -709,28 +709,69 @@ export class Discord {
             await interaction.reply("Can't find emote.");
             return;
           }
-          await interaction.reply({
-            embeds: [
-              {
-                title: "Emote Statistics",
-                thumbnail: {
-                  url: "https://talkingpanda.dev/hapboo.gif",
-                },
+          const prev = new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel("Previous")
+            .setCustomId("prev");
 
-                fields: [
-                  {
-                    name: `Top 10 ${emote} users in ${suffix}.`,
-                    value: emotes
-                      .map((value) => {
-                        if (value.totaltimes != null)
-                          return `<@${value.userId}> : ${value.totaltimes}`;
-                        else return `<@${value.userId}> : ${value.times}`;
-                      })
-                      .join("\n"),
-                  },
-                ],
+          const next = new ButtonBuilder()
+            .setStyle(ButtonStyle.Secondary)
+            .setLabel("Next")
+            .setCustomId("next");
+
+          const row = new ActionRowBuilder().addComponents(prev, next);
+
+          let page = 0;
+          const pageCount = Math.ceil(emotes.length / 10);
+
+          const genereateEmbed = (page: number) => {
+            const start = page * 10;
+            return {
+              title: "User Statistics",
+              thumbnail: {
+                url: "https://talkingpanda.dev/hapboo.gif",
               },
-            ],
+              fields: [
+                {
+                  name: `Top 10 ${emote} users in ${suffix}. (${page + 1}/${pageCount})`,
+                  value: emotes
+                    .slice(start, start + 10)
+                    .map((value, index) => {
+                      if (value.totaltimes != null)
+                        return `${index + start + 1}: <@${value.userId}> : ${value.totaltimes}`;
+                      else
+                        return `${index + start + 1}: <@${value.userId}> : ${value.times}`;
+                    })
+                    .join("\n"),
+                },
+              ],
+            };
+          };
+
+          const response = await interaction.reply({
+            components: [row],
+            embeds: [genereateEmbed(page)],
+          });
+
+          const collector = response.createMessageComponentCollector({
+            filter: (i) => i.user.id == interaction.user.id,
+            componentType: ComponentType.Button,
+            time: 1 * 60 * 1000,
+          });
+
+          collector.on("collect", async (i) => {
+            if (i.customId == "next") {
+              page++;
+              page = page >= pageCount ? 0 : page;
+            } else {
+              page--;
+              page = page < 0 ? pageCount - 1 : page;
+            }
+            await i.update({ embeds: [genereateEmbed(page)] });
+          });
+
+          collector.on("end", () => {
+            response.edit({ components: [] });
           });
         },
       },
