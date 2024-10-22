@@ -733,7 +733,7 @@ export class Discord {
               },
               fields: [
                 {
-                  name: `Top 10 ${emote} users in ${suffix}. (${page + 1}/${pageCount})`,
+                  name: `Top ${emote} users in ${suffix}. (${page + 1}/${pageCount})`,
                   value: emotes
                     .slice(start, start + 10)
                     .map((value, index) => {
