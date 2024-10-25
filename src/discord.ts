@@ -378,7 +378,7 @@ export class Discord {
               suffix = "messages and reactions";
               break;
           }
-          if (emotes == null) {
+          if (emotes == null || emotes.length == 0) {
             await interaction.reply("Can't find emote.");
             return;
           }
@@ -484,7 +484,7 @@ export class Discord {
               suffix = "messages and reactions";
               break;
           }
-          if (emotes == null) {
+          if (emotes == null || emotes.length == 0) {
             await interaction.reply("Can't find emote.");
             return;
           }
@@ -587,7 +587,7 @@ export class Discord {
               suffix = "messages and reactions";
               break;
           }
-          if (emotes == null) {
+          if (emotes == null || emotes.length == 0) {
             await interaction.reply("Can't find emote.");
             return;
           }
@@ -705,7 +705,7 @@ export class Discord {
               suffix = "messages and reactions";
               break;
           }
-          if (emotes == null) {
+          if (emotes == null || emotes.length == 0) {
             await interaction.reply("Can't find emote.");
             return;
           }
