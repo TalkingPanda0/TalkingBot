@@ -24,7 +24,11 @@ import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
 import { getRandomElement } from "./util";
-import { eightballMessages } from "./commands";
+import {
+  eightballMessages,
+  killOtherMessages,
+  selfKillMessages,
+} from "./commands";
 
 export interface streamInfo {
   game: string;
@@ -228,7 +232,7 @@ export class Discord {
           ),
         execute: async (interaction) => {
           const question = interaction.options.getString("question");
-					if(!question) return;
+          if (!question) return;
           let answer = "";
           if (
             question &&
@@ -772,6 +776,33 @@ export class Discord {
 
           collector.on("end", () => {
             response.edit({ components: [] });
+          });
+        },
+      },
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("kill")
+          .setDescription("KILL")
+          .addStringOption((option) =>
+            option
+              .setName("target")
+              .setDescription("the thing you want to murder"),
+          ),
+        execute: async (interaction) => {
+          const target = interaction.options.getString("target");
+          let response = "";
+          if (target == null) {
+            response = getRandomElement(selfKillMessages).replaceAll(
+              "$1",
+              interaction.user.displayName,
+            );
+          } else {
+            response = getRandomElement(killOtherMessages)
+              .replaceAll("$1", interaction.user.displayName)
+              .replaceAll("$2", target);
+          }
+          interaction.reply({
+            embeds: [{ fields: [{ name: "", value: response }] }],
           });
         },
       },

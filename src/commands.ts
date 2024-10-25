@@ -1313,7 +1313,7 @@ export class MessageHandler {
   }
 }
 
-const selfKillMessages: string[] = [
+export const selfKillMessages: string[] = [
   "$1 managed to kill themself.",
   "$1 died from an unknown cause.",
   "$1 was crushed by a boulder, or some piece of debris.",
@@ -1369,7 +1369,7 @@ const selfKillMessages: string[] = [
   "$1 passed the event horizon.",
 ];
 
-const killOtherMessages: string[] = [
+export const killOtherMessages: string[] = [
   "$1 murdered $2 with a unicorn's horn!",
   "$2 was killed by $1!",
   "$2 was mauled by $1 dressed up as a chicken.",

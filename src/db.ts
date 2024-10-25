@@ -185,7 +185,7 @@ export class DB {
     );
 
     this.getConfig = this.database.query(
-      "SELECT * FROM config WHERE key = ?1;",db
+      "SELECT * FROM config WHERE key = ?1;",
     );
     const setConfigQuery = this.database.prepare(
       "INSERT OR REPLACE INTO config (key,value) VALUES($key,$value);",
