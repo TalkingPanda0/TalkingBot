@@ -228,6 +228,7 @@ export class Discord {
           ),
         execute: async (interaction) => {
           const question = interaction.options.getString("question");
+					if(!question) return;
           let answer = "";
           if (
             question &&
@@ -578,7 +579,6 @@ export class Discord {
               break;
             case "reactions":
               emotes = this.bot.database.getTopReactions.all() as EmoteStat[];
-
               suffix = "reactions";
               break;
             case "both":
