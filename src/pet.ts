@@ -317,6 +317,7 @@ export class Pet {
   }
 
   public init(hatch: boolean) {
+		if(!hatch && this.currentPet.status == Status.dead) return;
     if (this.timer != null) return;
     this.bot.twitch.updateShieldReedem(false);
     if (hatch) {
