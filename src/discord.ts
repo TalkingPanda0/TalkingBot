@@ -29,6 +29,7 @@ import {
   killOtherMessages,
   selfKillMessages,
 } from "./commands";
+import { response } from "express";
 
 export interface streamInfo {
   game: string;
@@ -160,18 +161,22 @@ export class Discord {
       const emotes = this.findEmotes(message.content);
       if (emotes == null) return;
       emotes.forEach((emote) => {
+        if (emote == "<:baboo_TheDeep:1263655967938318346>") {
+          message.react("<:baboo_TheDeep:1263655967938318346>");
+        }
         this.bot.database.emoteUsage(message.author.id, emote);
       });
     });
 
     this.client.on(Events.MessageReactionAdd, async (reaction, user) => {
       if (user.bot) return;
-      console.log(
-        "\x1b[34m%s\x1b[0m",
-        `${user.id} reacted with ${reaction.emoji.toString()}`,
-      );
+      const emote = reaction.emoji.toString();
 
-      this.bot.database.reaction(user.id, reaction.emoji.toString());
+      console.log("\x1b[34m%s\x1b[0m", `${user.id} reacted with ${emote}`);
+      if (emote == "<:baboo_TheDeep:1263655967938318346>")
+        reaction.message.react("<:baboo_TheDeep:1263655967938318346>");
+
+      this.bot.database.reaction(user.id, emote);
     });
 
     this.client.on(

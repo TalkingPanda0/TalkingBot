@@ -181,7 +181,9 @@ export class Pet {
   }
 
   public sayStatus(reason: StatusReason): string {
-    let message = `Hapboo #${this.currentPet.name}`;
+		let message = "";
+		if(this.currentPet.name <= 0) message += "THIS IS TEST BOT NOT REAL HAPBOO. if it wasn't obvious by the name.";
+    message += `Hapboo #${this.currentPet.name}`;
     switch (this.currentPet.status) {
       case Status.alive:
         if(reason != StatusReason.command) this.bot.iochat.emit("hapboo", {

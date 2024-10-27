@@ -33,6 +33,8 @@ interface controlMessage {
   message: string;
 }
 
+
+
 export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
@@ -218,14 +220,12 @@ export class TalkingBot {
     Bun.write(
       this.commandHandler.counterFile,
       JSON.stringify({
-        counter: this.commandHandler.counter,
         modtext: this.modtext,
       }),
     );
     if (!this.modtext) return;
-    this.iomodtext.emit("message", {
-      text: this.modtext,
-      counter: this.commandHandler.counter,
-    });
+    this.iomodtext.emit("message", 
+      this.modtext.replaceAll(/counter\((\w+)\)/g,(_modtext, counter) => this.commandHandler.counter.getCounter(counter).toString()),
+    );
   }
 }
