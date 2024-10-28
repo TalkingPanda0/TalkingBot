@@ -159,6 +159,32 @@ export class Discord {
       if (message.partial) {
         await message.fetch();
       }
+
+      this.bot.commandHandler.handleCommand({
+        platform: "discord",
+        id: message.id,
+        reply: (replyMessage, replytoUser) => {
+          if (replytoUser) message.reply({ content: replyMessage });
+          else message.channel.send({ content: replyMessage });
+        },
+        badges: [],
+        isUserMod: false,
+        banUser: () => {},
+        message: message.content,
+        parsedMessage: message.content,
+        sender: message.author.displayName,
+        senderId: message.author.id,
+        isOld: false,
+        isFirst: false,
+        color: "",
+        replyId: "",
+        replyTo: "",
+        isCommand: false,
+        replyText: "",
+        isAction: false,
+        rewardName: "",
+      });
+
       const emotes = this.findEmotes(message.content);
       if (emotes == null) return;
       emotes.forEach((emote) => {

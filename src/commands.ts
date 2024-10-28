@@ -1095,7 +1095,7 @@ export class MessageHandler {
     ],
   ]);
   // returns true if isCommand
-  private async handleCommand(data: MessageData): Promise<boolean> {
+  public async handleCommand(data: MessageData): Promise<boolean> {
     try {
       if (!data.message.startsWith("!")) return false;
       let commandName = data.message.split(" ")[0];
@@ -1168,7 +1168,7 @@ export class MessageHandler {
       }
 
       const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand == null) return true;
+      if (builtinCommand == null || data.platform == "discord") return true;
       builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
