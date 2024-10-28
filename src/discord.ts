@@ -19,6 +19,7 @@ import {
   ActionRowBuilder,
   ComponentType,
   BaseMessageOptions,
+  parseEmoji,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
@@ -147,7 +148,7 @@ export class Discord {
 
       if (randomInt(100 + currentHapboos) === 0) {
         try {
-          await message.react("1255212339406573641");
+          await message.react("<a:baboo_hapboo:1032341515365793884>");
         } catch (e) {
           console.error(e);
         }
@@ -164,6 +165,7 @@ export class Discord {
         if (emote == "<:baboo_TheDeep:1263655967938318346>") {
           message.react("<:baboo_TheDeep:1263655967938318346>");
         }
+
         this.bot.database.emoteUsage(message.author.id, emote);
       });
     });
@@ -228,6 +230,26 @@ export class Discord {
     this.commands = new Collection();
 
     const discordCommands: DiscordCommand[] = [
+      {
+        commandBuilder: new SlashCommandBuilder()
+          .setName("enlarge")
+          .setDescription("OH GOD HE IS SO BIG")
+          .addStringOption((option) =>
+            option
+              .setName("emote")
+              .setDescription("Who do you want to enlarge"),
+          ),
+        execute: async (interaction) => {
+          const emote = interaction.options.getString("emote");
+          if (emote == null) {
+            return;
+          }
+          const emoji = parseEmoji(emote);
+          interaction.reply({
+            content: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? "gif" : "png"}`,
+          });
+        },
+      },
       {
         commandBuilder: new SlashCommandBuilder()
           .setName("8ball")
