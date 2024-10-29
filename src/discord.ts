@@ -30,7 +30,6 @@ import {
   killOtherMessages,
   selfKillMessages,
 } from "./commands";
-import { response } from "express";
 
 export interface streamInfo {
   game: string;
@@ -135,10 +134,7 @@ export class Discord {
 
     this.client.on(Events.MessageCreate, async (message) => {
       if (message.author.bot) return;
-      console.log(
-        "\x1b[34m%s\x1b[0m",
-        `Discord - got message from ${message.author.displayName}`,
-      );
+
 
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
         message.author.id,
@@ -159,20 +155,24 @@ export class Discord {
       if (message.partial) {
         await message.fetch();
       }
+      console.log(
+        "\x1b[34m%s\x1b[0m",
+        `Discord - ${message.author.displayName}: ${message.content}`,
+      );
 
       this.bot.commandHandler.handleCommand({
         platform: "discord",
         id: message.id,
         reply: (replyMessage, replytoUser) => {
-          if (replytoUser) message.reply({ content: replyMessage });
-          else message.channel.send({ content: replyMessage });
+          if (replytoUser) message.reply( {embeds: [{ fields: [{ name: "", value: replyMessage}] }]});
+          else message.channel.send( {embeds: [{ fields: [{ name: "", value: replyMessage}] }]});
         },
         badges: [],
         isUserMod: false,
         banUser: () => {},
         message: message.content,
         parsedMessage: message.content,
-        sender: message.author.displayName,
+        sender: `<@${message.author.id}>`,
         senderId: message.author.id,
         isOld: false,
         isFirst: false,
@@ -437,7 +437,7 @@ export class Discord {
               break;
           }
           if (emotes == null || emotes.length == 0) {
-            await interaction.reply("Can't find emote.");
+            await interaction.reply("Can't find emote." );
             return;
           }
           const prev = new ButtonBuilder()
@@ -847,11 +847,11 @@ export class Discord {
           if (target == null) {
             response = getRandomElement(selfKillMessages).replaceAll(
               "$1",
-              interaction.user.displayName,
+              `<@${interaction.user.id}>`,
             );
           } else {
             response = getRandomElement(killOtherMessages)
-              .replaceAll("$1", interaction.user.displayName)
+              .replaceAll("$1", `<@${interaction.user.id}>`)
               .replaceAll("$2", target);
           }
           interaction.reply({

@@ -1367,6 +1367,7 @@ export const selfKillMessages: string[] = [
   "$1 was struck with a bolt of inspiration, I mean lightning.",
   "$1 ended it all. Goodbye cruel world!",
   "$1 passed the event horizon.",
+	"$1 pissed themselves."
 ];
 
 export const killOtherMessages: string[] = [
@@ -1414,6 +1415,7 @@ export const killOtherMessages: string[] = [
   "$1 ruffled $2's fluff, and died!",
   "$1 hugged $2 a little too tight.",
   "$1 sent $2 to an awesome farm in the country.",
+	"$1 made $2 pee themselves."
 ];
 
 export const eightballMessages: string[] = [
