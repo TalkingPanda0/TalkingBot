@@ -99,7 +99,7 @@ export class Twitch {
     let replyTo = "";
     let replyId = "";
     let replyText = "";
-    let text = this.parseTwitchEmotes(message.text, message.emoteOffsets);
+    let text = this.parseTwitchEmotes(message.text, message.emoteOffsets,message.bits);
     let rewardName = "";
 
     text = await this.bot.parseClips(text);
@@ -228,7 +228,7 @@ export class Twitch {
       let badges = [];
 
       let parsedMessage = await this.bot.parseClips(
-        this.parseTwitchEmotes(msg.text, msg.emoteOffsets),
+        this.parseTwitchEmotes(msg.text, msg.emoteOffsets,msg.bits),
       );
       if (msg.userInfo.isMod) {
         badges.push(this.badges.get("moderator"));
@@ -651,6 +651,7 @@ export class Twitch {
       );
     });
 
+
     this.chatClient.onMessageRemove(
       (_channel: string, messageId: string, _msg: ClearMsg) => {
         this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
@@ -826,6 +827,7 @@ export class Twitch {
   public parseTwitchEmotes(
     text: string,
     emoteOffsets: Map<string, string[]>,
+		bits: number,
   ): string {
     let parsed = "";
     const parsedParts = parseChatMessage(
@@ -834,14 +836,15 @@ export class Twitch {
       this.cheerEmotes?.getPossibleNames(),
     );
 
-    const cheers: ParsedMessageCheerPart[] = [];
+		let cheerName = "";
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
           parsed += this.replaceBTTVEmotes(DOMPurify.sanitize(parsedPart.text));
           break;
         case "cheer":
-          cheers.push(parsedPart);
+					if(bits) cheerName = parsedPart.name;
+					else parsed += `${parsedPart.name}${parsedPart.amount}`;
           break;
         case "emote":
           const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
@@ -853,14 +856,13 @@ export class Twitch {
           break;
       }
     });
-    if (this.cheerEmotes == null || cheers.length == 0) return parsed;
-    const totalBits = cheers.reduce((sum, cheer) => sum + cheer.amount, 0);
+    if (!bits || this.cheerEmotes == null) return parsed;
     const cheermote = this.cheerEmotes.getCheermoteDisplayInfo(
-      cheers[0].name,
-      totalBits,
+      cheerName,
+      bits,
       { background: "dark", state: "animated", scale: "4" },
     );
-    parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${totalBits} </span>`;
+    parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
 
     return parsed;
   }

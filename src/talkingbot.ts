@@ -76,7 +76,6 @@ export class TalkingBot {
     });
 
     this.iochat.on("connect", () => {
-			console.log("ConnECTED!!!");
       try {
         this.twitch.sendRecentMessages();
         if (
