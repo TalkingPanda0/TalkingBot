@@ -4,6 +4,7 @@ import {
   getSuffix,
   getTimeDifference,
   milliSecondsToString,
+  removeByIndexToUppercase,
   replaceAsync,
 } from "./util";
 
@@ -108,25 +109,6 @@ export class MessageHandler {
 
   private commandMap: Map<string, BuiltinCommand> = new Map([
     [
-      "!8ball",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (
-            data.message.toLowerCase().includes("furry") &&
-            data.message.toLowerCase().includes("sweet")
-          ) {
-            data.reply(
-              getRandomElement(eightballMessages.slice(27, 34)),
-              false,
-            );
-            return;
-          }
-          data.reply(getRandomElement(eightballMessages), false);
-        },
-      },
-    ],
-    [
       "!toptime",
       {
         timeout: 120 * 1000,
@@ -200,27 +182,6 @@ export class MessageHandler {
           } else {
             data.reply(
               `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
-              false,
-            );
-          }
-        },
-      },
-    ],
-    [
-      "!kill",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (data.message === "" || data.message === undefined) {
-            data.reply(
-              getRandomElement(selfKillMessages).replaceAll("$1", data.sender),
-              false,
-            );
-          } else {
-            data.reply(
-              getRandomElement(killOtherMessages)
-                .replaceAll("$1", data.sender)
-                .replaceAll("$2", data.message),
               false,
             );
           }
@@ -1291,7 +1252,13 @@ export class MessageHandler {
     context.broadcast = (message: string) => {
       this.bot.broadcastMessage(message);
     };
+
+    context.getTimeDifference = getTimeDifference;
     context.milliSecondsToString = milliSecondsToString;
+    context.replaceAsync = replaceAsync;
+    context.getSuffix = getSuffix;
+    context.getRandomElement = getRandomElement;
+    context.removeByIndexToUppercase = removeByIndexToUppercase;
 
     const func = new Function(
       "context",
@@ -1312,145 +1279,3 @@ export class MessageHandler {
     }
   }
 }
-
-export const selfKillMessages: string[] = [
-  "$1 managed to kill themself.",
-  "$1 died from an unknown cause.",
-  "$1 was crushed by a boulder, or some piece of debris.",
-  "$1 exploded.",
-  "$1 forgot how to breathe.",
-  "$1 learned that cellular respiration uses oxygen, not sand.",
-  "$1 died.",
-  "$1 tried to befriend a wild grizzly bear.",
-  "$1 suffocated.",
-  "$1 tested the bounds of time and space, and lost.",
-  "$1 imploded.",
-  "$1 drowned.",
-  "$1 ceased to be.",
-  "$1 went kablewy!",
-  "$1 figured out how to divide by 0!",
-  "$1 took a long walk off a short pier.",
-  "$1 fell off a ladder.",
-  "$1 fell off a tree.",
-  "$1 fell off of the roof.",
-  "$1 burst into flames.",
-  "$1 was struck by lightning.",
-  "$1 starved to death.",
-  "$1 was stabbed to death.",
-  "$1 fell victim to gravity.",
-  "$1's plead for death was answered.",
-  "$1's vital organs were ruptured.",
-  "$1's innards were made outwards.",
-  "$1 was licked to death. Don't ask.",
-  "$1 was deleted.",
-  "$1 had to split. Literally..",
-  "$1 has bled to death.",
-  "$1 Food is a gift from God. Spices are a gift from the devil. I guess it was a little too spicy for you.",
-  "$1 has died due to a vehicular explosion!",
-  "$1 has killed themself!",
-  "$1 has been blown up by a landmine!",
-  "$1 died due to holding their breath for too long!",
-  "$1 burned to death.",
-  "$1 was blown up by a missile!",
-  "$1 froze to death.",
-  "$1 was dissolved in acid.",
-  "$1 tried to swim in acid.",
-  "$1 tried to swim in lava.",
-  "$1 experienced kinetic energy.",
-  "$1 blew up.",
-  "$1 fell into a patch of fire.",
-  "$1 fell out of a plane.",
-  "$1 went up in flames.",
-  "$1 withered away.",
-  "$1 went skydiving, and forgot the parachute.",
-  "$1 spontaneously combusted.",
-  "$1 was struck with a bolt of inspiration, I mean lightning.",
-  "$1 ended it all. Goodbye cruel world!",
-  "$1 passed the event horizon.",
-	"$1 pissed themselves."
-];
-
-export const killOtherMessages: string[] = [
-  "$1 murdered $2 with a unicorn's horn!",
-  "$2 was killed by $1!",
-  "$2 was mauled by $1 dressed up as a chicken.",
-  "$2 was ripped apart by $1, daaaaaaamn!",
-  "$2 was brutally murdered by $1 with a car!",
-  "$1 covered $2 in meat sauce and threw them in a cage with a starved tiger.",
-  "$1 genetically modified a Venus flytrap to grow abnormally large, and trapped $2 in a room with it.",
-  "$1 shanked $2's butt, over and over again.",
-  "$1 just wrote $2's name in their Death Note.",
-  "$1 put $2 out of their misery.",
-  "$1 destroyed $2!",
-  "$1 atacó a $2 con un consolador grande!",
-  "$2 was poked a bit too hard by $1 with a spork!",
-  "ZA WARUDO! $1 stopped time and throw hundreds of knives at $2. END!",
-  "$1 attacked $2 with a rusty spork...and managed to kill $2 with very little effort.",
-  "$1 stole a car known as 'KITT' and ran over $2.",
-  "$1 tickled $2 to death!",
-  "$2's skull was crushed by $1!",
-  "$2 is in several pieces after a tragic accident involving $1 and cutlery.",
-  "$1 licked $2 until $2 was squishy, yeah.. squishy.",
-  "$1 catapulted a huge load of rusty sporks on to $2. $2 died.",
-  "$1 ran out of rusty sporks and unicorn horns to kill $2 with, so instead they used a rusty hanger.",
-  "$1 came in like a mystical being of awesomeness and destroyed $2!",
-  "$2 drowned whilst trying to escape from $1",
-  "$2 walked into a cactus while running from $1",
-  "$2 was attacked by $1 behind a Taco Bell.",
-  "$1 went back in time to prevent himself from killing $2, apparently the time machine landed on $2 when $1 jumped back in time.",
-  "$1 rekt $2 30-4 by doing a 360 no-scope.",
-  "$1 struck the final blow and ended $2.",
-  "$1 tried to kill $2 with a unicorn's horn, but police showed up before $1 had time.",
-  "$1 tried to murder $2, but swat was hiding in the bushes and jumped on $1 before it could be done.",
-  "$1 was going to hit $2 with a hammer. However $2 was trained in the Secret Nippon Arts!",
-  "$1 attacked $2 with a plastic spoon, but then suddenly a swarm of police surrounded $1 and detained them.",
-  "$2 is protected by an unknown force which repels $1.",
-  "$1 was justly ended by $2.",
-  "$1 was blown up by $2.",
-  "$1 was shot off a ladder by $2.",
-  "$1 tried to swim in lava while trying to escape $2.",
-  "$1 got finished off by $2.",
-  "$1 delivered the fatal blow on $2.",
-  "$1 has punched $2 to death.",
-  "$1 ruffled $2's fluff, and died!",
-  "$1 hugged $2 a little too tight.",
-  "$1 sent $2 to an awesome farm in the country.",
-	"$1 made $2 pee themselves."
-];
-
-export const eightballMessages: string[] = [
-  "Reply hazy try again.",
-  "Ask again later.",
-  "Better not tell you now.",
-  "Cannot predict now.",
-  "Go for it!",
-  "You will have to wait.",
-  "Ask again later.",
-  "Concentrate and ask again.",
-  "Never going to happen!",
-  "The odds of that happening are pretty slim.",
-  "My reply is no.",
-  "My sources say no.",
-  "Very doubtful.",
-  "No.",
-  "I have no response for that question...",
-  "Why would I tell you?",
-  "Forget about it.",
-  "Don't bet on it.",
-  "Who knows?",
-  "Without a doubt.",
-  "You may rely on it.",
-  "Outlook good.",
-  "Probably.",
-  "Most likely.",
-  "This is not the Bot you're looking for ༼ﾉ۞⌂۞༽ﾉ",
-  "There's a pretty good chance.",
-  "No, don't even think about.",
-  "Yes, in due time.",
-  "It is certain.",
-  "Signs point to yes.",
-  "Yes definitely.",
-  "As I see it, yes.",
-  "Yes.",
-  "Signs point to yes.",
-];

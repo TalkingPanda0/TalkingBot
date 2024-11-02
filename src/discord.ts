@@ -135,7 +135,6 @@ export class Discord {
     this.client.on(Events.MessageCreate, async (message) => {
       if (message.author.bot) return;
 
-
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
         message.author.id,
       ) as HapbooReaction;
@@ -164,8 +163,14 @@ export class Discord {
         platform: "discord",
         id: message.id,
         reply: (replyMessage, replytoUser) => {
-          if (replytoUser) message.reply( {embeds: [{ fields: [{ name: "", value: replyMessage}] }]});
-          else message.channel.send( {embeds: [{ fields: [{ name: "", value: replyMessage}] }]});
+          if (replytoUser)
+            message.reply({
+              embeds: [{ fields: [{ name: "", value: replyMessage }] }],
+            });
+          else
+            message.channel.send({
+              embeds: [{ fields: [{ name: "", value: replyMessage }] }],
+            });
         },
         badges: [],
         isUserMod: false,
@@ -273,43 +278,6 @@ export class Discord {
           const emoji = parseEmoji(emote);
           interaction.reply({
             content: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? "gif" : "png"}`,
-          });
-        },
-      },
-      {
-        commandBuilder: new SlashCommandBuilder()
-          .setName("8ball")
-          .setDescription("ball")
-          .addStringOption((option) =>
-            option.setName("question").setDescription("The Question."),
-          ),
-        execute: async (interaction) => {
-          const question = interaction.options.getString("question");
-          if (!question) return;
-          let answer = "";
-          if (
-            question &&
-            question.toLowerCase().includes("furry") &&
-            question.toLowerCase().includes("sweet")
-          ) {
-            answer = getRandomElement(eightballMessages.slice(27, 34));
-          } else answer = getRandomElement(eightballMessages);
-          interaction.reply({
-            embeds: [
-              {
-                title: "8Balls",
-                fields: [
-                  {
-                    name: "Question",
-                    value: question,
-                  },
-                  {
-                    name: "Answer",
-                    value: answer,
-                  },
-                ],
-              },
-            ],
           });
         },
       },
@@ -437,7 +405,7 @@ export class Discord {
               break;
           }
           if (emotes == null || emotes.length == 0) {
-            await interaction.reply("Can't find emote." );
+            await interaction.reply("Can't find emote.");
             return;
           }
           const prev = new ButtonBuilder()
@@ -829,33 +797,6 @@ export class Discord {
 
           collector.on("end", () => {
             response.edit({ components: [] });
-          });
-        },
-      },
-      {
-        commandBuilder: new SlashCommandBuilder()
-          .setName("kill")
-          .setDescription("KILL")
-          .addStringOption((option) =>
-            option
-              .setName("target")
-              .setDescription("the thing you want to murder"),
-          ),
-        execute: async (interaction) => {
-          const target = interaction.options.getString("target");
-          let response = "";
-          if (target == null) {
-            response = getRandomElement(selfKillMessages).replaceAll(
-              "$1",
-              `<@${interaction.user.id}>`,
-            );
-          } else {
-            response = getRandomElement(killOtherMessages)
-              .replaceAll("$1", `<@${interaction.user.id}>`)
-              .replaceAll("$2", target);
-          }
-          interaction.reply({
-            embeds: [{ fields: [{ name: "", value: response }] }],
           });
         },
       },
