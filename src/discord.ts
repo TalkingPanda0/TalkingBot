@@ -24,12 +24,6 @@ import {
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
-import { getRandomElement } from "./util";
-import {
-  eightballMessages,
-  killOtherMessages,
-  selfKillMessages,
-} from "./commands";
 
 export interface streamInfo {
   game: string;
@@ -126,6 +120,7 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
+			this.client.guilds.cache.get(this.guildId).members.me.setNickname("♂️ Very Manly Bot ♂️");
     });
 
     this.client.on(Events.Error, (error: Error) => {
@@ -135,13 +130,18 @@ export class Discord {
     this.client.on(Events.MessageCreate, async (message) => {
       if (message.author.bot) return;
 
+		const doReact = message.channelId != "1020739967061868605";
+
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
         message.author.id,
       ) as HapbooReaction;
       let currentHapboos = 0;
       if (hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
 
-      if (randomInt(100 + currentHapboos) === 0) {
+      if (
+				doReact && 
+        randomInt(100 + currentHapboos) === 0
+      ) {
         try {
           await message.react("<a:baboo_hapboo:1032341515365793884>");
         } catch (e) {
@@ -190,12 +190,15 @@ export class Discord {
         rewardName: "",
       });
 
+
+      if (doReact && message.content.toLowerCase().includes("gay")) message.react("<:baboo_pride:981342135892729888>");
+
       const emotes = this.findEmotes(message.content);
+
+
       if (emotes == null) return;
       emotes.forEach((emote) => {
-        if (emote == "<:baboo_TheDeep:1263655967938318346>") {
-          message.react("<:baboo_TheDeep:1263655967938318346>");
-        }
+        if (emote == "<:baboo_TheDeep:1263655967938318346>") message.react("<:baboo_TheDeep:1263655967938318346>");
 
         this.bot.database.emoteUsage(message.author.id, emote);
       });
