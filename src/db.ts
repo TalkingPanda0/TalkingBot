@@ -196,6 +196,31 @@ export class DB {
 
     this.cleanDataBase();
   }
+
+  public getEmoteUsage(emoteList: string[], filter: string): EmoteStat[] {
+    switch (filter) {
+      case "emotes":
+        return this.database
+          .query(
+            `SELECT userId,SUM(times) as totaltimes FROM emotestats WHERE emoteId IN ('${emoteList.join("','")}') GROUP BY userId ORDER BY totaltimes DESC;`,
+          )
+          .all() as EmoteStat[];
+      case "reactions":
+        return this.database
+          .query(
+            `SELECT userId,SUM(times) as totaltimes FROM reactionstats WHERE emoteId IN ('${emoteList.join("','")}') GROUP BY userId ORDER BY totaltimes DESC;`,
+          )
+          .all() as EmoteStat[];
+      case "both":
+      default:
+        return this.database
+          .query(
+            `SELECT userId,SUM(totaltimes) as totaltimes FROM combinedemotestats WHERE emoteId IN ('${emoteList.join("','")}') GROUP BY userId ORDER BY totaltimes DESC;`,
+          )
+          .all() as EmoteStat[];
+    }
+  }
+
   public updateDataBase(inChat: number) {
     const toUpdate = this.inChatQuery.all(inChat) as WatchTime[];
     const date = new Date();

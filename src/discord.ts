@@ -120,7 +120,9 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
-			this.client.guilds.cache.get(this.guildId).members.me.setNickname("♂️ Very Manly Bot ♂️");
+      this.client.guilds.cache
+        .get(this.guildId)
+        .members.me.setNickname("♂️ Very Manly Bot ♂️");
     });
 
     this.client.on(Events.Error, (error: Error) => {
@@ -130,7 +132,7 @@ export class Discord {
     this.client.on(Events.MessageCreate, async (message) => {
       if (message.author.bot) return;
 
-		const doReact = message.channelId != "1020739967061868605";
+      const doReact = message.channelId != "1020739967061868605";
 
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
         message.author.id,
@@ -138,10 +140,7 @@ export class Discord {
       let currentHapboos = 0;
       if (hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
 
-      if (
-				doReact && 
-        randomInt(100 + currentHapboos) === 0
-      ) {
+      if (doReact && randomInt(100 + currentHapboos) === 0) {
         try {
           await message.react("<a:baboo_hapboo:1032341515365793884>");
         } catch (e) {
@@ -190,15 +189,15 @@ export class Discord {
         rewardName: "",
       });
 
-
-      if (doReact && message.content.toLowerCase().includes("gay")) message.react("<:baboo_pride:981342135892729888>");
+      if (doReact && message.content.toLowerCase().includes("gay"))
+        message.react("<:baboo_pride:981342135892729888>");
 
       const emotes = this.findEmotes(message.content);
 
-
       if (emotes == null) return;
       emotes.forEach((emote) => {
-        if (emote == "<:baboo_TheDeep:1263655967938318346>") message.react("<:baboo_TheDeep:1263655967938318346>");
+        if (emote == "<:baboo_TheDeep:1263655967938318346>")
+          message.react("<:baboo_TheDeep:1263655967938318346>");
 
         this.bot.database.emoteUsage(message.author.id, emote);
       });
@@ -704,35 +703,18 @@ export class Discord {
             ),
           ),
         execute: async (interaction) => {
-          const emote = interaction.options.getString("emote");
+          const arg = interaction.options.getString("emote");
           const filter = interaction.options.getString("filter");
-          if (emote == null) {
-            return;
-          }
-          let suffix = "";
-          let emotes: EmoteStat[];
-          switch (filter) {
-            case "emotes":
-              emotes = this.bot.database.getEmoteEmoteStat.all(
-                emote,
-              ) as EmoteStat[];
-              suffix = "messages";
+          if (arg == null) return;
+          const emoteList = this.findEmotes(arg);
+          if (emoteList == null || emoteList.length == 0) return;
 
-              break;
-            case "reactions":
-              emotes = this.bot.database.getEmoteReactionStat.all(
-                emote,
-              ) as EmoteStat[];
-              suffix = "reactions";
-              break;
-            case "both":
-            default:
-              emotes = this.bot.database.getEmoteTotalStat.all(
-                emote,
-              ) as EmoteStat[];
-              suffix = "messages and reactions";
-              break;
-          }
+          let suffix = "";
+          let emotes: EmoteStat[] = this.bot.database.getEmoteUsage(
+            emoteList,
+            filter,
+          );
+
           if (emotes == null || emotes.length == 0) {
             await interaction.reply("Can't find emote.");
             return;
@@ -761,7 +743,7 @@ export class Discord {
               },
               fields: [
                 {
-                  name: `Top ${emote} users in ${suffix}. (${page + 1}/${pageCount})`,
+                  name: `Top ${arg} users in ${suffix}. (${page + 1}/${pageCount})`,
                   value: emotes
                     .slice(start, start + 10)
                     .map((value, index) => {
