@@ -5,35 +5,43 @@ const voicesRegex =
   /(?<=^\()(Jan|Giorgio|Geraint|Salli|Matthew|Kimberly|Kendra|Justin|Joey|Joanna|Ivy|Raveena|Aditi|Emma|Brian|Amy|Russell|Nicole|Kangkang|Linda|Heather|Sean)(?=\))/;
 const messageList = document.getElementById("message-list");
 
-const emoteSoundEffects = {
-  ShyTwerk: "twerk.mp3",
-  HapBoo: "yippe.mp3",
-  HapFlat: "squish.mp3",
-  HabPoo: "habpoo.mp3",
-  Heheh: "hehe.mp3",
-  TeeHee: "hehe.mp3",
-  aids: "aids.mp3",
-  HNNNGH: "hnhg.mp3",
-  Skrunk: "huh.mp3",
-  Pixel: "pixel.mp3",
-  Silly: "silly.mp3",
-  realBoo: "realboo.mp3",
-  Shy: "uwu.mp3",
-  Sexy: "sexy.mp3",
-  Stunky: "stunky.mp3",
-  BanBan: "borf.mp3",
-  EatsDrywall: "eat.mp3",
-  Drywall: "eat.mp3",
-  HeartSweet: "kiss.mp3",
-  Heart: "kiss.mp3",
-  Trol: "troll.mp3",
-  TrollNuked: "troll.mp3",
-};
+const emoteSoundEffects = new Map([
+  ["ShyTwerk", "twerk.mp3"],
+  ["HapBoo", "yippe.mp3"],
+  ["HapFlat", "squish.mp3"],
+  ["HabPoo", "habpoo.mp3"],
+  ["Heheh", "hehe.mp3"],
+  ["TeeHee", "hehe.mp3"],
+  ["aids", "aids.mp3"],
+  ["HNNNGH", "hnhg.mp3"],
+  ["Skrunk", "huh.mp3"],
+  ["Pixel", "pixel.mp3"],
+  ["Silly", "silly.mp3"],
+  ["realBoo", "realboo.mp3"],
+  ["Shy", "uwu.mp3"],
+  ["Sexy", "sexy.mp3"],
+  ["Stunky", "stunky.mp3"],
+  ["BanBan", "borf.mp3"],
+  ["EatsDrywall", "eat.mp3"],
+  ["Drywall", "eat.mp3"],
+  ["HeartSweet", "kiss.mp3"],
+  ["Heart", "kiss.mp3"],
+  ["Trol", "troll.mp3"],
+  ["TrollNuked", "troll.mp3"],
+  ["a", "a.mp3"],
+  ["A", "a.mp3"],
+]);
 
 let queue = [];
 let isPlaying = false;
 let playing;
 let currentUser;
+let interval;
+
+const soundEffectRegex = new RegExp(
+  `(${Array.from(emoteSoundEffects.keys()).join("|")})`,
+  "g",
+);
 
 const audio = new Audio();
 
@@ -95,109 +103,82 @@ function getTTSAudio(message) {
 function handleQueue() {
   if (queue.length === 0 || isPlaying || messageList.childElementCount != 0)
     return;
-  var message = queue.shift();
-  var text = message.text.trim();
-  var interval;
+
+  const message = queue.shift();
+  const text = message.text.trim();
+  const voice = message.text.match(voicesRegex) ?? "Brian";
+
   isPlaying = true;
+
+  // Stop the TTS after 20 seconds
   interval = setTimeout(() => {
     if (playing != null) stopCurrentTTS();
   }, 20 * 1000);
+
   createPopup(message);
   currentUser = message.sender;
-  for (const key in emoteSoundEffects) {
-    const index = text.indexOf(key);
-    if (index !== -1) {
-      let tempqueue = [];
 
-      if (index != 0) {
-        message.text = text.slice(0, index);
-        tempqueue.push(getTTSAudio(message));
-      }
-      tempqueue.push(new Audio(emoteSoundEffects[key]));
-      if (index + key.length != text.length) {
-        message.text = text.slice(index + key.length, text.length);
-        tempqueue.push(getTTSAudio(message));
-      }
-      tempqueue.forEach((audio) => {
-        audio.onerror = (err) => {
-          console.log("Got error: " + err);
-          isPlaying = false;
-          clearInterval(interval);
-          interval = null;
+  const audioQueue = [];
 
-          playing = null;
-          removePopup();
-          createPopup({
-            sender: "Brian himself",
-            text: err,
-            parsedText: err,
-            color: "red",
-          });
-          setTimeout(removePopup, 10000);
-        };
-        audio.onended = () => {
-          if (tempqueue.length == 0) {
-            playing = null;
-            isPlaying = false;
-            clearInterval(interval);
-            interval = null;
-            setTimeout(removePopup, 10000);
-            return;
-          }
-          playing = tempqueue.shift();
-          playing.play().catch((err) => {
-            playing = null;
-            isPlaying = false;
-            clearInterval(interval);
-            interval = null;
-            console.error(err);
-            createPopup({
-              sender: "Brian himself",
-              text: err,
-              parsedText: err,
-              color: "red",
-            });
-            setTimeout(removePopup, 10000);
-          });
-        };
-      });
+  const segments = text.split(soundEffectRegex);
+  console.log(segments);
 
-      playing = tempqueue.shift();
-      playing.play().catch((err) => {
-        isPlaying = false;
-        clearInterval(interval);
-        interval = null;
-        playing = null;
-        console.error(err);
-        createPopup({
-          sender: "Brian himself",
-          text: err,
-          parsedText: err,
-          color: "red",
-        });
-        setTimeout(removePopup, 10000);
-      });
-
-      return;
+  for (const segment of segments) {
+    if (segment == null || segment.trim() == "") continue;
+    if (emoteSoundEffects.has(segment)) {
+      console.log(emoteSoundEffects.get(segment));
+      audioQueue.push(new Audio(emoteSoundEffects.get(segment)));
+    } else {
+      audioQueue.push(getTTSAudio({ voice: voice, text: segment }));
     }
   }
-  message.text = text;
-  const audio = getTTSAudio(message);
 
+  console.log(`Found ${audioQueue.length} segments.`);
+  playQueue(audioQueue);
+
+  return;
+}
+
+function playQueue(audioQueue) {
+  if (audioQueue == null || audioQueue.length == 0) return;
+  const audio = audioQueue.shift();
   playing = audio;
-  audio.onended = () => {
+
+  audio.onerror = (err) => {
+    console.log("Got error: " + err);
     isPlaying = false;
     clearInterval(interval);
     interval = null;
+
     playing = null;
+    removePopup();
+    createPopup({
+      sender: "Brian himself",
+      text: err,
+      parsedText: err,
+      color: "red",
+    });
     setTimeout(removePopup, 10000);
   };
+
+  audio.onended = () => {
+    if (audioQueue.length == 0) {
+      playing = null;
+      isPlaying = false;
+      clearInterval(interval);
+      interval = null;
+      setTimeout(removePopup, 10000);
+      return;
+    } else {
+      playQueue(audioQueue);
+    }
+  };
+
   audio.play().catch((err) => {
+    playing = null;
     isPlaying = false;
     clearInterval(interval);
     interval = null;
-
-    playing = null;
     console.error(err);
     createPopup({
       sender: "Brian himself",
@@ -210,7 +191,7 @@ function handleQueue() {
 }
 
 function ttSay(message) {
-  let voiceMatch = message.text.match(voicesRegex);
+  const voiceMatch = message.text.match(voicesRegex);
   if (voiceMatch !== null) {
     message.voice = voiceMatch[0];
   } else {
