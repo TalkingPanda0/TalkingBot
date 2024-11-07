@@ -25,6 +25,12 @@ import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
 
+const HAPBOOS = [
+  "<:commonhapboo:1302651100599554172>",
+  "<a:baboo_hapboo:1032341515365793884>",
+  "<a:baboo_hyperhapboo:1263893880403922974>",
+];
+
 export interface streamInfo {
   game: string;
   title: string;
@@ -120,9 +126,6 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
-      this.client.guilds.cache
-        .get(this.guildId)
-        .members.me.setNickname("♂️ Very Manly Bot ♂️");
     });
 
     this.client.on(Events.Error, (error: Error) => {
@@ -133,7 +136,6 @@ export class Discord {
       if (message.author.bot) return;
 
       const doReact = message.channelId != "1020739967061868605";
-
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
         message.author.id,
       ) as HapbooReaction;
@@ -142,12 +144,16 @@ export class Discord {
 
       if (doReact && randomInt(100 + currentHapboos) === 0) {
         try {
-          await message.react("<a:baboo_hapboo:1032341515365793884>");
+          let hapbooIndex: number;
+          for (hapbooIndex = 0; hapbooIndex < HAPBOOS.length - 1; hapbooIndex++)
+            if (randomInt(10) !== 0) break;
+
+          console.log(`HAPBOO ${hapbooIndex}`);
+          await message.react(HAPBOOS[hapbooIndex]);
+          this.bot.database.hapbooReaction(message.author.id);
         } catch (e) {
           console.error(e);
         }
-        console.log("HAPBOOO");
-        this.bot.database.hapbooReaction(message.author.id);
       }
 
       if (message.partial) {
