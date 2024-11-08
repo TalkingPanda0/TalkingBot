@@ -7,7 +7,7 @@ USER bun
 RUN mkdir /home/bun/talkingbot
 WORKDIR /home/bun/talkingbot
 
-COPY package.json bun.lockb tsconfig.json ./
+COPY package.json tsconfig.json ./
 
 RUN mkdir ./src
 COPY src ./src
