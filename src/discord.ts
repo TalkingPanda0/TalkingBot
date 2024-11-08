@@ -25,6 +25,7 @@ import {
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
+import { warn } from "console";
 
 const HAPBOOS = [
   "<:commonhapboo:1302651100599554172>",
@@ -683,6 +684,15 @@ export class Discord {
     pageCount: number,
     genereateEmbed: (page: number) => APIEmbed,
   ) {
+    if (pageCount == 0) return;
+
+    if (pageCount == 1) {
+      await interaction.reply({
+        embeds: [genereateEmbed(0)],
+      });
+      return;
+    }
+
     const prev = new ButtonBuilder()
       .setStyle(ButtonStyle.Secondary)
       .setLabel("Previous")
