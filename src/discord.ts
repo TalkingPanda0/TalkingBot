@@ -332,8 +332,8 @@ export class Discord {
                     name: `Top people. (${page + 1}/${pageCount})`,
                     value: hapboos
                       .slice(start, start + 10)
-                      .map((value) => {
-                        return `<@${value.userId}> : ${value.times}`;
+                      .map((value, index) => {
+                        return `${index + start + 1}: <@${value.userId}> : ${value.times}`;
                       })
                       .join("\n"),
                   },
