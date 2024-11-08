@@ -20,6 +20,7 @@ import {
   ComponentType,
   BaseMessageOptions,
   parseEmoji,
+  APIEmbed,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
@@ -121,11 +122,12 @@ export class Discord {
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
-    this.client.once(Events.ClientReady, (_readyClient) => {
+    this.client.once(Events.ClientReady, async (_readyClient) => {
       console.log("\x1b[34m%s\x1b[0m", `Discord setup complete`);
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
+      // this.client.guilds.cache.get(this.guildId).members.me.setNickname("");
     });
 
     this.client.on(Events.Error, (error: Error) => {
@@ -313,30 +315,35 @@ export class Discord {
         execute: async (interaction) => {
           const target = interaction.options.getUser("target");
           if (target == null) {
-            await interaction.reply({
-              embeds: [
-                {
-                  title: "HAPBOO",
-                  thumbnail: {
-                    url: "https://talkingpanda.dev/hapboo.gif",
-                  },
+            const hapboos = this.bot.database.getTopHapbooReactions();
 
-                  fields: [
-                    {
-                      name: "Top 10 Hapbooed people",
-                      value: this.bot.database
-                        .getTopHapbooReactions()
-                        .map((value) => {
-                          return `<@${value.userId}> : ${value.times}`;
-                        })
-                        .join("\n"),
-                    },
-                  ],
+            const pageCount = Math.ceil(hapboos.length / 10);
+
+            const genereateEmbed = (page: number) => {
+              const start = page * 10;
+              return {
+                title: "User Statistics",
+                thumbnail: {
+                  url: "https://talkingpanda.dev/hapboo.gif",
                 },
-              ],
-            });
+                fields: [
+                  {
+                    name: `Top people. (${page + 1}/${pageCount})`,
+                    value: hapboos
+                      .slice(start, start + 10)
+                      .map((value) => {
+                        return `<@${value.userId}> : ${value.times}`;
+                      })
+                      .join("\n"),
+                  },
+                ],
+              };
+            };
+
+            await this.sendPagedEmbed(interaction, pageCount, genereateEmbed);
             return;
           }
+
           const hapbooReaction = this.bot.database.getHapbooReaction.get(
             target.id,
           ) as HapbooReaction;
@@ -416,19 +423,7 @@ export class Discord {
             await interaction.reply("Can't find emote.");
             return;
           }
-          const prev = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Previous")
-            .setCustomId("prev");
 
-          const next = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Next")
-            .setCustomId("next");
-
-          const row = new ActionRowBuilder().addComponents(prev, next);
-
-          let page = 0;
           const pageCount = Math.ceil(emotes.length / 10);
 
           const genereateEmbed = (page: number) => {
@@ -455,31 +450,7 @@ export class Discord {
             };
           };
 
-          const response = await interaction.reply({
-            components: [row],
-            embeds: [genereateEmbed(page)],
-          });
-
-          const collector = response.createMessageComponentCollector({
-            filter: (i) => i.user.id == interaction.user.id,
-            componentType: ComponentType.Button,
-            time: 1 * 60 * 1000,
-          });
-
-          collector.on("collect", async (i) => {
-            if (i.customId == "next") {
-              page++;
-              page = page >= pageCount ? 0 : page;
-            } else {
-              page--;
-              page = page < 0 ? pageCount - 1 : page;
-            }
-            await i.update({ embeds: [genereateEmbed(page)] });
-          });
-
-          collector.on("end", () => {
-            response.edit({ components: [] });
-          });
+          await this.sendPagedEmbed(interaction, pageCount, genereateEmbed);
         },
       },
       {
@@ -523,19 +494,6 @@ export class Discord {
             return;
           }
 
-          const prev = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Previous")
-            .setCustomId("prev");
-
-          const next = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Next")
-            .setCustomId("next");
-
-          const row = new ActionRowBuilder().addComponents(prev, next);
-
-          let page = 0;
           const pageCount = Math.ceil(emotes.length / 10);
 
           const genereateEmbed = (page: number) => {
@@ -559,30 +517,7 @@ export class Discord {
             };
           };
 
-          const response = await interaction.reply({
-            components: [row],
-            embeds: [genereateEmbed(page)],
-          });
-          const collector = response.createMessageComponentCollector({
-            filter: (i) => i.user.id == interaction.user.id,
-            componentType: ComponentType.Button,
-            time: 1 * 60 * 1000,
-          });
-
-          collector.on("collect", async (i) => {
-            if (i.customId == "next") {
-              page++;
-              page = page >= pageCount ? 0 : page;
-            } else {
-              page--;
-              page = page < 0 ? pageCount - 1 : page;
-            }
-            await i.update({ embeds: [genereateEmbed(page)] });
-          });
-
-          collector.on("end", () => {
-            response.edit({ components: [] });
-          });
+          await this.sendPagedEmbed(interaction, pageCount, genereateEmbed);
         },
       },
 
@@ -625,19 +560,6 @@ export class Discord {
             return;
           }
 
-          const prev = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Previous")
-            .setCustomId("prev");
-
-          const next = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Next")
-            .setCustomId("next");
-
-          const row = new ActionRowBuilder().addComponents(prev, next);
-
-          let page = 0;
           const pageCount = Math.ceil(emotes.length / 10);
 
           const genereateEmbed = (page: number) => {
@@ -661,31 +583,7 @@ export class Discord {
             };
           };
 
-          const response = await interaction.reply({
-            components: [row],
-            embeds: [genereateEmbed(page)],
-          });
-
-          const collector = response.createMessageComponentCollector({
-            filter: (i) => i.user.id == interaction.user.id,
-            componentType: ComponentType.Button,
-            time: 1 * 60 * 1000,
-          });
-
-          collector.on("collect", async (i) => {
-            if (i.customId == "next") {
-              page++;
-              page = page >= pageCount ? 0 : page;
-            } else {
-              page--;
-              page = page < 0 ? pageCount - 1 : page;
-            }
-            await i.update({ embeds: [genereateEmbed(page)] });
-          });
-
-          collector.on("end", () => {
-            response.edit({ components: [] });
-          });
+          await this.sendPagedEmbed(interaction, pageCount, genereateEmbed);
         },
       },
       {
@@ -725,19 +623,7 @@ export class Discord {
             await interaction.reply("Can't find emote.");
             return;
           }
-          const prev = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Previous")
-            .setCustomId("prev");
 
-          const next = new ButtonBuilder()
-            .setStyle(ButtonStyle.Secondary)
-            .setLabel("Next")
-            .setCustomId("next");
-
-          const row = new ActionRowBuilder().addComponents(prev, next);
-
-          let page = 0;
           const pageCount = Math.ceil(emotes.length / 10);
 
           const genereateEmbed = (page: number) => {
@@ -764,31 +650,7 @@ export class Discord {
             };
           };
 
-          const response = await interaction.reply({
-            components: [row],
-            embeds: [genereateEmbed(page)],
-          });
-
-          const collector = response.createMessageComponentCollector({
-            filter: (i) => i.user.id == interaction.user.id,
-            componentType: ComponentType.Button,
-            time: 1 * 60 * 1000,
-          });
-
-          collector.on("collect", async (i) => {
-            if (i.customId == "next") {
-              page++;
-              page = page >= pageCount ? 0 : page;
-            } else {
-              page--;
-              page = page < 0 ? pageCount - 1 : page;
-            }
-            await i.update({ embeds: [genereateEmbed(page)] });
-          });
-
-          collector.on("end", () => {
-            response.edit({ components: [] });
-          });
+          await this.sendPagedEmbed(interaction, pageCount, genereateEmbed);
         },
       },
     ];
@@ -811,7 +673,54 @@ export class Discord {
       console.error(error);
     }
   }
+
   private findEmotes(message: string): string[] {
     return message.match(/<a?:.+?:\d+>/gu);
+  }
+
+  private async sendPagedEmbed(
+    interaction: ChatInputCommandInteraction,
+    pageCount: number,
+    genereateEmbed: (page: number) => APIEmbed,
+  ) {
+    const prev = new ButtonBuilder()
+      .setStyle(ButtonStyle.Secondary)
+      .setLabel("Previous")
+      .setCustomId("prev");
+
+    const next = new ButtonBuilder()
+      .setStyle(ButtonStyle.Secondary)
+      .setLabel("Next")
+      .setCustomId("next");
+
+    const row = new ActionRowBuilder().addComponents(prev, next);
+
+    let page = 0;
+
+    const response = await interaction.reply({
+      components: [row],
+      embeds: [genereateEmbed(page)],
+    });
+
+    const collector = response.createMessageComponentCollector({
+      filter: (i) => i.user.id == interaction.user.id,
+      componentType: ComponentType.Button,
+      time: 1 * 60 * 1000,
+    });
+
+    collector.on("collect", async (i) => {
+      if (i.customId == "next") {
+        page++;
+        page = page >= pageCount ? 0 : page;
+      } else {
+        page--;
+        page = page < 0 ? pageCount - 1 : page;
+      }
+      await i.update({ embeds: [genereateEmbed(page)] });
+    });
+
+    collector.on("end", () => {
+      response.edit({ components: [] });
+    });
   }
 }

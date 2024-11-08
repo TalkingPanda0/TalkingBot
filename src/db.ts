@@ -125,7 +125,7 @@ export class DB {
       "SELECT * FROM hapboo WHERE userId = ?1;",
     );
     this.getHapbooReactionSorted = this.database.query(
-      "SELECT * FROM hapboo ORDER BY times DESC LIMIT 10;",
+      "SELECT * FROM hapboo ORDER BY times DESC;",
     );
 
     const insertEmoteStatQuery = this.database.prepare(
