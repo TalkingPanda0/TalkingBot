@@ -7,6 +7,8 @@ import { TalkingBot } from "./talkingbot";
 const app: Express = express();
 const server = http.createServer(app);
 
+const bot: TalkingBot = new TalkingBot("17587561", server);
+
 app.use(express.static("public"));
 app.use(bodyParser.text());
 
@@ -34,6 +36,17 @@ app.get("/chatControl", (_req: Request, res: Response) => {
 app.get("/setup", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/setup.html");
 });
+
+app.post("/command", (req: Request, res: Response) => {
+	bot.commandHandler.setCustomCommand(req.query.name.toString(),req.query.response.toString());
+	res.sendStatus(200);
+});
+app.get("/command", (req: Request, res: Response) => {
+	res.send(bot.commandHandler.getCustomCommand(req.query.name.toString()));
+});
+app.get("/commandControl",(_req, res) => {
+  res.sendFile(__dirname + "/html/commandControl.html");
+});
 app.put("/control", (req: Request, res: Response) => {
   console.log(req.body);
   if (!req.body) {
@@ -55,7 +68,7 @@ app.get("/modtextedit", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/modtextedit.html");
 });
 
-const bot: TalkingBot = new TalkingBot("17587561", server);
+
 
 bot.initBot();
 server.listen(3000, () => {

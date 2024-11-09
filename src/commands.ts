@@ -1236,6 +1236,15 @@ export class MessageHandler {
     Bun.write(this.argsFile, JSON.stringify(args));
   }
 
+	public getCustomCommand(name :string): string {
+		return this.customCommandMap.get(name);
+	}
+
+	public setCustomCommand(name: string, response: string) {
+		this.customCommandMap.set(name,response);
+		this.writeCustomCommands();
+	}
+
   private async runScript(script: string, data: MessageData): Promise<string> {
     console.log(script);
     const context = Object.create(null);

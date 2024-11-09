@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title></title>
+<style>
+		#response {
+			width: 100%;
+			height: 500px;
+		}
+</style>
+	</head>
+	<body>
+		<textarea id="response" placeholder="Response"></textarea>
+		<input id="name" placeholder="Command Name"></input>
+		<button id="send">Send</button>
+		<button id="get">Get</button>
+<script>
+		const IP = "http://localhost:3000";
+
+		const response = document.getElementById("response");
+		const name = document.getElementById("name");
+		const send = document.getElementById("send");
+		const get = document.getElementById("get");
+		
+		get.onclick = async () => {
+			response.value = await (await fetch(`/command?name=${name.value}`)).text();
+		}
+
+		send.onclick = async () => {
+			await fetch(`/command?name=${name.value}&response=${response.value}`,{method: "POST"});
+		}
+
+</script>
+	</body>
+</html>

@@ -128,7 +128,7 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
-      // this.client.guilds.cache.get(this.guildId).members.me.setNickname("");
+      this.client.guilds.cache.get(this.guildId).members.me.setNickname("bisexualQueen");
     });
 
     this.client.on(Events.Error, (error: Error) => {

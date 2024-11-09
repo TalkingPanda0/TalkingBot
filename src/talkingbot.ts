@@ -42,7 +42,7 @@ export class TalkingBot {
   public kick: Kick;
   public iochat: Server;
   public iomodtext: Server;
-  public iopoll: Server;
+  public iopoll: Server;Capitano
   public ioalert: Server;
   public iocontrol: Server;
   public connectedtoOverlay: Boolean = false;
@@ -112,14 +112,16 @@ export class TalkingBot {
           case "chat":
             this.iochat.emit(data.target, data.message);
             break;
+
           case "modtext":
             this.modtext = data.message;
-
             this.updateModText();
             break;
+
           case "tts":
             this.iotts.emit(data.target, data.message);
             break;
+
           case "alerts":
             this.ioalert.emit(data.target, data.message);
             break;
