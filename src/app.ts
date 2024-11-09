@@ -38,13 +38,19 @@ app.get("/setup", (_req: Request, res: Response) => {
 });
 
 app.post("/command", (req: Request, res: Response) => {
-	bot.commandHandler.setCustomCommand(req.query.name.toString(),req.query.response.toString());
-	res.sendStatus(200);
+  console.log(req.body);
+  const name = req.query.name.toString();
+  if (!req.body || !name) {
+    res.sendStatus(400);
+    return;
+  }
+  bot.commandHandler.setCustomCommand(name, req.body);
+  res.sendStatus(200);
 });
 app.get("/command", (req: Request, res: Response) => {
-	res.send(bot.commandHandler.getCustomCommand(req.query.name.toString()));
+  res.send(bot.commandHandler.getCustomCommand(req.query.name.toString()));
 });
-app.get("/commandControl",(_req, res) => {
+app.get("/commandControl", (_req, res) => {
   res.sendFile(__dirname + "/html/commandControl.html");
 });
 app.put("/control", (req: Request, res: Response) => {
@@ -67,8 +73,6 @@ app.get("/wheel", (_req: Request, res: Response) => {
 app.get("/modtextedit", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/modtextedit.html");
 });
-
-
 
 bot.initBot();
 server.listen(3000, () => {

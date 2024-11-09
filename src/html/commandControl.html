@@ -29,7 +29,7 @@
 		}
 
 		send.onclick = async () => {
-			await fetch(`/command?name=${name.value}&response=${response.value}`,{method: "POST"});
+			await fetch(`/command?name=${name.value}`,{method: "POST",body: response.value.replaceAll("\n","")});
 		}
 
 </script>
