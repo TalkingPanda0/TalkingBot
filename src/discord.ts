@@ -613,7 +613,9 @@ export class Discord {
           const emoteList = this.findEmotes(arg);
           if (emoteList == null || emoteList.length == 0) return;
 
-          let suffix = filter;
+					let suffix = filter;	
+					if(suffix == null || suffix == "both") suffix = "messages and reactions";
+
           const emotes: EmoteStat[] = this.bot.database.getEmoteUsage(
             emoteList,
             filter,
