@@ -28,7 +28,7 @@ const emoteSoundEffects = new Map([
   ["Heart", "kiss.mp3"],
   ["Trol", "troll.mp3"],
   ["TrollNuked", "troll.mp3"],
-	["AAA+", "a.mp3"]
+  ["AAA+", "a.mp3"],
 ]);
 
 let queue = [];
@@ -119,20 +119,20 @@ function handleQueue() {
 
   const audioQueue = [];
 
-  const segments = text.split(soundEffectRegex);
-  console.log(segments);
-
-  for (const segment of segments) {
-    if (segment == null || segment.trim() == "") continue;
-    if (emoteSoundEffects.has(segment)) {
-      console.log(emoteSoundEffects.get(segment));
-      audioQueue.push(new Audio(emoteSoundEffects.get(segment)));
-    } else {
-      audioQueue.push(getTTSAudio({ voice: voice, text: segment }));
-    }
+  let match;
+  let lastIndex = 0;
+  while ((match = soundEffectRegex.exec(text)) !== null) {
+    audioQueue.push(
+      getTTSAudio({ voice: voice, text: text.slice(lastIndex, match.index) }),
+    );
+    audioQueue.push(getTTSAudio({ voice: voice, text: match[0] }));
+    lastIndex = match.index + match[0].length;
   }
+  audioQueue.push(getTTSAudio({ voice: voice, text: text.slice(lastIndex) }));
 
+  console.log(audioQueue);
   console.log(`Found ${audioQueue.length} segments.`);
+
   playQueue(audioQueue);
 
   return;
