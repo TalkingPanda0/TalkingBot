@@ -129,14 +129,20 @@ function handleQueue() {
   let match;
   let lastIndex = 0;
   while ((match = soundEffectRegex.exec(text)) !== null) {
-    audioQueue.push(
-      getTTSAudio({ voice: voice, text: text.slice(lastIndex, match.index) }),
-    );
+    const beforeEmote = getTTSAudio({
+      voice: voice,
+      text: text.slice(lastIndex, match.index),
+    });
+    if (beforeEmote) audioQueue.push(beforeEmote);
+
     audioQueue.push(new Audio(emoteSoundEffects.get(match[0])));
     lastIndex = match.index + match[0].length;
   }
-  const lastTTS = getTTSAudio({ voice: voice, text: text.slice(lastIndex) });
-  if (lastTTS) audioQueue.push(lastTTS);
+  const afterLastEmote = getTTSAudio({
+    voice: voice,
+    text: text.slice(lastIndex),
+  });
+  if (afterLastEmote) audioQueue.push(afterLastEmote);
 
   console.log(audioQueue);
   console.log(`Found ${audioQueue.length} segments.`);
