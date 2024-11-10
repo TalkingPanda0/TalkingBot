@@ -12,7 +12,6 @@ import {
   ParsedMessagePart,
   buildEmoteImageUrl,
   parseTwitchMessage,
-  ParsedMessageCheerPart,
 } from "@twurple/chat";
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 

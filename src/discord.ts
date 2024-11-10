@@ -18,14 +18,12 @@ import {
   ButtonStyle,
   ActionRowBuilder,
   ComponentType,
-  BaseMessageOptions,
   parseEmoji,
   APIEmbed,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
-import { warn } from "console";
 
 const HAPBOOS = [
   "<:commonhapboo:1302651100599554172>",
@@ -137,6 +135,7 @@ export class Discord {
 
     this.client.on(Events.MessageCreate, async (message) => {
       if (message.author.bot) return;
+
 
       const doReact = message.channelId != "1020739967061868605";
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
@@ -676,7 +675,7 @@ export class Discord {
   }
 
   private findEmotes(message: string): string[] {
-    return message.match(/<a?:.+?:\d+>/gu);
+    return message.match(/<a?:.+?:\d+>|\p{Emoji}/gu);
   }
 
   private async sendPagedEmbed(

@@ -42,8 +42,8 @@ export class TalkingBot {
   public kick: Kick;
   public iochat: Server;
   public iomodtext: Server;
-  public iopoll: Server;Capitano
-  public ioalert: Server;
+  public iopoll: Server;
+	public ioalert: Server;
   public iocontrol: Server;
   public connectedtoOverlay: Boolean = false;
   public pet: Pet;
