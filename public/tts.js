@@ -28,8 +28,6 @@ const emoteSoundEffects = new Map([
   ["Heart", "kiss.mp3"],
   ["Trol", "troll.mp3"],
   ["TrollNuked", "troll.mp3"],
-  ["a", "a.mp3"],
-  ["A", "a.mp3"],
 ]);
 
 let queue = [];
