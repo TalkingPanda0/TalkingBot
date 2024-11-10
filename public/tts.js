@@ -135,7 +135,8 @@ function handleQueue() {
     audioQueue.push(new Audio(emoteSoundEffects.get(match[0])));
     lastIndex = match.index + match[0].length;
   }
-  audioQueue.push(getTTSAudio({ voice: voice, text: text.slice(lastIndex) }));
+  const lastTTS = getTTSAudio({ voice: voice, text: text.slice(lastIndex) });
+  if (lastTTS) audioQueue.push(lastTTS);
 
   console.log(audioQueue);
   console.log(`Found ${audioQueue.length} segments.`);
