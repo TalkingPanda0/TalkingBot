@@ -94,6 +94,13 @@ function removePopup() {
   }, 1e3);
 }
 function getTTSAudio(message) {
+  if (
+    message.voice == null ||
+    message.voice == "" ||
+    message.text == null ||
+    message.text == ""
+  )
+    return null;
   return new Audio(
     `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(message.text)}`,
   );
@@ -125,7 +132,7 @@ function handleQueue() {
     audioQueue.push(
       getTTSAudio({ voice: voice, text: text.slice(lastIndex, match.index) }),
     );
-    audioQueue.push(getTTSAudio({ voice: voice, text: match[0] }));
+    audioQueue.push(new Audio(emoteSoundEffects.get(match[0])));
     lastIndex = match.index + match[0].length;
   }
   audioQueue.push(getTTSAudio({ voice: voice, text: text.slice(lastIndex) }));
