@@ -141,10 +141,10 @@ export class DB {
       "SELECT * FROM emotestats WHERE userId = ?1 ORDER BY times DESC;",
     );
     this.getTopEmotes = this.database.query(
-      "SELECT emoteId, SUM(times) as totalUsage FROM emotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10",
+      "SELECT emoteId, SUM(times) as totalUsage FROM emotestats GROUP BY emoteId ORDER BY totalUsage DESC",
     );
     this.getTopEmoteUsers = this.database.query(
-      "SELECT userId,SUM(times) as totalUsage FROM emotestats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10",
+      "SELECT userId,SUM(times) as totalUsage FROM emotestats GROUP BY userId ORDER BY totalUsage DESC",
     );
     this.getEmoteEmoteStat = this.database.query(
       "SELECT * FROM emotestats WHERE emoteId = ?1 ORDER BY times DESC;",
@@ -169,19 +169,19 @@ export class DB {
       "SELECT * FROM reactionstats WHERE emoteId = ?1 ORDER BY times DESC;",
     );
     this.getTopReactions = this.database.query(
-      "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10;",
+      "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC;",
     );
     this.getTopReactionUsers = this.database.query(
-      "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10;",
+      "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC;",
     );
     this.getTopTotalUsers = this.database.query(
-      "SELECT userId,SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY userId ORDER BY totalUsage DESC LIMIT 10;",
+      "SELECT userId,SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY userId ORDER BY totalUsage DESC;",
     );
     this.getEmoteTotalStat = this.database.query(
       "SELECT * FROM combinedemotestats WHERE emoteId = ?1 ORDER BY totaltimes DESC;",
     );
     this.getTopTotal = this.database.query(
-      "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC LIMIT 10;",
+      "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC;",
     );
 
     this.getConfig = this.database.query(

@@ -136,7 +136,6 @@ export class Discord {
     this.client.on(Events.MessageCreate, async (message) => {
       if (message.author.bot) return;
 
-
       const doReact = message.channelId != "1020739967061868605";
       const hapbooReactions = this.bot.database.getHapbooReaction.get(
         message.author.id,
