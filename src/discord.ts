@@ -714,7 +714,7 @@ export class Discord {
   }
 
   private findEmotes(message: string): string[] {
-    return message.match(/<a?:.+?:\d+>|\p{Emoji}/gu);
+    return message.match(/<a?:.+?:\d+>|\p{Extended_Pictographic}/gu);
   }
 
   private async sendPagedEmbed(
