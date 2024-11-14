@@ -372,7 +372,7 @@ export class DB {
     return this.getHapbooReactionSorted.all() as HapbooReaction[];
   }
 
-  public reaction(userId: string, emoteId: string) {
+  public reaction(userId: string, emoteId: string, number: number) {
     const reactionUsage = this.getReactionStat.get(
       userId,
       emoteId,
@@ -385,17 +385,17 @@ export class DB {
       });
       return;
     }
-    reactionUsage.times++;
+    reactionUsage.times += number;
     this.insertReactionStat(reactionUsage);
   }
 
-  public emoteUsage(userId: string, emoteId: string) {
+  public emoteUsage(userId: string, emoteId: string, number: number) {
     const emoteUsage = this.getEmoteStat.get(userId, emoteId) as EmoteStat;
     if (emoteUsage == null) {
       this.insertEmoteStat({ userId: userId, emoteId: emoteId, times: 1 });
       return;
     }
-    emoteUsage.times++;
+    emoteUsage.times += number;
     this.insertEmoteStat(emoteUsage);
   }
 

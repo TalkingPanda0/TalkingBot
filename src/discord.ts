@@ -20,6 +20,9 @@ import {
   ComponentType,
   parseEmoji,
   APIEmbed,
+  Message,
+  PartialMessage,
+  OmitPartialGroupDMChannel,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
@@ -126,7 +129,14 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
-      this.client.guilds.cache.get(this.guildId).members.me.setNickname("bisexualQueen");
+      //this.client.guilds.cache.get(this.guildId).members.me.setNickname("bisexualQueen");
+      const chatting = this.client.guilds.cache
+        .get("853223679664062465")
+        .channels.cache.get("853223680200409100");
+      if (!chatting.isTextBased()) return;
+      const message = await chatting.messages.fetch("1306600574485135371");
+      message.react("🧠");
+      message.react("🍪");
     });
 
     this.client.on(Events.Error, (error: Error) => {
@@ -199,16 +209,36 @@ export class Discord {
       if (doReact && message.content.toLowerCase().includes("gay"))
         message.react("<:baboo_pride:981342135892729888>");
 
-      const emotes = this.findEmotes(message.content);
-
-      if (emotes == null) return;
-      emotes.forEach((emote) => {
-        if (emote == "<:baboo_TheDeep:1263655967938318346>")
-          message.react("<:baboo_TheDeep:1263655967938318346>");
-
-        this.bot.database.emoteUsage(message.author.id, emote);
-      });
+      this.addEmotes(message);
     });
+
+    this.client.on(Events.MessageDelete, async (message) => {
+      if (message.author.bot) return;
+      if (message.partial) await message.fetch();
+
+      console.log(
+        "\x1b[34m%s\x1b[0m",
+        `${message.author.id} deleted ${message.content}`,
+      );
+
+      this.removeEmotes(message);
+    });
+
+    this.client.on(
+      Events.MessageUpdate,
+      async (oldMessage: Message, newMessage: Message) => {
+        if (oldMessage.author.bot) return;
+        if (oldMessage.partial) await oldMessage.fetch();
+        if (newMessage.partial) await newMessage.fetch();
+        console.log(
+          "\x1b[34m%s\x1b[0m",
+          `${oldMessage.author.id} updated ${oldMessage.content} to ${newMessage.content}`,
+        );
+
+        this.removeEmotes(oldMessage);
+        this.addEmotes(newMessage);
+      },
+    );
 
     this.client.on(Events.MessageReactionAdd, async (reaction, user) => {
       if (user.bot) return;
@@ -218,7 +248,14 @@ export class Discord {
       if (emote == "<:baboo_TheDeep:1263655967938318346>")
         reaction.message.react("<:baboo_TheDeep:1263655967938318346>");
 
-      this.bot.database.reaction(user.id, emote);
+      this.bot.database.reaction(user.id, emote, 1);
+    });
+
+    this.client.on(Events.MessageReactionRemove, async (reaction, user) => {
+      if (user.bot) return;
+      const emote = reaction.emoji.toString();
+      console.log("\x1b[34m%s\x1b[0m", `${user.id} took back a ${emote}`);
+      this.bot.database.reaction(user.id, emote, -1);
     });
 
     this.client.on(
@@ -612,8 +649,9 @@ export class Discord {
           const emoteList = this.findEmotes(arg);
           if (emoteList == null || emoteList.length == 0) return;
 
-					let suffix = filter;	
-					if(suffix == null || suffix == "both") suffix = "messages and reactions";
+          let suffix = filter;
+          if (suffix == null || suffix == "both")
+            suffix = "messages and reactions";
 
           const emotes: EmoteStat[] = this.bot.database.getEmoteUsage(
             emoteList,
@@ -731,6 +769,23 @@ export class Discord {
 
     collector.on("end", () => {
       response.edit({ components: [] });
+    });
+  }
+  private removeEmotes(message: { content: string; author: { id: string } }) {
+    const emotes = this.findEmotes(message.content);
+    if (emotes == null) return;
+    emotes.forEach((emote) => {
+      this.bot.database.emoteUsage(message.author.id, emote, -1);
+    });
+  }
+  private addEmotes(message: Message) {
+    const emotes = this.findEmotes(message.content);
+    if (emotes == null) return;
+    emotes.forEach((emote) => {
+      if (emote == "<:baboo_TheDeep:1263655967938318346>")
+        message.react("<:baboo_TheDeep:1263655967938318346>");
+
+      this.bot.database.emoteUsage(message.author.id, emote, 1);
     });
   }
 }
