@@ -1,11 +1,14 @@
+<!DOCTYPE html>
 <html>
   <head>
     <link
       href="https://fonts.googleapis.com/icon?family=Material+Icons"
       rel="stylesheet"
     />
+
   </head>
   <body id="body">
+		<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <div id="message-list"></div>
     <div
       id="disconnect-list"
@@ -33,9 +36,15 @@
 		</div>
   </body>
 
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
   <script>
+		async function sendToControl(request){
+			const body = JSON.stringify(request);
+			const response = await fetch("/control", {
+          method: "POST",
+          body: body,
+        });
+			console.log(await response.text());
+		}
     const mentionRegex = /@(\w+)/g;
     const platformIcons = {
       bot: "https://talkingpanda.dev/bot.png",
@@ -79,9 +88,8 @@
 			  "isCommand": command,
 			  "id": undefined, 
 				"isFake": true,
-			}
-		
-			controlSocket.emit("control", {
+			};
+			sendToControl({
           overlay: "chat",
           target: "message",
           message: message,
@@ -200,7 +208,7 @@
       deleteElement.classList.add("action");
       deleteElement.classList.add("badge");
       deleteElement.addEventListener("click", () => {
-        controlSocket.emit("control", {
+        sendToControl( {
           overlay: "chat",
           target: "deleteMessage",
           message: messageElement.id,
@@ -223,7 +231,7 @@
       banElement.classList.add("action");
       banElement.classList.add("badge");
       banElement.addEventListener("click", () => {
-        controlSocket.emit("control", {
+        sendToControl( {
           overlay: "chat",
           target: "banUser",
           message: message.senderId,
@@ -263,7 +271,6 @@
     }
 
     var socket = io("/", { path: "/chat/" });
-    const controlSocket = io("/", { path: "/control/" });
 
     socket.on("connect", () => {
       console.log("Connected");
