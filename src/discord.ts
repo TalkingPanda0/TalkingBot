@@ -30,7 +30,7 @@ const HAPBOOS = [
   "<:commonhapboo:1302651100599554172>",
   "<a:baboo_hapboo:1032341515365793884>",
   "<a:baboo_hyperhapboo:1263893880403922974>",
-	"<a:squishedboo:1306943140128620545>"
+  "<a:squishedboo:1306943140128620545>",
 ];
 
 export interface streamInfo {
@@ -793,8 +793,12 @@ export class Discord {
   }
 
   public async isStreamMod(userId: string): Promise<boolean> {
-    const user = await this.channel.guild.members.fetch(userId);
-    if (!user) return false;
-    return user.roles.cache.has("886305448251261018");
+    try {
+      const user = await this.channel.guild.members.fetch(userId);
+      if (!user) return false;
+      return user.roles.cache.has("886305448251261018");
+    } catch (e) {
+      return false;
+    }
   }
 }

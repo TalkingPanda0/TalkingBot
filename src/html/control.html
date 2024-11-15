@@ -18,29 +18,29 @@
     <input type="checkbox" id="parse" name="Parse" value="false" />
     <label for="parse"> Parse</label>
     <button id="button">Send</button>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <script>
-      var socket = io("/", { path: "/control/" });
+    <br />
 
+    <script>
       const overlay = document.getElementById("overlay");
       const target = document.getElementById("target");
       const message = document.getElementById("message");
       const button = document.getElementById("button");
       const parse = document.getElementById("parse");
 
-      socket.on("connect", () => {
-        console.log("Connected to socket server");
-      });
-
-      button.onclick = () => {
+      button.onclick = async () => {
         const messageObject = parse.checked
           ? JSON.parse(message.value)
           : message.value;
-        socket.emit("control", {
+        const body = JSON.stringify({
           overlay: overlay.value,
           target: target.value,
           message: messageObject,
         });
+        const response = await fetch("/control", {
+          method: "POST",
+          body: body,
+        });
+        alert(await response.text());
       };
     </script>
   </body>

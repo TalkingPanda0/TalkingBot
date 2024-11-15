@@ -17,6 +17,14 @@ export interface AuthSetup {
   channelName: string;
 }
 
+export interface DiscordAuthData {
+  token_type: string;
+  access_token: string;
+  expires_in: number;
+  refresh_token: string;
+  scope: string;
+}
+
 export interface pollOption {
   id: string;
   label: string;
@@ -33,8 +41,6 @@ interface controlMessage {
   message: string;
 }
 
-
-
 export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
@@ -43,8 +49,7 @@ export class TalkingBot {
   public iochat: Server;
   public iomodtext: Server;
   public iopoll: Server;
-	public ioalert: Server;
-  public iocontrol: Server;
+  public ioalert: Server;
   public connectedtoOverlay: Boolean = false;
   public pet: Pet;
   public database: DB;
@@ -55,6 +60,10 @@ export class TalkingBot {
 
   private kickId: string;
   private server: http.Server;
+  private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
+  public jwtSecret: string;
+  public discordRedirectUri: string;
+  public discordLoginUri: string;
 
   constructor(kickId: string, server: http.Server) {
     this.server = server;
@@ -102,33 +111,6 @@ export class TalkingBot {
       path: "/alerts/",
     });
 
-    this.iocontrol = new Server(this.server, {
-      path: "/control/",
-    });
-    this.iocontrol.on("connect", (socket) => {
-      socket.on("control", (data: controlMessage) => {
-        console.log(data.overlay);
-        switch (data.overlay) {
-          case "chat":
-            this.iochat.emit(data.target, data.message);
-            break;
-
-          case "modtext":
-            this.modtext = data.message;
-            this.updateModText();
-            break;
-
-          case "tts":
-            this.iotts.emit(data.target, data.message);
-            break;
-
-          case "alerts":
-            this.ioalert.emit(data.target, data.message);
-            break;
-        }
-      });
-    });
-
     this.kickId = kickId;
 
     this.commandHandler = new MessageHandler(this);
@@ -144,13 +126,18 @@ export class TalkingBot {
   }
 
   public async initBot() {
+    const secrets = await this.secretsFile.json();
+    this.jwtSecret = secrets.jwtSecret;
+    this.discordRedirectUri = secrets.discordRedirectUri;
+    this.discordLoginUri = secrets.discordLoginUri;
+
     this.database.init();
     this.database.cleanDataBase();
     this.discord.initBot();
     await this.twitch.initBot();
     this.kick.initBot();
     this.youTube.initBot();
-		this.commandHandler.init();
+    this.commandHandler.init();
   }
 
   public async cleanUp() {
@@ -225,8 +212,61 @@ export class TalkingBot {
       }),
     );
     if (!this.modtext) return;
-    this.iomodtext.emit("message", 
-      this.modtext.replaceAll(/counter\((\w+)\)/g,(_modtext, counter) => this.commandHandler.counter.getCounter(counter).toString()),
+    this.iomodtext.emit(
+      "message",
+      this.modtext.replaceAll(/counter\((\w+)\)/g, (_modtext, counter) =>
+        this.commandHandler.counter.getCounter(counter).toString(),
+      ),
     );
+  }
+  public async getUserIdFromCode(code: string): Promise<string> {
+    if (!code) return;
+    try {
+      const response = await fetch("https://discord.com/api/oauth2/token", {
+        method: "POST",
+        body: new URLSearchParams({
+          client_id: this.discord.clientId,
+          client_secret: this.discord.clientSecret,
+          code,
+          grant_type: "authorization_code",
+          redirect_uri: this.discordRedirectUri,
+          scope: "identify",
+        }).toString(),
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      });
+      const data: DiscordAuthData = await response.json();
+      const result = await fetch("https://discord.com/api/users/@me", {
+        headers: {
+          authorization: `${data.token_type} ${data.access_token}`,
+        },
+      });
+      const userData = await result.json();
+      return userData.id;
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+  public handleControl(data: controlMessage) {
+    switch (data.overlay) {
+      case "chat":
+        this.iochat.emit(data.target, data.message);
+        break;
+
+      case "modtext":
+        this.modtext = data.message;
+        this.updateModText();
+        break;
+
+      case "tts":
+        this.iotts.emit(data.target, data.message);
+        break;
+
+      case "alerts":
+        this.ioalert.emit(data.target, data.message);
+        break;
+    }
   }
 }
