@@ -21,8 +21,6 @@ import {
   parseEmoji,
   APIEmbed,
   Message,
-  PartialMessage,
-  OmitPartialGroupDMChannel,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
@@ -32,6 +30,7 @@ const HAPBOOS = [
   "<:commonhapboo:1302651100599554172>",
   "<a:baboo_hapboo:1032341515365793884>",
   "<a:baboo_hyperhapboo:1263893880403922974>",
+	"<a:squishedboo:1306943140128620545>"
 ];
 
 export interface streamInfo {
@@ -51,7 +50,8 @@ interface DiscordCommand {
 
 export class Discord {
   private token: string;
-  private clientId: string;
+  public clientId: string;
+  public clientSecret: string;
   private guildId: string;
   private commands: Collection<string, DiscordCommand>;
   private bot: TalkingBot;
@@ -108,6 +108,7 @@ export class Discord {
     const fileContent = await this.discordFile.json();
     this.token = fileContent.token;
     this.clientId = fileContent.clientId;
+    this.clientSecret = fileContent.clientSecret;
     this.guildId = fileContent.guildId;
 
     if (this.token == null) return;
@@ -129,7 +130,7 @@ export class Discord {
       this.channel = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
-      //this.client.guilds.cache.get(this.guildId).members.me.setNickname("bisexualQueen");
+      //this.client.guilds.cache.get(this.guildId).members.me.setNickname("");
       const chatting = this.client.guilds.cache
         .get("853223679664062465")
         .channels.cache.get("853223680200409100");
@@ -771,6 +772,7 @@ export class Discord {
       response.edit({ components: [] });
     });
   }
+
   private removeEmotes(message: { content: string; author: { id: string } }) {
     const emotes = this.findEmotes(message.content);
     if (emotes == null) return;
@@ -778,6 +780,7 @@ export class Discord {
       this.bot.database.emoteUsage(message.author.id, emote, -1);
     });
   }
+
   private addEmotes(message: Message) {
     const emotes = this.findEmotes(message.content);
     if (emotes == null) return;
@@ -787,5 +790,11 @@ export class Discord {
 
       this.bot.database.emoteUsage(message.author.id, emote, 1);
     });
+  }
+
+  public async isStreamMod(userId: string): Promise<boolean> {
+    const user = await this.channel.guild.members.fetch(userId);
+    if (!user) return false;
+    return user.roles.cache.has("886305448251261018");
   }
 }
