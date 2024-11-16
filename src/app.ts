@@ -104,7 +104,7 @@ app.get("/auth", async (req, res) => {
   }
   const token = sign(userId, bot.jwtSecret);
   res.set({
-    "Set-Cookie": `discord_id=${token};path=/control;max-age=18000;HttpOnly;`,
+    "Set-Cookie": `discord_id=${token};path=/control;HttpOnly;`,
     Location: "/control",
   });
   res.sendStatus(302);

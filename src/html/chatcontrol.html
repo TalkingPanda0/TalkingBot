@@ -9,7 +9,6 @@
   </head>
   <body id="body">
 		<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-    <div id="message-list"></div>
     <div
       id="disconnect-list"
       style="
@@ -20,23 +19,62 @@
         display: flex;
       "
     ></div>
-    <div id="send-message">
-    <select name="platform" id="platform-input">
-			<option value="bot">Bot</option>
-      <option value="twitch">Twitch</option>
-      <option value="kick">Kick</option>
-      <option value="youtube">YouTube</option>
-    </select>
-			<input type="checkbox" id="command-input" name="iscommand" value="false" />
-			<input id="badges-input" placeholder="Badges"></input>
-			<input id="name-input" placeholder="Name"></input>
-			<input id="color-input" placeholder="Color"></input>
-			<input id="message-input" placeholder="Message"></input>
-			<button onclick="sendMessage()">Send!</button>
+		<div id="container">
+			<div id="message-list"></div>
+			<div id="send-message">
+	<div id="message-apperance">
+			<input class="input" id="color-input" placeholder="Color"></input>
+			<input class="input" id="name-input" placeholder="Name"></input>
+		<input type="checkbox" id="command-input" name="iscommand" value="false" >Is command</input>
+	<div class="dropdown">
+		<div class="dropdown-toggle">Badges</div>
+		<div class="dropdown-menu">
+			<label><input type="checkbox" value="Youtube Moderator"> Youtube Moderator</label>
+			<label><input type="checkbox" value="Kick Moderator"> Kick Moderator</label>
+			<label><input type="checkbox" value="Kick Sub"> Kick Sub</label>
+			<label><input type="checkbox" value="Twitch Moderator"> Twitch Moderator</label>
+			<label><input type="checkbox" value="Twitch Sub"> Twitch Sub</label>
+			<label><input type="checkbox" value="HAPBOO"> HAPBOO</label>
+			</div>
+		</div>
+			<select class="button" name="platform" id="platform-input">
+				<option value="bot">Bot</option>
+  	    <option value="twitch">Twitch</option>
+  	    <option value="kick">Kick</option>
+  	    <option value="youtube">YouTube</option>
+  	  </select>
+		</div>
+				<div id="send-container">
+					<input class="input" id="message-input" placeholder="Message"></input>
+					<button class="button" onclick="sendMessage()">Send</button>
+				</div>
+			</div>
 		</div>
   </body>
 
   <script>
+	const badges = new Map([
+		["Youtube Moderator","/ytmod.svg"],
+		["Kick Moderator","/kickmod.svg"],
+		["Kick Sub","/kicksub.svg"],
+		["Twitch Moderator","https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3"],
+		["Twitch Sub","https://static-cdn.jtvnw.net/badges/v1/d945f08c-f244-4207-974b-3909d5732d63/3"],
+		["HAPBOO","https://talkingpanda.dev/hapboo.gif"]
+	]);
+		const dropdownToggle = document.querySelector(".dropdown-toggle");
+    const dropdownMenu = document.querySelector(".dropdown-menu");
+
+    dropdownToggle.addEventListener("click", () => {
+      dropdownMenu.classList.toggle("show");
+		});
+
+    // Close dropdown if clicked outside
+    document.addEventListener("click", (event) => {
+      if (!dropdownToggle.contains(event.target) && !dropdownMenu.contains(event.target)) {
+        dropdownMenu.classList.remove("show");
+			}
+    });
+
 		async function sendToControl(request){
 			const body = JSON.stringify(request);
 			const response = await fetch("/control", {
@@ -44,6 +82,7 @@
           body: body,
         });
 			console.log(await response.text());
+			if(response.status == 403) window.location.replace("/control");
 		}
     const mentionRegex = /@(\w+)/g;
     const platformIcons = {
@@ -54,6 +93,7 @@
     };
 
     const messageList = document.getElementById("message-list");
+    const controlDiv = document.getElementById("container");
     const disconnectList = document.getElementById("disconnect-list");
 
     const platformInput = document.getElementById("platform-input");
@@ -63,15 +103,24 @@
     const messageInput = document.getElementById("message-input");
     const commandInput = document.getElementById("command-input");
 
+		colorInput.onkeyup = () => {
+			colorInput.style.color = "";
+			colorInput.style.color = colorInput.value;
+		}
+		
+		messageInput.onkeyup = ((e) => {
+			if(e.key == "Enter") sendMessage();
+		});
+
 		function sendMessage(){
 			const platform = platformInput.value;
 			const color = colorInput.value;
 			const text = messageInput.value;
 			const user = nameInput.value;
 			const command = commandInput.checked;
-			const badges = JSON.parse(badgesInput.value);
+			const badgeList = Array.prototype.map.call(dropdownMenu.querySelectorAll('input[type="checkbox"]:checked'),(value) => badges.get(value.value));
 			const message = {
-			  "badges": badges,
+			  "badges": badgeList,
 			  "sender": user,
 			  "senderId": undefined,
 			  "color": color,
@@ -220,9 +269,13 @@
       copyElement.classList.add("badge");
       copyElement.addEventListener("click", () => {
 				platformInput.value = message.platform;
-				badgesInput.value = JSON.stringify(message.badges.slice(1));
+				badges.forEach((value,key) => {
+					const badgeCheckBox = dropdownMenu.querySelector(`input[value="${key}"]`);
+					badgeCheckBox.checked = message.badges.some((badge) => badge == value);
+				});
 				nameInput.value = message.sender;
 				colorInput.value = message.color;
+				colorInput.onkeyup(); 
 				messageInput.value = message.parsedMessage;
 				commandInput.checked = message.isCommand;
       });
@@ -245,7 +298,8 @@
       messageElement.appendChild(copyElement);
       messageElement.appendChild(spanElement);
       messageList.appendChild(messageElement);
-      messageList.scrollIntoView({
+
+      controlDiv.scrollIntoView({
         behavior: "smooth",
         block: "end",
         inline: "nearest",
@@ -342,12 +396,43 @@
     });
   </script>
   <style>
+		
+		#command-input {
+			flex: 0 !important;
+		}
+		#message-apperance {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+
+		#message-apperance * {
+			flex: 1;
+		}
+		
+		#message-input {
+			flex: 1;
+		}
+
+		#send-container {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
+		#container {
+			height: 100%;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+		}
     #send-message {
-      position: fixed;
-      bottom: 0;
-			left: 20%;
+      display: flex;
+			flex-direction: column;
+			gap: 10px;
+			padding: 10px;
     }
     #message-list {
+			flex: 1;
       background-color: rgba(0, 0, 0, 0.5);
       display: table;
       bottom: 0;
@@ -364,7 +449,6 @@
     .message {
       padding-left: 4px;
       border-radius: 2px;
-      margin: 2px;
       padding-bottom: 7px;
       padding-top: 7px;
       overflow-wrap: break-word;
@@ -397,6 +481,7 @@
       font-size: 25px;
       font-weight: 700;
       line-height: 1em;
+			background-color: #15171C;
     }
     .emote {
       height: 28px;
@@ -439,5 +524,57 @@
     .action {
       cursor: pointer;
     }
+	 .dropdown {
+      position: relative;
+      display: inline-block;
+      width: 200px;
+    }
+    .dropdown-toggle {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #15171C;
+      cursor: pointer;
+    }
+    .dropdown-toggle:hover {
+      background-color: #2b2e38;
+    }
+    .dropdown-menu {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #2b2e38;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 10;
+    }
+    .dropdown-menu.show {
+      display: block;
+    }
+    .dropdown-menu label {
+      display: block;
+      padding: 8px;
+      cursor: pointer;
+    }
+    .dropdown-menu label:hover {
+      background-color: #048ac7;
+    }
+    .dropdown-menu input[type="checkbox"] {
+      margin-right: 10px;
+    }
+		.button {
+			padding: 6px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.input {
+			padding: 6px;
+			border: 1px solid #ccc;
+			border-radius: 5px;
+		}
   </style>
 </html>
