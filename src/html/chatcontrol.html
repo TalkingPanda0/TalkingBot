@@ -122,7 +122,7 @@
 			const message = {
 			  "badges": badgeList,
 			  "sender": user,
-			  "senderId": undefined,
+			  "senderId": user,
 			  "color": color,
 			  "isUserMod": false,
 			  "platform": platform,
@@ -135,7 +135,7 @@
 			  "rewardName": "",
 			  "isOld": false,
 			  "isCommand": command,
-			  "id": undefined, 
+				"id": `bot-${(Math.random()).toString(36).substring(2)}`, 
 				"isFake": true,
 			};
 			sendToControl({
