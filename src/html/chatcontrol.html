@@ -77,7 +77,7 @@
 
 		async function sendToControl(request){
 			const body = JSON.stringify(request);
-			const response = await fetch("/control", {
+			const response = await fetch("/control/overlay", {
           method: "POST",
           body: body,
         });

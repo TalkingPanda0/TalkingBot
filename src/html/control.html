@@ -7,42 +7,10 @@
   </head>
 
   <body>
-    <select name="overlay" id="overlay">
-      <option value="chat">Chat</option>
-      <option value="modtext">Modtext</option>
-      <option value="tts">TTS</option>
-      <option value="alerts">Alerts</option>
-    </select>
-    <input id="target" placeholder="target" />
-    <input id="message" placeholder="message" />
-    <input type="checkbox" id="parse" name="Parse" value="false" />
-    <label for="parse"> Parse</label>
-    <button id="button">Send</button>
+    <a href="/control/chat">Control Chat</a>
     <br />
-    <a href="/chatControl">Control Chat</a>
-
-    <script>
-      const overlay = document.getElementById("overlay");
-      const target = document.getElementById("target");
-      const message = document.getElementById("message");
-      const button = document.getElementById("button");
-      const parse = document.getElementById("parse");
-
-      button.onclick = async () => {
-        const messageObject = parse.checked
-          ? JSON.parse(message.value)
-          : message.value;
-        const body = JSON.stringify({
-          overlay: overlay.value,
-          target: target.value,
-          message: messageObject,
-        });
-        const response = await fetch("/control", {
-          method: "POST",
-          body: body,
-        });
-        console.log(await response.text());
-      };
-    </script>
+    <a href="/control/modtext">Control Moderator Text</a>
+    <br />
+    <a href="/control/command">Control Commands</a>
   </body>
 </html>

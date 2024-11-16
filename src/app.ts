@@ -18,32 +18,89 @@ app.use(cookieParser());
 app.use("/control", async (req, res) => {
   try {
     var discordId = verify(req.cookies.discord_id, bot.jwtSecret);
-    const isMod = await bot.discord.isStreamMod(discordId.toString());
-    if (!isMod) {
-      res.sendStatus(403);
-      return;
-    }
-    switch (req.method) {
-      case "GET":
-        res.sendFile(__dirname + "/html/control.html");
-        break;
-      case "POST":
-        bot.handleControl(JSON.parse(req.body));
-        res.sendStatus(200);
-        break;
-    }
   } catch (e) {
     // No discord_id cookie was found
     res.redirect(bot.discordLoginUri);
+  }
+
+  const isMod = await bot.discord.isStreamMod(discordId.toString());
+  if (!isMod) {
+    res.sendStatus(403);
+    return;
+  }
+
+  switch (req.method) {
+    case "GET":
+      switch (req.path) {
+        case "/chat":
+          res.sendFile(__dirname + "/html/chatcontrol.html");
+          break;
+        case "/command":
+          res.sendFile(__dirname + "/html/commandControl.html");
+          break;
+        case "/modtext":
+          res.sendFile(__dirname + "/html/modtextedit.html");
+          break;
+
+        case "/command/get":
+          const command = bot.commandHandler.getCustomCommand(
+            req.query.name.toString(),
+          );
+          if (command == null) res.send(404);
+          res.send(command);
+          break;
+        case "/command/list":
+          res.send(bot.commandHandler.getCustomCommandList());
+          break;
+
+        case "/modtext/get":
+          res.send(bot.modtext);
+          break;
+
+        default:
+          res.sendFile(__dirname + "/html/control.html");
+          break;
+      }
+      break;
+    case "POST":
+      switch (req.path) {
+        case "/command/set":
+          const name = req.query.name.toString();
+          if (!req.body || !name) {
+            res.sendStatus(400);
+            return;
+          }
+          bot.commandHandler.setCustomCommand(name, req.body);
+          res.sendStatus(200);
+          break;
+
+        case "/modtext/set":
+          bot.modtext = req.body;
+          bot.updateModText();
+          res.sendStatus(200);
+          break;
+
+        case "/overlay":
+          bot.handleControl(JSON.parse(req.body));
+          res.sendStatus(200);
+          break;
+
+        default:
+          res.sendStatus(404);
+          break;
+      }
+      break;
   }
 });
 
 app.get("/tts", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/tts.html");
 });
+
 app.get("/modtext", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/modtext.html");
 });
+
 app.get("/alerts", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/alerts.html");
 });
@@ -55,47 +112,7 @@ app.get("/poll", (_req: Request, res: Response) => {
 app.get("/chat", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/chat.html");
 });
-app.get("/chatControl", (_req: Request, res: Response) => {
-  res.sendFile(__dirname + "/html/chatcontrol.html");
-});
 
-app.post("/command", (req: Request, res: Response) => {
-  console.log(req.body);
-  const name = req.query.name.toString();
-  if (!req.body || !name) {
-    res.sendStatus(400);
-    return;
-  }
-  bot.commandHandler.setCustomCommand(name, req.body);
-  res.sendStatus(200);
-});
-app.get("/command", (req: Request, res: Response) => {
-  res.send(bot.commandHandler.getCustomCommand(req.query.name.toString()));
-});
-app.get("/commandControl", (_req, res) => {
-  res.sendFile(__dirname + "/html/commandControl.html");
-});
-/*app.put("/control", (req: Request, res: Response) => {
-  console.log(req.cookies);
-  if (!req.body) {
-    res.sendStatus(400);
-    return;
-  }
-  // AUTH
-  bot.modtext = req.body;
-  bot.updateModText();
-  res.sendStatus(200);
-});
-app.get("/control", (req: Request, res: Response) => {
-	console.log(req.signedCookies);
-  res.sendFile(__dirname + "/html/control.html");
-});*/
-app.get("/wheel", (_req: Request, res: Response) => {
-  res.sendFile(__dirname + "/html/wheel.html");
-});
-app.get("/modtextedit", (_req: Request, res: Response) => {
-  res.sendFile(__dirname + "/html/modtextedit.html");
-});
 app.get("/auth", async (req, res) => {
   const userId = await bot.getUserIdFromCode(req.query.code.toString());
   if (userId == null) {
