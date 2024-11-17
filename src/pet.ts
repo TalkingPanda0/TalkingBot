@@ -181,15 +181,18 @@ export class Pet {
   }
 
   public sayStatus(reason: StatusReason): string {
-		let message = "";
-		if(this.currentPet.name <= 0) message += "THIS IS TEST BOT NOT REAL HAPBOO. if it wasn't obvious by the name.";
+    let message = "";
+    if (this.currentPet.name <= 0)
+      message +=
+        "THIS IS TEST BOT NOT REAL HAPBOO. if it wasn't obvious by the name.";
     message += `Hapboo #${this.currentPet.name}`;
     switch (this.currentPet.status) {
       case Status.alive:
-        if(reason != StatusReason.command) this.bot.iochat.emit("hapboo", {
-          name: this.currentPet.name,
-          status: this.currentPet.stomach,
-        });
+        if (reason != StatusReason.command)
+          this.bot.iochat.emit("hapboo", {
+            name: this.currentPet.name,
+            status: this.currentPet.stomach,
+          });
         switch (reason) {
           case StatusReason.fed:
             message += ` has been given a candy. He is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
@@ -198,11 +201,10 @@ export class Pet {
             message += ` is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
             break;
           case StatusReason.command:
-            if (this.lastFed == null) {
+            if (this.lastFed == null)
               message += ` is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
-              break;
-            }
-            message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
+            else
+              message += ` had a candy ${getTimeDifference(this.lastFed, new Date())} ago. He is feeling: ${emotes[this.currentPet.stomach]} . ${this.currentPet.stomach + 1}/5`;
             message += ` He is ${this.currentPet.age} streams old.`;
             break;
         }
@@ -212,10 +214,11 @@ export class Pet {
         break;
       case Status.egg:
       case Status.hatching:
-        if(reason != StatusReason.command) this.bot.iochat.emit("hapboo", {
-          name: this.currentPet.name,
-          status: this.campfire,
-        });
+        if (reason != StatusReason.command)
+          this.bot.iochat.emit("hapboo", {
+            name: this.currentPet.name,
+            status: this.campfire,
+          });
         message += ` is ${eggs[this.currentPet.status]} The campfire is at ${this.campfire}/5 🔥 `;
         message += campfires[this.campfire];
         break;
@@ -317,7 +320,7 @@ export class Pet {
   }
 
   public init(hatch: boolean) {
-		if(!hatch && this.currentPet.status == Status.dead) return;
+    if (!hatch && this.currentPet.status == Status.dead) return;
     if (this.timer != null) return;
     this.bot.twitch.updateShieldReedem(false);
     if (hatch) {
