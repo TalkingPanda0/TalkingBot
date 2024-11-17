@@ -98,7 +98,11 @@ export class Twitch {
     let replyTo = "";
     let replyId = "";
     let replyText = "";
-    let text = this.parseTwitchEmotes(message.text, message.emoteOffsets,message.bits);
+    let text = this.parseTwitchEmotes(
+      message.text,
+      message.emoteOffsets,
+      message.bits,
+    );
     let rewardName = "";
 
     text = await this.bot.parseClips(text);
@@ -227,7 +231,7 @@ export class Twitch {
       let badges = [];
 
       let parsedMessage = await this.bot.parseClips(
-        this.parseTwitchEmotes(msg.text, msg.emoteOffsets,msg.bits),
+        this.parseTwitchEmotes(msg.text, msg.emoteOffsets, msg.bits),
       );
       if (msg.userInfo.isMod) {
         badges.push(this.badges.get("moderator"));
@@ -650,7 +654,6 @@ export class Twitch {
       );
     });
 
-
     this.chatClient.onMessageRemove(
       (_channel: string, messageId: string, _msg: ClearMsg) => {
         this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
@@ -826,7 +829,7 @@ export class Twitch {
   public parseTwitchEmotes(
     text: string,
     emoteOffsets: Map<string, string[]>,
-		bits: number,
+    bits: number,
   ): string {
     let parsed = "";
     const parsedParts = parseChatMessage(
@@ -835,15 +838,15 @@ export class Twitch {
       this.cheerEmotes?.getPossibleNames(),
     );
 
-		let cheerName = "";
+    let cheerName = "";
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
           parsed += this.replaceBTTVEmotes(DOMPurify.sanitize(parsedPart.text));
           break;
         case "cheer":
-					if(bits) cheerName = parsedPart.name;
-					else parsed += `${parsedPart.name}${parsedPart.amount}`;
+          if (bits) cheerName = parsedPart.name;
+          else parsed += `${parsedPart.name}${parsedPart.amount}`;
           break;
         case "emote":
           const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
@@ -864,5 +867,15 @@ export class Twitch {
     parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
 
     return parsed;
+  }
+  public async sendStreamPing() {
+    const stream =
+      await this.apiClient.streams.getStreamByUserName("SweetbabooO_o");
+    const thumbnail = stream.getThumbnailUrl(1280, 720);
+    this.bot.discord.sendStreamPing({
+      title: stream.title,
+      game: stream.gameName,
+      thumbnailUrl: thumbnail,
+    });
   }
 }

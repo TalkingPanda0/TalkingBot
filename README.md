@@ -93,3 +93,5 @@ after the stream is over the YouTube title will be set to `[title] (game)`.
 - `'pet read` will read the hapboo state from the config file.
 - `!pet protect` will activate the hapboo shield.
 - `!pet tick` will do a hapboo tick.
+# Misc 
+- `!senddiscordping` will send stream ping on discord
