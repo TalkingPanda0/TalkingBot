@@ -12,6 +12,7 @@ import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
+import { response } from "express";
 
 export enum Permissons {
   Mod = 1,
@@ -346,7 +347,6 @@ export class MessageHandler {
           const regex = /[+|-]/g;
 
           if (data.isUserMod && args[1] != null) {
-            console.log(args[1]);
             if (regex.test(args[1])) {
               this.counter.addToCounter(args[0], parseFloat(args[1]));
             } else {
@@ -503,7 +503,6 @@ export class MessageHandler {
           );
 
           this.argMap.set(commandName, response);
-          console.log(this.argMap);
 
           data.reply(`argument ${commandName} has been added`, true);
 
@@ -1198,6 +1197,7 @@ export class MessageHandler {
       this.lastDynamicTitle = title;
     }
   }
+
   public async readCustomCommands() {
     if (!(await this.commandsFile.exists())) return;
     const customCommands: CustomCommand[] = await this.commandsFile.json();
@@ -1236,8 +1236,12 @@ export class MessageHandler {
     Bun.write(this.argsFile, JSON.stringify(args));
   }
 
-  public getCustomCommandList(): string[] {
-    return this.customCommandMap.keys().toArray();
+  public getCustomCommandList(): string {
+    const commandList: { command: string; response: string }[] = [];
+    this.customCommandMap.forEach((value, key) => {
+      commandList.push({ command: key, response: value });
+    });
+    return JSON.stringify(commandList);
   }
 
   public getCustomCommand(name: string): string {
@@ -1249,8 +1253,21 @@ export class MessageHandler {
     this.writeCustomCommands();
   }
 
+  public addCustomCommand(name: string, response: string): string {
+    if (!name.startsWith("!")) name = `!${name}`;
+    if (this.customCommandMap.has(name))
+      return `Command ${name} already exists!`;
+    this.customCommandMap.set(name, response);
+    this.writeCustomCommands();
+    return "";
+  }
+
+  public deleteCustomCommand(name: string) {
+    this.customCommandMap.delete(name);
+    this.writeCustomCommands();
+  }
+
   private async runScript(script: string, data: MessageData): Promise<string> {
-    console.log(script);
     const context = Object.create(null);
 
     context.result = "";

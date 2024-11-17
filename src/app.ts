@@ -18,16 +18,19 @@ app.use(cookieParser());
 app.use("/control", async (req, res) => {
   try {
     var discordId = verify(req.cookies.discord_id, bot.jwtSecret);
+    const isMod = await bot.discord.isStreamMod(discordId.toString());
+    if (!isMod) {
+      res.sendStatus(403);
+      return;
+    }
   } catch (e) {
     // No discord_id cookie was found
     res.redirect(bot.discordLoginUri);
-  }
-
-  const isMod = await bot.discord.isStreamMod(discordId.toString());
-  if (!isMod) {
-    res.sendStatus(403);
     return;
   }
+  console.log(
+    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
+  );
 
   switch (req.method) {
     case "GET":
@@ -64,6 +67,24 @@ app.use("/control", async (req, res) => {
       break;
     case "POST":
       switch (req.path) {
+        case "/command/add":
+          const commandToAdd = req.query.name.toString();
+          if (!req.body || !commandToAdd) {
+            res.sendStatus(400);
+            return;
+          }
+          const result = bot.commandHandler.addCustomCommand(
+            commandToAdd,
+            req.body,
+          );
+          if (result == "") {
+            res.sendStatus(200);
+            return;
+          }
+          res.status(400);
+          res.send(result);
+          break;
+
         case "/command/set":
           const name = req.query.name.toString();
           if (!req.body || !name) {
@@ -71,6 +92,10 @@ app.use("/control", async (req, res) => {
             return;
           }
           bot.commandHandler.setCustomCommand(name, req.body);
+          res.sendStatus(200);
+          break;
+        case "/command/delete":
+          bot.commandHandler.deleteCustomCommand(req.query.name.toString());
           res.sendStatus(200);
           break;
 
