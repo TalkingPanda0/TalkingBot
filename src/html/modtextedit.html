@@ -2,84 +2,116 @@
 <html>
   <head>
     <link rel="stylesheet" type="text/css" href="content-tools.min.css" />
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #15171c;
+        color: white;
+      }
+      .ql-snow .ql-picker-options {
+        background-color: #15171c !important;
+      }
+      .button {
+        background-color: #15171c;
+        color: white;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #textarea {
+        width: 95%;
+        height: 50%;
+        background-color: #15171c;
+        color: white;
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+    </style>
+    <link
+      href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"
+      rel="stylesheet"
+    />
   </head>
 
   <body>
+    <textarea style="display: none" id="textarea" rows="10"></textarea>
     <div data-editable data-name="main-content" id="text"></div>
+    <div id="editor"></div>
+    <br />
+    <button class="button" onclick="sendModtext()">Send</button>
+    <button class="button" id="button" onclick="toggleMode()">Nerd Mode</button>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+
+    <script>
+      const button = document.getElementById("button");
+      const normalEditor = document.getElementById("editor");
+      const textArea = document.getElementById("textarea");
+      const socket = io("/", { path: "/modtext/" });
+      let mode = false;
+
+      const toolbarOptions = [
+        ["bold", "italic", "underline", "strike"], // toggled buttons
+        ["image"],
+
+        [{ size: ["small", false, "large", "huge"] }], // custom dropdown
+        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+
+        [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+        [{ align: [] }],
+      ];
+
+      const quill = new Quill("#editor", {
+        modules: {
+          toolbar: toolbarOptions,
+        },
+        theme: "snow",
+      });
+
+      const toolbar = quill.getModule("toolbar");
+      toolbar.addHandler("image", (value) => {
+        if (value) {
+          const href = prompt("Enter the URL");
+          quill.format("image", href);
+        } else {
+          quill.format("image", false);
+        }
+      });
+
+      const editor = document.querySelector(".ql-editor");
+      const toolbarElement = document.querySelector(".ql-toolbar");
+
+      async function sendModtext() {
+        const response = await fetch("/control/modtext/set", {
+          method: "POST",
+          body: mode ? textArea.value : quill.getSemanticHTML(),
+        });
+        console.log(await response.text());
+      }
+
+      socket.on("message", (message) => {
+        console.log("GOT MESSAGE:", message);
+        editor.innerHTML = message;
+        textArea.value = message;
+      });
+      function toggleMode() {
+        if (mode) {
+          normalEditor.style.display = "block";
+          toolbarElement.style.display = "block";
+          textArea.style.display = "none";
+          button.innerHTML = "Nerd Mode";
+        } else {
+          normalEditor.style.display = "none";
+          toolbarElement.style.display = "none";
+          textArea.style.display = "block";
+          button.innerHTML = "Normal Mode";
+        }
+        mode = !mode;
+      }
+    </script>
   </body>
-  <script src="content-tools.min.js"></script>
-  <script src="editor.js"></script>
-
-  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-
-  <script>
-    const text = document.getElementById("text");
-
-    var socket = io("/", { path: "/modtext/" });
-
-    socket.on("message", (message) => {
-      console.log("GOT MESSAGE:", message);
-      text.innerHTML = message.text;
-    });
-  </script>
-  <style>
-    #text {
-      text-shadow:
-        -1px -1px 0 #000,
-        1px -1px 0 #000,
-        -1px 1px 0 #000,
-        1px 1px 0 #000;
-    }
-    .emote {
-      height: 28px;
-    }
-    * {
-      color: #fff;
-      font-family: Arial, Helvetica, sans-serif;
-      font-size: 25px;
-      font-weight: 700;
-      line-height: 1em;
-    }
-    [data-editable] iframe,
-    [data-editable] image,
-    [data-editable] [data-ce-tag="img"],
-    [data-editable] img,
-    [data-editable] video {
-      clear: both;
-      display: block;
-      margin-left: auto;
-      margin-right: auto;
-      max-width: 100%;
-    }
-
-    /* Left align */
-    [data-editable] .align-left {
-      clear: initial;
-      float: left;
-      margin-right: 0.5em;
-    }
-
-    /* Right align */
-    [data-editable].align-right {
-      clear: initial;
-      float: right;
-      margin-left: 0.5em;
-    }
-
-    /* Alignment styles for text in editable regions */
-    [data-editable] .text-center {
-      text-align: center;
-    }
-
-    [data-editable] .text-left {
-      text-align: left;
-    }
-
-    [data-editable] .text-right {
-      text-align: right;
-    }
-    p {
-      margin: 0;
-    }
-  </style>
 </html>
