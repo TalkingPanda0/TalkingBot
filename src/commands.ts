@@ -1294,6 +1294,11 @@ export class MessageHandler {
     context.broadcast = (message: string) => {
       this.bot.broadcastMessage(message);
     };
+		context.runCommand = (command: string) => {
+			data.message = command;
+			data.isCommand = true;
+			this.handleCommand(data);
+		} 
 
     context.getTimeDifference = getTimeDifference;
     context.milliSecondsToString = milliSecondsToString;
