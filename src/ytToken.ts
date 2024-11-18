@@ -19,6 +19,8 @@ async function setupAPI() {
   });
 
   console.log("Authorize this app by visiting this url:", authUrl);
+  let count = 0;
+  console.log("Enter token for editor");
   for await (const code of console) {
     oAuth2Client.getToken(code, (err, token) => {
       if (err) {
@@ -26,6 +28,19 @@ async function setupAPI() {
         return;
       }
       console.log(token);
+      if (count == 0) {
+        credentials.editorToken = token;
+        console.log("Enter token for bot");
+      } else if (count == 1) {
+        credentials.token = token;
+        console.log("writing to the file...");
+        Bun.write(tokenFile, JSON.stringify(credentials)).then(() => {
+          console.log("DONE!");
+        });
+      } else {
+        return;
+      }
+      count++;
     });
   }
 }
