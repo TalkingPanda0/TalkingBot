@@ -1,7 +1,13 @@
 <!doctype html>
 <html>
+  <head>
+    <link
+      href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"
+      rel="stylesheet"
+    />
+  </head>
   <body>
-    <div id="text"></div>
+    <div class="ql-editor" id="text"></div>
   </body>
 
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -19,6 +25,9 @@
   <style>
     * {
       font-family: Arial, Helvetica, sans-serif;
+    }
+    body {
+      color: white;
     }
   </style>
 </html>
