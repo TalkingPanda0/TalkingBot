@@ -42,16 +42,15 @@
     <div id="editor"></div>
     <br />
     <button class="button" onclick="sendModtext()">Send</button>
+    <button class="button" onclick="getModText()">Update</button>
     <button class="button" id="button" onclick="toggleMode()">Nerd Mode</button>
 
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 
     <script>
       const button = document.getElementById("button");
       const normalEditor = document.getElementById("editor");
       const textArea = document.getElementById("textarea");
-      const socket = io("/", { path: "/modtext/" });
       let mode = false;
 
       const toolbarOptions = [
@@ -86,18 +85,17 @@
       const toolbarElement = document.querySelector(".ql-toolbar");
 
       async function sendModtext() {
+        const html = mode ? textArea.value : quill.getSemanticHTML();
+        textArea.value = html;
+        editor.innerHTML = html;
+
         const response = await fetch("/control/modtext/set", {
           method: "POST",
-          body: mode ? textArea.value : quill.getSemanticHTML(),
+          body: html,
         });
         console.log(await response.text());
       }
 
-      socket.on("message", (message) => {
-        console.log("GOT MESSAGE:", message);
-        editor.innerHTML = message;
-        textArea.value = message;
-      });
       function toggleMode() {
         if (mode) {
           normalEditor.style.display = "block";
@@ -112,6 +110,23 @@
         }
         mode = !mode;
       }
+
+      async function getModText() {
+        try {
+          const response = await fetch("/control/modtext/get");
+          const responseText = await response.text();
+          if (!response.ok) {
+            alert(`Error updating modtext ${responseText}`);
+            return;
+          }
+          console.log("GOT MESSAGE:", responseText);
+          editor.innerHTML = responseText;
+          textArea.value = responseText;
+        } catch (e) {
+          alert(`Error updating modtext ${e}`);
+        }
+      }
+      getModText();
     </script>
   </body>
 </html>
