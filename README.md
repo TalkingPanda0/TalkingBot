@@ -20,14 +20,23 @@
 - `args`  array of the arguments the user gave.
 - `platform` the platform command was used in (twitch/youtube/kick).
 - `result` `script()` will be replaced with `result`.
+
+- `pet.currentPet.birthDate` string, the date pet was born on in JSON format   
+- `pet.currentPet.name` number, the name of the pet. like 21 of Hapboo #21
+- `pet.currentPet.stomach` number, pet's current stomach between 0 and 4 (inclusive)
+- `pet.currentPet.age` number
+- `pet.currentPet.status` enum, 0: egg, 1: hatching, 2: alive, 3: dead
+
+- `pet.feedOrFuel(username: string)` takes the username and returns true if the pet shield was active and the user tried to kill.
+
 ##### Functions
 - `say([message],[reply])` will say `[message]` in chat, replies to the user if `[reply]` is true.
+- `banUser(reason, duration)`reason: string, duration: number, will ban/timeout the user with the reason `reason` and duration `duration`.
 - `broadcast([message])` will say `[message]` in every chat.
 - `fetch()` https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch
 - `milliSecondsToString([milliSeconds])` will convert `[milliSeconds]` to minutes and seconds.
 - `getSuffix(number)` gets a number returns a string with that number + its ordinal suffix. for example getSuffix(12) returns "12th".
-- `getRandomElement(array)` returns a random element from string array.
-- ``
+- `getRandomElement(array)` returns a random element from a string array.
 ##### Example
 - ``!addcmd !sr script( const categories = await (await fetch(`https://www.speedrun.com/api/v1/games/${args[0]}/categories`)).json();const leaderboards = await (await fetch(categories.data[0].links[5].uri)).json();const player =  await (await fetch(leaderboards.data.runs[0].run.players[0].uri)).json();result = `World record holder in game ${args[0]} is ${player.data.names.international};`)``
 ## Removing Commands

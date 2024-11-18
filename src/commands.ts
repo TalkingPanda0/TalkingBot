@@ -1284,11 +1284,13 @@ export class MessageHandler {
     context.user = data.sender;
     context.args = data.message.split(" ");
     context.platform = data.platform;
+    context.pet = this.bot.pet;
 
-    context.fetch = fetch;
-    context.say = (message: string, reply: boolean) => {
+    context.banUser = (reason: string, duration?: number) =>
+      data.banUser(reason, duration);
+    context.say = (message: string, reply: boolean) =>
       data.reply(message, reply);
-    };
+    context.fetch = fetch;
     context.broadcast = (message: string) => {
       this.bot.broadcastMessage(message);
     };

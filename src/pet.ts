@@ -59,8 +59,9 @@ interface CurrentPet {
 }
 
 export class Pet {
+  public currentPet: CurrentPet;
+
   private bot: TalkingBot;
-  private currentPet: CurrentPet;
   private timer: Timer;
   private shield = false;
   private lastFed: Date;
@@ -163,7 +164,7 @@ export class Pet {
     }
   }
 
-  public feedOrFuel(userName: string) {
+  public feedOrFuel(userName: string): boolean {
     if (this.currentPet.status !== Status.dead && this.timer == null) {
       this.bot.broadcastMessage(this.sayStatus(StatusReason.command));
       return false;
