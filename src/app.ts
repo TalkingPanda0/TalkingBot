@@ -29,7 +29,7 @@ app.use("/control", async (req, res) => {
     return;
   }
   console.log(
-    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
+    `Control - id: ${discordId}, ip: ${req.ip}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
   );
 
   switch (req.method) {

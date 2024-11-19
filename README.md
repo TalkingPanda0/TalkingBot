@@ -37,6 +37,7 @@
 - `milliSecondsToString([milliSeconds])` will convert `[milliSeconds]` to minutes and seconds.
 - `getSuffix(number)` gets a number returns a string with that number + its ordinal suffix. for example getSuffix(12) returns "12th".
 - `getRandomElement(array)` returns a random element from a string array.
+- `runCommand(command)` will run `command` can be a custom or builtin command and can have arguments like `runCommand(`!kill ${user}`)`}
 ##### Example
 - ``!addcmd !sr script( const categories = await (await fetch(`https://www.speedrun.com/api/v1/games/${args[0]}/categories`)).json();const leaderboards = await (await fetch(categories.data[0].links[5].uri)).json();const player =  await (await fetch(leaderboards.data.runs[0].run.players[0].uri)).json();result = `World record holder in game ${args[0]} is ${player.data.names.international};`)``
 ## Removing Commands

@@ -32,25 +32,7 @@
           />Is command
           <div class="dropdown">
             <div class="dropdown-toggle">Badges</div>
-            <div class="dropdown-menu">
-              <label
-                ><input type="checkbox" value="Youtube Moderator" /> Youtube
-                Moderator</label
-              >
-              <label
-                ><input type="checkbox" value="Kick Moderator" /> Kick
-                Moderator</label
-              >
-              <label><input type="checkbox" value="Kick Sub" /> Kick Sub</label>
-              <label
-                ><input type="checkbox" value="Twitch Moderator" /> Twitch
-                Moderator</label
-              >
-              <label
-                ><input type="checkbox" value="Twitch Sub" /> Twitch Sub</label
-              >
-              <label><input type="checkbox" value="HAPBOO" /> HAPBOO</label>
-            </div>
+            <div class="dropdown-menu"></div>
           </div>
           <select class="button" name="platform" id="platform-input">
             <option value="bot">Bot</option>
@@ -77,13 +59,28 @@
         "https://static-cdn.jtvnw.net/badges/v1/3267646d-33f0-4b17-b3df-f923a41db1d0/3",
       ],
       [
-        "Twitch Sub",
+        "Twitch Tier 1 Sub",
         "https://static-cdn.jtvnw.net/badges/v1/d945f08c-f244-4207-974b-3909d5732d63/3",
+      ],
+      [
+        "Twitch Tier 3 Sub",
+        "https://static-cdn.jtvnw.net/badges/v1/6d959692-22a6-4a66-83e9-10f4de1cf9c2/3",
+      ],
+      [
+        "Twitch Vip",
+        "https://static-cdn.jtvnw.net/badges/v1/b817aba4-fad8-49e2-b88a-7cc744dfa6ec/3",
       ],
       ["HAPBOO", "https://talkingpanda.dev/hapboo.gif"],
     ]);
+
     const dropdownToggle = document.querySelector(".dropdown-toggle");
     const dropdownMenu = document.querySelector(".dropdown-menu");
+
+    badges.forEach((value, key) => {
+      const label = document.createElement("label");
+      label.innerHTML = `<input type="checkbox" value="${key}" /> ${key}`;
+      dropdownMenu.appendChild(label);
+    });
 
     dropdownToggle.addEventListener("click", () => {
       dropdownMenu.classList.toggle("show");
