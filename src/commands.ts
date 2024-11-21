@@ -1267,6 +1267,33 @@ export class MessageHandler {
     Bun.write(this.argsFile, JSON.stringify(args));
   }
 
+  public getCommandAliasList(): string {
+    const aliasList: { alias: string; command: string }[] = [];
+    this.commandAliasMap.forEach((value, key) => {
+      aliasList.push({ alias: key, command: value });
+    });
+    return JSON.stringify(aliasList);
+  }
+
+  public setCommandAlias(alias: string, command: string) {
+    this.commandAliasMap.set(alias, command);
+    this.writeCustomCommands();
+  }
+
+  public addCommandAlias(alias: string, command: string): string {
+    if (!alias.startsWith("!")) alias = `!${alias}`;
+    if (this.commandAliasMap.has(alias))
+      return `Alias ${alias} already exists!`;
+    this.commandAliasMap.set(alias, command);
+    this.writeCustomCommands();
+    return "";
+  }
+
+  public deleteCommandAlias(alias: string) {
+    this.commandAliasMap.delete(alias);
+    this.writeCustomCommands();
+  }
+
   public getCustomCommandList(): string {
     const commandList: { command: string; response: string }[] = [];
     this.customCommandMap.forEach((value, key) => {

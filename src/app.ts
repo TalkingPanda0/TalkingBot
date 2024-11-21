@@ -29,7 +29,7 @@ app.use("/control", async (req, res) => {
     return;
   }
   console.log(
-    `Control - id: ${discordId}, ip: ${req.ip}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
+    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
   );
 
   switch (req.method) {
@@ -54,6 +54,10 @@ app.use("/control", async (req, res) => {
           break;
         case "/command/list":
           res.send(bot.commandHandler.getCustomCommandList());
+          break;
+
+        case "/command/alias/list":
+          res.send(bot.commandHandler.getCommandAliasList());
           break;
 
         case "/modtext/get":
@@ -96,6 +100,36 @@ app.use("/control", async (req, res) => {
           break;
         case "/command/delete":
           bot.commandHandler.deleteCustomCommand(req.query.name.toString());
+          res.sendStatus(200);
+          break;
+
+        case "/command/alias/add":
+          const aliasToAdd = req.query.name.toString();
+          if (!req.body || !aliasToAdd) {
+            res.sendStatus(400);
+            return;
+          }
+          const aliasAddResult = bot.commandHandler.addCommandAlias(
+            aliasToAdd,
+            req.body,
+          );
+          if (aliasAddResult == "") {
+            res.sendStatus(200);
+            return;
+          }
+          res.status(400);
+          res.send(result);
+        case "/command/alias/set":
+          const alias = req.query.name.toString();
+          if (!req.body || !alias) {
+            res.sendStatus(400);
+            return;
+          }
+          bot.commandHandler.setCommandAlias(alias, req.body);
+          res.sendStatus(200);
+          break;
+        case "/command/alias/delete":
+          bot.commandHandler.deleteCommandAlias(req.query.name.toString());
           res.sendStatus(200);
           break;
 
