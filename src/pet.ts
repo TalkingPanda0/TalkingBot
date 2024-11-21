@@ -83,6 +83,7 @@ export class Pet {
       this.timeout = false;
     }, 1000 * 60);
   }
+
   private restartTickTimer() {
     clearInterval(this.timer);
     this.timer = setInterval(
@@ -233,6 +234,11 @@ export class Pet {
   }
 
   public feed(userName: string): boolean {
+    if (this.currentPet.status !== Status.dead && this.timer == null) {
+      this.bot.broadcastMessage(this.sayStatus(StatusReason.command));
+      return false;
+    }
+
     if (
       this.timeout ||
       this.timer == null ||
@@ -288,6 +294,11 @@ export class Pet {
   }
 
   public fuel(userName: string): boolean {
+    if (this.currentPet.status !== Status.dead && this.timer == null) {
+      this.bot.broadcastMessage(this.sayStatus(StatusReason.command));
+      return false;
+    }
+
     if (
       this.timeout ||
       this.timer == null ||

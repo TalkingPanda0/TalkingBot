@@ -13,6 +13,7 @@ import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
 import { Twitch } from "./twitch";
+import { deflate } from "zlib";
 
 export enum Permissons {
   Mod = 1,
@@ -821,13 +822,12 @@ export class MessageHandler {
         showOnChat: true,
         commandFunction: (data): void | Promise<void> => {
           if (data.message.trim() == "") return;
-          if (!data.isUserMod && !this.ttsEnabled) return;
-
-          this.bot.iotts.emit("message", {
+          this.bot.ttsManager.send({
             text: data.message,
             sender: data.sender,
             color: data.color,
             parsedText: data.parsedMessage.split(" ").slice(1).join(" "),
+            isImportant: false,
           });
         },
       },
@@ -882,15 +882,36 @@ export class MessageHandler {
           const args = data.message.split(" ");
           switch (args[0]) {
             case "enable":
-              this.ttsEnabled = true;
+              this.bot.ttsManager.enabled = true;
               data.reply("TTS command has been enabled", true);
               return;
             case "disable":
-              this.ttsEnabled = false;
+              this.bot.ttsManager.enabled = false;
               data.reply("TTS command has been disabled", true);
               return;
             case "skip":
-              this.bot.iotts.emit("skip", args[1]);
+              this.bot.ttsManager.skip(args[1]);
+              return;
+            case "pause":
+              this.bot.ttsManager.setPause(true);
+              break;
+            case "unpause":
+              this.bot.ttsManager.setPause(false);
+              break;
+            case "say":
+              this.bot.ttsManager.send({
+                text: data.message.split(" ").slice(1).join(" "),
+                sender: data.sender,
+                color: data.color,
+                parsedText: data.parsedMessage.split(" ").slice(2).join(" "),
+                isImportant: true,
+              });
+              return;
+            default:
+              data.reply(
+                `TTS is currently ${this.bot.ttsManager.enabled ? "Enabled" : "Disabled"}`,
+                true,
+              );
               return;
           }
         },
@@ -1294,11 +1315,11 @@ export class MessageHandler {
     context.broadcast = (message: string) => {
       this.bot.broadcastMessage(message);
     };
-		context.runCommand = (command: string) => {
-			data.message = command;
-			data.isCommand = true;
-			this.handleCommand(data);
-		} 
+    context.runCommand = (command: string) => {
+      data.message = command;
+      data.isCommand = true;
+      this.handleCommand(data);
+    };
 
     context.getTimeDifference = getTimeDifference;
     context.milliSecondsToString = milliSecondsToString;

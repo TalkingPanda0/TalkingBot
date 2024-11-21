@@ -10,6 +10,7 @@ import { Pet } from "./pet";
 
 import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
+import { TTSManager } from "./tts";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -56,7 +57,7 @@ export class TalkingBot {
   public commandHandler: MessageHandler;
   public wheel: Wheel;
   public modtext: string;
-  public iotts: Server;
+  public ttsManager: TTSManager;
 
   private kickId: string;
   private server: http.Server;
@@ -67,6 +68,7 @@ export class TalkingBot {
 
   constructor(kickId: string, server: http.Server) {
     this.server = server;
+    this.ttsManager = new TTSManager(server);
 
     this.iomodtext = new Server(this.server, {
       path: "/modtext/",
@@ -74,10 +76,6 @@ export class TalkingBot {
 
     this.iomodtext.on("connection", () => {
       this.updateModText();
-    });
-
-    this.iotts = new Server(this.server, {
-      path: "/tts/",
     });
 
     this.iochat = new Server(this.server, {
@@ -261,7 +259,7 @@ export class TalkingBot {
         break;
 
       case "tts":
-        this.iotts.emit(data.target, data.message);
+        this.ttsManager.io.emit(data.target, data.message);
         break;
 
       case "alerts":

@@ -36,6 +36,7 @@ let isPlaying = false;
 let playing;
 let currentUser;
 let interval;
+let queueInterval;
 
 const soundEffectRegex = new RegExp(
   `(${Array.from(emoteSoundEffects.keys()).join("|")})`,
@@ -203,7 +204,7 @@ function playQueue(audioQueue) {
   });
 }
 
-function ttSay(message) {
+function ttSay(message,isImportant) {
   const voiceMatch = message.text.match(voicesRegex);
   if (voiceMatch !== null) {
     message.voice = voiceMatch[0];
@@ -211,7 +212,8 @@ function ttSay(message) {
     message.voice = "Brian";
   }
   message.text = message.text.replace(voicesRemoveRegex, "");
-  queue.push(message);
+	if(isImportant) queue.unshift(message);
+	else queue.push(message);
 }
 
 function stopCurrentTTS() {
@@ -231,9 +233,14 @@ function listen() {
       location.reload();
       return;
     }
-    ttSay(message);
-    handleQueue();
+		if(message.isImportant){
+			ttSay(message,true);
+			if(queueInterval == null) handleQueue();
+			return;
+		}
+    ttSay(message,false);
   });
+
   socket.on("skip", (user) => {
     if (user == null) {
       stopCurrentTTS();
@@ -246,5 +253,16 @@ function listen() {
       stopCurrentTTS();
     queue = queue.filter((message) => message.sender.toLowerCase() != user);
   });
-  setInterval(handleQueue, 1e3);
+
+	socket.on("pause", (pause) => {
+		if(pause) {
+			clearInterval(queueInterval);
+			queueInterval = null;
+		} else {
+			queueInterval = setInterval(handleQueue, 1e3);
+		}
+
+	});
+
+  queueInterval = setInterval(handleQueue, 1e3);
 }
