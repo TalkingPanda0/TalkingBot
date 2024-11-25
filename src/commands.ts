@@ -12,14 +12,6 @@ import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
-import { Twitch } from "./twitch";
-import { deflate } from "zlib";
-
-export enum Permissons {
-  Mod = 1,
-  Vip = 1 << 1,
-  Sub = 1 << 2,
-}
 
 export interface MessageData {
   badges: string[];

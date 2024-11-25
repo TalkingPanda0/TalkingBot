@@ -11,6 +11,7 @@
         background-color: #15171c;
         color: white;
       }
+
       * {
         font-family: Roboto, Arial, sans-serif;
       }
@@ -67,6 +68,7 @@
       crossorigin="anonymous"
     ></script>
   </head>
+
   <body>
     <h1>Commands</h1>
     <table>
@@ -112,6 +114,10 @@
       const commandTable = document.getElementById("commandTable");
       const aliasTable = document.getElementById("aliasTable");
 
+      function removeNewLines(string) {
+        return string.replaceAll("\n", "").replaceAll("\r", "");
+      }
+
       async function addCommand() {
         const result = await new swal({
           title: "Add a command",
@@ -128,7 +134,7 @@
             const response = $("#swal2-textarea").val();
             const result = await fetch(`/control/command/add?name=${command}`, {
               method: "POST",
-              body: response,
+              body: removeNewLines(response),
             });
             if (!result.ok) {
               return Swal.showValidationMessage(`${await result.text()}`);
@@ -179,7 +185,7 @@
                   `/control/command/set?name=${command.command}`,
                   {
                     method: "POST",
-                    body: newResponse,
+                    body: removeNewLines(newResponse),
                   },
                 );
                 if (!result.ok) {
@@ -263,7 +269,7 @@
               `/control/command/alias/add?name=${alias}`,
               {
                 method: "POST",
-                body: command,
+                body: removeNewLines(command),
               },
             );
             if (!result.ok) {
@@ -317,7 +323,7 @@
                   `/control/command/alias/set?name=${alias.alias}`,
                   {
                     method: "POST",
-                    body: newCommand,
+                    body: removeNewLines(newCommand),
                   },
                 );
                 if (!result.ok) {

@@ -41,10 +41,10 @@ export interface streamInfo {
 
 interface DiscordCommand {
   commandBuilder:
-    | SlashCommandBuilder
-    | SlashCommandSubcommandsOnlyBuilder
-    | SlashCommandOptionsOnlyBuilder
-    | SlashCommandSubcommandBuilder;
+  | SlashCommandBuilder
+  | SlashCommandSubcommandsOnlyBuilder
+  | SlashCommandOptionsOnlyBuilder
+  | SlashCommandSubcommandBuilder;
   execute: (interaction: ChatInputCommandInteraction) => Promise<void> | void;
 }
 
@@ -191,7 +191,7 @@ export class Discord {
         },
         badges: [],
         isUserMod: false,
-        banUser: () => {},
+        banUser: () => { },
         message: message.content,
         parsedMessage: message.content,
         sender: `<@${message.author.id}>`,
