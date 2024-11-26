@@ -41,10 +41,10 @@ export interface streamInfo {
 
 interface DiscordCommand {
   commandBuilder:
-  | SlashCommandBuilder
-  | SlashCommandSubcommandsOnlyBuilder
-  | SlashCommandOptionsOnlyBuilder
-  | SlashCommandSubcommandBuilder;
+    | SlashCommandBuilder
+    | SlashCommandSubcommandsOnlyBuilder
+    | SlashCommandOptionsOnlyBuilder
+    | SlashCommandSubcommandBuilder;
   execute: (interaction: ChatInputCommandInteraction) => Promise<void> | void;
 }
 
@@ -180,6 +180,7 @@ export class Discord {
         platform: "discord",
         id: message.id,
         reply: (replyMessage, replytoUser) => {
+          if (replyMessage == "") return;
           if (replytoUser)
             message.reply({
               embeds: [{ fields: [{ name: "", value: replyMessage }] }],
@@ -191,7 +192,7 @@ export class Discord {
         },
         badges: [],
         isUserMod: false,
-        banUser: () => { },
+        banUser: () => {},
         message: message.content,
         parsedMessage: message.content,
         sender: `<@${message.author.id}>`,
