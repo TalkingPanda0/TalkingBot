@@ -149,7 +149,7 @@
       }
 
       async function getCommands() {
-        commandTable.innerHTML = "";
+        commandTable.innerText = "";
 
         const commands = await (await fetch("/control/command/list")).json();
         commands.forEach((command) => {
@@ -157,12 +157,12 @@
 
           const commandCol = document.createElement("th");
           commandCol.scope = "row";
-          commandCol.innerHTML = command.command;
+          commandCol.innerText = command.command;
 
           commandRow.appendChild(commandCol);
 
           const responseCol = document.createElement("td");
-          responseCol.innerHTML = command.response;
+          responseCol.innerText = command.response;
 
           commandRow.appendChild(responseCol);
 
@@ -171,7 +171,7 @@
           const editElement = document.createElement("div");
           editElement.classList.add("material-icons");
           editElement.classList.add("button");
-          editElement.innerHTML = "edit";
+          editElement.innerText = "edit";
           editElement.addEventListener("click", async () => {
             const response = await new swal({
               title: `Edit ${command.command}`,
@@ -202,7 +202,7 @@
           const deleteElement = document.createElement("div");
           deleteElement.classList.add("material-icons");
           deleteElement.classList.add("button");
-          deleteElement.innerHTML = "delete";
+          deleteElement.innerText = "delete";
           deleteElement.addEventListener("click", async () => {
             const result = await Swal.fire({
               title: `Are you sure you want to delete ${command.command} ?`,
@@ -285,7 +285,7 @@
       }
 
       async function getAliases() {
-        aliasTable.innerHTML = "";
+        aliasTable.innerText = "";
 
         const aliases = await (
           await fetch("/control/command/alias/list")
@@ -295,12 +295,12 @@
 
           const aliasCol = document.createElement("th");
           aliasCol.scope = "row";
-          aliasCol.innerHTML = alias.alias;
+          aliasCol.innerText = alias.alias;
 
           aliasRow.appendChild(aliasCol);
 
           const responseCol = document.createElement("td");
-          responseCol.innerHTML = alias.command;
+          responseCol.innerText = alias.command;
 
           aliasRow.appendChild(responseCol);
 
@@ -309,7 +309,7 @@
           const editElement = document.createElement("div");
           editElement.classList.add("material-icons");
           editElement.classList.add("button");
-          editElement.innerHTML = "edit";
+          editElement.innerText = "edit";
           editElement.addEventListener("click", async () => {
             const response = await new swal({
               title: `Alias ${alias.alias}`,
@@ -340,7 +340,7 @@
           const deleteElement = document.createElement("div");
           deleteElement.classList.add("material-icons");
           deleteElement.classList.add("button");
-          deleteElement.innerHTML = "delete";
+          deleteElement.innerText = "delete";
           deleteElement.addEventListener("click", async () => {
             const result = await Swal.fire({
               title: `Are you sure you want to delete ${alias.alias} ?`,

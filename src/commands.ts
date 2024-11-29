@@ -1350,6 +1350,7 @@ export class MessageHandler {
     };
     context.runCommand = (command: string) => {
       data.message = command;
+      data.parsedMessage = command;
       data.isCommand = true;
       this.handleCommand(data);
     };
