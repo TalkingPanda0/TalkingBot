@@ -12,6 +12,7 @@ import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
+import { exit } from "./app";
 
 export interface MessageData {
   badges: string[];
@@ -921,6 +922,17 @@ export class MessageHandler {
               80 * 45,
             );
           this.bot.updateModText();
+        },
+      },
+    ],
+    [
+      "!restart",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          if (!data.isUserMod) return;
+          data.reply("Restarting", true);
+          await exit();
         },
       },
     ],
