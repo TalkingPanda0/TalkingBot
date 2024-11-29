@@ -19,7 +19,7 @@ export function parseKickEmotes(message: string) {
   return message.replace(
     regex,
     (_match, id, _name) =>
-      `<img src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
+      `<img onload="emoteLoaded()" src="https://files.kick.com/emotes/${id}/fullsize" class="emote" />`,
   );
 }
 interface ChatMessage {

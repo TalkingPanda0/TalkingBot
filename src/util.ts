@@ -1,9 +1,9 @@
 export function getTimeDifference(startDate: Date, endDate: Date): string {
   const timeDifference = endDate.getTime() - startDate.getTime();
-  const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365.25));
-  const remainingTime = timeDifference % (1000 * 60 * 60 * 24 * 365.25);
-  const months = Math.floor(remainingTime / (1000 * 60 * 60 * 24 * 30.44));
-  const remainingTime2 = remainingTime % (1000 * 60 * 60 * 24 * 30.44);
+  const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365));
+  const remainingTime = timeDifference % (1000 * 60 * 60 * 24 * 365);
+  const months = Math.floor(remainingTime / (1000 * 60 * 60 * 24 * 30));
+  const remainingTime2 = remainingTime % (1000 * 60 * 60 * 24 * 30);
   const days = Math.floor(remainingTime2 / (1000 * 60 * 60 * 24));
   const remainingTime3 = remainingTime2 % (1000 * 60 * 60 * 24);
   const hours = Math.floor(remainingTime3 / (1000 * 60 * 60));

@@ -112,14 +112,14 @@ export class Twitch {
       badges.push(this.badges.get("broadcaster"));
     }
 
-		if(message.userInfo.isVip) {
-			badges.push(this.badges.get("vip"));
-		}
+    if (message.userInfo.isVip) {
+      badges.push(this.badges.get("vip"));
+    }
 
     message.userInfo.badges.forEach((element) => {
-			const badge = this.badges.get(element);
-			if(badge != null) badges.push(badge);
-		});
+      const badge = this.badges.get(element);
+      if (badge != null) badges.push(badge);
+    });
 
     color = this.getUserColor(message);
 
@@ -242,8 +242,8 @@ export class Twitch {
       } else if (msg.userInfo.isBroadcaster) {
         badges.push(this.badges.get("broadcaster"));
       }
-			
-			if(msg.userInfo.isVip) badges.push(this.badges.get("vip"));
+
+      if (msg.userInfo.isVip) badges.push(this.badges.get("vip"));
 
       const badge = msg.userInfo.badges.get("subscriber");
       if (badge != undefined) {
@@ -372,7 +372,12 @@ export class Twitch {
     });
     const globalBadges = await this.apiClient.chat.getGlobalBadges();
     globalBadges.forEach((badge) => {
-      if (badge.id != "moderator" && badge.id != "broadcaster" && badge.id != "vip") return;
+      if (
+        badge.id != "moderator" &&
+        badge.id != "broadcaster" &&
+        badge.id != "vip"
+      )
+        return;
       badge.versions.forEach((element) => {
         this.badges.set(badge.id, element.getImageUrl(4));
       });
@@ -703,6 +708,20 @@ export class Twitch {
     if (this.isStreamOnline) {
       this.bot.pet.init(false);
     }
+    /*const rewards = await this.apiClient.channelPoints.getCustomRewards(
+      this.channel.id,
+      true,
+    );
+    const reward = rewards.find((reward) => reward.cost == 100000000);
+    this.apiClient.channelPoints.updateCustomReward(
+      this.channel.id,
+      reward.id,
+      {
+        cost: 100000000,
+        title: "cooikie express :3",
+        prompt: "sweebo buys you cookie fast",
+      },
+    );*/
   }
 
   public async getCurrentTitle(): Promise<string> {
@@ -828,7 +847,7 @@ export class Twitch {
     return input.replace(
       regex,
       (match) =>
-        `<img src="https://cdn.betterttv.net/emote/${this.BTTVEmotes.get(match)}/1x" class="emote">` ||
+        `<img onload="emoteLoaded()" src="https://cdn.betterttv.net/emote/${this.BTTVEmotes.get(match)}/1x" class="emote">` ||
         match,
     );
   }
@@ -860,7 +879,7 @@ export class Twitch {
             backgroundType: "dark",
             animationSettings: "default",
           });
-          parsed += ` <img src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+          parsed += ` <img onload="emoteLoaded()" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
           break;
       }
     });
@@ -870,7 +889,7 @@ export class Twitch {
       bits,
       { background: "dark", state: "animated", scale: "4" },
     );
-    parsed += `<img src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
+    parsed += `<img onload="emoteLoaded()" src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
 
     return parsed;
   }

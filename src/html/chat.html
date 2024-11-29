@@ -342,6 +342,13 @@
       });
     });
     if (showEmoteWall) window.requestAnimationFrame(animateEmoteWall);
+    function emoteLoaded() {
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }
   </script>
   <style>
     #emote-wall {
@@ -413,8 +420,7 @@
       line-height: 1em;
     }
     .emote {
-      height: 28px;
-      min-width: 28px;
+      width: 28px;
       vertical-align: middle;
       padding-left: 5px;
       padding-right: 5px;

@@ -10,7 +10,7 @@ export function parseYTMessage(message: MessageFragments[]): string {
     if (fragment.text !== undefined) {
       text += fragment.text;
     } else if (fragment.emoji !== undefined) {
-      text += `<img src="${fragment.emoji}" class="emote" />`;
+      text += `<img onload="emoteLoaded()" src="${fragment.emoji}" class="emote" />`;
     }
   }
   return text;
@@ -122,10 +122,7 @@ export class YouTube {
     });
 
     this.chat.on("deleted_message_author", (event) => {
-      this.bot.iochat.emit(
-        "banUser",
-        `youtube-${event.externalChannelId}`,
-      );
+      this.bot.iochat.emit("banUser", `youtube-${event.externalChannelId}`);
     });
 
     this.chat.on("unkown", (event) => {
