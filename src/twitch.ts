@@ -441,8 +441,18 @@ export class Twitch {
     );*/
 
     if (!this.eventSubSecret) {
-      this.eventListener.onUserSocketDisconnect((event) => {
+      const ws = this.eventListener as EventSubWsListener;
+      ws.onUserSocketDisconnect((event) => {
         console.error(`Disconnected from event sub ${event}`);
+      });
+    } else {
+      const httpListener: EventSubHttpListener = this
+        .eventListener as EventSubHttpListener;
+      httpListener.onSubscriptionCreateSuccess((subscription) => {
+        console.log(`Succesfully subscribed to ${subscription._cliName}`);
+      });
+      httpListener.onSubscriptionCreateFailure((subscription, error) => {
+        console.log(`Failed to connect to ${subscription._cliName}: ${error}`);
       });
     }
 
