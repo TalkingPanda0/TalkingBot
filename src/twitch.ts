@@ -377,7 +377,6 @@ export class Twitch {
         pathPrefix: "/event",
         secret: this.eventSubSecret,
       });
-      this.eventListener.apply(this.bot.server);
     } else {
       console.log("No eventSubSecret found using ws.");
       this.eventListener = new EventSubWsListener({
