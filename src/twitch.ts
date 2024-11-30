@@ -440,9 +440,11 @@ export class Twitch {
       },
     );*/
 
-    this.eventListener.onUserSocketDisconnect((event) => {
-      console.error(`Disconnected from event sub ${event}`);
-    });
+    if (!this.eventSubSecret) {
+      this.eventListener.onUserSocketDisconnect((event) => {
+        console.error(`Disconnected from event sub ${event}`);
+      });
+    }
 
     this.eventListener.onChannelPollBegin(this.channel.id, (data) => {
       if (this.currentPoll != null) return;
