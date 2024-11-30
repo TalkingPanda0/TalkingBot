@@ -58,9 +58,9 @@ export class TalkingBot {
   public wheel: Wheel;
   public modtext: string;
   public ttsManager: TTSManager;
+  public server: http.Server;
 
   private kickId: string;
-  private server: http.Server;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string;
   public discordRedirectUri: string;
