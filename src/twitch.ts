@@ -380,7 +380,7 @@ export class Twitch {
       this.eventListener = new EventSubHttpListener({
         apiClient: this.apiClient,
         adapter: new ReverseProxyAdapter({
-          hostName: "talkingpanda.dev",
+          hostName: "event.talkingpanda.dev",
           port: 8080,
         }),
         secret: this.eventSubSecret,
