@@ -16,11 +16,19 @@ import {
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
 import { EventSubWsListener } from "@twurple/eventsub-ws";
-import { EventSubChannelRedemptionAddEvent } from "@twurple/eventsub-base";
+import {
+  EventSubChannelRedemptionAddEvent,
+  EventSubListener,
+} from "@twurple/eventsub-base";
 import { AuthSetup, Poll, TalkingBot, pollOption } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase } from "./util";
+import { file } from "bun";
+import {
+  EventSubHttpListener,
+  ReverseProxyAdapter,
+} from "@twurple/eventsub-http";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -58,7 +66,7 @@ export class Twitch {
   public badges = new Map<string, string>();
 
   private channelName: string;
-  private eventListener: EventSubWsListener;
+  private eventListener: EventSubListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
@@ -66,6 +74,7 @@ export class Twitch {
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
   private shieldid = "9a3d1045-a42b-4cb0-b5eb-7e850b4984ec";
   //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
+  private eventSubSecret?: string;
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private oauthFile = Bun.file(__dirname + "/../config/oauth.json");
   private broadcasterFile = Bun.file(
@@ -179,26 +188,6 @@ export class Twitch {
     );
   }
 
-  public setupAuth(auth: AuthSetup) {
-    this.clientId = auth.twitchClientId;
-    this.clientSecret = auth.twitchClientSecret;
-    this.channelName = auth.channelName;
-
-    Bun.write(
-      this.oauthFile,
-      JSON.stringify({
-        clientId: this.clientId,
-        clientSecret: this.clientSecret,
-        channelName: this.channelName,
-      }),
-    );
-    this.authProvider = new RefreshingAuthProvider({
-      clientId: this.clientId,
-      clientSecret: this.clientSecret,
-      redirectUri: "http://localhost:3000/oauth",
-    });
-  }
-
   public async addUser(code: string, scope: string) {
     const isBroadcaster: Boolean = scope.startsWith("bits:read");
     const tokenData = await exchangeCode(
@@ -219,6 +208,7 @@ export class Twitch {
     this.clientSecret = fileContent.clientSecret;
     this.channelName = fileContent.channelName;
     this.publicClientId = fileContent.publicApikey;
+    this.eventSubSecret = fileContent.eventSubSecret;
   }
   private async handleMessage(
     channel: string,
@@ -386,9 +376,21 @@ export class Twitch {
 
     this.BTTVEmotes = await getBTTVEmotes(this.channel.id);
 
-    this.eventListener = new EventSubWsListener({
-      apiClient: this.apiClient,
-    });
+    if (this.eventSubSecret) {
+      this.eventListener = new EventSubHttpListener({
+        apiClient: this.apiClient,
+        adapter: new ReverseProxyAdapter({
+          hostName: "talkingpanda.dev",
+          port: 3000,
+        }),
+        secret: this.eventSubSecret,
+      });
+    } else {
+      console.log("No eventSubSecret found using ws.");
+      this.eventListener = new EventSubWsListener({
+        apiClient: this.apiClient,
+      });
+    }
 
     this.eventListener.onStreamOnline(this.channel.id, async (event) => {
       this.isStreamOnline = true;

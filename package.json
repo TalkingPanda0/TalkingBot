@@ -13,6 +13,7 @@
     "@twurple/auth": "^7.2.0",
     "@twurple/chat": "^7.2.0",
     "@twurple/easy-bot": "^7.2.0",
+    "@twurple/eventsub-http": "^7.2.0",
     "@twurple/eventsub-ws": "^7.2.0",
     "@types/cookie-parser": "^1.4.8",
     "@types/jsonwebtoken": "^9.0.7",
