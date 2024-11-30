@@ -378,6 +378,7 @@ export class Twitch {
         secret: this.eventSubSecret,
       });
       this.eventListener.apply(this.bot.server);
+      await this.eventListener.markAsReady();
     } else {
       console.log("No eventSubSecret found using ws.");
       this.eventListener = new EventSubWsListener({
@@ -908,8 +909,5 @@ export class Twitch {
       game: stream.gameName,
       thumbnailUrl: thumbnail,
     });
-  }
-  public async onServerListen() {
-    if (this.eventSubSecret) await this.eventListener.markAsReady();
   }
 }
