@@ -187,8 +187,7 @@ app.get("/auth", async (req, res) => {
 });
 
 bot.initBot();
-server.listen(3000, async () => {
-  await bot.twitch.onServerListen();
+server.listen(3000, () => {
   console.log("listening on *:3000");
 });
 

@@ -16,12 +16,19 @@ import {
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
 import { EventSubWsListener } from "@twurple/eventsub-ws";
-import { EventSubChannelRedemptionAddEvent } from "@twurple/eventsub-base";
-import { Poll, TalkingBot, pollOption } from "./talkingbot";
+import {
+  EventSubChannelRedemptionAddEvent,
+  EventSubListener,
+} from "@twurple/eventsub-base";
+import { AuthSetup, Poll, TalkingBot, pollOption } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase } from "./util";
-import { EventSubMiddleware } from "@twurple/eventsub-http";
+import { file } from "bun";
+import {
+  EventSubHttpListener,
+  ReverseProxyAdapter,
+} from "@twurple/eventsub-http";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -59,7 +66,7 @@ export class Twitch {
   public badges = new Map<string, string>();
 
   private channelName: string;
-  private eventListener: EventSubWsListener | EventSubMiddleware;
+  private eventListener: EventSubListener;
   private bot: TalkingBot;
   private authProvider: RefreshingAuthProvider;
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
@@ -168,7 +175,7 @@ export class Twitch {
   }
   public async cleanUp() {
     this.chatClient.quit();
-    if (!this.eventSubSecret) this.eventListener.stop();
+    this.eventListener.stop();
     this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
     this.bot.database.cleanDataBase();
   }
@@ -370,11 +377,12 @@ export class Twitch {
     this.BTTVEmotes = await getBTTVEmotes(this.channel.id);
 
     if (this.eventSubSecret) {
-      console.log("Creating a event sub http listener at port 8080");
-      this.eventListener = new EventSubMiddleware({
+      this.eventListener = new EventSubHttpListener({
         apiClient: this.apiClient,
-        hostName: "talkingpanda.dev",
-        pathPrefix: "/event",
+        adapter: new ReverseProxyAdapter({
+          hostName: "event.talkingpanda.dev",
+          port: 8080,
+        }),
         secret: this.eventSubSecret,
       });
     } else {
@@ -438,7 +446,8 @@ export class Twitch {
         console.error(`Disconnected from event sub ${event}`);
       });
     } else {
-      const httpListener = this.eventListener as EventSubMiddleware;
+      const httpListener: EventSubHttpListener = this
+        .eventListener as EventSubHttpListener;
       httpListener.onSubscriptionCreateSuccess((subscription) => {
         console.log(`Succesfully subscribed to ${subscription._cliName}`);
       });
@@ -706,7 +715,7 @@ export class Twitch {
       );
     });
     this.chatClient.connect();
-    if (!this.eventSubSecret) this.eventListener.start();
+    this.eventListener.start();
     // Apis ready
     this.isStreamOnline =
       (await this.apiClient.streams.getStreamByUserId(this.channel.id)) != null;
@@ -907,8 +916,5 @@ export class Twitch {
       game: stream.gameName,
       thumbnailUrl: thumbnail,
     });
-  }
-  public async onServerListen() {
-    if (this.eventSubSecret) await this.eventListener.markAsReady();
   }
 }
