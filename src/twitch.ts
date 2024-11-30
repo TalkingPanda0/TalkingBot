@@ -381,7 +381,7 @@ export class Twitch {
         apiClient: this.apiClient,
         adapter: new ReverseProxyAdapter({
           hostName: "talkingpanda.dev",
-          port: 3000,
+          port: 8080,
         }),
         secret: this.eventSubSecret,
       });
