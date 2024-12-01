@@ -93,7 +93,6 @@ after the stream is over the YouTube title will be set to `[title] (game)`.
 `!modtext [text]` will change the modtext to `[text]`.
 `!tempmodtext [text]` will change the modtext to `[text]` after 15 minutes will change it back.
 `[text]` can have `$counter` which will show the current counter.
-`!hapboo` will improve the stream.
 # Snipe
  Made by [SweetbabooO_o](https://www.youtube.com/watch?v=9dhKjWy4v08)
  - `!snipe [name]` will find 3 beat saber songs that `[name]` has a better score than streamer and will bsr them.
