@@ -911,21 +911,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!hapboo",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-
-          this.bot.modtext =
-            '<img src="https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3c2386e9c7064294811122aff92173c6/default/dark/3.0" class="emote" id="emotesv2_3c2386e9c7064294811122aff92173c6">'.repeat(
-              80 * 45,
-            );
-          this.bot.updateModText();
-        },
-      },
-    ],
-    [
       "!restart",
       {
         showOnChat: false,
