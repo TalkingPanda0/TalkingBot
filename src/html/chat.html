@@ -28,7 +28,8 @@
 
   <script>
     const mentionRegex = /@(\w+)/g;
-    const emoteWallRegex = /<img\b[^>]*?\bsrc\s*=\s*["']?([^"'\s>]+)["']?/gi;
+    const emoteWallRegex =
+      /<img\b[^>]*?\bsrc\s*=\s*["']?([^"'\s>]+)["']? class="emote"/g;
     const platformIcons = {
       bot: "https://talkingpanda.dev/bot.png",
       twitch: "https://twitch.tv/favicon.ico",

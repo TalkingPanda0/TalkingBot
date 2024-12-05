@@ -430,7 +430,7 @@ export class Twitch {
       });
     });
 
-    /*this.eventListener.onChannelFollow(
+    this.eventListener.onChannelFollow(
       this.channel.id,
       this.channel.id,
       (event) => {
@@ -438,7 +438,7 @@ export class Twitch {
           follower: event.userDisplayName,
         });
       },
-    );*/
+    );
 
     if (!this.eventSubSecret) {
       const ws = this.eventListener as EventSubWsListener;
@@ -585,13 +585,13 @@ export class Twitch {
       }
     });
 
-    /*this.eventListener.onChannelCheer(this.channel.id, (event) => {
+    this.eventListener.onChannelCheer(this.channel.id, (event) => {
       this.bot.ioalert.emit("alert", {
         bits: event.bits,
         user: event.userDisplayName,
         message: event.message,
       });
-    });*/
+    });
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
       channels: [this.channelName],
