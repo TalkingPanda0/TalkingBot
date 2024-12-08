@@ -143,11 +143,11 @@
       }
       function bitsAlert(cheerInfo) {
         isPlaying = true;
-        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${cheerInfo.name} </span>cheered ${cheerInfo.bits}</span> `;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
         alertElement.style = "opacity: 100%;";
         const name = getTTSAudio({
           voice: "Brian",
-          text: `${cheerInfo.name} cheered ${cheerInfo.bits} bits: ${cheerInfo.message},`,
+          text: `${cheerInfo.user} cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}: ${cheerInfo.message},`,
         });
         name.onended = () => {
           alertElement.style = "opacity: 0%";
