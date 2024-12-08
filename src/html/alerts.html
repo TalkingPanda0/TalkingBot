@@ -269,7 +269,7 @@
         };
         sub.onended = () => {
           exp0.style.display = "none";
-          if (subInfo.message == null) {
+          if (subInfo.message.trim() == "") {
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
