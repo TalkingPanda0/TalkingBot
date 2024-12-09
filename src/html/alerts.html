@@ -6,17 +6,16 @@
     <meta name="description" content="" />
     <style>
       .sender {
-        color: #048ac7;
+        color: cyan;
       }
       #alert {
+        background-color: rgba(0, 0, 0, 0.5);
         position: relative;
         opacity: 0%;
         transition: opacity 1s ease-in-out;
         text-align: center;
-        margin: auto;
-      }
-      img {
-        position: absolute;
+        display: inline-block;
+        padding: 50px;
       }
       .message {
         font-size: 50px;
@@ -25,37 +24,35 @@
         position: relative;
         font-family: Arial, Helvetica, sans-serif;
         font-size: 60px;
+        color: white;
       }
       .bab {
         z-index: 1;
-        top: 100%;
-        left: 50%;
-        transform: translate(-50%, -25%);
       }
       .follow {
         padding-bottom: 10px;
       }
       #exp0 {
+        position: absolute;
         z-index: 2;
-        top: 100%;
         left: 50%;
-        transform: translate(-50%, -25%);
+        transform: translate(-50%, 0%);
       }
       #exp1 {
+        position: absolute;
         z-index: 3;
-        top: 100%;
         left: 50%;
-        transform: translate(-100%, -25%);
+        transform: translate(-70%, 0%);
       }
       #exp2 {
-        z-index: 3;
-        top: 100%;
+        position: absolute;
+        z-index: 4;
         left: 50%;
-        transform: translate(0%, -25%);
+        transform: translate(-20%, 0%);
       }
 
       .text {
-        top: 1050px;
+        color: white;
       }
       .message {
         top: 1050px;
@@ -74,6 +71,7 @@
       <img id="hapboo4" src="/hapboo4.png" />
       <img id="hapboo5" src="/hapboo5.png" />
       <img id="hapboo6" src="/hapboo6.png" />
+      <video><source src="/subalert.webm" type="video/webm" /></video>
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -126,24 +124,26 @@
       }
       function followAlert(followInfo) {
         isPlaying = true;
-        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
         alertElement.style = "opacity: 100%;";
         const name = getTTSAudio({
           voice: "Brian",
           text: `${followInfo.follower} just followed`,
         });
         name.onended = () => {
-          alertElement.style = "opacity: 0%";
           setTimeout(() => {
-            alertElement.innerHTML = "";
-            isPlaying = false;
-          }, 1000);
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              isPlaying = false;
+            }, 1000);
+          }, 4000);
         };
         name.play();
       }
       function bitsAlert(cheerInfo) {
         isPlaying = true;
-        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
         alertElement.style = "opacity: 100%;";
         const name = getTTSAudio({
           voice: "Brian",
@@ -162,7 +162,7 @@
       function raidAlert(raidInfo) {
         let raiders = [];
 
-        alertElement.style = "opacity: 100%";
+        alertElement.style.opacity = "100%";
         alertElement.innerHTML = `<canvas height=1000 width=1000 id="raiders"></canvas><br><span class="raider" ><span class="sender">${raidInfo.raider} </span>just raided with ${raidInfo.viewers} viewers</span>`;
 
         isPlaying = true;
@@ -192,7 +192,7 @@
           if (raiders.length === 0) {
             clearInterval(interval);
             clearInterval(hapboointerval);
-            alertElement.style = "opacity: 0%;";
+            alertElement.style.opacity = "0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
             }, 1000);
@@ -225,11 +225,11 @@
             .replace(/</g, "&lt;")
             .replace(/>/g, "&gt;");
 
-        alertElement.id = "alert";
+        alertElement.innerHTML = `<div style= "display:block;" ><img class="bab" height="1000" src="/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /></div>`;
         if (!subInfo.gift)
-          alertElement.innerHTML = ` <img class="bab" height="1000" src="/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
+          alertElement.innerHTML += `<span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
         else
-          alertElement.innerHTML = ` <img class="bab" height="1000" src="/bab.png" /><img class="exp" id="exp0" height="1000" /><img class="exp" id="exp1" height="1000" /><img class="exp" id="exp2" height="1000"  /><br /><span class="text"><span class="sender">${subInfo.name} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.gifted}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML += `<span class="text"><span class="sender">${subInfo.name} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.gifted}</span></span><br /><span class="message">${subInfo.message}</span>`;
         alertElement.style = "opacity: 100%";
 
         const imgElement = document.getElementById("image");
@@ -285,6 +285,7 @@
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
               isPlaying = false;
             }, 1000);
           };
@@ -298,6 +299,7 @@
 
       var socket = io("/", { path: "/alerts/" });
       socket.on("alert", (alertInfo) => {
+        console.log(alertInfo);
         alertQueue.push(alertInfo);
       });
       setInterval(handleQueue, 500);

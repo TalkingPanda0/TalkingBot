@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 5px;
+        background-color: #15171c;
+        color: white;
+      }
+      .button {
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .input {
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      * {
+        margin: 10px;
+      }
+      textarea {
+        height: 100px;
+        margin-bottom: -6px;
+      }
+    </style>
+  </head>
+  <body>
+    <select class="button" name="alert" id="alert-input">
+      <option value="sub">Subscriber</option>
+      <option value="subgift">Subscriber Gifted</option>
+      <option value="raid">Raid</option>
+      <option value="bits">Bits</option>
+      <option value="follower">Follower</option>
+    </select>
+    <button onclick="send()" id="button">Send</button>
+    <div id="bits" style="display: none">
+      <input
+        class="input"
+        id="bitsCount"
+        type="number"
+        min="1"
+        placeholder="Bits"
+      />
+      <input class="input" id="bitSender" type="text" placeholder="Sender" />
+      <textarea class="input" id="bitMessage" placeholder="Message"></textarea>
+    </div>
+    <div id="raid" style="display: none">
+      <input
+        class="input"
+        id="raiders"
+        type="number"
+        min="1"
+        placeholder="Raiders"
+      />
+      <input class="input" id="raider" type="text" placeholder="Raider" />
+    </div>
+    <div id="follower" style="display: none">
+      <input
+        class="input"
+        id="followerName"
+        type="text"
+        placeholder="Follower"
+      />
+    </div>
+    <div id="sub">
+      <input
+        class="input"
+        id="subscriber"
+        type="text"
+        placeholder="Subscriber"
+      />
+      <textarea class="input" id="submessage" placeholder="Message"></textarea>
+      <input
+        class="input"
+        id="submonths"
+        type="number"
+        min="1"
+        placeholder="Months"
+      ></input>
+      <select class="button" name="tier" id="subtier-input">
+        <option value="Prime">Amazon Prime</option>
+        <option value="1000">Tier 1</option>
+        <option value="2000">Tier 2</option>
+        <option value="3000">Tier 3</option>
+      </select>
+    </div>
+    <div id="subgift" style="display: none">
+      <input class="input" id="gifter" type="text" placeholder="Gifted" />
+      <input class="input" id="gifted" type="text" placeholder="Gifter" />
+      <input
+        class="input"
+        id="giftmonths"
+        type="number"
+        min="1"
+        placeholder="Months"
+      ></input>
+      <select class="button" name="tier" id="gifttier-input">
+        <option value="Prime">Amazon Prime</option>
+        <option value="1000">Tier 1</option>
+        <option value="2000">Tier 2</option>
+        <option value="3000">Tier 3</option>
+      </select>
+    </div>
+    <script>
+      let currentAlert = "sub";
+      const alertInput = document.getElementById("alert-input");
+      alertInput.onchange = (event) => {
+        document.getElementById(currentAlert).style.display = "none";
+        currentAlert = event.target.value;
+        document.getElementById(currentAlert).style.display = "block";
+      };
+
+      async function send() {
+        let message = {};
+        switch (currentAlert) {
+          case "follower":
+            message.follower = document.getElementById("followerName").value;
+            break;
+          case "bits":
+            message.user = document.getElementById("bitSender").value;
+            message.bits = document.getElementById("bitsCount").value;
+            message.message = document.getElementById("bitMessage").value;
+            break;
+          case "raid":
+            message.raider = document.getElementById("raider").value;
+            message.viewers = document.getElementById("raiders").value;
+            break;
+          case "sub":
+            message.gift = false;
+            message.plan = document.getElementById("subtier-input").value;
+            message.message = document.getElementById("submessage").value;
+            message.months = document.getElementById("submonths").value;
+            message.name = document.getElementById("subscriber").value;
+            break;
+          case "subgift":
+            message.gift = true;
+            message.plan = document.getElementById("gifttier-input").value;
+            message.gifted = document.getElementById("gifted").value;
+            message.months = document.getElementById("giftmonths").value;
+            message.name = document.getElementById("gifter").value;
+            break;
+          default:
+            return;
+        }
+        await sendToControl({
+          overlay: "alerts",
+          target: "alert",
+          message: message,
+        });
+      }
+      async function sendToControl(request) {
+        const body = JSON.stringify(request);
+        const response = await fetch("/control/overlay", {
+          method: "POST",
+          body: body,
+        });
+        console.log(await response.text());
+        if (response.status == 403) window.location.replace("/control");
+      }
+    </script>
+  </body>
+</html>

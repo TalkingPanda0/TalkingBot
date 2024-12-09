@@ -44,7 +44,9 @@ app.use("/control", async (req, res) => {
         case "/modtext":
           res.sendFile(__dirname + "/html/modtextedit.html");
           break;
-
+        case "/alerts":
+          res.sendFile(__dirname + "/html/alertscontrol.html");
+          break;
         case "/command/get":
           const command = bot.commandHandler.getCustomCommand(
             req.query.name.toString(),
