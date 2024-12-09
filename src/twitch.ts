@@ -158,7 +158,7 @@ export class Twitch {
       badges: badges,
       text: text,
       parsedMessage: text,
-      sender: message.userInfo.displayName,
+      sender: this.formatDisplayName(message),
       senderId: "twitch-" + message.userInfo.userId,
       color: color,
       id: "twitch-" + message.id,
@@ -201,6 +201,14 @@ export class Twitch {
       JSON.stringify(tokenData, null, 4),
     );
   }
+  private formatDisplayName(message: ChatMessage) {
+    const display = message.userInfo.displayName;
+    const login = message.userInfo.userName;
+    if (display && display.toLowerCase().replaceAll(/\s/g, "") !== login) {
+      return `${display} (${login})`;
+    }
+    return display || login;
+  }
 
   public async readAuth() {
     const fileContent = await this.oauthFile.json();
@@ -220,7 +228,7 @@ export class Twitch {
     try {
       console.log(
         "\x1b[35m%s\x1b[0m",
-        `Twitch - ${msg.userInfo.displayName}: ${text}`,
+        `Twitch - ${this.formatDisplayName(msg)}: ${text}`,
       );
       let badges = [];
 
@@ -273,7 +281,7 @@ export class Twitch {
 
       this.bot.commandHandler.handleMessage({
         badges: badges,
-        sender: msg.userInfo.displayName,
+        sender: this.formatDisplayName(msg),
         senderId: msg.userInfo.userId,
         color: this.getUserColor(msg),
         isUserMod: msg.userInfo.isMod || msg.userInfo.isBroadcaster,
