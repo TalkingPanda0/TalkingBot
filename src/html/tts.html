@@ -6,6 +6,128 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="/tts.js"></script>
   <script>
+    function handleQueue() {
+      if (queue.length === 0 || isPlaying || messageList.childElementCount != 0)
+        return;
+
+      const message = queue.shift();
+      const text = message.text.trim();
+      const voice = message.text.match(voicesRegex) ?? "Brian";
+
+      isPlaying = true;
+
+      // Stop the TTS after 20 seconds
+      interval = setTimeout(() => {
+        if (playing != null) stopCurrentTTS();
+      }, 20 * 1000);
+
+      createPopup(message);
+      currentUser = message.sender;
+      playTTS(
+        text,
+        voice,
+        (err) => {
+          removePopup();
+          createPopup({
+            sender: "Brian himself",
+            text: err,
+            parsedText: err,
+            color: "red",
+          });
+          setTimeout(removePopup, 10000);
+        },
+        () => {
+          setTimeout(removePopup, 10000);
+        },
+      );
+      return;
+    }
+
+    function ttSay(message, isImportant) {
+      const voiceMatch = message.text.match(voicesRegex);
+      if (voiceMatch !== null) {
+        message.voice = voiceMatch[0];
+      } else {
+        message.voice = "Brian";
+      }
+      message.text = message.text.replace(voicesRemoveRegex, "");
+      if (isImportant) queue.unshift(message);
+      else queue.push(message);
+    }
+
+    function stopCurrentTTS() {
+      playing.pause();
+      playing.currentTime = 0;
+      playing = null;
+      isPlaying = false;
+      setTimeout(removePopup, 1000);
+    }
+
+    function listen() {
+      const socket = io("/", { path: "/tts/" });
+
+      socket.on("message", (message) => {
+        console.log("GOT MESSAGE:", message);
+        if (message.sender == "TalkingPanda" && message.text == "refresh") {
+          location.reload();
+          return;
+        }
+        if (message.isImportant) {
+          ttSay(message, true);
+          if (queueInterval == null) handleQueue();
+          return;
+        }
+        ttSay(message, false);
+      });
+
+      socket.on("skip", (user) => {
+        if (user == null) {
+          stopCurrentTTS();
+          console.log(`Skipping current message`);
+          return;
+        }
+        user = user.replace(/^@/, "").toLowerCase();
+        console.log(`Skipping ${user}`);
+        if (currentUser != null && currentUser.toLowerCase() === user)
+          stopCurrentTTS();
+        queue = queue.filter((message) => message.sender.toLowerCase() != user);
+      });
+
+      socket.on("pause", (pause) => {
+        if (pause) {
+          clearInterval(queueInterval);
+          queueInterval = null;
+        } else {
+          queueInterval = setInterval(handleQueue, 1e3);
+        }
+      });
+
+      queueInterval = setInterval(handleQueue, 1e3);
+    }
+    function HAPBOO() {
+      var img = document.createElement("img");
+      img.src = "https://talkingpanda.dev/hapboo.gif";
+      img.width = 50;
+      return img;
+    }
+
+    function createPopup(message) {
+      var popupElement = `<span class="sender"><span style="color: ${message.color}">${message.sender}</span> says:</span><br/><span class="text">${message.parsedText}</span class="text"></span><div></div>`;
+      messageList.innerHTML = popupElement;
+      messageList.style.opacity = 1;
+      if (Math.floor(Math.random() * 100) == 0) {
+        messageList.appendChild(HAPBOO());
+      }
+    }
+
+    function removePopup() {
+      messageList.style.opacity = 0;
+      currentUser = null;
+      setTimeout(() => {
+        messageList.innerHTML = "";
+      }, 1e3);
+    }
+
     listen();
   </script>
   <style>
@@ -32,13 +154,12 @@
       color: white;
       font-family: Arial, Helvetica, sans-serif;
     }
-  .emote {
+    .emote {
       height: 28px;
       min-width: 28px;
       vertical-align: middle;
       padding-left: 5px;
       padding-right: 5px;
     }
-
   </style>
 </html>

@@ -71,7 +71,6 @@
       <img id="hapboo4" src="/hapboo4.png" />
       <img id="hapboo5" src="/hapboo5.png" />
       <img id="hapboo6" src="/hapboo6.png" />
-      <video><source src="/subalert.webm" type="video/webm" /></video>
     </div>
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
@@ -145,18 +144,18 @@
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
         alertElement.style = "opacity: 100%;";
-        const name = getTTSAudio({
-          voice: "Brian",
-          text: `${cheerInfo.user} cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}: ${cheerInfo.message},`,
-        });
-        name.onended = () => {
-          alertElement.style = "opacity: 0%";
-          setTimeout(() => {
-            alertElement.innerHTML = "";
-            isPlaying = false;
-          }, 1000);
-        };
-        name.play();
+        playTTS(
+          `${cheerInfo.user} cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}: ${cheerInfo.message},`,
+          "Brian",
+          (err) => {},
+          () => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              isPlaying = false;
+            }, 1000);
+          },
+        );
       }
 
       function raidAlert(raidInfo) {
@@ -192,14 +191,20 @@
           if (raiders.length === 0) {
             clearInterval(interval);
             clearInterval(hapboointerval);
-            alertElement.style.opacity = "0%";
-            setTimeout(() => {
-              alertElement.innerHTML = "";
-            }, 1000);
+            playTTS(
+              `${raidInfo.raider} raided with ${raidInfo.viewers} viewers`,
+              "Brian",
+              (err) => {},
+              () => {
+                alertElement.style.opacity = "0%";
+                setTimeout(() => {
+                  alertElement.innerHTML = "";
+                  isPlaying = false;
+                }, 1000);
+              },
+            );
           }
         }, 10);
-
-        isPlaying = false;
       }
       function subAlert(subInfo) {
         isPlaying = true;
@@ -277,20 +282,20 @@
             }, 1000);
             return;
           }
-          const message = getTTSAudio({
-            voice: "Brian",
-            text: subInfo.message,
-          });
-          message.onended = () => {
-            alertElement.style = "opacity: 0%";
-            setTimeout(() => {
-              alertElement.innerHTML = "";
-              alertElement.style.display = "inline-block";
-              isPlaying = false;
-            }, 1000);
-          };
 
-          message.play();
+          playTTS(
+            subInfo.message,
+            "Brian",
+            (err) => {},
+            () => {
+              alertElement.style = "opacity: 0%";
+              setTimeout(() => {
+                alertElement.innerHTML = "";
+                alertElement.style.display = "inline-block";
+                isPlaying = false;
+              }, 1000);
+            },
+          );
         };
 
         exp.play();
