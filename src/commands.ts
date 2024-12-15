@@ -1058,7 +1058,8 @@ export class MessageHandler {
   public async handleCommand(data: MessageData): Promise<boolean> {
     try {
       let commandName = data.message.split(" ")[0];
-      if (this.timeout.has(commandName) && !data.isUserMod) return true;
+      if (this.timeout.has(commandName) && !data.isUserMod)
+        return data.message.startsWith("!");
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) {
         data.message = data.message.replace(commandName, commandAlias);
