@@ -1121,13 +1121,14 @@ export class MessageHandler {
             this.timeout.delete(commandName);
           }, 60 * 1000);
         }
-        if (modonly && !data.isUserMod) return true;
+        if (modonly && !data.isUserMod) return data.message.startsWith("!");
         data.reply(response, doReply);
         return true;
       }
 
       const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand == null || data.platform == "discord") return true;
+      if (builtinCommand == null || data.platform == "discord")
+        return data.message.startsWith("!");
       builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
