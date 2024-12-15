@@ -822,24 +822,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!snipe",
-      {
-        showOnChat: false,
-        timeout: 60 * 1000,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          data.reply(`Sniping ${data.message}`, true);
-          const songs = await kill(data.message);
-          if (songs.length === 0) {
-            data.reply("Couldn't find songs", true);
-          }
-          songs.forEach((map) => {
-            data.reply(`!bsr ${map}`, false);
-          });
-        },
-      },
-    ],
-    [
       "!bs",
       {
         timeout: 60 * 1000,
