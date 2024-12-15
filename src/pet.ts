@@ -431,7 +431,7 @@ export class Pet {
       if (this.campfire == 1) {
         setTimeout(
           () => {
-            if (this.campfire != 1) return;
+            if (this.campfire != 1 || this.timer == null) return;
             this.bot.broadcastMessage(
               `Hapboo #${this.currentPet.name}: PLEEASSE IM COLD PLEAAASEEEE KEEP ME WARM PLEASEEEEEEEEEEEEEEE USING !pet fuel.`,
             );
