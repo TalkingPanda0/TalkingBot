@@ -1,6 +1,6 @@
 # TalkingBot
 # Custom Commands
-`[commandname]` and `[aliasname]` must start with a `!` and can't have a space in them.
+`[commandname]` and `[aliasname]` can't have a spaces in them.
 ## Adding Commands
 `!addcmd [commandname] [response]` this will create a command called `[commandname]` that will respond with `[response]` when used.
 `!editcmd [commandname] [response]` this will edit the command `[commandname]` to respond with `[response]`.

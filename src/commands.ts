@@ -455,7 +455,6 @@ export class MessageHandler {
             data.message.length,
           );
 
-          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           let command = this.customCommandMap.get(commandName);
           if (!command) {
             data.reply(`Command ${commandName} does not exist!`, true);
@@ -517,7 +516,6 @@ export class MessageHandler {
             data.message.length,
           );
 
-          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           if (!this.customCommandMap.has(commandName)) {
             data.reply(`Command ${commandName} does not exist!`, true);
             return;
@@ -550,7 +548,6 @@ export class MessageHandler {
             data.message.length,
           );
 
-          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           if (this.customCommandMap.has(commandName)) {
             data.reply(`Command ${commandName} already exists!`, true);
             return;
@@ -574,7 +571,6 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           let commandName = data.message.split(" ")[0];
-          if (!commandName.startsWith("!")) commandName = `!${commandName}`;
           const command = this.customCommandMap.get(commandName);
           if (command) {
             data.reply(`${commandName}: ${command}`, true);
@@ -1079,7 +1075,6 @@ export class MessageHandler {
   // returns true if isCommand
   public async handleCommand(data: MessageData): Promise<boolean> {
     try {
-      if (!data.message.startsWith("!")) return false;
       let commandName = data.message.split(" ")[0];
       if (this.timeout.has(commandName) && !data.isUserMod) return true;
       const commandAlias = this.commandAliasMap.get(commandName);
@@ -1113,7 +1108,6 @@ export class MessageHandler {
                 .replace(/\$user/g, data.sender)
                 .replace(/\$args/g, message);
               const req = await fetch(url);
-              if (command.startsWith("!")) return "";
               if (key === undefined) {
                 return await req.text();
               } else {
@@ -1272,7 +1266,6 @@ export class MessageHandler {
   }
 
   public addCommandAlias(alias: string, command: string): string {
-    if (!alias.startsWith("!")) alias = `!${alias}`;
     if (this.commandAliasMap.has(alias))
       return `Alias ${alias} already exists!`;
     this.commandAliasMap.set(alias, command);
@@ -1303,7 +1296,6 @@ export class MessageHandler {
   }
 
   public addCustomCommand(name: string, response: string): string {
-    if (!name.startsWith("!")) name = `!${name}`;
     if (this.customCommandMap.has(name))
       return `Command ${name} already exists!`;
     this.customCommandMap.set(name, response);
