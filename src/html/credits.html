@@ -100,16 +100,14 @@
           return;
         }
 
-        if (y > height) {
-          cancelAnimationFrame(req);
-          return;
+        if (y < -height) {
+          y = height;
         }
 
         const deltaTime = timeStamp - lastTimeStamp;
         lastTimeStamp = timeStamp;
-        const oldY = y;
-        y += speed * deltaTime;
-        container.style.top = `-${y}px`;
+        y -= speed * deltaTime;
+        container.style.top = `${y}px`;
 
         req = requestAnimationFrame(scroll);
       }
