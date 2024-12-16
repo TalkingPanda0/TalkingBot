@@ -29,6 +29,7 @@ import {
   EventSubHttpListener,
   ReverseProxyAdapter,
 } from "@twurple/eventsub-http";
+import { CreditType } from "./credits";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -403,6 +404,7 @@ export class Twitch {
     this.eventListener.onStreamOnline(this.channel.id, async (event) => {
       this.isStreamOnline = true;
       this.bot.pet.init(true);
+      this.bot.credits.clear();
       try {
         const stream = await event.getStream();
         const thumbnail = stream.getThumbnailUrl(1280, 720);
@@ -442,6 +444,7 @@ export class Twitch {
       this.channel.id,
       this.channel.id,
       (event) => {
+        this.bot.credits.addToCredits(event.userDisplayName, CreditType.Follow);
         this.bot.ioalert.emit("alert", {
           follower: event.userDisplayName,
         });
@@ -614,6 +617,10 @@ export class Twitch {
         subInfo: ChatSubInfo,
         _msg: UserNotice,
       ) => {
+        this.bot.credits.addToCredits(
+          subInfo.displayName,
+          CreditType.Subscription,
+        );
         this.bot.ioalert.emit("alert", {
           name: subInfo.displayName,
           message: subInfo.message,
@@ -630,6 +637,7 @@ export class Twitch {
         subInfo: ChatSubGiftInfo,
         _msg: UserNotice,
       ) => {
+        this.bot.credits.addToCredits(subInfo.gifter, CreditType.Subscription);
         this.bot.ioalert.emit("alert", {
           name: subInfo.gifter,
           gifted: subInfo.displayName,

@@ -11,6 +11,7 @@ import { Pet } from "./pet";
 import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
+import { Credits } from "./credits";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -58,6 +59,7 @@ export class TalkingBot {
   public wheel: Wheel;
   public modtext: string;
   public ttsManager: TTSManager;
+  public credits: Credits;
 
   private kickId: string;
   private server: http.Server;
@@ -114,6 +116,7 @@ export class TalkingBot {
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
+    this.credits = new Credits();
     this.pet = new Pet(this);
     this.wheel = new Wheel(this.server);
     this.database = new DB();

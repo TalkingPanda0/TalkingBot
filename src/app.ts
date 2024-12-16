@@ -154,6 +154,14 @@ app.use("/control", async (req, res) => {
   }
 });
 
+app.get("/creditsList", (_req, res) => {
+  res.send(bot.credits.getCreditsList());
+});
+
+app.get("/credits", (_req, res) => {
+  res.sendFile(__dirname + "/html/credits.html");
+});
+
 app.get("/tts", (_req: Request, res: Response) => {
   res.sendFile(__dirname + "/html/tts.html");
 });

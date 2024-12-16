@@ -13,6 +13,7 @@ import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
 import { exit } from "./app";
+import { CreditType } from "./credits";
 
 export interface MessageData {
   badges: string[];
@@ -1148,6 +1149,8 @@ export class MessageHandler {
   }
 
   public async handleMessage(data: MessageData) {
+    if (data.isUserMod)
+      this.bot.credits.addToCredits(data.sender, CreditType.Moderator);
     data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     data.id = `${data.platform}-${data.id}`;
