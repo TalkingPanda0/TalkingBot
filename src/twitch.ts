@@ -20,11 +20,10 @@ import {
   EventSubChannelRedemptionAddEvent,
   EventSubListener,
 } from "@twurple/eventsub-base";
-import { AuthSetup, Poll, TalkingBot, pollOption } from "./talkingbot";
+import { Poll, TalkingBot, pollOption } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase } from "./util";
-import { file } from "bun";
 import {
   EventSubHttpListener,
   ReverseProxyAdapter,
@@ -90,7 +89,7 @@ export class Twitch {
   getUserColor(message: ChatMessage): string {
     let color = message.userInfo.color;
 
-    // User hasn't set a color or failed to get the color get a "random" color
+    // User hasn't set a color or failed to get the color, get a "random" color
     if (!color) {
       color = userColors[parseInt(message.userInfo.userId) % userColors.length];
     }
@@ -738,20 +737,6 @@ export class Twitch {
     if (this.isStreamOnline) {
       this.bot.pet.init(false);
     }
-    /*const rewards = await this.apiClient.channelPoints.getCustomRewards(
-      this.channel.id,
-      true,
-    );
-    const reward = rewards.find((reward) => reward.cost == 100000000);
-    this.apiClient.channelPoints.updateCustomReward(
-      this.channel.id,
-      reward.id,
-      {
-        cost: 100000000,
-        title: "cooikie express :3",
-        prompt: "sweebo buys you cookie fast",
-      },
-    );*/
   }
 
   public async getCurrentTitle(): Promise<string> {

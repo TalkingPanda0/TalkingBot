@@ -721,8 +721,13 @@ export class MessageHandler {
 
         commandFunction: async (data) => {
           if (!data.isUserMod || data.message.length == 0) return;
-          const game: HelixGame =
-            await this.bot.twitch.apiClient.games.getGameByName(data.message);
+          const game: HelixGame = (
+            await this.bot.twitch.apiClient.search.searchCategories(
+              data.message,
+              { limit: 1 },
+            )
+          ).data[0];
+
           if (game == null) {
             data.reply(`Can't find game "${data.message}"`, true);
             return;
