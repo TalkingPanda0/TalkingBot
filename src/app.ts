@@ -6,14 +6,22 @@ import * as http from "http";
 import { TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 
+import { readdir } from "node:fs/promises";
+
 const app: Express = express();
 const server = http.createServer(app);
 
 const bot: TalkingBot = new TalkingBot("17587561", server);
 
 app.use(express.static("public"));
+app.use(express.static("config/sounds"));
 app.use(bodyParser.text());
 app.use(cookieParser());
+
+app.get("/soundEffects", async (_req, res) => {
+  const files = await readdir(__dirname + "/../config/sounds");
+  res.send(JSON.stringify(files.map((file) => file.replace(/.mp3$/, ""))));
+});
 
 app.use("/control", async (req, res) => {
   try {

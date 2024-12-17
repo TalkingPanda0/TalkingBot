@@ -3,33 +3,6 @@ const voicesRemoveRegex =
   /^\((Jan|Giorgio|Geraint|Salli|Matthew|Kimberly|Kendra|Justin|Joey|Joanna|Ivy|Raveena|Aditi|Emma|Brian|Amy|Russell|Nicole|Kangkang|Linda|Heather|Sean)\)/;
 const voicesRegex =
   /(?<=^\()(Jan|Giorgio|Geraint|Salli|Matthew|Kimberly|Kendra|Justin|Joey|Joanna|Ivy|Raveena|Aditi|Emma|Brian|Amy|Russell|Nicole|Kangkang|Linda|Heather|Sean)(?=\))/;
-const messageList = document.getElementById("message-list");
-
-const emoteSoundEffects = new Map([
-  ["ShyTwerk", "twerk.mp3"],
-  ["HapBoo", "yippe.mp3"],
-  ["HapFlat", "squish.mp3"],
-  ["HabPoo", "habpoo.mp3"],
-  ["Heheh", "hehe.mp3"],
-  ["TeeHee", "hehe.mp3"],
-  ["aids", "aids.mp3"],
-  ["HNNNGH", "hnhg.mp3"],
-  ["Skrunk", "huh.mp3"],
-  ["Pixel", "pixel.mp3"],
-  ["Silly", "silly.mp3"],
-  ["realBoo", "realboo.mp3"],
-  ["Shy", "uwu.mp3"],
-  ["Sexy", "sexy.mp3"],
-  ["Stunky", "stunky.mp3"],
-  ["BanBan", "borf.mp3"],
-  ["EatsDrywall", "eat.mp3"],
-  ["Drywall", "eat.mp3"],
-  ["HeartSweet", "kiss.mp3"],
-  ["Heart", "kiss.mp3"],
-  ["Trol", "troll.mp3"],
-  ["TrollNuked", "troll.mp3"],
-  ["AAA", "a.mp3"],
-]);
 
 let queue = [];
 let isPlaying = false;
@@ -38,11 +11,15 @@ let currentUser;
 let interval;
 let queueInterval;
 
-const soundEffectRegex = new RegExp(
-  `(${Array.from(emoteSoundEffects.keys()).join("|")})`,
-  "g",
+let soundEffectRegex;
+fetch("/soundEffects").then((res) =>
+  res.json().then((sounds) => {
+    soundEffectRegex = new RegExp(
+      `(${sounds.map((sound) => sound.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&")).join("|")})`,
+      "g",
+    );
+  }),
 );
-
 const audio = new Audio();
 
 // Try to play to see if we can interact.
@@ -132,7 +109,7 @@ function playTTS(message, voice, onerror, onended) {
     });
     if (beforeEmote) audioQueue.push(beforeEmote);
 
-    audioQueue.push(new Audio(emoteSoundEffects.get(match[0])));
+    audioQueue.push(new Audio(encodeURIComponent(`${match[0]}.mp3`)));
     lastIndex = match.index + match[0].length;
   }
   const afterLastEmote = getTTSAudio({

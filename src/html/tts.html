@@ -6,6 +6,8 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="/tts.js"></script>
   <script>
+    const messageList = document.getElementById("message-list");
+
     function handleQueue() {
       if (queue.length === 0 || isPlaying || messageList.childElementCount != 0)
         return;
