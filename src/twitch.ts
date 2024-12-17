@@ -600,7 +600,7 @@ export class Twitch {
       this.bot.ioalert.emit("alert", {
         bits: event.bits,
         user: event.userDisplayName,
-        message: event.message,
+        message: event.message.replaceAll(/cheer\d+/g, ""),
       });
     });
     this.chatClient = new ChatClient({
