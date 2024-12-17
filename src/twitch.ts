@@ -513,7 +513,7 @@ export class Twitch {
         console.log(
           `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
         );
-        let completed: Boolean;
+        let completed: boolean;
         if (data.input === "") {
           this.bot.iochat.emit("redeem", {
             id: data.id,
@@ -596,10 +596,11 @@ export class Twitch {
     });
 
     this.eventListener.onChannelCheer(this.channel.id, (event) => {
+      this.bot.credits.addToCredits(event.userDisplayName, CreditType.Cheer);
       this.bot.ioalert.emit("alert", {
         bits: event.bits,
         user: event.userDisplayName,
-        message: event.message.replaceAll(/cheer\d+/g, ""),
+        message: event.message.replaceAll(/cheer\d+/gi, ""),
       });
     });
     this.chatClient = new ChatClient({

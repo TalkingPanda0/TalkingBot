@@ -77,14 +77,20 @@
         <p class="title">Subscribers</p>
         <div id="subs"></div>
       </div>
+      <div id="cheersContainer">
+        <p class="title">Cheers</p>
+        <div id="cheers"></div>
+      </div>
     </div>
     <script>
       const container = document.getElementById("container");
       const mods = document.getElementById("mods");
       const subs = document.getElementById("subs");
+      const cheers = document.getElementById("cheers");
       const followers = document.getElementById("followers");
       const modsContainer = document.getElementById("modsContainer");
       const subsContainer = document.getElementById("subsContainer");
+      const cheersContainer = document.getElementById("cheersContainer");
       const followersContainer = document.getElementById("followersContainer");
       let height;
       const speed = 0.3;
@@ -143,6 +149,13 @@
         } else {
           creditsList.moderators.forEach((moderator) => {
             mods.appendChild(createCreditText(moderator));
+          });
+        }
+        if (creditsList.cheers.length == 0) {
+          modsContainer.style.display = "none";
+        } else {
+          creditsList.cheers.forEach((cheer) => {
+            cheers.appendChild(createCreditText(cheer));
           });
         }
 

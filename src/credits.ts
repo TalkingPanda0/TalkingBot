@@ -2,23 +2,27 @@ interface CreditsList {
   followers: string[];
   subscribers: string[];
   moderators: string[];
+  cheers: string[];
 }
 
 export enum CreditType {
   Follow,
   Subscription,
   Moderator,
+  Cheer,
 }
 
 export class Credits {
   private followers: Set<string> = new Set();
   private subscribers: Set<string> = new Set();
   private moderators: Set<string> = new Set();
+  private cheers: Set<string> = new Set();
 
   public clear() {
     this.followers.clear();
     this.subscribers.clear();
     this.moderators.clear();
+    this.cheers.clear();
   }
 
   public addToCredits(name: string, type: CreditType) {
@@ -32,6 +36,9 @@ export class Credits {
       case CreditType.Subscription:
         this.subscribers.add(name);
         break;
+      case CreditType.Cheer:
+        this.cheers.add(name);
+        break;
     }
   }
 
@@ -40,6 +47,7 @@ export class Credits {
       followers: Array.from(this.followers),
       subscribers: Array.from(this.subscribers),
       moderators: Array.from(this.moderators),
+      cheers: Array.from(this.cheers),
     };
     return JSON.stringify(list);
   }
