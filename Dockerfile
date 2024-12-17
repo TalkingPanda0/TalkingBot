@@ -15,4 +15,4 @@ RUN mkdir src/
 COPY src ./src
 
 EXPOSE 3000/tcp
-#ENTRYPOINT [ "bun", "run", "src/app.ts" ]
+ENTRYPOINT [ "bun", "run", "src/app.ts" ]
