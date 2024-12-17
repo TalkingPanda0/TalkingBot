@@ -6,6 +6,12 @@
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <script src="/tts.js"></script>
   <script>
+    //const voices = ["Jan", "Giorgio", "Geraint", "Salli", "Matthew", "Kimberly", "Kendra", "Justin", "Joey", "Joanna", "Ivy", "Raveena", "Aditi", "Emma", "Brian", "Amy", "Russell", "Nicole", "Kangkang", "Linda", "Heather", "Sean"];
+    const voicesRemoveRegex =
+      /^\((Jan|Giorgio|Geraint|Salli|Matthew|Kimberly|Kendra|Justin|Joey|Joanna|Ivy|Raveena|Aditi|Emma|Brian|Amy|Russell|Nicole|Kangkang|Linda|Heather|Sean)\)/;
+    const voicesRegex =
+      /(?<=^\()(Jan|Giorgio|Geraint|Salli|Matthew|Kimberly|Kendra|Justin|Joey|Joanna|Ivy|Raveena|Aditi|Emma|Brian|Amy|Russell|Nicole|Kangkang|Linda|Heather|Sean)(?=\))/;
+
     const messageList = document.getElementById("message-list");
 
     function handleQueue() {
@@ -14,7 +20,7 @@
 
       const message = queue.shift();
       const text = message.text.trim();
-      const voice = message.text.match(voicesRegex) ?? "Brian";
+      const voice = message.voice;
 
       isPlaying = true;
 
