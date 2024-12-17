@@ -55,6 +55,9 @@ app.use("/control", async (req, res) => {
         case "/alerts":
           res.sendFile(__dirname + "/html/alertscontrol.html");
           break;
+        case "/reload":
+          res.sendFile(__dirname + "/html/restart.html");
+          break;
         case "/command/get":
           const command = bot.commandHandler.getCustomCommand(
             req.query.name.toString(),

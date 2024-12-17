@@ -68,12 +68,12 @@
     function listen() {
       const socket = io("/", { path: "/tts/" });
 
+      socket.on("refresh", () => {
+        window.location.reload();
+      });
+
       socket.on("message", (message) => {
         console.log("GOT MESSAGE:", message);
-        if (message.sender == "TalkingPanda" && message.text == "refresh") {
-          location.reload();
-          return;
-        }
         if (message.isImportant) {
           ttSay(message, true);
           if (queueInterval == null) handleQueue();

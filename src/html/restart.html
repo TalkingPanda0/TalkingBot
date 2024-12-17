@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 5px;
+        background-color: #15171c;
+        color: white;
+      }
+      .button {
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      * {
+        margin: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <button class="button" onclick="onClick('chat')">Chat</button>
+    <button class="button" onclick="onClick('modtext')">ModText</button>
+    <button class="button" onclick="onClick('tts')">TTS</button>
+    <button class="button" onclick="onClick('alerts')">Alerts</button>
+    <script>
+      async function onClick(overlay) {
+        sendToControl({
+          overlay: overlay,
+          target: "refresh",
+          message: "",
+        });
+      }
+
+      async function sendToControl(request) {
+        const body = JSON.stringify(request);
+        const response = await fetch("/control/overlay", {
+          method: "POST",
+          body: body,
+        });
+        console.log(await response.text());
+        if (response.status == 403) window.location.replace("/control");
+      }
+    </script>
+  </body>
+</html>

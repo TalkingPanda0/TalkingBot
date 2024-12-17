@@ -17,6 +17,9 @@
 
     var socket = io("/", { path: "/modtext/" });
 
+    socket.on("refresh", () => {
+      window.location.reload();
+    });
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
       text.innerHTML = message;

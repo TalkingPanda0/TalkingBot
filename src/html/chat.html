@@ -274,6 +274,10 @@
 
     var socket = io("/", { path: "/chat/" });
 
+    socket.on("refresh", () => {
+      window.location.reload();
+    });
+
     socket.on("connect", () => {
       console.log("Connected");
       emptyDisconnectList();

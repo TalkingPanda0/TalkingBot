@@ -303,6 +303,11 @@
       }
 
       var socket = io("/", { path: "/alerts/" });
+
+      socket.on("refresh", () => {
+        window.location.reload();
+      });
+
       socket.on("alert", (alertInfo) => {
         console.log(alertInfo);
         alertQueue.push(alertInfo);

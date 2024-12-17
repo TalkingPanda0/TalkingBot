@@ -257,6 +257,10 @@ export class TalkingBot {
         break;
 
       case "modtext":
+        if (data.target == "refresh") {
+          this.iomodtext.emit("refresh");
+          return;
+        }
         this.modtext = data.message;
         this.updateModText();
         break;
