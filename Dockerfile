@@ -8,9 +8,11 @@ COPY package.json ./
 
 RUN bun install --frozen-lockfile --verbose --production
 
-COPY --chown=bun public .
+RUN mkdir public/
+COPY --chown=bun  public ./public
 
-COPY src .
+RUN mkdir src/
+COPY src ./src
 
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", "src/app.ts" ]
+#ENTRYPOINT [ "bun", "run", "src/app.ts" ]
