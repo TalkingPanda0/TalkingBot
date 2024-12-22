@@ -234,7 +234,7 @@
         if (!subInfo.gift)
           alertElement.innerHTML += `<span class="text" ><span class="sender">${subInfo.name} </span>just subscribed ${tier} for ${subInfo.months} months </span><br /><span class="message">${subInfo.message}</span> `;
         else
-          alertElement.innerHTML += `<span class="text"><span class="sender">${subInfo.name} </span>just gifted subscription ${tier} for ${subInfo.months} months to <span class="sender">${subInfo.gifted}</span></span><br /><span class="message">${subInfo.message}</span>`;
+          alertElement.innerHTML += `<span class="text"><span class="sender">${subInfo.name} </span>just gifted ${subInfo.gifted} subscriptions at ${tier} </span>`;
         alertElement.style = "opacity: 100%";
 
         const imgElement = document.getElementById("image");

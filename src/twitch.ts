@@ -466,6 +466,30 @@ export class Twitch {
       });
     }
 
+    this.eventListener.onChannelSubscriptionMessage(this.channel.id, (data) => {
+      this.bot.credits.addToCredits(
+        data.userDisplayName,
+        CreditType.Subscription,
+      );
+      this.bot.ioalert.emit("alert", {
+        name: data.userDisplayName,
+        message: data.messageText,
+        plan: data.tier,
+        months: data.cumulativeMonths,
+        gift: false,
+      });
+    });
+    this.eventListener.onChannelSubscriptionGift(this.channel.id, (data) => {
+      this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
+      this.bot.ioalert.emit("alert", {
+        name: data.gifterName,
+        gifted: data.amount,
+        plan: data.tier,
+        months: data.cumulativeAmount,
+        gift: true,
+      });
+    });
+
     this.eventListener.onChannelPollBegin(this.channel.id, (data) => {
       if (this.currentPoll != null) return;
       const pollOptions: pollOption[] = data.choices.reduce(
@@ -610,44 +634,6 @@ export class Twitch {
       requestMembershipEvents: true,
       ssl: true,
     });
-    this.chatClient.onSub(
-      (
-        _channel: string,
-        _user: string,
-        subInfo: ChatSubInfo,
-        _msg: UserNotice,
-      ) => {
-        this.bot.credits.addToCredits(
-          subInfo.displayName,
-          CreditType.Subscription,
-        );
-        this.bot.ioalert.emit("alert", {
-          name: subInfo.displayName,
-          message: subInfo.message,
-          plan: subInfo.plan,
-          months: subInfo.months,
-          gift: false,
-        });
-      },
-    );
-    this.chatClient.onSubGift(
-      (
-        _channel: string,
-        _user: string,
-        subInfo: ChatSubGiftInfo,
-        _msg: UserNotice,
-      ) => {
-        this.bot.credits.addToCredits(subInfo.gifter, CreditType.Subscription);
-        this.bot.ioalert.emit("alert", {
-          name: subInfo.gifter,
-          gifted: subInfo.displayName,
-          message: subInfo.message,
-          plan: subInfo.plan,
-          months: subInfo.months,
-          gift: true,
-        });
-      },
-    );
 
     this.chatClient.onRaid(
       (
