@@ -1075,8 +1075,7 @@ export class MessageHandler {
   public async handleCommand(data: MessageData): Promise<boolean> {
     try {
       let commandName = data.message.split(" ")[0];
-      if (this.timeout.has(commandName) && !data.isUserMod)
-        return data.message.startsWith("!");
+      if (this.timeout.has(commandName) && !data.isUserMod) return true;
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) {
         data.message = data.message.replace(commandName, commandAlias);
@@ -1100,7 +1099,7 @@ export class MessageHandler {
 
             async (
               message: string,
-              command: string,
+              _command: string,
               url: string,
               key: string,
             ) => {
@@ -1138,14 +1137,14 @@ export class MessageHandler {
             this.timeout.delete(commandName);
           }, 60 * 1000);
         }
-        if (modonly && !data.isUserMod) return data.message.startsWith("!");
+        if (modonly && !data.isUserMod) return commandName.startsWith("!");
         data.reply(response, doReply);
         return true;
       }
 
       const builtinCommand = this.commandMap.get(commandName);
       if (builtinCommand == null || data.platform == "discord")
-        return data.message.startsWith("!");
+        return commandName.startsWith("!");
       builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
