@@ -828,25 +828,36 @@ export class MessageHandler {
       },
     ],
     [
-      "!bs",
+      "!playtime",
       {
         timeout: 60 * 1000,
         showOnChat: false,
         commandFunction: async (data) => {
-          const response = await (
-            await fetch(
-              `http://api.steampowered.com/IPlayerService/GetRecentlyPlayedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json`,
-            )
-          ).json();
-          const games: { appid: number; playtime_forever: number }[] =
-            response.response.games;
-          const minutes = games.find((game) => {
-            return game.appid == 620980;
-          }).playtime_forever;
-          data.reply(
-            `SweetBabooO_o has ${Math.floor(minutes / 60)} hours ${minutes % 60} minutes on Beat Saber.`,
-            true,
-          );
+          try {
+            const game = (
+              await (
+                await fetch(
+                  `https://steamcommunity.com/actions/SearchApps/${data.message}`,
+                )
+              ).json()
+            )[0];
+            const response = await (
+              await fetch(
+                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json`,
+              )
+            ).json();
+            const games: { appid: number; playtime_forever: number }[] =
+              response.response.games;
+            const minutes = games.find((ownedGame) => {
+              return ownedGame.appid == game.appid;
+            }).playtime_forever;
+            data.reply(
+              `SweetbabooO_o has ${Math.floor(minutes / 60)} hours ${minutes % 60} minutes on ${game.name}.`,
+              true,
+            );
+          } catch (e) {
+            data.reply(`Can't find game ${data.message}`, true);
+          }
         },
       },
     ],
