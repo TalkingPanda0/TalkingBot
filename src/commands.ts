@@ -837,26 +837,35 @@ export class MessageHandler {
             const game = (
               await (
                 await fetch(
-                  `https://steamcommunity.com/actions/SearchApps/${data.message}`,
+                  `https://steamcommunity.com/actions/SearchApps/${encodeURIComponent(data.message)}`,
                 )
               ).json()
             )[0];
+            if (game == undefined) {
+              data.reply(`Can't find game ${data.message}.`, true);
+              return;
+            }
             const response = await (
               await fetch(
-                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json`,
+                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json&include_played_free_games=true&appids_filter[0]=${game.appid}`,
               )
             ).json();
+            if (response.response.game_count == 0) {
+              data.reply(`SweetbabooO_o doesn't own ${game.name}.`, true);
+              return;
+            }
             const games: { appid: number; playtime_forever: number }[] =
               response.response.games;
-            const minutes = games.find((ownedGame) => {
-              return ownedGame.appid == game.appid;
-            }).playtime_forever;
+            const ownedGame = games[0];
+
+            const minutes = ownedGame.playtime_forever;
             data.reply(
               `SweetbabooO_o has ${Math.floor(minutes / 60)} hours ${minutes % 60} minutes on ${game.name}.`,
               true,
             );
           } catch (e) {
             data.reply(`Can't find game ${data.message}`, true);
+            console.log(e);
           }
         },
       },

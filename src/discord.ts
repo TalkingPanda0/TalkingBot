@@ -66,6 +66,35 @@ export class Discord {
     this.bot = bot;
   }
 
+  public async getAllMessages(channelId: string) {
+    const channel = this.client.channels.cache.get(channelId) as TextChannel;
+    let messages = [];
+
+    // Create message pointer
+    let message = await channel.messages
+      .fetch({ limit: 1 })
+      .then((messagePage) =>
+        messagePage.size === 1 ? messagePage.at(0) : null,
+      );
+    messages.push(message.toJSON());
+
+    do {
+      await channel.messages
+        .fetch({ limit: 100, before: message.id })
+        .then((messagePage) => {
+          messagePage.forEach((msg) => messages.push(msg.toJSON()));
+
+          // Update our message pointer to be the last message on the page of messages
+          message =
+            0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
+        });
+
+      console.log(`Got ${messages.length} messages so far...`);
+    } while (message);
+    console.log(`Got ${messages.length} messages.`);
+    await Bun.write("/dev/shm/discordLog", JSON.stringify(messages));
+  }
+
   public cleanUp() {
     this.client.destroy();
   }
