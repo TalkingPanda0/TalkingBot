@@ -48,6 +48,13 @@ export class Credits {
         break;
     }
   }
+  public deleteFromCredits(name: string) {
+    this.followers.delete(name);
+    this.moderators.delete(name);
+    this.subscribers.delete(name);
+    this.cheers.delete(name);
+    this.chatters.delete(name);
+  }
 
   public getCreditsList(): string {
     const list: CreditsList = {

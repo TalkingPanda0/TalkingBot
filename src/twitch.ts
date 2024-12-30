@@ -675,6 +675,7 @@ export class Twitch {
     });
 
     this.eventListener.onChannelBan(this.channel.id, (event) => {
+      this.bot.credits.deleteFromCredits(event.userDisplayName);
       this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.say(
         `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever" : ""}.`,
