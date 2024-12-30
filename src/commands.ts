@@ -8,7 +8,6 @@ import {
   replaceAsync,
 } from "./util";
 
-import { kill } from "./beatsniper.js";
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
@@ -1175,6 +1174,7 @@ export class MessageHandler {
   public async handleMessage(data: MessageData) {
     if (data.isUserMod)
       this.bot.credits.addToCredits(data.sender, CreditType.Moderator);
+    this.bot.credits.addToCredits(data.sender, CreditType.Chatter);
     data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     data.id = `${data.platform}-${data.id}`;

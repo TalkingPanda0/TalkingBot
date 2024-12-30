@@ -64,10 +64,6 @@
     <div id="container" style="display: none">
       <p class="thanks">Special Thanks</p>
       <p class="title">Thank You All So Much For Watching!</p>
-      <div id="followersContainer">
-        <p class="title">Followers</p>
-        <div id="followers"></div>
-      </div>
 
       <div id="modsContainer">
         <p class="title">Moderators</p>
@@ -81,6 +77,14 @@
         <p class="title">Cheers</p>
         <div id="cheers"></div>
       </div>
+      <div id="chattersContainer">
+        <p class="title">Chatters</p>
+        <div id="chatters"></div>
+      </div>
+      <div id="followersContainer">
+        <p class="title">Followers</p>
+        <div id="followers"></div>
+      </div>
     </div>
     <script>
       const container = document.getElementById("container");
@@ -88,10 +92,12 @@
       const subs = document.getElementById("subs");
       const cheers = document.getElementById("cheers");
       const followers = document.getElementById("followers");
+      const chatters = document.getElementById("chatters");
       const modsContainer = document.getElementById("modsContainer");
       const subsContainer = document.getElementById("subsContainer");
       const cheersContainer = document.getElementById("cheersContainer");
       const followersContainer = document.getElementById("followersContainer");
+      const chattersContainer = document.getElementById("chattersContainer");
       let height;
       const speed = 0.3;
 
@@ -156,6 +162,13 @@
         } else {
           creditsList.cheers.forEach((cheer) => {
             cheers.appendChild(createCreditText(cheer));
+          });
+        }
+        if (creditsList.chatters.length == 0) {
+          chattersContainer.style.display = "none";
+        } else {
+          creditsList.chatters.forEach((chatter) => {
+            chatters.appendChild(createCreditText(chatter));
           });
         }
 
