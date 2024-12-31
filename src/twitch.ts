@@ -230,11 +230,13 @@ export class Twitch {
         "\x1b[35m%s\x1b[0m",
         `Twitch - ${this.formatDisplayName(msg)}: ${text}`,
       );
-      let badges = [];
 
       let parsedMessage = await this.bot.parseClips(
         this.parseTwitchEmotes(msg.text, msg.emoteOffsets, msg.bits),
       );
+
+      let badges = [];
+
       if (msg.userInfo.isMod) {
         badges.push(this.badges.get("moderator"));
       } else if (msg.userInfo.isBroadcaster) {
@@ -278,6 +280,14 @@ export class Twitch {
           indexes.push(parseInt(index));
         });
       });
+      const messageWithoutPrefix = removeByIndexToUppercase(text, indexes);
+      if (msg.isCheer) {
+        this.onCheer({
+          bits: msg.bits,
+          message: messageWithoutPrefix,
+          userDisplayName: this.formatDisplayName(msg),
+        });
+      }
 
       this.bot.commandHandler.handleMessage({
         badges: badges,
@@ -286,7 +296,7 @@ export class Twitch {
         color: this.getUserColor(msg),
         isUserMod: msg.userInfo.isMod || msg.userInfo.isBroadcaster,
         platform: "twitch",
-        message: removeByIndexToUppercase(text, indexes),
+        message: messageWithoutPrefix,
         parsedMessage: parsedMessage,
         isFirst: msg.isFirst,
         replyText: replyText,
@@ -329,6 +339,18 @@ export class Twitch {
     } catch (e) {
       console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
     }
+  }
+  private onCheer(event: {
+    userDisplayName: string;
+    bits: number;
+    message: string;
+  }) {
+    this.bot.credits.addToCredits(event.userDisplayName, CreditType.Cheer);
+    this.bot.ioalert.emit("alert", {
+      bits: event.bits,
+      user: event.userDisplayName,
+      message: event.message.replaceAll(/cheer\d+/gi, ""),
+    });
   }
 
   async initBot(): Promise<void> {
@@ -619,14 +641,6 @@ export class Twitch {
       }
     });
 
-    this.eventListener.onChannelCheer(this.channel.id, (event) => {
-      this.bot.credits.addToCredits(event.userDisplayName, CreditType.Cheer);
-      this.bot.ioalert.emit("alert", {
-        bits: event.bits,
-        user: event.userDisplayName,
-        message: event.message.replaceAll(/cheer\d+/gi, ""),
-      });
-    });
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
       channels: [this.channelName],
