@@ -1135,6 +1135,7 @@ export class MessageHandler {
           response,
           /script\((.+)\)/g,
           async (_message: string, script: string) => {
+            if (modonly && !data.isUserMod) return;
             return await this.runScript(script, data);
           },
         );
