@@ -12,6 +12,7 @@ import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
 import { Credits } from "./credits";
+import { Users } from "./users";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -60,6 +61,7 @@ export class TalkingBot {
   public modtext: string;
   public ttsManager: TTSManager;
   public credits: Credits;
+  public users: Users;
 
   private kickId: string;
   private server: http.Server;
@@ -124,6 +126,7 @@ export class TalkingBot {
     this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord(this);
+    this.users = new Users(this.database);
   }
 
   public async initBot() {
@@ -139,6 +142,7 @@ export class TalkingBot {
     this.kick.initBot();
     this.youTube.initBot();
     this.commandHandler.init();
+    this.users.init();
 
     this.modtext = this.database.getOrSetConfig("currentModtext", "");
     this.updateModText();

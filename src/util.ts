@@ -89,3 +89,24 @@ export function removeByIndexToUppercase(
   });
   return str;
 }
+export function hashMaptoArray<Key, Value>(
+  map: Map<Key, Value>,
+): { key: Key; value: Value }[] {
+  const array: { key: Key; value: Value }[] = [];
+  map.forEach((value, key) => {
+    array.push({ key, value });
+  });
+  return array;
+}
+export function arraytoHashMap<Key, Value>(
+  array: {
+    key: Key;
+    value: Value;
+  }[],
+): Map<Key, Value> {
+  const map = new Map<Key, Value>();
+  array.forEach((element) => {
+    map.set(element.key, element.value);
+  });
+  return map;
+}

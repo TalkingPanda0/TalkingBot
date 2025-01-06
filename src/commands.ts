@@ -1,8 +1,10 @@
 import { TalkingBot } from "./talkingbot";
 import {
+  arraytoHashMap,
   getRandomElement,
   getSuffix,
   getTimeDifference,
+  hashMaptoArray,
   milliSecondsToString,
   removeByIndexToUppercase,
   replaceAsync,
@@ -36,16 +38,6 @@ export interface MessageData {
   banUser: (reason: string, duration?: number) => void | Promise<void>;
 }
 
-interface CustomCommand {
-  command: string;
-  response: string;
-}
-
-interface CommandAlias {
-  alias: string;
-  command: string;
-}
-
 interface BuiltinCommand {
   showOnChat: boolean;
   timeout?: number; // in ms
@@ -61,7 +53,6 @@ export class MessageHandler {
   private beefageDecayTimer: Timer;
   private timeout = new Set();
   private bot: TalkingBot;
-  private ttsEnabled: Boolean = false;
   private dynamicTitle: string;
   private dynamicTitleInterval: Timer;
   private lastDynamicTitle: string;
@@ -1000,6 +991,29 @@ export class MessageHandler {
       },
     ],
     [
+      "!nickname",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+
+          const args = data.message.split(" ");
+
+          const username = args[0];
+          const nickname = args[1];
+          const id = { platform: data.platform, username: username };
+
+          if (nickname) {
+            this.bot.users.setNickname(id, nickname);
+            data.reply(`${username} has been nicknamed to ${nickname}.`, true);
+          } else {
+            const user = this.bot.users.getUser(id);
+            data.reply(`${username} is nicknamed to ${user.nickname}`, true);
+          }
+        },
+      },
+    ],
+    [
       "!pet",
       {
         showOnChat: false,
@@ -1182,6 +1196,13 @@ export class MessageHandler {
     data.senderId = `${data.platform}-${data.senderId}`;
     data.replyId = `${data.platform}-${data.replyId}`;
 
+    const user = this.bot.users.getUser({
+      platform: data.platform,
+      username: data.sender,
+    });
+
+    data.sender = user.nickname ?? data.sender;
+
     this.sendToChatList(data);
   }
 
@@ -1228,40 +1249,26 @@ export class MessageHandler {
 
   public async readCustomCommands() {
     if (!(await this.commandsFile.exists())) return;
-    const customCommands: CustomCommand[] = await this.commandsFile.json();
-    customCommands.forEach((value) => {
-      this.customCommandMap.set(value.command, value.response);
-    });
+
+    this.customCommandMap = arraytoHashMap(await this.commandsFile.json());
     if (!(await this.aliasesFile.exists())) return;
-    const commandAlias: CommandAlias[] = await this.aliasesFile.json();
-    commandAlias.forEach((value) => {
-      this.commandAliasMap.set(value.alias, value.command);
-    });
+    this.commandAliasMap = arraytoHashMap(await this.aliasesFile.json());
     if (!(await this.argsFile.exists())) return;
-    const arg: CommandAlias[] = await this.argsFile.json();
-    arg.forEach((value) => {
-      this.argMap.set(value.alias, value.command);
-    });
+    this.argMap = arraytoHashMap(await this.argsFile.json());
 
     this.keys = await this.keysFile.json();
   }
 
   private writeCustomCommands() {
-    const customCommands: CustomCommand[] = [];
-    const commandAlias: CommandAlias[] = [];
-    const args: CommandAlias[] = [];
-    this.customCommandMap.forEach((value, key) => {
-      customCommands.push({ command: key, response: value });
-    });
-    Bun.write(this.commandsFile, JSON.stringify(customCommands));
-    this.commandAliasMap.forEach((value, key) => {
-      commandAlias.push({ alias: key, command: value });
-    });
-    Bun.write(this.aliasesFile, JSON.stringify(commandAlias));
-    this.argMap.forEach((value, key) => {
-      args.push({ alias: key, command: value });
-    });
-    Bun.write(this.argsFile, JSON.stringify(args));
+    Bun.write(
+      this.commandsFile,
+      JSON.stringify(hashMaptoArray(this.customCommandMap)),
+    );
+    Bun.write(
+      this.aliasesFile,
+      JSON.stringify(hashMaptoArray(this.commandAliasMap)),
+    );
+    Bun.write(this.argsFile, JSON.stringify(hashMaptoArray(this.argMap)));
   }
 
   public getCommandAliasList(): string {
