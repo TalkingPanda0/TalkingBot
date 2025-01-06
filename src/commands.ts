@@ -1000,7 +1000,7 @@ export class MessageHandler {
           const args = data.message.split(" ");
 
           const username = args[0];
-          const nickname = args[1];
+          const nickname = args.splice(1).join(" ");
           const id = { platform: data.platform, username: username };
 
           if (nickname) {
