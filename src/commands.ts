@@ -1014,6 +1014,21 @@ export class MessageHandler {
       },
     ],
     [
+      "!unnickname",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          const args = data.message.split(" ");
+          const username = args[0];
+
+          const id = { platform: data.platform, username: username };
+          this.bot.users.setNickname(id, null);
+          data.reply(`${username} is now not nicknamed.`, true);
+        },
+      },
+    ],
+    [
       "!pet",
       {
         showOnChat: false,
