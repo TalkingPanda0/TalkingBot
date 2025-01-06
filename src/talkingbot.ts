@@ -139,6 +139,9 @@ export class TalkingBot {
     this.kick.initBot();
     this.youTube.initBot();
     this.commandHandler.init();
+
+    this.modtext = this.database.getOrSetConfig("currentModtext", "");
+    this.updateModText();
   }
 
   public async cleanUp() {
@@ -206,13 +209,8 @@ export class TalkingBot {
     this.youTube.api.sendMessage(message);
   }
   public updateModText() {
-    Bun.write(
-      this.commandHandler.counterFile,
-      JSON.stringify({
-        modtext: this.modtext,
-      }),
-    );
     if (!this.modtext) return;
+    this.database.setConfig("currentModtext", this.modtext);
     this.iomodtext.emit(
       "message",
       this.modtext.replaceAll(/counter\((\w+)\)/g, (_modtext, counter) =>

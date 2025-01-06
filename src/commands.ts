@@ -242,7 +242,7 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          this.bot.modtext = `<p>${data.parsedMessage.split(" ").slice(1).join(" ")}</p>`;
+          this.bot.modtext = `<h1>${data.parsedMessage.split(" ").slice(1).join(" ")}</h1>`;
           this.bot.updateModText();
         },
       },
