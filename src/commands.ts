@@ -21,6 +21,7 @@ export interface MessageData {
   isUserMod: boolean;
   message: string;
   parsedMessage: string;
+  username: string;
   sender: string;
   senderId: string;
   color: string;
@@ -994,7 +995,7 @@ export class MessageHandler {
       {
         showOnChat: false,
         commandFunction: (data) => {
-          const id = { platform: data.platform, username: data.sender };
+          const id = { platform: data.platform, username: data.username };
           switch (data.message.trim()) {
             case "":
               const user = this.bot.users.getUser(id);
@@ -1059,7 +1060,7 @@ export class MessageHandler {
           const args = data.message.split(" ");
           switch (args[0]) {
             case "feed":
-              if (this.bot.pet.feed(data.sender)) {
+              if (this.bot.pet.feed(data.username)) {
                 data.banUser("Hapboo Shield", 10 * 60);
               }
               break;
@@ -1070,12 +1071,12 @@ export class MessageHandler {
               data.reply(this.bot.pet.graveyard(args[1]), true);
               break;
             case "fuel":
-              if (this.bot.pet.fuel(data.sender)) {
+              if (this.bot.pet.fuel(data.username)) {
                 data.banUser("Hapboo Shield", 10 * 60);
               }
               break;
             case "pet":
-              data.reply(this.bot.pet.pet(data.sender), true);
+              data.reply(this.bot.pet.pet(data.username), true);
               break;
             case "murderers":
               data.reply(this.bot.pet.murdererList(), true);
@@ -1117,7 +1118,7 @@ export class MessageHandler {
               }
             default:
               if (args[0].startsWith("f")) {
-                if (this.bot.pet.feedOrFuel(data.sender))
+                if (this.bot.pet.feedOrFuel(data.username))
                   data.banUser("Hapboo Shield", 10 * 60);
                 return;
               }
@@ -1224,17 +1225,18 @@ export class MessageHandler {
   }
 
   public async handleMessage(data: MessageData) {
-    if (data.isUserMod)
-      this.bot.credits.addToCredits(data.sender, CreditType.Moderator);
-    this.bot.credits.addToCredits(data.sender, CreditType.Chatter);
-
     const user = this.bot.users.getUser({
       platform: data.platform,
       username: data.sender,
     });
 
+    data.username = data.sender;
     data.sender = user.nickname ?? data.sender;
     data.color = user.color ?? data.color;
+
+    if (data.isUserMod)
+      this.bot.credits.addToCredits(data.username, CreditType.Moderator);
+    this.bot.credits.addToCredits(data.username, CreditType.Chatter);
 
     data.isCommand = data.isCommand || (await this.handleCommand(data));
 

@@ -192,26 +192,21 @@
       });
       const textElement = document.createElement("span");
       textElement.classList.add("sender");
+      textElement.dataset.name =
+        `${message.platform}-${message.username}`.toLowerCase();
       textElement.style = `color:${message.color}`;
       let text = message.parsedMessage.trim();
 
       text = text.replaceAll(mentionRegex, (mention, user) => {
-        do {
-          const elements = document.querySelectorAll(".sender");
-          if (elements == null) {
-            break;
-          }
+        const nameTag = `${message.platform}-${user}`.toLowerCase();
+        const elements = document.querySelectorAll(`[data-name="${nameTag}"]`);
+        if (elements.length == 0) {
+          return mention;
+        }
 
-          const targetElement = Array.from(elements).find((element) =>
-            element.innerText.toLowerCase().startsWith(`${user.toLowerCase()}`),
-          );
-          if (targetElement == null) {
-            break;
-          }
-          const color = targetElement.style.color;
-          return `<span style="color:${color}">${mention}</span>`;
-        } while (false);
-        return mention;
+        const targetElement = elements[elements.length - 1];
+        const color = targetElement.style.color;
+        return `<span style="color:${color}">${mention}</span>`;
       });
       const faceChars = [
         ")",
