@@ -226,7 +226,6 @@ export class MessageHandler {
         },
       },
     ],
-
     [
       "!modtext",
       {
@@ -991,6 +990,29 @@ export class MessageHandler {
       },
     ],
     [
+      "!color",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          const id = { platform: data.platform, username: data.sender };
+          switch (data.message.trim()) {
+            case "":
+              const user = this.bot.users.getUser(id);
+              data.reply(`Your color is currently set to ${user.color}.`, true);
+              break;
+            case "clear":
+              this.bot.users.setColor(id, null);
+              data.reply(`Your color has been cleared.`, true);
+              break;
+            default:
+              this.bot.users.setColor(id, data.message);
+              data.reply(`Updated your color to ${data.message}.`, true);
+              break;
+          }
+        },
+      },
+    ],
+    [
       "!nickname",
       {
         showOnChat: false,
@@ -1205,11 +1227,6 @@ export class MessageHandler {
     if (data.isUserMod)
       this.bot.credits.addToCredits(data.sender, CreditType.Moderator);
     this.bot.credits.addToCredits(data.sender, CreditType.Chatter);
-    data.isCommand = data.isCommand || (await this.handleCommand(data));
-
-    data.id = `${data.platform}-${data.id}`;
-    data.senderId = `${data.platform}-${data.senderId}`;
-    data.replyId = `${data.platform}-${data.replyId}`;
 
     const user = this.bot.users.getUser({
       platform: data.platform,
@@ -1217,6 +1234,13 @@ export class MessageHandler {
     });
 
     data.sender = user.nickname ?? data.sender;
+    data.color = user.color ?? data.color;
+
+    data.isCommand = data.isCommand || (await this.handleCommand(data));
+
+    data.id = `${data.platform}-${data.id}`;
+    data.senderId = `${data.platform}-${data.senderId}`;
+    data.replyId = `${data.platform}-${data.replyId}`;
 
     this.sendToChatList(data);
   }
