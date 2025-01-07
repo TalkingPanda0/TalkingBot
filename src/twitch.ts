@@ -97,82 +97,6 @@ export class Twitch {
     return color;
   }
 
-  async sendToChatList(
-    message: ChatMessage,
-    isCommand: Boolean,
-    isOld: Boolean,
-  ): Promise<void> {
-    let color = message.userInfo.color;
-    let badges = [];
-    let replyTo = "";
-    let replyId = "";
-    let replyText = "";
-    let text = this.parseTwitchEmotes(
-      message.text,
-      message.emoteOffsets,
-      message.bits,
-    );
-    let rewardName = "";
-
-    text = await this.bot.parseClips(text);
-    if (message.userInfo.isMod) {
-      badges.push(this.badges.get("moderator"));
-    } else if (message.userInfo.isBroadcaster) {
-      badges.push(this.badges.get("broadcaster"));
-    }
-
-    if (message.userInfo.isVip) {
-      badges.push(this.badges.get("vip"));
-    }
-
-    message.userInfo.badges.forEach((element) => {
-      const badge = this.badges.get(element);
-      if (badge != null) badges.push(badge);
-    });
-
-    color = this.getUserColor(message);
-
-    if (message.isReply) {
-      text = text.replace(
-        new RegExp(`^@${message.parentMessageUserDisplayName}`, "i"),
-        "",
-      );
-      replyTo = message.parentMessageUserDisplayName;
-      replyId = message.parentMessageUserId;
-      replyText = message.parentMessageText;
-    }
-
-    if (message.isHighlight) {
-      rewardName = "Highlight My Message";
-    }
-
-    if (message.isRedemption) {
-      const reward = await this.apiClient.channelPoints.getCustomRewardById(
-        this.channel.id,
-        message.rewardId,
-      );
-      rewardName = reward.title;
-    }
-
-    this.bot.iochat.emit("message", {
-      badges: badges,
-      text: text,
-      parsedMessage: text,
-      sender: this.formatDisplayName(message),
-      senderId: "twitch-" + message.userInfo.userId,
-      color: color,
-      id: "twitch-" + message.id,
-      platform: "twitch",
-      isFirst: message.isFirst,
-      replyTo: replyTo,
-      replyId: "twitch-" + replyId,
-      replyText: replyText,
-      isCommand: isCommand,
-      rewardName: rewardName,
-      isOld: isOld,
-      isAction: text.startsWith("\u0001ACTION"),
-    });
-  }
   public async cleanUp() {
     this.chatClient.quit();
     this.eventListener.stop();
@@ -224,6 +148,7 @@ export class Twitch {
     text: string,
     msg: ChatMessage,
     isAction: boolean,
+    isOld: boolean,
   ) {
     try {
       console.log(
@@ -303,7 +228,7 @@ export class Twitch {
         replyId: replyId,
         replyTo: replyTo,
         rewardName: rewardName,
-        isOld: false,
+        isOld: isOld,
         isAction: isAction,
         isCommand: user == "botrixoficial" || user == "talkingboto_o",
         id: msg.id,
@@ -709,12 +634,12 @@ export class Twitch {
 
     this.chatClient.onMessage(
       async (channel: string, user: string, text: string, msg: ChatMessage) => {
-        this.handleMessage(channel, user, text, msg, false);
+        this.handleMessage(channel, user, text, msg, false, false);
       },
     );
 
     this.chatClient.onAction((channel, user, text, msg) => {
-      this.handleMessage(channel, user, text, msg, true);
+      this.handleMessage(channel, user, text, msg, true, false);
     });
 
     this.chatClient.onConnect(() => {
@@ -840,13 +765,21 @@ export class Twitch {
       try {
         if (!element.includes("PRIVMSG")) return;
         const message = parseTwitchMessage(element) as ChatMessage;
-        if (message.userInfo.userName === "botrixoficial") return;
 
         const isCommand =
           message.text.startsWith("!") ||
-          message.userInfo.userId === "736013381";
+          message.userInfo.userId === "736013381" ||
+          message.userInfo.userName == "botrixoficial";
+        const isAction = message.text.startsWith("\u0001ACTION");
 
-        this.sendToChatList(message, isCommand, true);
+        this.handleMessage(
+          "",
+          message.userInfo.userName,
+          message.text,
+          message,
+          isAction,
+          true,
+        );
       } catch (e) {
         console.error(
           "\x1b[35m%s\x1b[0m",

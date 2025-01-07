@@ -21,7 +21,7 @@ export interface MessageData {
   isUserMod: boolean;
   message: string;
   parsedMessage: string;
-  username: string;
+  username?: string;
   sender: string;
   senderId: string;
   color: string;
@@ -1238,7 +1238,8 @@ export class MessageHandler {
       this.bot.credits.addToCredits(data.username, CreditType.Moderator);
     this.bot.credits.addToCredits(data.username, CreditType.Chatter);
 
-    data.isCommand = data.isCommand || (await this.handleCommand(data));
+    if (!data.isOld)
+      data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     data.id = `${data.platform}-${data.id}`;
     data.senderId = `${data.platform}-${data.senderId}`;
