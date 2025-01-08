@@ -618,7 +618,7 @@ export class Twitch {
         this.bot.credits.deleteFromCredits(event.userDisplayName);
       this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
       this.say(
-        `@${event.userName} has been banished to the nut room${event.isPermanent ? " Forever" : ""}.`,
+        `@${event.userName} has been defenestrated${event.isPermanent ? " Forever" : ""}.`,
       );
     });
 
