@@ -22,6 +22,7 @@
     "discord.js": "^14.16.3",
     "express": "^4.21.2",
     "googleapis": "^140.0.1",
+    "howlongtobeat-api": "^1.0.3",
     "isomorphic-dompurify": "^2.19.0",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.8.1",

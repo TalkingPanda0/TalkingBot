@@ -208,16 +208,18 @@ export class Discord {
       this.bot.commandHandler.handleCommand({
         platform: "discord",
         id: message.id,
-        reply: (replyMessage, replytoUser) => {
+        reply: (replyMessage: string, replytoUser: boolean) => {
           if (replyMessage == "") return;
-          if (replytoUser)
-            message.reply({
-              embeds: [{ fields: [{ name: "", value: replyMessage }] }],
-            });
-          else
-            message.channel.send({
-              embeds: [{ fields: [{ name: "", value: replyMessage }] }],
-            });
+          replyMessage.match(/.{1,1024}/g)?.forEach((chunk) => {
+            if (replytoUser)
+              message.reply({
+                embeds: [{ fields: [{ name: "", value: chunk }] }],
+              });
+            else
+              message.channel.send({
+                embeds: [{ fields: [{ name: "", value: chunk }] }],
+              });
+          });
         },
         badges: [],
         isUserMod: false,

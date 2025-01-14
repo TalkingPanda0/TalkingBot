@@ -15,6 +15,7 @@ import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
+import { find } from "howlongtobeat-api";
 
 export interface MessageData {
   badges: string[];
@@ -814,6 +815,25 @@ export class MessageHandler {
             parsedText: data.parsedMessage.split(" ").slice(1).join(" "),
             isImportant: false,
           });
+        },
+      },
+    ],
+    [
+      "!hltb",
+      {
+        timeout: 60 * 1000,
+        showOnChat: false,
+        commandFunction: async (data) => {
+          const result = await find({ search: data.message.trim() });
+          if (result == null || result.total == 0) {
+            data.reply(`Can't find game ${data.message}.`, true);
+            return;
+          }
+          const game = result.data[0];
+          data.reply(
+            `Average playtime of ${game.name} is ${game.gameplayMain} hours.`,
+            true,
+          );
         },
       },
     ],
