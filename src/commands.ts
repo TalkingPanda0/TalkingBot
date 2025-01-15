@@ -1075,7 +1075,7 @@ export class MessageHandler {
       "!pet",
       {
         showOnChat: false,
-        commandFunction: async (data) => {
+        commandFunction: (data) => {
           if (data.platform == "kick") return;
           const args = data.message.split(" ");
           switch (args[0]) {
@@ -1397,6 +1397,12 @@ export class MessageHandler {
     context.args = data.message.split(" ");
     context.platform = data.platform;
     context.pet = this.bot.pet;
+    context.getOrSetConfig = (key: string, defaultValue: any): any => {
+      return JSON.parse(this.bot.database.getOrSetConfig(key, defaultValue));
+    };
+    context.setConfig = (key: string, value: any) => {
+      this.bot.database.setConfig(key, JSON.stringify(value));
+    };
 
     context.banUser = (reason: string, duration?: number) =>
       data.banUser(reason, duration);
@@ -1420,17 +1426,17 @@ export class MessageHandler {
     context.getRandomElement = getRandomElement;
     context.removeByIndexToUppercase = removeByIndexToUppercase;
 
-    const func = new Function(
-      "context",
-      `
+    try {
+      const func = new Function(
+        "context",
+        `
     return (async () => {
       with(context) {
         ${script}
       }
     })();
   `,
-    );
-    try {
+      );
       await func(context);
       return context.result;
     } catch (error) {

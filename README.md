@@ -29,6 +29,9 @@
 
 - `pet.feedOrFuel(username: string)` takes the username and returns true if the pet shield was active and the user tried to kill.
 
+- `getOrSetConfig(key, defaultvalue)` gets config `key` if it doesn't exists creates it and sets it to `defaultvalue`.
+- `setConfig(key,value)` sets config `key` to `value`.
+
 ##### Functions
 - `say([message],[reply])` will say `[message]` in chat, replies to the user if `[reply]` is true.
 - `banUser(reason, duration)`reason: string, duration: number, will ban/timeout the user with the reason `reason` and duration `duration`.
