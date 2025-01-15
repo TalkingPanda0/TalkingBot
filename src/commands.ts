@@ -1398,7 +1398,9 @@ export class MessageHandler {
     context.platform = data.platform;
     context.pet = this.bot.pet;
     context.getOrSetConfig = (key: string, defaultValue: any): any => {
-      return JSON.parse(this.bot.database.getOrSetConfig(key, defaultValue));
+      return JSON.parse(
+        this.bot.database.getOrSetConfig(key, JSON.stringify(defaultValue)),
+      );
     };
     context.setConfig = (key: string, value: any) => {
       this.bot.database.setConfig(key, JSON.stringify(value));
