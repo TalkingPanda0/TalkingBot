@@ -415,6 +415,21 @@ export class Twitch {
       });
     }
 
+    this.eventListener.onChannelSubscription(this.channel.id, (data) => {
+      if (data.tier != "prime") return;
+      this.bot.credits.addToCredits(
+        data.userDisplayName,
+        CreditType.Subscription,
+      );
+      this.bot.ioalert.emit("alert", {
+        name: data.userDisplayName,
+        message: "",
+        plan: data.tier,
+        months: 1,
+        gift: false,
+      });
+    });
+
     this.eventListener.onChannelSubscriptionMessage(this.channel.id, (data) => {
       this.bot.credits.addToCredits(
         data.userDisplayName,
