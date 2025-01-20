@@ -83,6 +83,7 @@ export class WhereWord {
   }
 
   public guess(guesser: string, name: string, word: string): string {
+    if (!word || !name) return "Usage !whereword guess name word";
     const player = this.getPlayer(name);
     if (player == null) return `@${name} is not playing the game.`;
     if (player.guessed) return `@${name}'s word was already guessed.`;

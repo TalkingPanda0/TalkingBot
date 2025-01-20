@@ -1191,6 +1191,7 @@ export class MessageHandler {
                 ),
                 true,
               );
+              break;
             case "status":
               const name = args[1]?.replace("@", "").toLowerCase();
               if (name) {
