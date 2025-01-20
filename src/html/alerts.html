@@ -102,6 +102,7 @@
         if (alert.viewers !== undefined) raidAlert(alert);
         else if (alert.follower !== undefined) followAlert(alert);
         else if (alert.bits !== undefined) bitsAlert(alert);
+        else if (alert.member !== undefined) discordJoinAlert(alert);
         else subAlert(alert);
       }
       function drawRaiders(raiders, ctx) {
@@ -120,6 +121,25 @@
             return;
           }
         });
+      }
+      function discordJoinAlert(event) {
+        isPlaying = true;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${event.member} </span>just joined the fish tank.</span> `;
+        alertElement.style = "opacity: 100%;";
+        const name = getTTSAudio({
+          voice: "Brian",
+          text: `${event.memeber} just joined the fish tank.`,
+        });
+        name.onended = () => {
+          setTimeout(() => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              isPlaying = false;
+            }, 1000);
+          }, 4000);
+        };
+        name.play();
       }
       function followAlert(followInfo) {
         isPlaying = true;

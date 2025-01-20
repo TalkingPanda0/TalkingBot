@@ -149,6 +149,7 @@ export class Discord {
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.GuildPresences,
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMembers,
       ],
       allowedMentions: { parse: ["users", "roles"] },
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
@@ -160,13 +161,6 @@ export class Discord {
         .get("853223679664062465")
         .channels.cache.get("947160971883982919") as TextChannel;
       //this.client.guilds.cache.get(this.guildId).members.me.setNickname("");
-      const chatting = this.client.guilds.cache
-        .get("853223679664062465")
-        .channels.cache.get("853223680200409100");
-      if (!chatting.isTextBased()) return;
-      const message = await chatting.messages.fetch("1306600574485135371");
-      message.react("🧠");
-      message.react("🍪");
     });
 
     this.client.on(Events.Error, (error: Error) => {
@@ -334,6 +328,10 @@ export class Discord {
         }
         return;
       }
+    });
+
+    this.client.on(Events.GuildMemberAdd, async (event) => {
+      this.bot.ioalert.emit("discordJoin", { member: event.user.displayName });
     });
 
     this.client.login(this.token);
