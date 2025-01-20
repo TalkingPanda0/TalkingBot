@@ -351,6 +351,7 @@ export class Twitch {
       this.isStreamOnline = true;
       this.bot.pet.init(true);
       this.bot.credits.clear();
+      this.bot.whereWord.clearGame();
       try {
         const stream = await event.getStream();
         const thumbnail = stream.getThumbnailUrl(1280, 720);

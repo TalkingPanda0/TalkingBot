@@ -135,6 +135,10 @@ export class WhereWord {
     this.players.delete(name);
   }
 
+  public clearGame() {
+    this.players.clear();
+  }
+
   public endGame(): string {
     const winner = this.getWinner();
 
@@ -146,7 +150,7 @@ export class WhereWord {
       result = `@${winner.name} won this stream's whereword congrulations!!!1!. Their word was "${winner.data.word}", they have used it ${winner.data.times} times during the stream without getting caught.`;
     }
 
-    this.players.clear();
+    this.clearGame();
     return result;
   }
 }
