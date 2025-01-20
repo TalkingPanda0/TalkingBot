@@ -1,9 +1,12 @@
+import { TalkingBot } from "./talkingbot";
+
 interface CreditsList {
   followers: string[];
   subscribers: string[];
   moderators: string[];
   cheers: string[];
   chatters: string[];
+  whereWordWinner: string;
 }
 
 export enum CreditType {
@@ -20,6 +23,11 @@ export class Credits {
   private moderators: Set<string> = new Set();
   private cheers: Set<string> = new Set();
   private chatters: Set<string> = new Set();
+  private bot: TalkingBot;
+
+  constructor(bot: TalkingBot) {
+    this.bot = bot;
+  }
 
   public clear() {
     this.followers.clear();
@@ -63,6 +71,7 @@ export class Credits {
       moderators: Array.from(this.moderators),
       cheers: Array.from(this.cheers),
       chatters: Array.from(this.chatters),
+      whereWordWinner: this.bot.whereWord.getWinner()?.name,
     };
     return JSON.stringify(list);
   }

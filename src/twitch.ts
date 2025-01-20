@@ -375,6 +375,7 @@ export class Twitch {
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
       this.isStreamOnline = false;
       this.bot.pet.sleep();
+      this.bot.whereWord.endGame();
       this.bot.youTube.onStreamEnd();
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);

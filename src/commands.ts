@@ -12,10 +12,10 @@ import {
 
 import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
+import { HttpStatusCodeError } from "@twurple/api-call";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
-import { find } from "howlongtobeat-api";
 
 export interface MessageData {
   badges: string[];
@@ -1150,6 +1150,101 @@ export class MessageHandler {
         },
       },
     ],
+    [
+      "!whereword",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          if (data.platform != "twitch") return;
+          const args = data.message.toLowerCase().split(" ");
+          switch (args[0]) {
+            case "join":
+              try {
+                const word = this.bot.whereWord.playerJoin(
+                  data.username.toLowerCase(),
+                  args[1],
+                );
+                await this.bot.twitch.apiClient.whispers.sendWhisper(
+                  "736013381",
+                  data.senderId,
+                  `Your secret word is "${word}", good luck!`,
+                );
+                data.reply("Your word has been sent.", true);
+              } catch (e) {
+                if (e instanceof HttpStatusCodeError) {
+                  data.reply(
+                    "Couldn't whisper to you, try whipsering to @TalkingBotO_o.",
+                    true,
+                  );
+                  this.bot.whereWord.resetPlayer(data.username.toLowerCase());
+                  return;
+                }
+                data.reply(e.toString(), true);
+              }
+              break;
+            case "guess":
+              data.reply(
+                this.bot.whereWord.guess(
+                  data.username.toLowerCase(),
+                  args[1].replace("@", "").toLowerCase(),
+                  args[2],
+                ),
+                true,
+              );
+            case "status":
+              const name = args[1]?.replace("@", "").toLowerCase();
+              if (name) {
+                const status = this.bot.whereWord.getPlayer(name);
+                if (status == null) {
+                  data.reply(`@${name} is not playing the game`, true);
+                  return;
+                }
+                if (status.guessed) {
+                  data.reply(
+                    `@${name}'s word has been guessed by @${status.guessedBy[0]}. It was "${status.word}".`,
+                    true,
+                  );
+                  return;
+                }
+                data.reply(`@${name} is playing the game.`, true);
+                return;
+              }
+
+              const status = this.bot.whereWord.getPlayer(
+                data.username.toLowerCase(),
+              );
+              if (status == null) {
+                data.reply("You are not playing the game", true);
+                return;
+              }
+              if (status.guessed) {
+                data.reply(
+                  `Your word has been guessed by @${status.guessedBy[0]}. It was "${status.word}".`,
+                  true,
+                );
+                return;
+              }
+              await this.bot.twitch.apiClient.whispers.sendWhisper(
+                "736013381",
+                data.senderId,
+                `Your secret word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. You have used it ${status.times} times.`,
+              );
+              break;
+            case "reset":
+              if (data.isUserMod) {
+                this.bot.whereWord.resetPlayer(
+                  args[1].replaceAll("@", "").toLowerCase(),
+                );
+                data.reply(`Reset ${args[1]}.`, true);
+                return;
+              }
+            default:
+              data.reply("Usage !whereword join|guess|status.", true);
+              break;
+          }
+        },
+      },
+    ],
   ]);
   // returns true if isCommand
   public async handleCommand(data: MessageData): Promise<boolean> {
@@ -1162,7 +1257,6 @@ export class MessageHandler {
         commandName = data.message.split(" ")[0];
       }
       data.message = data.message.replace(commandName, "").trim();
-
       let customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
         const message = data.message;
@@ -1257,6 +1351,11 @@ export class MessageHandler {
     if (data.isUserMod)
       this.bot.credits.addToCredits(data.username, CreditType.Moderator);
     this.bot.credits.addToCredits(data.username, CreditType.Chatter);
+
+    this.bot.whereWord.proccesMessage(
+      data.username.toLowerCase(),
+      data.message.toLowerCase(),
+    );
 
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));

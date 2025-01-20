@@ -85,6 +85,10 @@
         <p class="title">Chatters</p>
         <div id="chatters"></div>
       </div>
+      <div id="whereWordWinnerContainer">
+        <p class="title">Whereword Winner</p>
+        <div id="winner"></div>
+      </div>
     </div>
     <script>
       const container = document.getElementById("container");
@@ -93,11 +97,15 @@
       const cheers = document.getElementById("cheers");
       const followers = document.getElementById("followers");
       const chatters = document.getElementById("chatters");
+      const winner = document.getElementById("winner");
       const modsContainer = document.getElementById("modsContainer");
       const subsContainer = document.getElementById("subsContainer");
       const cheersContainer = document.getElementById("cheersContainer");
       const followersContainer = document.getElementById("followersContainer");
       const chattersContainer = document.getElementById("chattersContainer");
+      const whereWordWinnerContainer = document.getElementById(
+        "whereWordWinnerContainer",
+      );
       let height;
       const speed = 0.3;
 
@@ -170,6 +178,12 @@
           creditsList.chatters.forEach((chatter) => {
             chatters.appendChild(createCreditText(chatter));
           });
+        }
+
+        if (creditsList.whereWordWinner == null) {
+          whereWordWinnerContainer.style.display = "none";
+        } else {
+          winner.appendChild(createCreditText(creditsList.whereWordWinner));
         }
 
         container.style.display = "block";

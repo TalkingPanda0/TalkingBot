@@ -13,6 +13,7 @@ import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
 import { Credits } from "./credits";
 import { Users } from "./users";
+import { WhereWord } from "./whereword";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -62,6 +63,7 @@ export class TalkingBot {
   public ttsManager: TTSManager;
   public credits: Credits;
   public users: Users;
+  public whereWord: WhereWord;
 
   private kickId: string;
   private server: http.Server;
@@ -118,7 +120,7 @@ export class TalkingBot {
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
-    this.credits = new Credits();
+    this.credits = new Credits(this);
     this.pet = new Pet(this);
     this.wheel = new Wheel(this.server);
     this.database = new DB();
@@ -127,6 +129,7 @@ export class TalkingBot {
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
+    this.whereWord = new WhereWord();
   }
 
   public async initBot() {
@@ -143,6 +146,7 @@ export class TalkingBot {
     this.youTube.initBot();
     this.commandHandler.init();
     this.users.init();
+    await this.whereWord.init();
 
     this.modtext = this.database.getOrSetConfig("currentModtext", "");
     this.updateModText();
