@@ -9,10 +9,17 @@ enum Difficulty {
 interface PlayerData {
   word: string;
   difficulty: Difficulty;
-  guessedBy: string[];
+  guesses: Guess[];
   guessed: boolean;
   times: number;
 }
+
+interface Guess {
+  guesser: string;
+  word: string;
+  correct: boolean;
+}
+
 export class WhereWord {
   private players = new Map<string, PlayerData>();
   private easyWords: string[];
@@ -52,7 +59,7 @@ export class WhereWord {
       throw new Error(`${name}, You already joined this stream.`);
     let data: PlayerData = {
       guessed: false,
-      guessedBy: [],
+      guesses: [],
       times: 0,
       word: "",
       difficulty: Difficulty.Easy,
@@ -83,20 +90,19 @@ export class WhereWord {
   }
 
   public guess(guesser: string, name: string, word: string): string {
-    if (!word || !name) return "Usage !whereword guess name word";
     const player = this.getPlayer(name);
     if (player == null) return `@${name} is not playing the game.`;
     if (player.guessed) return `@${name}'s word was already guessed.`;
-    if (player.guessedBy.includes(guesser))
+    if (player.guesses.some((guess) => guess.guesser == guesser))
       return `You already guessed @${name}'s word this stream.`;
     let message = "";
     if (player.word == word.trim().toLowerCase()) {
       player.guessed = true;
-      player.guessedBy = [guesser];
+      player.guesses.push({ guesser: guesser, word: word, correct: true });
       player.times = 0;
-      message = `Congrulations @${guesser}, you guessed @${name}'s word correctly! their word was ${player.word}.`;
+      message = `Congrulations @${guesser}, you guessed @${name}'s word correctly! their word was ${player.word}. They have used it ${player.times} times.`;
     } else {
-      player.guessedBy.push(guesser);
+      player.guesses.push({ guesser: guesser, word: word, correct: false });
       message = `No @${guesser}, @${name}'s word is not ${word}.`;
     }
     return message;
@@ -120,6 +126,7 @@ export class WhereWord {
     }
     let winner: { name: string; data: PlayerData };
     for (const [name, data] of this.players) {
+      if (data.guessed) continue;
       if (
         !winner ||
         data.times + data.difficulty * 10 >

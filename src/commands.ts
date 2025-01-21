@@ -1183,6 +1183,10 @@ export class MessageHandler {
               }
               break;
             case "guess":
+              if (args.length != 3) {
+                data.reply("Usage !whereword guess [name] [word]", true);
+                return;
+              }
               data.reply(
                 this.bot.whereWord.guess(
                   data.username.toLowerCase(),
@@ -1202,12 +1206,16 @@ export class MessageHandler {
                 }
                 if (status.guessed) {
                   data.reply(
-                    `@${name}'s word has been guessed by @${status.guessedBy[0]}. It was "${status.word}".`,
+                    `@${name}'s word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". They have used it ${status.times} times.`,
                     true,
                   );
                   return;
                 }
-                data.reply(`@${name} is playing the game.`, true);
+                let statusmsg = `@${name} is playing the game.`;
+                if (status.guesses.length != 0) {
+                  statusmsg += ` Guesses: ${status.guesses.map((guess) => guess.word).join(" ,")}`;
+                }
+                data.reply(statusmsg, true);
                 return;
               }
 
@@ -1220,7 +1228,7 @@ export class MessageHandler {
               }
               if (status.guessed) {
                 data.reply(
-                  `Your word has been guessed by @${status.guessedBy[0]}. It was "${status.word}".`,
+                  `Your word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". You have used it ${status.times} times.`,
                   true,
                 );
                 return;
