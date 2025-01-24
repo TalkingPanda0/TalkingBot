@@ -11,6 +11,7 @@ interface PlayerData {
   difficulty: Difficulty;
   guesses: Guess[];
   guessed: boolean;
+  extrapoints: number;
   times: number;
 }
 
@@ -62,6 +63,7 @@ export class WhereWord {
       guesses: [],
       times: 0,
       word: "",
+      extrapoints: 0,
       difficulty: Difficulty.Easy,
     };
 
@@ -91,6 +93,7 @@ export class WhereWord {
 
   public guess(guesser: string, name: string, word: string): string {
     const player = this.getPlayer(name);
+    const guesserData = this.getPlayer(guesser);
     if (player == null) return `@${name} is not playing the game.`;
     if (player.guessed) return `@${name}'s word was already guessed.`;
     if (player.guesses.some((guess) => guess.guesser == guesser))
@@ -100,6 +103,8 @@ export class WhereWord {
       player.guessed = true;
       player.guesses.push({ guesser: guesser, word: word, correct: true });
       player.times = 0;
+      if (guesserData)
+        guesserData.extrapoints += [5, 4, 3, 2][player.difficulty];
       message = `Congrulations @${guesser}, you guessed @${name}'s word correctly! their word was ${player.word}. They have used it ${player.times} times.`;
     } else {
       player.guesses.push({ guesser: guesser, word: word, correct: false });
@@ -129,8 +134,9 @@ export class WhereWord {
       if (data.guessed) continue;
       if (
         !winner ||
-        data.times + (data.difficulty + 1) * 10 >
-          winner.data.times + (winner.data.difficulty + 1) * 10
+        data.times * ((data.difficulty + 1) * 10) + data.extrapoints >
+          winner.data.times * ((winner.data.difficulty + 1) * 10) +
+            winner.data.extrapoints
       ) {
         winner = { name, data };
       }
