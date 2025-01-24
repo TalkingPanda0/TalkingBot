@@ -158,7 +158,7 @@ export class WhereWord {
 
     let result = "";
 
-    if (winner != null) {
+    if (winner == null) {
       result = "No one won this stream's whereword. You noobs.";
     } else {
       result = `@${winner.name} won this stream's whereword congrulations!!!1!. Their word was "${winner.data.word}", they have used it ${winner.data.times} times during the stream without getting caught.`;
