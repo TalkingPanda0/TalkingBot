@@ -129,8 +129,8 @@ export class WhereWord {
       if (data.guessed) continue;
       if (
         !winner ||
-        data.times + data.difficulty * 10 >
-          winner.data.times + winner.data.difficulty * 10
+        data.times + (data.difficulty + 1) * 10 >
+          winner.data.times + (winner.data.difficulty + 1) * 10
       ) {
         winner = { name, data };
       }
