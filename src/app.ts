@@ -2,11 +2,10 @@ import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import * as http from "http";
-
 import { TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
-
 import { readdir } from "node:fs/promises";
+import fileUpload, { UploadedFile } from "express-fileupload";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -17,10 +16,22 @@ app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(bodyParser.text());
 app.use(cookieParser());
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  }),
+);
 
 app.get("/soundEffects", async (_req, res) => {
   const files = await readdir(__dirname + "/../config/sounds");
-  res.send(JSON.stringify(files.map((file) => file.replace(/.mp3$/, ""))));
+  res.send(
+    JSON.stringify(
+      files
+        .filter((file) => file.endsWith(".mp3"))
+        .map((file) => file.replace(/.mp3$/, "")),
+    ),
+  );
 });
 
 app.use("/control", async (req, res) => {
@@ -57,6 +68,9 @@ app.use("/control", async (req, res) => {
           break;
         case "/reload":
           res.sendFile(__dirname + "/html/restart.html");
+          break;
+        case "/soundeffect":
+          res.sendFile(__dirname + "/html/soundeffectscontrol.html");
           break;
         case "/command/get":
           const command = bot.commandHandler.getCustomCommand(
@@ -157,6 +171,35 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
+        case "/soundEffects/delete":
+          const file = Bun.file(
+            `${__dirname}/../config/sounds/${req.query.name.toString()}.mp3`,
+          );
+          console.log(`deleting ${file.name}`);
+          file
+            .delete()
+            .then(() => {
+              res.sendStatus(200);
+            })
+            .catch((e) => {
+              console.error(e);
+              res.sendStatus(400);
+            });
+          break;
+        case "/soundEffects/add":
+          if (!req.files || !req.files.sound) {
+            return res.status(422).send("No files were uploaded");
+          }
+          const uploadedFile = req.files.sound as UploadedFile;
+          if (uploadedFile.mimetype != "audio/mpeg") {
+            return res.status(422).send("This is not an mp3.");
+          }
+          const filePath = `${__dirname}/../config/sounds/${uploadedFile.name}`;
+          uploadedFile.mv(filePath, (e) => {
+            if (e) return res.status(500).send(e);
+            res.sendStatus(200);
+          });
+          break;
         default:
           res.sendStatus(404);
           break;

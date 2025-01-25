@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+  </head>
+  <style>
+    button {
+      margin: 10px;
+    }
+    .row {
+      display: flex;
+    }
+  </style>
+  <body>
+    <form
+      action="/control/soundEffects/add"
+      method="POST"
+      enctype="multipart/form-data"
+    >
+      <input type="file" name="sound" required />
+      <button type="submit">Upload File</button>
+    </form>
+    <ul id="list"></ul>
+    <script>
+      const list = document.getElementById("list");
+
+      async function loadEffects() {
+        list.innerHTML = "";
+        const effects = await (await fetch("/soundEffects")).json();
+        effects.forEach((effect) => {
+          const span = document.createElement("span");
+          span.classList.add("row");
+          const p = document.createElement("p");
+          p.innerText = effect;
+          span.appendChild(p);
+          const button = document.createElement("button");
+          button.innerText = "Delete";
+          button.onclick = async () => {
+            await fetch(`/control/soundEffects/delete?name=${effect}`, {
+              method: "POST",
+            });
+            loadEffects();
+          };
+          span.appendChild(button);
+          list.appendChild(span);
+          const audio = document.createElement("audio");
+          audio.controls = "controls";
+          audio.src = `/${encodeURIComponent(effect)}.mp3`;
+          list.appendChild(audio);
+        });
+      }
+      loadEffects();
+    </script>
+  </body>
+</html>
