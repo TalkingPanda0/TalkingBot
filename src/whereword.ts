@@ -21,6 +21,10 @@ interface Guess {
   correct: boolean;
 }
 
+export function calculatePoints(data: PlayerData): number {
+  return data.times * ((data.difficulty + 1) * 10) + data.extrapoints;
+}
+
 export class WhereWord {
   private players = new Map<string, PlayerData>();
   private easyWords: string[];
@@ -129,16 +133,12 @@ export class WhereWord {
     if (this.players.size == 0) {
       return null;
     }
-    let winner: { name: string; data: PlayerData };
+    let winner: { name: string; data: PlayerData; points: number };
     for (const [name, data] of this.players) {
       if (data.guessed) continue;
-      if (
-        !winner ||
-        data.times * ((data.difficulty + 1) * 10) + data.extrapoints >
-          winner.data.times * ((winner.data.difficulty + 1) * 10) +
-            winner.data.extrapoints
-      ) {
-        winner = { name, data };
+      const points = calculatePoints(data);
+      if (!winner || points > winner.points) {
+        winner = { name, data, points };
       }
     }
     if (winner.data.times == 0) return null;

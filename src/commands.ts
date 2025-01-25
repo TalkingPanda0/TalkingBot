@@ -16,6 +16,7 @@ import { HttpStatusCodeError } from "@twurple/api-call";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
+import { calculatePoints } from "./whereword";
 
 export interface MessageData {
   badges: string[];
@@ -1206,7 +1207,7 @@ export class MessageHandler {
                 }
                 if (status.guessed) {
                   data.reply(
-                    `@${name}'s word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". They have used it ${status.times} times.`,
+                    `@${name}'s word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". They have used it ${status.times} times. They had ${calculatePoints(status)} points.`,
                     true,
                   );
                   return;
@@ -1216,7 +1217,15 @@ export class MessageHandler {
                   statusmsg += ` Guesses: ${status.guesses.map((guess) => guess.word).join(" ,")}`;
                 }
                 data.reply(statusmsg, true);
-                return;
+
+                if (data.isUserMod && args[2] == "mod") {
+                  await this.bot.twitch.apiClient.whispers.sendWhisper(
+                    "736013381",
+                    data.senderId,
+                    `Their word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. They have used it ${status.times} times. They have ${calculatePoints(status)} points.`,
+                  );
+                }
+                break;
               }
 
               const status = this.bot.whereWord.getPlayer(
@@ -1228,7 +1237,7 @@ export class MessageHandler {
               }
               if (status.guessed) {
                 data.reply(
-                  `Your word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". You have used it ${status.times} times.`,
+                  `Your word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". You have used it ${status.times} times. You had ${calculatePoints(status)} points.`,
                   true,
                 );
                 return;
@@ -1236,7 +1245,7 @@ export class MessageHandler {
               await this.bot.twitch.apiClient.whispers.sendWhisper(
                 "736013381",
                 data.senderId,
-                `Your secret word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. You have used it ${status.times} times.`,
+                `Your secret word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. You have used it ${status.times} times. You have ${calculatePoints(status)} points.`,
               );
               break;
             case "reset":
@@ -1245,7 +1254,7 @@ export class MessageHandler {
                   args[1].replaceAll("@", "").toLowerCase(),
                 );
                 data.reply(`Reset ${args[1]}.`, true);
-                return;
+                break;
               }
             default:
               data.reply("Usage !whereword join|guess|status.", true);
