@@ -106,7 +106,6 @@ export class WhereWord {
     if (player.word == word.trim().toLowerCase()) {
       player.guessed = true;
       player.guesses.push({ guesser: guesser, word: word, correct: true });
-      player.times = 0;
       if (guesserData)
         guesserData.extrapoints += [5, 4, 3, 2][player.difficulty];
       message = `Congrulations @${guesser}, you guessed @${name}'s word correctly! their word was ${player.word}. They have used it ${player.times} times.`;
@@ -126,6 +125,7 @@ export class WhereWord {
     if (player == null || player.guessed) return;
     const wordRegex = new RegExp(player.word, "gi");
     const times = (message.match(wordRegex) || []).length;
+    console.log(times);
     player.times += times;
   }
 
