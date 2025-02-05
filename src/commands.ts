@@ -1214,7 +1214,7 @@ export class MessageHandler {
                 }
                 let statusmsg = `@${name} is playing the game.`;
                 if (status.guesses.length != 0) {
-                  statusmsg += ` Guesses: ${status.guesses.map((guess) => guess.word).join(" ,")}`;
+                  statusmsg += ` Guesses: ${status.guesses.map((guess) => guess.word).join(", ")}`;
                 }
                 data.reply(statusmsg, true);
 
@@ -1538,6 +1538,7 @@ export class MessageHandler {
       this.handleCommand(data);
     };
 
+    context.users = this.bot.users;
     context.getTimeDifference = getTimeDifference;
     context.milliSecondsToString = milliSecondsToString;
     context.replaceAsync = replaceAsync;

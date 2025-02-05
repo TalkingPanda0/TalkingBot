@@ -32,6 +32,11 @@
 - `getOrSetConfig(key, defaultvalue)` gets config `key` if it doesn't exists creates it and sets it to `defaultvalue`.
 - `setConfig(key,value)` sets config `key` to `value`.
 
+- `id: {platform: string, username: string}`
+- `users.setColor(id: UserIdentifier, color: string)` set's a user's color
+- `users.setNickname(id: UserIdentifier, nickname: string)` set's a user's nickname
+- `users.getUser(id: UserIdentifier):  {nickname?: string; color?: string}` get's a user's info
+
 ##### Functions
 - `say([message],[reply])` will say `[message]` in chat, replies to the user if `[reply]` is true.
 - `banUser(reason, duration)`reason: string, duration: number, will ban/timeout the user with the reason `reason` and duration `duration`.
