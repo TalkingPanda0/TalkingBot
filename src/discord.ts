@@ -331,7 +331,8 @@ export class Discord {
     });
 
     this.client.on(Events.GuildMemberAdd, async (event) => {
-      this.bot.ioalert.emit("discordJoin", { member: event.user.displayName });
+      console.log(`${event.user.displayName} joined the fish tank.`);
+      this.bot.ioalert.emit("alert", { member: event.user.displayName });
     });
 
     this.client.login(this.token);
