@@ -17,6 +17,8 @@ import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
 import { calculatePoints } from "./whereword";
+import { User } from "discord.js";
+import { UserIdentifier } from "./users";
 
 export interface MessageData {
   badges: string[];
@@ -1357,10 +1359,13 @@ export class MessageHandler {
   }
 
   public async handleMessage(data: MessageData) {
-    const user = this.bot.users.getUser({
+    const id: UserIdentifier = {
       platform: data.platform,
       username: data.sender,
-    });
+    };
+    const user = this.bot.users.getUser(id);
+
+    this.bot.users.setRealColor(id, data.color);
 
     data.username = data.sender;
     data.sender = user.nickname ?? data.sender;

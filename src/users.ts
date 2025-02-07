@@ -4,6 +4,7 @@ import { arraytoHashMap, hashMaptoArray } from "./util";
 export interface User {
   nickname?: string;
   color?: string;
+  realColor?: string;
 }
 export interface UserIdentifier {
   platform: string;
@@ -34,6 +35,13 @@ export class Users {
   setColor(id: UserIdentifier, color: string) {
     const user = this.getUser(id);
     user.color = color;
+    this.userMap.set(`${id.platform}-${id.username}`, user);
+    this.saveUsers();
+  }
+
+  setRealColor(id: UserIdentifier, color: string) {
+    const user = this.getUser(id);
+    user.realColor = color;
     this.userMap.set(`${id.platform}-${id.username}`, user);
     this.saveUsers();
   }
