@@ -6,6 +6,7 @@ import { TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 import { readdir } from "node:fs/promises";
 import fileUpload, { UploadedFile } from "express-fileupload";
+import { MessageData } from "./commands";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -72,6 +73,9 @@ app.use("/control", async (req, res) => {
         case "/soundeffect":
           res.sendFile(__dirname + "/html/soundeffectscontrol.html");
           break;
+        case "/commandbuilder":
+          res.sendFile(__dirname + "/html/commandbuilder.html");
+          break;
         case "/command/get":
           const command = bot.commandHandler.getCustomCommand(
             req.query.name.toString(),
@@ -124,6 +128,20 @@ app.use("/control", async (req, res) => {
           }
           bot.commandHandler.setCustomCommand(name, req.body);
           res.sendStatus(200);
+          break;
+        case "/command/run":
+          if (!req.body) {
+            res.sendStatus(400);
+            return;
+          }
+          const data: { script: string; data: MessageData } = JSON.parse(
+            req.body,
+          );
+          const commandOutput = await bot.commandHandler.runScript(
+            data.script,
+            data.data,
+          );
+          res.send(commandOutput);
           break;
         case "/command/delete":
           bot.commandHandler.deleteCustomCommand(req.query.name.toString());

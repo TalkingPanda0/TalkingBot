@@ -17,7 +17,6 @@ import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
 import { calculatePoints } from "./whereword";
-import { User } from "discord.js";
 import { UserIdentifier } from "./users";
 
 export interface MessageData {
@@ -39,6 +38,7 @@ export interface MessageData {
   rewardName: string;
   isOld: boolean;
   isAction?: boolean;
+  isTestRun?: boolean;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   banUser: (reason: string, duration?: number) => void | Promise<void>;
 }
@@ -1511,7 +1511,7 @@ export class MessageHandler {
     this.writeCustomCommands();
   }
 
-  private async runScript(script: string, data: MessageData): Promise<string> {
+  public async runScript(script: string, data: MessageData): Promise<string> {
     const context = Object.create(null);
 
     context.result = "";
@@ -1528,19 +1528,29 @@ export class MessageHandler {
       this.bot.database.setConfig(key, JSON.stringify(value));
     };
 
-    context.banUser = (reason: string, duration?: number) =>
-      data.banUser(reason, duration);
-    context.say = (message: string, reply: boolean) =>
-      data.reply(message, reply);
+    context.banUser = (reason: string, duration?: number) => {
+      if (data.isTestRun)
+        context.result += `Banned user for ${duration} seconds: ${reason}\n`;
+      else data.banUser(reason, duration);
+    };
+    context.say = (message: string, reply: boolean) => {
+      if (data.isTestRun)
+        context.result += `${reply ? "Reply: " : ""}${message}\n`;
+      else data.reply(message, reply);
+    };
     context.fetch = fetch;
     context.broadcast = (message: string) => {
-      this.bot.broadcastMessage(message);
+      if (data.isTestRun) context.result += `Broadcasted message: ${message}\n`;
+      else this.bot.broadcastMessage(message);
     };
     context.runCommand = (command: string) => {
-      data.message = command;
-      data.parsedMessage = command;
-      data.isCommand = true;
-      this.handleCommand(data);
+      if (data.isTestRun) context.result += `Ran ${command}`;
+      else {
+        data.message = command;
+        data.parsedMessage = command;
+        data.isCommand = true;
+        this.handleCommand(data);
+      }
     };
 
     context.users = this.bot.users;
