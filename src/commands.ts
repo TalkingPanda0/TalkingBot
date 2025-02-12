@@ -54,8 +54,6 @@ export class MessageHandler {
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
   private keys: any;
-  private beefage: number = 0;
-  private beefageDecayTimer: Timer;
   private timeout = new Set();
   private bot: TalkingBot;
   private dynamicTitle: string;
@@ -71,31 +69,10 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-    this.beefageDecayTimer = setInterval(
-      () => {
-        this.beefageDecay();
-      },
-      5 * 60 * 1000,
-    );
   }
 
   public init() {
     this.counter = new Counter(this.bot.database);
-  }
-
-  private resetBeefageDecay() {
-    clearInterval(this.beefageDecayTimer);
-    this.beefageDecayTimer = setInterval(
-      () => {
-        this.beefageDecay();
-      },
-      5 * 60 * 1000,
-    );
-  }
-
-  private beefageDecay() {
-    if (this.beefage > 0) this.beefage--;
-    else if (this.beefage < 0) this.beefage++;
   }
 
   private commandMap: Map<string, BuiltinCommand> = new Map([
@@ -289,41 +266,6 @@ export class MessageHandler {
               data.reply("Usage: !redeem accept/deny", true);
               break;
           }
-        },
-      },
-    ],
-    [
-      "!beefage",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          data.reply(`Current beefage: ${this.beefage}`, true);
-        },
-      },
-    ],
-    [
-      "!beef",
-      {
-        showOnChat: false,
-        timeout: 60 * 1000,
-        commandFunction: (data) => {
-          if (this.timeout.has("!pork") && !data.isUserMod) return;
-          this.beefage++;
-          data.reply(`Beefage is now: ${this.beefage}`, true);
-          this.resetBeefageDecay();
-        },
-      },
-    ],
-    [
-      "!pork",
-      {
-        showOnChat: false,
-        timeout: 60 * 1000,
-        commandFunction: (data) => {
-          if (this.timeout.has("!beef") && !data.isUserMod) return;
-          this.beefage--;
-          data.reply(`Beefage is now: ${this.beefage}`, true);
-          this.resetBeefageDecay();
         },
       },
     ],
