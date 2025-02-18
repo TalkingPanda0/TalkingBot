@@ -15,7 +15,13 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css"
     />
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+      integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
+      crossorigin="anonymous"
+    ></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script>
       let editor;
@@ -162,6 +168,7 @@
         <div id="send-container">
           <input class="input" id="message-input" placeholder="Arguments" />
           <button class="button" onclick="runCommand()">Run</button>
+          <button class="button" onclick="uploadCommand()">Upload</button>
         </div>
       </div>
     </div>
@@ -169,6 +176,41 @@
       const messageInput = document.getElementById("message-input");
       const userInput = document.getElementById("name-input");
       const platformInput = document.getElementById("platform-input");
+
+      async function uploadCommand() {
+        const code = editor.getValue();
+        const result = await new swal({
+          title: "Add/Edit a command",
+          showCancelButton: true,
+          showLoaderOnConfirm: true,
+          html:
+            '<label for="swal2-input" class="swal2-input-label">Command name</label>' +
+            '<input id="swal2-input" class="swal2-input">' +
+            '<label class="swal2-checkbox" style="display: flex;">' +
+            '<input id="swal2-checkbox" type="checkbox" class="swal2-input">' +
+            '<span class="swal2-label">Mod only?</span></label>' +
+            '<label class="swal2-checkbox" style="display: flex;">' +
+            '<input id="swal2-checkbox2" type="checkbox" class="swal2-input">' +
+            '<span class="swal2-label">Reply to the user?</span></label>',
+          preConfirm: async () => {
+            const name = $("#swal2-input").val();
+            const modOnly = $("#swal2-checkbox").is(":checked");
+            const reply = $("#swal2-checkbox2").is(":checked");
+            const command = `${modOnly ? "(modonly)" : ""} ${reply ? "(reply)" : ""} script(${removeNewLines(code)})`;
+            const result = await fetch(`/control/command/set?name=${name}`, {
+              method: "POST",
+              body: command,
+            });
+            if (!result.ok) {
+              return Swal.showValidationMessage(`${await result.text()}`);
+            }
+            return await result.text();
+          },
+          didOpen: function () {
+            $("#swal2-input").focus();
+          },
+        });
+      }
 
       async function runCommand() {
         const code = editor.getValue();
@@ -203,6 +245,9 @@
           text: await result.text(),
           icon: "error",
         });
+      }
+      function removeNewLines(string) {
+        return string.replaceAll("\n", "").replaceAll("\r", "");
       }
     </script>
   </body>
