@@ -21,7 +21,9 @@
       crossorigin="anonymous"
     ></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
-
+    <script src=" https://cdn.jsdelivr.net/npm/prettier@3.5.1/standalone.min.js "></script>
+    <script src="https://cdn.jsdelivr.net/npm/prettier@3.5.1/plugins/babel.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/prettier@3.5.1/plugins/estree.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
     <script>
       let editor;
@@ -169,6 +171,7 @@
           <input class="input" id="message-input" placeholder="Arguments" />
           <button class="button" onclick="runCommand()">Run</button>
           <button class="button" onclick="uploadCommand()">Upload</button>
+          <button class="button" onclick="loadCommand()">Load</button>
         </div>
       </div>
     </div>
@@ -176,10 +179,46 @@
       const messageInput = document.getElementById("message-input");
       const userInput = document.getElementById("name-input");
       const platformInput = document.getElementById("platform-input");
+      const scriptRegex = /script\((.+)\)/g;
+
+      async function loadCommand() {
+        const { value: name } = await new Swal({
+          title: "Load from command",
+          showCancelButton: true,
+          showLoaderOnConfirm: true,
+          input: "text",
+          inputLabel: "Command name",
+          inputValidator: (value) => {
+            if (!value) {
+              return "You need to write something!";
+            }
+          },
+          preConfirm: async (name) => {
+            if (!name) return;
+            const result = await fetch(`/control/command/get?name=${name}`);
+            if (!result.ok) {
+              return Swal.showValidationMessage(
+                `Error: ${await result.text()}`,
+              );
+            }
+            const matches = scriptRegex.exec(await result.text());
+            if (!matches || matches.length < 2)
+              return Swal.showValidationMessage(
+                `Failed parsing command: ${await result.text()}`,
+              );
+            const formatted = await prettier.format(matches[1], {
+              parser: "babel",
+              plugins: prettierPlugins,
+            });
+            console.log(formatted);
+            editor.setValue(formatted);
+          },
+        });
+      }
 
       async function uploadCommand() {
         const code = editor.getValue();
-        const result = await new swal({
+        await new swal({
           title: "Add/Edit a command",
           showCancelButton: true,
           showLoaderOnConfirm: true,
