@@ -1496,6 +1496,8 @@ export class MessageHandler {
     };
 
     context.users = this.bot.users;
+    context.sendInDiscord = (message: string, channelId: string) =>
+      this.bot.discord.say(message, channelId);
     context.getTimeDifference = getTimeDifference;
     context.milliSecondsToString = milliSecondsToString;
     context.replaceAsync = replaceAsync;

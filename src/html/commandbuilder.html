@@ -111,6 +111,7 @@
           "* Will run command can be a custom or builtin command",
           "*/",
           "declare function runCommand(command: string)",
+          "declare function sendInDiscord(message: string, channelId: string)",
         ].join("\n");
         const libUri = "ts:filename/script.d.ts";
         monaco.languages.typescript.javascriptDefaults.addExtraLib(

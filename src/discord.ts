@@ -129,6 +129,18 @@ export class Discord {
     });
   }
 
+  public say(message: string, channelId: string) {
+    const channel = this.client.guilds.cache
+      .get("853223679664062465")
+      .channels.cache.get(channelId) as TextChannel;
+    if (!channel) throw Error(`Can't find channel with id ${channelId}`);
+    message.match(/.{1,1024}/g)?.forEach((chunk) => {
+      channel.send({
+        embeds: [{ fields: [{ name: "", value: chunk }] }],
+      });
+    });
+  }
+
   public async initBot() {
     if (!(await this.discordFile.exists())) {
       console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
