@@ -179,7 +179,6 @@
       const messageInput = document.getElementById("message-input");
       const userInput = document.getElementById("name-input");
       const platformInput = document.getElementById("platform-input");
-      const scriptRegex = /script\((.+)\)/g;
 
       async function loadCommand() {
         const { value: name } = await new Swal({
@@ -201,14 +200,16 @@
                 `Error: ${await result.text()}`,
               );
             }
-            const matches = scriptRegex.exec(await result.text());
+            const command = await result.text();
+            const matches = /script\((.+)\)/g.exec(command);
             if (!matches || matches.length < 2)
               return Swal.showValidationMessage(
-                `Failed parsing command: ${await result.text()}`,
+                `Failed parsing command: ${command}`,
               );
             const formatted = await prettier.format(matches[1], {
               parser: "babel",
               plugins: prettierPlugins,
+              tabWidth: 4,
             });
             console.log(formatted);
             editor.setValue(formatted);
