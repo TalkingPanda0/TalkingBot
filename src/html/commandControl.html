@@ -109,10 +109,31 @@
         </tr>
       </tfoot>
     </table>
+    <h1>Regex Commands</h1>
+    <br />
+    <table>
+      <thead>
+        <th scope="col">Regex</th>
+        <th scope="col" style="width: 100%">Command</th>
+        <th scope="col">Actions</th>
+      </thead>
+      <tbody id="regexTable"></tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="2">Add a regex command</th>
+          <td>
+            <div onclick="addRegex()" class="material-icons button">
+              add_circle
+            </div>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
 
     <script>
       const commandTable = document.getElementById("commandTable");
       const aliasTable = document.getElementById("aliasTable");
+      const regexTable = document.getElementById("regexTable");
 
       function removeNewLines(string) {
         return string.replaceAll("\n", "").replaceAll("\r", "");
@@ -284,6 +305,39 @@
         });
       }
 
+      async function addRegex() {
+        const result = await new swal({
+          title: "Add a regex command",
+          showCancelButton: true,
+          showLoaderOnConfirm: true,
+
+          html:
+            '<label for="swal2-input" class="swal2-input-label">Regex</label>' +
+            '<input id="swal2-input" class="swal2-input">' +
+            '<label for="swal2-input2" class="swal2-input-label">Command</label>' +
+            '<input id="swal2-input2" class="swal2-input">',
+          preConfirm: async () => {
+            const regex = $("#swal2-input").val();
+            const command = $("#swal2-input2").val();
+            const result = await fetch(
+              `/control/command/regex/add?name=${encodeURIComponent(regex)}`,
+              {
+                method: "POST",
+                body: removeNewLines(command),
+              },
+            );
+            if (!result.ok) {
+              return Swal.showValidationMessage(`${await result.text()}`);
+            }
+            getRegexCommands();
+            return result.text();
+          },
+          didOpen: function () {
+            $("#swal-input1").focus();
+          },
+        });
+      }
+
       async function getAliases() {
         aliasTable.innerText = "";
 
@@ -389,8 +443,113 @@
         });
       }
 
+      async function getRegexCommands() {
+        regexTable.innerText = "";
+
+        const regexCommands = await (
+          await fetch("/control/command/regex/list")
+        ).json();
+        regexCommands.forEach((regex) => {
+          const regexRow = document.createElement("tr");
+
+          const regexCol = document.createElement("th");
+          regexCol.scope = "row";
+          regexCol.innerText = regex.regex;
+
+          regexRow.appendChild(regexCol);
+
+          const responseCol = document.createElement("td");
+          responseCol.innerText = regex.command;
+
+          regexRow.appendChild(responseCol);
+
+          const buttonDiv = document.createElement("td");
+
+          const editElement = document.createElement("div");
+          editElement.classList.add("material-icons");
+          editElement.classList.add("button");
+          editElement.innerText = "edit";
+          editElement.addEventListener("click", async () => {
+            const response = await new swal({
+              title: `Regex ${regex.regex}`,
+              input: "text",
+              inputLabel: "Command",
+              inputValue: regex.command,
+              showCancelButton: true,
+              showLoaderOnConfirm: true,
+              preConfirm: async (newCommand) => {
+                const result = await fetch(
+                  `/control/command/regex/set?name=${regex.regex}`,
+                  {
+                    method: "POST",
+                    body: removeNewLines(newCommand),
+                  },
+                );
+                if (!result.ok) {
+                  return Swal.showValidationMessage(`${await result.text()}`);
+                }
+                getRegexCommands();
+                return result.text();
+              },
+            });
+          });
+
+          buttonDiv.appendChild(editElement);
+
+          const deleteElement = document.createElement("div");
+          deleteElement.classList.add("material-icons");
+          deleteElement.classList.add("button");
+          deleteElement.innerText = "delete";
+          deleteElement.addEventListener("click", async () => {
+            const result = await Swal.fire({
+              title: `Are you sure you want to delete ${regex.regex} ?`,
+              text: "You won't be able to revert this!",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+              confirmButtonText: "Yes, delete it!",
+            });
+            if (!result.isConfirmed) return;
+            try {
+              const response = await fetch(
+                `/control/command/regex/delete?name=${encodeURIComponent(regex.regex)}`,
+                {
+                  method: "POST",
+                },
+              );
+              if (response.status == 200) {
+                getRegexCommands();
+                Swal.fire({
+                  title: "Deleted!",
+                  text: `${regex.regex} has been deleted.`,
+                  icon: "success",
+                });
+              } else {
+                Swal.fire({
+                  title: "Failed!",
+                  text: `${await response.text()}`,
+                  icon: "error",
+                });
+              }
+            } catch (e) {
+              Swal.fire({
+                title: "Failed!",
+                text: e,
+                icon: "error",
+              });
+            }
+          });
+
+          buttonDiv.appendChild(deleteElement);
+          regexRow.appendChild(buttonDiv);
+          regexTable.appendChild(regexRow);
+        });
+      }
+
       getCommands();
       getAliases();
+      getRegexCommands();
     </script>
   </body>
 </html>

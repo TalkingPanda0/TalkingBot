@@ -43,6 +43,11 @@ export interface MessageData {
   banUser: (reason: string, duration?: number) => void | Promise<void>;
 }
 
+interface RegexCommand {
+  regex: RegExp;
+  command: string;
+}
+
 interface BuiltinCommand {
   showOnChat: boolean;
   timeout?: number; // in ms
@@ -61,6 +66,7 @@ export class MessageHandler {
   private lastDynamicTitle: string;
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
+  private regexCommands: RegexCommand[] = [];
   private argMap = new Map<string, string>();
   private argsFile = Bun.file(__dirname + "/../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../config/commands.json");
@@ -1208,6 +1214,62 @@ export class MessageHandler {
       },
     ],
   ]);
+
+  private async runCommand(
+    data: MessageData,
+    commandName: string | RegExpExecArray[],
+    customCommand: string,
+  ): Promise<boolean> {
+    const message = data.message;
+    const arg = this.argMap.get(`${commandName} ${data.message.split(" ")[0]}`);
+    if (arg) customCommand = arg;
+    const modonly = customCommand.includes("(modonly)");
+    const doReply = customCommand.includes("(reply)");
+    let response = (
+      await replaceAsync(
+        customCommand,
+        /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
+
+        async (message: string, _command: string, url: string, key: string) => {
+          url = url.replace(/\$user/g, data.sender).replace(/\$args/g, message);
+          const req = await fetch(url);
+          if (key === undefined) {
+            return await req.text();
+          } else {
+            const json = await req.json();
+            return json[key];
+          }
+        },
+      )
+    )
+      .replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
+        return getSuffix(parseInt(number));
+      })
+      .replace(/\$user/g, data.sender)
+      .replace(/\$args/g, message)
+      .replace(/\(modonly\)/g, "")
+      .replace(/\(reply\)/g, "");
+    response = await replaceAsync(
+      response,
+      /script\((.+)\)/g,
+      async (_message: string, script: string) => {
+        if (modonly && !data.isUserMod) return;
+        return await this.runScript(script, data, commandName);
+      },
+    );
+
+    if (customCommand.includes("fetch")) {
+      this.timeout.add(commandName);
+      setTimeout(() => {
+        this.timeout.delete(commandName);
+      }, 60 * 1000);
+    }
+    if (typeof commandName == "string" && modonly && !data.isUserMod)
+      return commandName.startsWith("!");
+    data.reply(response, doReply);
+    return true;
+  }
+
   // returns true if isCommand
   public async handleCommand(data: MessageData): Promise<boolean> {
     try {
@@ -1218,70 +1280,24 @@ export class MessageHandler {
         data.message = data.message.replace(commandName, commandAlias);
         commandName = data.message.split(" ")[0];
       }
-      data.message = data.message.replace(commandName, "").trim();
       let customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
-        const message = data.message;
-        const arg = this.argMap.get(
-          `${commandName} ${data.message.split(" ")[0]}`,
-        );
-        if (arg) customCommand = arg;
-        const modonly = customCommand.includes("(modonly)");
-        const doReply = customCommand.includes("(reply)");
-        let response = (
-          await replaceAsync(
-            customCommand,
-            /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
-
-            async (
-              message: string,
-              _command: string,
-              url: string,
-              key: string,
-            ) => {
-              url = url
-                .replace(/\$user/g, data.sender)
-                .replace(/\$args/g, message);
-              const req = await fetch(url);
-              if (key === undefined) {
-                return await req.text();
-              } else {
-                const json = await req.json();
-                return json[key];
-              }
-            },
-          )
-        )
-          .replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
-            return getSuffix(parseInt(number));
-          })
-          .replace(/\$user/g, data.sender)
-          .replace(/\$args/g, message)
-          .replace(/\(modonly\)/g, "")
-          .replace(/\(reply\)/g, "");
-        response = await replaceAsync(
-          response,
-          /script\((.+)\)/g,
-          async (_message: string, script: string) => {
-            if (modonly && !data.isUserMod) return;
-            return await this.runScript(script, data);
-          },
-        );
-
-        if (customCommand.includes("fetch")) {
-          this.timeout.add(commandName);
-          setTimeout(() => {
-            this.timeout.delete(commandName);
-          }, 60 * 1000);
-        }
-        if (modonly && !data.isUserMod) return commandName.startsWith("!");
-        data.reply(response, doReply);
-        return true;
+        data.message = data.message.replace(commandName, "").trim();
+        return await this.runCommand(data, commandName, customCommand);
+      }
+      const builtinCommand = this.commandMap.get(commandName);
+      if (builtinCommand == null || data.platform == "discord") {
+        this.regexCommands.some((command) => {
+          const matches = Array.from(data.message.matchAll(command.regex));
+          if (matches.length != 0) {
+            this.runCommand(data, matches, command.command);
+            return true;
+          }
+        });
+        return commandName.startsWith("!");
       }
 
-      const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand == null || data.platform == "discord")
-        return commandName.startsWith("!");
+      data.message = data.message.replace(commandName, "").trim();
       builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
@@ -1382,6 +1398,16 @@ export class MessageHandler {
     if (!(await this.argsFile.exists())) return;
     this.argMap = arraytoHashMap(await this.argsFile.json());
 
+    this.regexCommands = JSON.parse(
+      this.bot.database.getOrSetConfig("customCommands", JSON.stringify([])),
+    ).map((command: { command: string; regex: string }) => {
+      console.log(command);
+      return {
+        command: command.command,
+        regex: new RegExp(command.regex, "gi"),
+      };
+    });
+
     this.keys = await this.keysFile.json();
   }
 
@@ -1395,6 +1421,8 @@ export class MessageHandler {
       JSON.stringify(hashMaptoArray(this.commandAliasMap)),
     );
     Bun.write(this.argsFile, JSON.stringify(hashMaptoArray(this.argMap)));
+
+    this.bot.database.setConfig("customCommands", this.getRegexCommandList());
   }
 
   public getCommandAliasList(): string {
@@ -1453,10 +1481,48 @@ export class MessageHandler {
     this.writeCustomCommands();
   }
 
-  public async runScript(script: string, data: MessageData): Promise<string> {
+  public getRegexCommandList(): string {
+    return JSON.stringify(
+      this.regexCommands.map((command) => {
+        return { command: command.command, regex: command.regex.source };
+      }),
+    );
+  }
+
+  public addRegexCommand(regexString: string, command: string) {
+    if (
+      this.regexCommands.some((command) => command.regex.source == regexString)
+    )
+      return;
+    this.regexCommands.push({
+      regex: new RegExp(regexString, "gi"),
+      command: command,
+    });
+    this.writeCustomCommands();
+  }
+
+  public setRegexCommand(regexString: string, newCommand: string) {
+    this.regexCommands.some((command) => {
+      if (command.regex.source != regexString) return false;
+      command.command = newCommand;
+    });
+  }
+
+  public removeRegexCommand(regexString: string) {
+    this.regexCommands = this.regexCommands.filter(
+      (command) => command.regex.source != regexString,
+    );
+  }
+
+  public async runScript(
+    script: string,
+    data: MessageData,
+    commandName: string | RegExpExecArray[],
+  ): Promise<string> {
     const context = Object.create(null);
 
     context.result = "";
+    context.command = commandName;
     context.user = data.sender;
     context.args = data.message.split(" ");
     context.platform = data.platform;

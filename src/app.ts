@@ -90,6 +90,9 @@ app.use("/control", async (req, res) => {
         case "/command/alias/list":
           res.send(bot.commandHandler.getCommandAliasList());
           break;
+        case "/command/regex/list":
+          res.send(bot.commandHandler.getRegexCommandList());
+          break;
 
         case "/modtext/get":
           res.send(bot.modtext);
@@ -140,6 +143,7 @@ app.use("/control", async (req, res) => {
           const commandOutput = await bot.commandHandler.runScript(
             data.script,
             data.data,
+            "",
           );
           res.send(commandOutput);
           break;
@@ -175,6 +179,34 @@ app.use("/control", async (req, res) => {
           break;
         case "/command/alias/delete":
           bot.commandHandler.deleteCommandAlias(req.query.name.toString());
+          res.sendStatus(200);
+          break;
+
+        case "/command/regex/add":
+          const regex = req.query.name.toString();
+          if (!req.body || !regex) {
+            res.sendStatus(400);
+            return;
+          }
+          bot.commandHandler.addRegexCommand(regex, req.body);
+          res.sendStatus(200);
+          break;
+        case "/command/regex/delete":
+          const regexToDelete = req.query.name.toString();
+          if (!regexToDelete) {
+            res.sendStatus(400);
+            return;
+          }
+          bot.commandHandler.removeRegexCommand(regexToDelete);
+          res.sendStatus(200);
+          break;
+        case "/command/regex/set":
+          const regexToSet = req.query.name.toString();
+          if (!req.body || !regexToSet) {
+            res.sendStatus(400);
+            return;
+          }
+          bot.commandHandler.setRegexCommand(regexToSet, req.body);
           res.sendStatus(200);
           break;
 

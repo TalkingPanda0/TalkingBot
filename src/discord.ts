@@ -215,6 +215,7 @@ export class Discord {
         platform: "discord",
         id: message.id,
         reply: (replyMessage: string, replytoUser: boolean) => {
+          if (replyMessage == null) return;
           if (replyMessage == "") return;
           replyMessage.match(/.{1,1024}/g)?.forEach((chunk) => {
             if (replytoUser)

@@ -50,6 +50,10 @@
         // extra libraries
         const libSource = [
           "/**",
+          "* Command Name or Matches of Regex",
+          "*/",
+          "declare var command: string | RegExpExecArray[]",
+          "/**",
           "* Array of the arguments the user gave",
           "*/",
           "declare var args: string[]",
