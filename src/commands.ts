@@ -1502,9 +1502,11 @@ export class MessageHandler {
   }
 
   public setRegexCommand(regexString: string, newCommand: string) {
-    this.regexCommands.some((command) => {
+    this.regexCommands.forEach((command, index) => {
       if (command.regex.source != regexString) return false;
       command.command = newCommand;
+      this.regexCommands[index] = command;
+      return true;
     });
   }
 
