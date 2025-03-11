@@ -18,7 +18,7 @@
 ##### Variables
 - `user` the username of the person who used the command. 
 - `args`  array of the arguments the user gave.
-- `platform` the platform command was used in (twitch/youtube/kick).
+- `platform` the platform command was used in (twitch/youtube).
 - `result` `script()` will be replaced with `result`.
 
 - `pet.currentPet.birthDate` string, the date pet was born on in JSON format   

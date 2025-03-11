@@ -176,8 +176,6 @@ export class MessageHandler {
           );
           await this.bot.youTube.api.setTitle(data.message);
 
-          // TODO change title in kick
-
           this.bot.broadcastMessage(
             `Title has been changed to "${data.message}"`,
           );
@@ -618,8 +616,6 @@ export class MessageHandler {
             );
             await this.bot.youTube.api.setTitle(data.message);
 
-            // TODO change title in kick
-
             this.bot.broadcastMessage(
               `Title has been changed to "${data.message}"`,
             );
@@ -651,8 +647,6 @@ export class MessageHandler {
             );
           if (streamInfo != null)
             this.bot.youTube.permTitle = `${data.message} (${streamInfo.gameName})`;
-
-          // TODO change title in kick
         },
       },
     ],
@@ -1027,7 +1021,6 @@ export class MessageHandler {
       {
         showOnChat: false,
         commandFunction: (data) => {
-          if (data.platform == "kick") return;
           const args = data.message.split(" ");
           switch (args[0]) {
             case "feed":

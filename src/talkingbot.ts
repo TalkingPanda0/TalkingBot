@@ -1,7 +1,6 @@
 import { Twitch } from "./twitch";
 import { Discord } from "./discord";
 import { YouTube } from "./youtube";
-import { Kick } from "./kick";
 import { DB } from "./db";
 
 import { Server } from "socket.io";
@@ -49,7 +48,6 @@ export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
   public youTube: YouTube;
-  public kick: Kick;
   public iochat: Server;
   public iomodtext: Server;
   public iopoll: Server;
@@ -65,14 +63,13 @@ export class TalkingBot {
   public users: Users;
   public whereWord: WhereWord;
 
-  private kickId: string;
   private server: http.Server;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string;
   public discordRedirectUri: string;
   public discordLoginUri: string;
 
-  constructor(kickId: string, server: http.Server) {
+  constructor(server: http.Server) {
     this.server = server;
     this.ttsManager = new TTSManager(server);
 
@@ -97,9 +94,6 @@ export class TalkingBot {
         ) {
           this.iochat.emit("chatDisconnect", "twitch");
         }
-        if (!this.kick.isConnected) {
-          this.iochat.emit("chatDisconnect", "kick");
-        }
         if (!this.youTube.isConnected) {
           this.iochat.emit("chatDisconnect", "youtube");
         }
@@ -115,8 +109,6 @@ export class TalkingBot {
       path: "/alerts/",
     });
 
-    this.kickId = kickId;
-
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
@@ -125,7 +117,6 @@ export class TalkingBot {
     this.wheel = new Wheel(this.server);
     this.database = new DB();
     this.twitch = new Twitch(this);
-    this.kick = new Kick(this.kickId, this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
@@ -142,7 +133,6 @@ export class TalkingBot {
     this.database.cleanDataBase();
     this.discord.initBot();
     await this.twitch.initBot();
-    this.kick.initBot();
     this.youTube.initBot();
     this.commandHandler.init();
     this.users.init();
@@ -154,22 +144,12 @@ export class TalkingBot {
 
   public async cleanUp() {
     await this.twitch.cleanUp();
-    this.kick.cleanUp();
     this.discord.cleanUp();
     this.database.cleanUp();
   }
 
   public updatePoll() {
     const combinedOptions = {};
-
-    if (this.kick.currentPoll != null) {
-      this.kick.currentPoll.options.forEach((option) => {
-        combinedOptions[option.id] = {
-          label: option.label,
-          votes: option.votes,
-        };
-      });
-    }
 
     if (this.twitch.currentPoll != null) {
       this.twitch.currentPoll.options.forEach((option) => {

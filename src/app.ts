@@ -11,7 +11,7 @@ import { MessageData } from "./commands";
 const app: Express = express();
 const server = http.createServer(app);
 
-const bot: TalkingBot = new TalkingBot("17587561", server);
+const bot: TalkingBot = new TalkingBot(server);
 
 app.use(express.static("public"));
 app.use(express.static("config/sounds"));
