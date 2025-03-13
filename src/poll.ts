@@ -166,10 +166,16 @@ export class Poll {
     const method = this.pollMethods.get(methodName);
     if (method == null) throw "Poll method not found.";
     this.currentMethod = method;
-    return this.currentMethod.startPoll((results: PollOption[]) => {
+    try {
+      const response = this.currentMethod.startPoll((results: PollOption[]) => {
+        this.currentMethod = null;
+        onPollEnd(results);
+      }, args.join(" "));
+      return response;
+    } catch (error) {
+      console.error(error);
       this.currentMethod = null;
-      onPollEnd(results);
-    }, args.join(" "));
+    }
   }
   public addVote(user: string, message: string): string {
     if (this.currentMethod == null) throw "no poll.";

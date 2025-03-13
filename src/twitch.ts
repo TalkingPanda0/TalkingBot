@@ -353,7 +353,6 @@ export class Twitch {
 
     this.eventListener.onStreamOnline(this.channel.id, async (event) => {
       this.isStreamOnline = true;
-      this.bot.pet.init(true);
       this.bot.credits.clear();
       this.bot.whereWord.clearGame();
       try {
@@ -680,11 +679,6 @@ export class Twitch {
     this.chatClient.connect();
     this.eventListener.start();
     // Apis ready
-    this.isStreamOnline =
-      (await this.apiClient.streams.getStreamByUserId(this.channel.id)) != null;
-    if (this.isStreamOnline) {
-      this.bot.pet.init(false);
-    }
   }
 
   public async getCurrentTitle(): Promise<string> {
