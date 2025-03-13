@@ -30,7 +30,7 @@ export class YouTubeAPI {
       this.log(`Connected to chat: ${chatId}`);
       return true;
     } catch (e) {
-      this.error(e);
+      this.error(`getChatId: ${e}`);
       return false;
     }
   }
@@ -49,7 +49,7 @@ export class YouTubeAPI {
         part: ["snippet"],
       });
     } catch (e) {
-      this.error(e);
+      this.error(`sendMessage: ${e}`);
     }
   }
 
@@ -92,7 +92,7 @@ export class YouTubeAPI {
         part: ["snippet"],
       });
     } catch (e) {
-      this.error(e);
+      this.error(`setTitle: ${e}`);
     }
   }
   public async banUser(userId: string, seconds?: number) {
@@ -110,6 +110,7 @@ export class YouTubeAPI {
       });
     } catch (e) {
       this.error(e);
+      this.error(`banUser: ${e}`);
     }
   }
 

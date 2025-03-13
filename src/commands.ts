@@ -1219,10 +1219,24 @@ export class MessageHandler {
                   results.length - 1
                 ];
                 this.bot.broadcastMessage(
-                  `${winner.label} won with a score of ${winner.score};`,
+                  `${winner.label} won with a score of ${winner.score}`,
                 );
               }),
             );
+          } catch (error) {
+            data.reply(error, true);
+          }
+        },
+      },
+    ],
+    [
+      "!endpoll",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          try {
+            this.bot.poll.endPoll();
           } catch (error) {
             data.reply(error, true);
           }

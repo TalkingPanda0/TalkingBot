@@ -56,7 +56,7 @@ abstract class PollMethod {
     this.iopoll.emit("updatePoll", this.getScores());
   }
 
-  private endPoll() {
+  public endPoll() {
     const scores = this.getScores();
     this.onPollEnd(scores);
     this.iopoll.emit("pollEnd");
@@ -66,7 +66,7 @@ abstract class PollMethod {
 class FPPPoll extends PollMethod {
   private votes = new Map<string, number>();
   public getStartMessage(): string {
-    return `POLL: ${this.currentTitle}? ${this.options.map((option) => `${option.id}: ${option.label}`).join(", ")}. vote by doing !vote [number]. ends in ${this.duration} seconds`;
+    return `POLL: ${this.currentTitle}? ${this.options.map((option) => `${option.id}: ${option.label}`).join(", ")}. vote by doing !vote [number]. ends in ${this.duration / 1000} seconds`;
   }
   public addVote(user: string, args: string): string {
     const id = parseInt(args);
@@ -92,7 +92,7 @@ class FPPPoll extends PollMethod {
 class ScorePoll extends PollMethod {
   private votes = new Map<string, number[]>();
   public getStartMessage(): string {
-    return `POLL: ${this.currentTitle}? ${this.options.map((option) => `${option.id}: ${option.label}`).join(", ")}. vote by doing !vote [number] -/0/+. or vote for all options by doing !vote + - 0..., ends in ${this.duration} seconds.`;
+    return `POLL: ${this.currentTitle}? ${this.options.map((option) => `${option.id}: ${option.label}`).join(", ")}. vote by doing !vote [number] -/0/+. or vote for all options by doing !vote + - 0..., ends in ${this.duration / 1000} seconds.`;
   }
   public addVote(user: string, args: string): string {
     const parts = args.split(" ");
@@ -166,5 +166,9 @@ export class Poll {
   public addVote(user: string, message: string): string {
     if (this.currentMethod == null) throw "no poll.";
     return this.currentMethod.addVote(user, message);
+  }
+  public endPoll() {
+    if (this.currentMethod == null) throw "no poll";
+    this.currentMethod.endPoll();
   }
 }
