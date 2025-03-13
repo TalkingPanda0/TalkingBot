@@ -232,14 +232,20 @@
             '<label class="swal2-checkbox" style="display: flex;">' +
             '<input id="swal2-checkbox" type="checkbox" class="swal2-input">' +
             '<span class="swal2-label">Mod only?</span></label>' +
+            '<input id="swal2-checkbox3" type="checkbox" class="swal2-input">' +
+            '<span class="swal2-label"Sub only?</span></label>' +
+            '<input id="swal2-checkbox4" type="checkbox" class="swal2-input">' +
+            '<span class="swal2-label">Vip only?</span></label>' +
             '<label class="swal2-checkbox" style="display: flex;">' +
             '<input id="swal2-checkbox2" type="checkbox" class="swal2-input">' +
             '<span class="swal2-label">Reply to the user?</span></label>',
           preConfirm: async () => {
             const name = $("#swal2-input").val();
             const modOnly = $("#swal2-checkbox").is(":checked");
+            const subOnly = $("#swal2-checkbox3").is(":checked");
+            const vipOnly = $("#swal2-checkbox4").is(":checked");
             const reply = $("#swal2-checkbox2").is(":checked");
-            const command = `${modOnly ? "(modonly)" : ""} ${reply ? "(reply)" : ""} script(${removeNewLines(code)})`;
+            const command = `${modOnly ? "(modonly)" : ""} ${reply ? "(reply)" : ""} ${subOnly ? "(subonly)" : ""} ${vipOnly ? "(viponly)" : ""} script(${removeNewLines(code)})`;
             const result = await fetch(`/control/command/set?name=${name}`, {
               method: "POST",
               body: command,
