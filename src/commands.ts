@@ -1023,73 +1023,17 @@ export class MessageHandler {
         commandFunction: (data) => {
           const args = data.message.split(" ");
           switch (args[0]) {
-            case "feed":
-              if (this.bot.pet.feed(data.username)) {
-                data.banUser("Hapboo Shield", 10 * 60);
-              }
-              break;
-            case "status":
-              data.reply(this.bot.pet.sayStatus(StatusReason.command), true);
-              break;
             case "graveyard":
               data.reply(this.bot.pet.graveyard(args[1]), true);
-              break;
-            case "fuel":
-              if (this.bot.pet.fuel(data.username)) {
-                data.banUser("Hapboo Shield", 10 * 60);
-              }
-              break;
-            case "pet":
-              data.reply(this.bot.pet.pet(data.username), true);
               break;
             case "murderers":
               data.reply(this.bot.pet.murdererList(), true);
               break;
-            case "start":
-              if (data.isUserMod) {
-                this.bot.pet.init(true);
-                break;
-              }
-            case "sleep":
-              if (data.isUserMod) {
-                this.bot.pet.sleep();
-                break;
-              }
-            case "continue":
-              if (data.isUserMod) {
-                this.bot.pet.init(false);
-                break;
-              }
-            case "tick":
-              if (data.isUserMod) {
-                this.bot.pet.tick();
-                break;
-              }
             case "read":
               if (data.isUserMod) {
                 this.bot.pet.readPet();
                 break;
               }
-            case "write":
-              if (data.isUserMod) {
-                this.bot.pet.writePet();
-                break;
-              }
-            case "protect":
-              if (data.isUserMod) {
-                this.bot.pet.activateShield();
-                break;
-              }
-            default:
-              if (args[0].startsWith("f")) {
-                if (this.bot.pet.feedOrFuel(data.username))
-                  data.banUser("Hapboo Shield", 10 * 60);
-                return;
-              }
-              data.reply(
-                "Usage !pet feed|fuel|status|pet|graveyard|murderers. Use !petinfo for more info.",
-                true,
-              );
           }
         },
       },
