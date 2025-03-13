@@ -13,6 +13,7 @@ import { TTSManager } from "./tts";
 import { Credits } from "./credits";
 import { Users } from "./users";
 import { WhereWord } from "./whereword";
+import { Poll } from "./poll";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -28,16 +29,6 @@ export interface DiscordAuthData {
   scope: string;
 }
 
-export interface pollOption {
-  id: string;
-  label: string;
-  votes: number;
-}
-export interface Poll {
-  title: string;
-  options: pollOption[];
-  id?: string;
-}
 interface controlMessage {
   overlay: string;
   target: string;
@@ -48,6 +39,7 @@ export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
   public youTube: YouTube;
+  public poll: Poll;
   public iochat: Server;
   public iomodtext: Server;
   public iopoll: Server;
@@ -118,6 +110,7 @@ export class TalkingBot {
     this.database = new DB();
     this.twitch = new Twitch(this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);
+    this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
     this.whereWord = new WhereWord();
@@ -146,30 +139,6 @@ export class TalkingBot {
     await this.twitch.cleanUp();
     this.discord.cleanUp();
     this.database.cleanUp();
-  }
-
-  public updatePoll() {
-    const combinedOptions = {};
-
-    if (this.twitch.currentPoll != null) {
-      this.twitch.currentPoll.options.forEach((option) => {
-        if (combinedOptions.hasOwnProperty(option.id)) {
-          combinedOptions[option.id].votes += option.votes;
-        } else {
-          combinedOptions[option.id] = {
-            label: option.label,
-            votes: option.votes,
-          };
-        }
-      });
-    }
-
-    const combinedOptionsArray = Object.keys(combinedOptions).map((id) => ({
-      id: parseInt(id),
-      label: combinedOptions[id].label,
-      votes: combinedOptions[id].votes,
-    }));
-    this.iopoll.emit("updatePoll", combinedOptionsArray);
   }
 
   public async parseClips(text: string): Promise<string> {

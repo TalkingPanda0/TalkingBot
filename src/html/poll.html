@@ -38,23 +38,50 @@
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
+      function endPoll() {
+        let highestVotes = currentPoll.options.reduce(
+          (maxVotes, currentOption) => {
+            if (currentOption.score > maxVotes[0].score) {
+              return [currentOption];
+            } else if (currentOption.score === maxVotes[0].score) {
+              return [...maxVotes, currentOption];
+            } else {
+              return maxVotes;
+            }
+          },
+          [currentPoll.options[0]],
+        );
+        for (let i = 1; i < pollElement.children[0].childElementCount; i++) {
+          let optionElement = pollElement.children[0].children[i];
+          optionElement.style = "opacity: 0.2";
+        }
+        highestVotes.forEach((option) => {
+          let element = document.getElementById(option.id);
+          element.style = "opacity: 1;";
+        });
+
+        setTimeout(() => {
+          pollElement.innerHtml = "";
+          pollElement.style = "display: none;";
+        }, 5000);
+      }
       const pollElement = document.getElementById("poll");
       let currentPoll = {};
 
       function updatePoll(options) {
         currentPoll.options = options;
         const totalVotes = options.reduce(
-          (total, option) => total + option.votes,
+          (total, option) => total + option.score,
           0,
         );
 
         options.forEach((option) => {
           let percentage =
-            option.votes == 0 ? 0 : (option.votes / totalVotes) * 100;
+            option.score == 0 ? 0 : (option.score / totalVotes) * 100;
           const optionElement = document.getElementById(option.id);
           const textElement = optionElement.children[0].children[1];
           const progressbar = optionElement.children[1].children[0];
-          textElement.innerText = `${Math.round(percentage)}% (${option.votes})`;
+          textElement.innerText = `${Math.round(percentage)}% (${option.score})`;
           progressbar.style = `width: ${percentage}%`;
         });
       }
@@ -62,7 +89,7 @@
       function createPoll(poll) {
         currentPoll = poll;
         const totalVotes = poll.options.reduce(
-          (total, option) => total + option.votes,
+          (total, option) => total + option.score,
           0,
         );
 
@@ -75,12 +102,12 @@
 
         poll.options.forEach((option) => {
           let percentage =
-            option.votes == 0 ? 0 : (option.votes / totalVotes) * 100;
+            option.score == 0 ? 0 : (option.score / totalVotes) * 100;
           html += `
                   <div class="card-text option" id="${option.id}">
                   <div class="d-flex justify-content-between">
                    <div>${option.label}</div>
-                      <div>${percentage}% (${option.votes})</div>
+                      <div>${percentage}% (${option.score})</div>
                     </div>
                   <div
                     class="progress"
@@ -94,32 +121,8 @@
         pollElement.innerHTML = html;
         pollElement.style = "display: block;";
         setTimeout(() => {
-          let highestVotes = currentPoll.options.reduce(
-            (maxVotes, currentOption) => {
-              if (currentOption.votes > maxVotes[0].votes) {
-                return [currentOption];
-              } else if (currentOption.votes === maxVotes[0].votes) {
-                return [...maxVotes, currentOption];
-              } else {
-                return maxVotes;
-              }
-            },
-            [currentPoll.options[0]],
-          );
-          for (let i = 1; i < pollElement.children[0].childElementCount; i++) {
-            let optionElement = pollElement.children[0].children[i];
-            optionElement.style = "opacity: 0.2";
-          }
-          highestVotes.forEach((option) => {
-            let element = document.getElementById(option.id);
-            element.style = "opacity: 1;";
-          });
-
-          setTimeout(() => {
-            pollElement.innerHtml = "";
-            pollElement.style = "display: none;";
-          }, 5000);
-        }, poll.duration * 1000);
+          endPoll();
+        }, poll.duration);
       }
       var socket = io("/", { path: "/poll/" });
       socket.on("createPoll", (poll) => {
@@ -130,10 +133,9 @@
         console.log(options);
         updatePoll(options);
       });
-      socket.on("deletePoll", () => {
-        console.log("deletepoll");
-        pollElement.innerHtml = "";
-        pollElement.style = "display: none;";
+
+      socket.on("pollEnd", () => {
+        endPoll();
       });
     </script>
   </body>

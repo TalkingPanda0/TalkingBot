@@ -1206,6 +1206,48 @@ export class MessageHandler {
         },
       },
     ],
+    [
+      "!createpoll",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          try {
+            this.bot.broadcastMessage(
+              this.bot.poll.startPoll(data.message, (results) => {
+                const winner = results.toSorted((a, b) => a.score - b.score)[
+                  results.length - 1
+                ];
+                this.bot.broadcastMessage(
+                  `${winner.label} won with a score of ${winner.score};`,
+                );
+              }),
+            );
+          } catch (error) {
+            data.reply(error, true);
+          }
+        },
+      },
+    ],
+    [
+      "!vote",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          try {
+            data.reply(
+              this.bot.poll.addVote(
+                `${data.platform}-${data.sender}`,
+                data.message,
+              ),
+              false,
+            );
+          } catch (error) {
+            data.reply(error, true);
+          }
+        },
+      },
+    ],
   ]);
 
   private async runCommand(

@@ -20,7 +20,7 @@ import {
   EventSubChannelRedemptionAddEvent,
   EventSubListener,
 } from "@twurple/eventsub-base";
-import { Poll, TalkingBot, pollOption } from "./talkingbot";
+import { Poll, TalkingBot } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase } from "./util";
@@ -29,6 +29,7 @@ import {
   ReverseProxyAdapter,
 } from "@twurple/eventsub-http";
 import { CreditType } from "./credits";
+import { PollOption } from "./poll";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -55,7 +56,6 @@ export class Twitch {
   public apiClient: ApiClient;
   public channel: HelixUser;
   public publicClientId: string;
-  public currentPoll: Poll;
   public chatClient: ChatClient;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
@@ -455,13 +455,12 @@ export class Twitch {
     });
 
     this.eventListener.onChannelPollBegin(this.channel.id, (data) => {
-      if (this.currentPoll != null) return;
-      const pollOptions: pollOption[] = data.choices.reduce(
+      const pollOptions: PollOption[] = data.choices.reduce(
         (options, choice, index) => {
-          const option: pollOption = {
-            id: index.toString(),
+          const option: PollOption = {
+            id: index,
             label: choice.title,
-            votes: 0,
+            score: 0,
           };
           options.push(option);
           return options;
@@ -469,33 +468,33 @@ export class Twitch {
         [],
       );
 
-      this.currentPoll = {
-        title: data.title,
-        options: pollOptions,
-      };
-
       this.bot.iopoll.emit("createPoll", {
-        duration: 60,
+        duration: data.endDate.getTime() - data.startDate.getTime(),
         options: pollOptions,
         title: data.title,
       });
     });
 
     this.eventListener.onChannelPollProgress(this.channel.id, (data) => {
-      const options: pollOption[] = [];
-      data.choices.forEach((choice, i) => {
-        options.push({
-          label: choice.title,
-          id: i.toString(),
-          votes: choice.totalVotes,
-        });
-      });
-      this.currentPoll = { title: data.title, options: options, id: data.id };
-      this.bot.updatePoll();
+      const pollOptions: PollOption[] = data.choices.reduce(
+        (options, choice, index) => {
+          const option: PollOption = {
+            id: index,
+            label: choice.title,
+            score: choice.totalVotes,
+          };
+          options.push(option);
+          return options;
+        },
+        [],
+      );
+      this.bot.iopoll.emit("updatePoll", pollOptions);
     });
+
     this.eventListener.onChannelPollEnd(this.channel.id, (_data) => {
-      this.currentPoll = null;
+      this.bot.iopoll.emit("pollEnd");
     });
+
     this.eventListener.onChannelRedemptionAdd(this.channel.id, async (data) => {
       try {
         console.log(
