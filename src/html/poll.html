@@ -101,12 +101,12 @@
                   </h5>`;
 
         poll.options.forEach((option) => {
-          let percentage =
+          const percentage =
             option.score == 0 ? 0 : (option.score / totalVotes) * 100;
           html += `
                   <div class="card-text option" id="${option.id}">
                   <div class="d-flex justify-content-between">
-            <div>${option.id}: ${option.label}</div>
+                      <div>${option.id}: ${option.label}</div>
                       <div>${percentage}% (${option.score})</div>
                     </div>
                   <div

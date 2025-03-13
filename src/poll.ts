@@ -31,7 +31,7 @@ abstract class PollMethod {
     if (isNaN(this.duration)) throw "Failed to parse duration.";
 
     args.forEach((option, index) => {
-      this.options.push({ id: index, label: option, score: 0 });
+      this.options.push({ id: index + 1, label: option, score: 0 });
     });
 
     this.iopoll.emit("createPoll", {
@@ -70,7 +70,11 @@ class FPPPoll extends PollMethod {
   }
   public addVote(user: string, args: string): string {
     const id = parseInt(args);
-    if (isNaN(id) || this.options[id] == null) return "Wrong index.";
+    if (
+      isNaN(id) ||
+      this.options.find((option) => option.id == id) == undefined
+    )
+      return "Wrong index.";
     this.votes.set(user, id);
     this.updatePoll();
     return `You have voted for ${this.options[id].label}.`;
@@ -104,10 +108,14 @@ class ScorePoll extends PollMethod {
     if (parts.length === 2) {
       const id = parseInt(parts[0]);
       const score = parts[1];
-      if (isNaN(id) || !["+", "-", "0"].includes(score) || !this.options[id]) {
+      if (
+        isNaN(id) ||
+        !["+", "-", "0"].includes(score) ||
+        this.options.find((option) => option.id == id) == undefined
+      ) {
         return "Invalid vote format. Use [number] -/0/+ to vote for a specific option.";
       }
-      userVotes[id] = score === "+" ? 1 : score === "-" ? -1 : 0;
+      userVotes[id - 1] = score === "+" ? 1 : score === "-" ? -1 : 0;
     } else {
       const scores = parts.map((score) => {
         if (score === "+") return 1;
