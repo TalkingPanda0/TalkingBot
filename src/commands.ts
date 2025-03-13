@@ -10,7 +10,6 @@ import {
   replaceAsync,
 } from "./util";
 
-import { StatusReason } from "./pet";
 import { HelixGame } from "@twurple/api";
 import { HttpStatusCodeError } from "@twurple/api-call";
 import { Counter } from "./counter";
@@ -22,6 +21,8 @@ import { UserIdentifier } from "./users";
 export interface MessageData {
   badges: string[];
   isUserMod: boolean;
+  isUserVip?: boolean;
+  isUserSub?: boolean;
   message: string;
   parsedMessage: string;
   username?: string;
@@ -1217,6 +1218,12 @@ export class MessageHandler {
     const arg = this.argMap.get(`${commandName} ${data.message.split(" ")[0]}`);
     if (arg) customCommand = arg;
     const modonly = customCommand.includes("(modonly)");
+    const viponly = customCommand.includes("(viponly)");
+    const subonly = customCommand.includes("(subonly)");
+    const canUserRunCommand =
+      (!modonly || data.isUserMod) &&
+      (!viponly || data.isUserVip) &&
+      (!subonly || data.isUserSub);
     const doReply = customCommand.includes("(reply)");
     let response = (
       await replaceAsync(
@@ -1241,12 +1248,14 @@ export class MessageHandler {
       .replace(/\$user/g, data.sender)
       .replace(/\$args/g, message)
       .replace(/\(modonly\)/g, "")
+      .replace(/\(viponly\)/g, "")
+      .replace(/\(subonly\)/g, "")
       .replace(/\(reply\)/g, "");
     response = await replaceAsync(
       response,
       /script\((.+)\)/g,
       async (_message: string, script: string) => {
-        if (modonly && !data.isUserMod) return;
+        if (!canUserRunCommand) return;
         return await this.runScript(script, data, commandName);
       },
     );
@@ -1257,7 +1266,7 @@ export class MessageHandler {
         this.timeout.delete(commandName);
       }, 60 * 1000);
     }
-    if (typeof commandName == "string" && modonly && !data.isUserMod)
+    if (typeof commandName == "string" && !canUserRunCommand)
       return commandName.startsWith("!");
     data.reply(response, doReply);
     return true;

@@ -2,12 +2,10 @@ import { RefreshingAuthProvider, exchangeCode } from "@twurple/auth";
 import {
   ChatClient,
   ChatMessage,
-  ChatSubInfo,
   ChatRaidInfo,
   ClearChat,
   ClearMsg,
   UserNotice,
-  ChatSubGiftInfo,
   parseChatMessage,
   ParsedMessagePart,
   buildEmoteImageUrl,
@@ -20,7 +18,7 @@ import {
   EventSubChannelRedemptionAddEvent,
   EventSubListener,
 } from "@twurple/eventsub-base";
-import { Poll, TalkingBot } from "./talkingbot";
+import { TalkingBot } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase } from "./util";
@@ -214,12 +212,18 @@ export class Twitch {
         });
       }
 
+      const isUserMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
+      const isUserVip = isUserMod || msg.userInfo.isVip;
+      const isUserSub = isUserVip || msg.userInfo.isSubscriber;
+
       this.bot.commandHandler.handleMessage({
         badges: badges,
         sender: this.formatDisplayName(msg),
         senderId: msg.userInfo.userId,
         color: this.getUserColor(msg),
-        isUserMod: msg.userInfo.isMod || msg.userInfo.isBroadcaster,
+        isUserMod: isUserMod,
+        isUserSub: isUserSub,
+        isUserVip: isUserVip,
         platform: "twitch",
         message: messageWithoutPrefix,
         parsedMessage: parsedMessage,
