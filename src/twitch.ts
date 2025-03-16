@@ -237,6 +237,7 @@ export class Twitch {
         isCommand: user == "botrixoficial" || user == "talkingboto_o",
         id: msg.id,
         reply: async (message: string, replyToUser: boolean) => {
+          if (!message || message == "") return;
           const replyId = replyToUser ? msg.id : null;
           await this.chatClient.say(channel, message, { replyTo: replyId });
           this.bot.iochat.emit("message", {
@@ -690,6 +691,7 @@ export class Twitch {
   }
 
   public say(message: string) {
+    if (!message || message == "") return;
     this.chatClient.say(this.channel.name, message);
     this.bot.iochat.emit("message", {
       badges: [],

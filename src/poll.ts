@@ -12,6 +12,7 @@ abstract class PollMethod {
   public iopoll: Server;
   public options: PollOption[] = [];
   public onPollEnd: (results: PollOption[]) => void | Promise<void>;
+  private pollTimer: Timer;
   constructor(iopoll: Server) {
     this.iopoll = iopoll;
   }
@@ -25,7 +26,7 @@ abstract class PollMethod {
     this.onPollEnd = onPollEnd;
     const delimeterIndex = message.indexOf(":");
     this.currentTitle = message.slice(0, delimeterIndex);
-    const args = message.slice(delimeterIndex + 2).split(" ");
+    const args = message.slice(delimeterIndex + 2).split(",");
     // Duration in seconds.
     this.duration = parseInt(args.pop()) * 1000;
     if (isNaN(this.duration)) throw "Failed to parse duration.";
@@ -40,7 +41,7 @@ abstract class PollMethod {
       title: this.currentTitle,
     });
 
-    setTimeout(() => {
+    this.pollTimer = setTimeout(() => {
       this.endPoll();
     }, this.duration);
     return this.getStartMessage();
@@ -56,28 +57,32 @@ abstract class PollMethod {
     this.iopoll.emit("updatePoll", this.getScores());
   }
 
+  public cleanUp() {}
+
   public endPoll() {
     const scores = this.getScores();
     this.onPollEnd(scores);
     this.iopoll.emit("pollEnd");
+    this.options.length = 0;
+    clearTimeout(this.pollTimer);
+    this.cleanUp();
   }
 }
 
 class FPPPoll extends PollMethod {
   private votes = new Map<string, number>();
+
   public getStartMessage(): string {
     return `POLL: ${this.currentTitle}? ${this.options.map((option) => `${option.id}: ${option.label}`).join(", ")}. vote by doing !vote [number]. ends in ${this.duration / 1000} seconds`;
   }
   public addVote(user: string, args: string): string {
     const id = parseInt(args);
-    if (
-      isNaN(id) ||
-      this.options.find((option) => option.id == id) == undefined
-    )
-      return "Wrong index.";
+    if (isNaN(id)) return "NaN.";
+    const option = this.options.find((option) => option.id == id);
+    if (option == undefined) return `Can't find option ${id}`;
     this.votes.set(user, id);
     this.updatePoll();
-    return `You have voted for ${this.options[id].label}.`;
+    return `You have voted for ${option.label}.`;
   }
   public getScores(): PollOption[] {
     return this.options.map((option) => {
@@ -91,6 +96,9 @@ class FPPPoll extends PollMethod {
       };
     });
   }
+  public cleanUp() {
+    this.votes.clear();
+  }
 }
 
 class ScorePoll extends PollMethod {
@@ -98,6 +106,7 @@ class ScorePoll extends PollMethod {
   public getStartMessage(): string {
     return `POLL: ${this.currentTitle}? ${this.options.map((option) => `${option.id}: ${option.label}`).join(", ")}. vote by doing !vote [number] -/0/+. or vote for all options by doing !vote + - 0..., ends in ${this.duration / 1000} seconds.`;
   }
+
   public addVote(user: string, args: string): string {
     const parts = args.split(" ");
     if (!this.votes.has(user)) {
@@ -143,6 +152,9 @@ class ScorePoll extends PollMethod {
       };
     });
   }
+  public cleanUp() {
+    this.votes.clear();
+  }
 }
 
 export class Poll {
@@ -173,13 +185,18 @@ export class Poll {
       }, args.join(" "));
       return response;
     } catch (error) {
-      console.error(error);
       this.currentMethod = null;
+      throw error;
     }
   }
   public addVote(user: string, message: string): string {
     if (this.currentMethod == null) throw "no poll.";
-    return this.currentMethod.addVote(user, message);
+    try {
+      const response = this.currentMethod.addVote(user, message);
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
   public endPoll() {
     if (this.currentMethod == null) throw "no poll";

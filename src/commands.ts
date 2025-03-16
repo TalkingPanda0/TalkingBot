@@ -1199,10 +1199,10 @@ export class MessageHandler {
                 `${data.platform}-${data.sender}`,
                 data.message,
               ),
-              false,
+              true,
             );
           } catch (error) {
-            data.reply(error, true);
+            console.error(error);
           }
         },
       },
