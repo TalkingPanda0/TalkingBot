@@ -28,6 +28,7 @@ import {
 } from "@twurple/eventsub-http";
 import { CreditType } from "./credits";
 import { PollOption } from "./poll";
+import { warn } from "node:console";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -353,6 +354,7 @@ export class Twitch {
     }
 
     this.eventListener.onStreamOnline(this.channel.id, async (event) => {
+      this.say("Something wicked this way comes.");
       this.isStreamOnline = true;
       this.bot.credits.clear();
       this.bot.whereWord.clearGame();
