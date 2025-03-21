@@ -25,7 +25,7 @@ export interface MessageData {
   isUserSub?: boolean;
   message: string;
   parsedMessage: string;
-  username?: string;
+  username: string;
   sender: string;
   senderId: string;
   color: string;
@@ -62,9 +62,9 @@ export class MessageHandler {
   private keys: any;
   private timeout = new Set();
   private bot: TalkingBot;
-  private dynamicTitle: string;
-  private dynamicTitleInterval: Timer;
-  private lastDynamicTitle: string;
+  private dynamicTitle?: string;
+  private dynamicTitleInterval?: Timer;
+  private lastDynamicTitle?: string;
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
   private regexCommands: RegexCommand[] = [];
@@ -102,9 +102,12 @@ export class MessageHandler {
               (
                 await Promise.all(
                   users.map(async (watchTime) => {
-                    const user = helixUsers.find(
+                    const helixUser = helixUsers.find(
                       (user) => user.id == watchTime.userId,
-                    ).displayName;
+                    );
+                    if (helixUser == undefined) return "";
+
+                    const user = helixUser.displayName;
                     try {
                       if (isOffline)
                         return `@${user} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
@@ -265,7 +268,7 @@ export class MessageHandler {
               this.bot.twitch.handleRedeemQueue(false);
               break;
             case "scam":
-              this.bot.twitch.handleRedeemQueue(null);
+              this.bot.twitch.handleRedeemQueue(undefined);
               break;
             default:
               data.reply("Usage: !redeem accept/deny", true);
@@ -708,7 +711,7 @@ export class MessageHandler {
                   { tags: newTags },
                 );
               } catch (e) {
-                data.reply(e, true);
+                data.reply(e as string, true);
                 return;
               }
               data.reply(`Tags ${newTags} has been added`, true);
@@ -761,25 +764,6 @@ export class MessageHandler {
             parsedText: data.parsedMessage.split(" ").slice(1).join(" "),
             isImportant: false,
           });
-        },
-      },
-    ],
-    [
-      "!hltb",
-      {
-        timeout: 60 * 1000,
-        showOnChat: false,
-        commandFunction: async (data) => {
-          const result = await find({ search: data.message.trim() });
-          if (result == null || result.total == 0) {
-            data.reply(`Can't find game ${data.message}.`, true);
-            return;
-          }
-          const game = result.data[0];
-          data.reply(
-            `Average playtime of ${game.name} is ${game.gameplayMain} hours.`,
-            true,
-          );
         },
       },
     ],
@@ -916,13 +900,16 @@ export class MessageHandler {
               data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
               break;
             case "add":
-              let weight = parseInt(args.at(-1));
-              let color: string;
+              if (args.length < 3) {
+                return;
+              }
+              let weight = parseInt(args[args.length - 1]);
+              let color: string = "";
               let text: string;
 
               if (isNaN(weight)) {
-                weight = parseInt(args.at(-2));
-                color = args.at(-1);
+                weight = parseInt(args[args.length - 2]);
+                color = args[-1];
                 text = args.slice(1, -2).join(" ");
               } else {
                 text = args.slice(1, -1).join(" ");
@@ -961,14 +948,17 @@ export class MessageHandler {
       {
         showOnChat: false,
         commandFunction: (data) => {
-          const id = { platform: data.platform, username: data.username };
+          const id: UserIdentifier = {
+            platform: data.platform,
+            username: data.username || "",
+          };
           switch (data.message.trim()) {
             case "":
               const user = this.bot.users.getUser(id);
               data.reply(`Your color is currently set to ${user.color}.`, true);
               break;
             case "clear":
-              this.bot.users.setColor(id, null);
+              this.bot.users.setColor(id, undefined);
               data.reply(`Your color has been cleared.`, true);
               break;
             default:
@@ -1012,7 +1002,7 @@ export class MessageHandler {
           const username = args[0];
 
           const id = { platform: data.platform, username: username };
-          this.bot.users.setNickname(id, null);
+          this.bot.users.setNickname(id, undefined);
           data.reply(`${username} is now not nicknamed.`, true);
         },
       },
@@ -1068,7 +1058,7 @@ export class MessageHandler {
                   this.bot.whereWord.resetPlayer(data.username.toLowerCase());
                   return;
                 }
-                data.reply(e.toString(), true);
+                data.reply(e as string, true);
               }
               break;
             case "guess":
@@ -1093,9 +1083,13 @@ export class MessageHandler {
                   data.reply(`@${name} is not playing the game`, true);
                   return;
                 }
+                const correctGuess = status.guesses.find(
+                  (guess) => guess.correct,
+                );
+
                 if (status.guessed) {
                   data.reply(
-                    `@${name}'s word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". They have used it ${status.times} times. They had ${calculatePoints(status)} points.`,
+                    `@${name}'s word has been guessed by @${correctGuess != null ? correctGuess.guesser : "[Can't find guesser]"}. It was "${status.word}". They have used it ${status.times} times. They had ${calculatePoints(status)} points.`,
                     true,
                   );
                   return;
@@ -1124,8 +1118,11 @@ export class MessageHandler {
                 return;
               }
               if (status.guessed) {
+                const correctGuess = status.guesses.find(
+                  (guess) => guess.correct,
+                );
                 data.reply(
-                  `Your word has been guessed by @${status.guesses.find((guess) => guess.correct).guesser}. It was "${status.word}". You have used it ${status.times} times. You had ${calculatePoints(status)} points.`,
+                  `Your word has been guessed by @${correctGuess != null ? correctGuess.guesser : "[Can't find guesser]"}. It was "${status.word}". You have used it ${status.times} times. You had ${calculatePoints(status)} points.`,
                   true,
                 );
                 return;
@@ -1169,7 +1166,7 @@ export class MessageHandler {
               }),
             );
           } catch (error) {
-            data.reply(error, true);
+            data.reply(error as string, true);
           }
         },
       },
@@ -1183,7 +1180,7 @@ export class MessageHandler {
           try {
             this.bot.poll.endPoll();
           } catch (error) {
-            data.reply(error, true);
+            data.reply(error as string, true);
           }
         },
       },
@@ -1268,7 +1265,7 @@ export class MessageHandler {
     }
     if (typeof commandName == "string" && !canUserRunCommand)
       return commandName.startsWith("!");
-    data.reply(response, doReply);
+    if (response.trim() != "") data.reply(response, doReply);
     return true;
   }
 
@@ -1461,7 +1458,7 @@ export class MessageHandler {
     return JSON.stringify(commandList);
   }
 
-  public getCustomCommand(name: string): string {
+  public getCustomCommand(name: string): string | undefined {
     return this.customCommandMap.get(name);
   }
 
@@ -1590,7 +1587,7 @@ export class MessageHandler {
       return context.result;
     } catch (error) {
       console.error("Error executing custom code:", error);
-      return error;
+      return error as string;
     }
   }
 }

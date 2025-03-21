@@ -6,7 +6,7 @@ interface CreditsList {
   moderators: string[];
   cheers: string[];
   chatters: string[];
-  whereWordWinner: string;
+  whereWordWinner?: string;
 }
 
 export enum CreditType {

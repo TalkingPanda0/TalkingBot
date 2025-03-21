@@ -105,7 +105,7 @@ export class TalkingBot {
     this.commandHandler.readCustomCommands();
 
     this.credits = new Credits(this);
-    this.pet = new Pet(this);
+    this.pet = new Pet();
     this.wheel = new Wheel(this.server);
     this.database = new DB();
     this.twitch = new Twitch(this);
@@ -123,7 +123,6 @@ export class TalkingBot {
     this.discordLoginUri = secrets.discordLoginUri;
 
     this.database.init();
-    this.database.cleanDataBase();
     this.discord.initBot();
     await this.twitch.initBot();
     this.youTube.initBot();

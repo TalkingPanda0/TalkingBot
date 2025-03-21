@@ -12,7 +12,7 @@ export interface UserIdentifier {
 }
 
 export class Users {
-  private userMap: Map<string, User>;
+  private userMap = new Map<string, User>();
   private db: DB;
 
   constructor(db: DB) {
@@ -32,7 +32,7 @@ export class Users {
     this.db.setConfig("users", JSON.stringify(hashMaptoArray(this.userMap)));
   }
 
-  setColor(id: UserIdentifier, color: string) {
+  setColor(id: UserIdentifier, color: string | undefined) {
     const user = this.getUser(id);
     user.color = color;
     this.userMap.set(`${id.platform}-${id.username}`, user);
@@ -46,7 +46,7 @@ export class Users {
     this.saveUsers();
   }
 
-  setNickname(id: UserIdentifier, nick: string) {
+  setNickname(id: UserIdentifier, nick: string | undefined) {
     const user = this.getUser(id);
     user.nickname = nick;
     this.userMap.set(`${id.platform}-${id.username}`, user);

@@ -99,6 +99,7 @@ export class YouTube {
           },
           platform: "youtube",
           color: this.getColor(event.name),
+          username: event.channel,
           sender: event.name,
           id: event.id,
           senderId: event.channelId,

@@ -16,25 +16,25 @@
     "@twurple/eventsub-ws": "^7.2.1",
     "@types/cookie-parser": "^1.4.8",
     "@types/express-fileupload": "^1.5.1",
-    "@types/jsonwebtoken": "^9.0.8",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/seedrandom": "^3.0.8",
     "body-parser": "^1.20.3",
     "cookie-parser": "^1.4.7",
-    "discord.js": "^14.17.3",
+    "discord.js": "^14.18.0",
     "express": "^4.21.2",
     "express-fileupload": "^1.5.1",
-    "form-data": "^4.0.1",
+    "form-data": "^4.0.2",
     "googleapis": "^140.0.1",
     "howlongtobeat-api": "^1.0.3",
-    "isomorphic-dompurify": "^2.20.0",
+    "isomorphic-dompurify": "^2.22.0",
     "jsonwebtoken": "^9.0.2",
     "socket.io": "^4.8.1",
     "tubechat": "^1.0.3"
   },
   "devDependencies": {
-    "@types/bun": "^1.2.0",
+    "@types/bun": "^1.2.5",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.17.16",
-    "typescript": "^5.7.3"
+    "@types/node": "^20.17.25",
+    "typescript": "^5.8.2"
   }
 }

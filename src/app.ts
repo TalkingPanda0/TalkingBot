@@ -77,6 +77,10 @@ app.use("/control", async (req, res) => {
           res.sendFile(__dirname + "/html/commandbuilder.html");
           break;
         case "/command/get":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const command = bot.commandHandler.getCustomCommand(
             req.query.name.toString(),
           );
@@ -106,6 +110,10 @@ app.use("/control", async (req, res) => {
     case "POST":
       switch (req.path) {
         case "/command/add":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const commandToAdd = req.query.name.toString();
           if (!req.body || !commandToAdd) {
             res.sendStatus(400);
@@ -124,6 +132,10 @@ app.use("/control", async (req, res) => {
           break;
 
         case "/command/set":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const name = req.query.name.toString();
           if (!req.body || !name) {
             res.sendStatus(400);
@@ -148,11 +160,19 @@ app.use("/control", async (req, res) => {
           res.send(commandOutput);
           break;
         case "/command/delete":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           bot.commandHandler.deleteCustomCommand(req.query.name.toString());
           res.sendStatus(200);
           break;
 
         case "/command/alias/add":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const aliasToAdd = req.query.name.toString();
           if (!req.body || !aliasToAdd) {
             res.sendStatus(400);
@@ -167,8 +187,12 @@ app.use("/control", async (req, res) => {
             return;
           }
           res.status(400);
-          res.send(result);
+          res.send(aliasAddResult);
         case "/command/alias/set":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const alias = req.query.name.toString();
           if (!req.body || !alias) {
             res.sendStatus(400);
@@ -178,11 +202,19 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
         case "/command/alias/delete":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           bot.commandHandler.deleteCommandAlias(req.query.name.toString());
           res.sendStatus(200);
           break;
 
         case "/command/regex/add":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const regex = req.query.name.toString();
           if (!req.body || !regex) {
             res.sendStatus(400);
@@ -192,6 +224,10 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
         case "/command/regex/delete":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const regexToDelete = req.query.name.toString();
           if (!regexToDelete) {
             res.sendStatus(400);
@@ -201,6 +237,10 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
         case "/command/regex/set":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const regexToSet = req.query.name.toString();
           if (!req.body || !regexToSet) {
             res.sendStatus(400);
@@ -222,6 +262,10 @@ app.use("/control", async (req, res) => {
           break;
 
         case "/soundEffects/delete":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
           const file = Bun.file(
             `${__dirname}/../config/sounds/${req.query.name.toString()}.mp3`,
           );
@@ -287,6 +331,10 @@ app.get("/chat", (_req: Request, res: Response) => {
 });
 
 app.get("/auth", async (req, res) => {
+  if (req.query.code == null) {
+    res.send(400);
+    return;
+  }
   const userId = await bot.getUserIdFromCode(req.query.code.toString());
   if (userId == null) {
     res.sendStatus(403);

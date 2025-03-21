@@ -28,7 +28,6 @@ import {
 } from "@twurple/eventsub-http";
 import { CreditType } from "./credits";
 import { PollOption } from "./poll";
-import { warn } from "node:console";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -71,7 +70,6 @@ export class Twitch {
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
-  private shieldid = "9a3d1045-a42b-4cb0-b5eb-7e850b4984ec";
   //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private eventSubSecret?: string;
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
@@ -101,14 +99,6 @@ export class Twitch {
     this.eventListener.stop();
     this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
     this.bot.database.cleanDataBase();
-  }
-
-  public updateShieldReedem(status: boolean) {
-    this.apiClient.channelPoints.updateCustomReward(
-      this.channel.id,
-      this.shieldid,
-      { isPaused: status },
-    );
   }
 
   public async addUser(code: string, scope: string) {
@@ -219,6 +209,7 @@ export class Twitch {
 
       this.bot.commandHandler.handleMessage({
         badges: badges,
+        username: msg.userInfo.userName,
         sender: this.formatDisplayName(msg),
         senderId: msg.userInfo.userId,
         color: this.getUserColor(msg),
@@ -381,7 +372,6 @@ export class Twitch {
 
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
       this.isStreamOnline = false;
-      this.bot.pet.sleep();
       this.chatClient.say(this.channelName, this.bot.whereWord.endGame());
       this.bot.youTube.onStreamEnd();
 
@@ -569,9 +559,6 @@ export class Twitch {
             break;
           case this.titleid:
             this.redeemQueue.push(data);
-            break;
-          case this.shieldid:
-            completed = this.bot.pet.activateShield();
             break;
           default:
             return;

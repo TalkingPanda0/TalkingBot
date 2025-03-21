@@ -3,16 +3,16 @@ import { Server } from "socket.io";
 export interface PollOption {
   id: number;
   label: string;
-  score?: number;
+  score: number;
 }
 
 abstract class PollMethod {
   public duration: number = 0;
-  public currentTitle: string;
+  public currentTitle?: string;
   public iopoll: Server;
   public options: PollOption[] = [];
-  public onPollEnd: (results: PollOption[]) => void | Promise<void>;
-  private pollTimer: Timer;
+  public onPollEnd: (results: PollOption[]) => void | Promise<void> = () => {};
+  private pollTimer: Timer | null = null;
   constructor(iopoll: Server) {
     this.iopoll = iopoll;
   }
@@ -28,7 +28,7 @@ abstract class PollMethod {
     this.currentTitle = message.slice(0, delimeterIndex);
     const args = message.slice(delimeterIndex + 2).split(",");
     // Duration in seconds.
-    this.duration = parseInt(args.pop()) * 1000;
+    this.duration = parseInt(args.pop() || "") * 1000;
     if (isNaN(this.duration)) throw "Failed to parse duration.";
 
     args.forEach((option, index) => {
@@ -46,7 +46,7 @@ abstract class PollMethod {
     }, this.duration);
     return this.getStartMessage();
   }
-  public addVote(user: string, args: string): string {
+  public addVote(_user: string, _args: string): string {
     this.updatePoll();
     return "";
   }
@@ -64,7 +64,7 @@ abstract class PollMethod {
     this.onPollEnd(scores);
     this.iopoll.emit("pollEnd");
     this.options.length = 0;
-    clearTimeout(this.pollTimer);
+    if (this.pollTimer) clearTimeout(this.pollTimer);
     this.cleanUp();
   }
 }
@@ -109,10 +109,9 @@ class ScorePoll extends PollMethod {
 
   public addVote(user: string, args: string): string {
     const parts = args.split(" ");
-    if (!this.votes.has(user)) {
-      this.votes.set(user, Array(this.options.length).fill(0));
-    }
-    const userVotes = this.votes.get(user);
+
+    const userVotes =
+      this.votes.get(user) || Array(this.options.length).fill(0);
 
     if (parts.length === 2) {
       const id = parseInt(parts[0]);
@@ -174,18 +173,20 @@ export class Poll {
   ): string {
     if (this.currentMethod != null) throw "A poll is already running.";
     const args = message.split(" ");
+
     const methodName = args.shift();
+    if (methodName == undefined) throw "Can't get method name";
     const method = this.pollMethods.get(methodName);
     if (method == null) throw "Poll method not found.";
     this.currentMethod = method;
     try {
       const response = this.currentMethod.startPoll((results: PollOption[]) => {
-        this.currentMethod = null;
+        this.currentMethod = undefined;
         onPollEnd(results);
       }, args.join(" "));
       return response;
     } catch (error) {
-      this.currentMethod = null;
+      this.currentMethod = undefined;
       throw error;
     }
   }
