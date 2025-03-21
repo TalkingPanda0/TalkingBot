@@ -575,6 +575,23 @@ export class Twitch {
       }
     });
 
+    this.eventListener.onUserWhisperMessage("736013381", (data) => {
+      if (data.messageText.startsWith("!vote")) {
+        try {
+          this.apiClient.whispers.sendWhisper(
+            "736013381",
+            data.senderUserId,
+            this.bot.poll.addVote(
+              `twitch-${data.senderUserDisplayName}`,
+              data.messageText.replace("!vote ", ""),
+            ),
+          );
+        } catch (error) {
+          console.error(error);
+        }
+      }
+    });
+
     this.chatClient = new ChatClient({
       authProvider: this.authProvider,
       channels: [this.channelName],

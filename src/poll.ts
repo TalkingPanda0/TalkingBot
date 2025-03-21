@@ -191,6 +191,7 @@ export class Poll {
     }
   }
   public addVote(user: string, message: string): string {
+    console.log(`${user} voted for ${message}`);
     if (this.currentMethod == null) throw "no poll.";
     try {
       const response = this.currentMethod.addVote(user, message);
