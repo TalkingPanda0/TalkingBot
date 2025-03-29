@@ -17,13 +17,6 @@ app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(bodyParser.text());
 app.use(cookieParser());
-app.use(
-  fileUpload({
-    useTempFiles: true,
-    tempFileDir: "/tmp/",
-    hashAlgorithm: "sha1",
-  }),
-);
 
 app.get("/soundEffects", async (_req, res) => {
   const files = await readdir(__dirname + "/../config/sounds");
