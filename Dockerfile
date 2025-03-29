@@ -1,4 +1,4 @@
-FROM oven/bun:alpine
+FROM oven/bun:1.2.6-alpine:WORKDIR 
 USER bun
 
 RUN mkdir /home/bun/talkingbot
