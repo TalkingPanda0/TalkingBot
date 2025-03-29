@@ -21,7 +21,6 @@ app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "/tmp/",
-    hashAlgorithm: "sha1",
   }),
 );
 
