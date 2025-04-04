@@ -1,19 +1,22 @@
-import { TubeChat } from "tubechat";
 import { TalkingBot } from "./talkingbot";
+import { LiveChat } from "youtube-chat";
 import { userColors } from "./twitch";
-import { MessageFragments } from "tubechat/lib/types/Client";
 import { YouTubeAPI } from "./youtubeapi";
-export function parseYTMessage(message: MessageFragments[]): string {
-  let text = "";
-  for (let i = 0; i < message.length; i++) {
-    const fragment: MessageFragments = message.at(i);
-    if (fragment.text !== undefined) {
-      text += fragment.text;
-    } else if (fragment.emoji !== undefined) {
-      text += `<img onload="emoteLoaded()" src="${fragment.emoji}" class="emote" />`;
-    }
-  }
-  return text;
+import { MessageItem } from "youtube-chat/dist/types/data";
+
+export function parseYTMessage(
+  message: MessageItem[],
+  emojisasImg: boolean,
+): string {
+  return message
+    .map((item) => {
+      return "text" in item
+        ? item.text
+        : emojisasImg
+          ? `<img onload="emoteLoaded()" src="${item.url}" class="emote" />`
+          : item.alt;
+    })
+    .join(" ");
 }
 
 export class YouTube {
@@ -22,8 +25,7 @@ export class YouTube {
   public permTitle: string;
 
   private bot: TalkingBot;
-  private chat: TubeChat;
-  private channelName: string;
+  private chat: LiveChat;
   private getColor(username: string): string {
     let hash = 0,
       i: number,
@@ -37,7 +39,7 @@ export class YouTube {
   }
 
   public cleanUp() {
-    this.chat.disconnect(this.channelName);
+    this.chat.stop();
   }
 
   public onStreamEnd() {
@@ -45,17 +47,16 @@ export class YouTube {
     this.api.onStreamEnd();
   }
 
-  public async initBot() {
+  public initBot() {
     this.api.setupAPI();
-    this.chat.connect(this.channelName);
 
-    this.chat.on("disconnect", () => {
+    this.chat.on("end", () => {
       this.bot.iochat.emit("chatDisconnect", "youtube");
       this.isConnected = false;
       console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected`);
     });
 
-    this.chat.on("chat_connected", async (_channel, videoId) => {
+    this.chat.on("start", async (videoId) => {
       this.bot.iochat.emit("chatConnect", "youtube");
       this.isConnected = true;
       this.api.getChatId(videoId);
@@ -64,15 +65,17 @@ export class YouTube {
       if (title != null) this.api.setTitle(title);
     });
 
-    this.chat.on("message", async (event) => {
+    this.chat.on("error", (erro) => {
+      console.log(erro);
+    });
+
+    this.chat.on("chat", async (event) => {
       try {
-        let text = event.message
-          .map((messageFragment) => {
-            if (messageFragment.textEmoji) return messageFragment.textEmoji;
-            return messageFragment.text;
-          })
-          .join("");
-        console.log("\x1b[31m%s\x1b[0m", `YouTube - ${event.name}: ${text}`);
+        let text = parseYTMessage(event.message, false);
+        console.log(
+          "\x1b[31m%s\x1b[0m",
+          `YouTube - ${event.author.name}: ${text}`,
+        );
 
         const badges = [];
         if (event.isModerator) {
@@ -89,27 +92,29 @@ export class YouTube {
             }
           },
           message: text,
-          parsedMessage: parseYTMessage(event.message),
+          parsedMessage: parseYTMessage(event.message, true),
           banUser: async (_reason, duration) => {
             try {
-              this.api.banUser(event.channelId, duration);
+              this.api.banUser(event.author.channelId, duration);
             } catch (e) {
               console.error(e);
             }
           },
           platform: "youtube",
-          color: this.getColor(event.name),
-          username: event.channel,
-          sender: event.name,
+          color: this.getColor(event.author.name),
+          username: event.author.name,
+          sender: event.author.name,
           id: event.id,
-          senderId: event.channelId,
+          senderId: event.author.channelId,
           isFirst: false,
           replyText: "",
           replyId: "",
           replyTo: "",
           rewardName: "",
           isOld: false,
-          isCommand: event.name === "BotRix" || event.name == "Talking Bot",
+          isCommand:
+            event.author.name === "BotRix" ||
+            event.author.name == "Talking Bot",
         });
 
         return;
@@ -117,24 +122,12 @@ export class YouTube {
         console.log(e);
       }
     });
-
-    this.chat.on("deleted_message", (event) => {
-      this.bot.iochat.emit("deleteMessage", "youtube-" + event.commentId);
-    });
-
-    this.chat.on("deleted_message_author", (event) => {
-      this.bot.iochat.emit("banUser", `youtube-${event.externalChannelId}`);
-    });
-
-    this.chat.on("unkown", (event) => {
-      console.log("unknwoı event: " + event);
-    });
+    this.chat.start();
   }
   constructor(channelName: string, bot: TalkingBot) {
-    this.channelName = channelName;
     this.bot = bot;
 
-    this.chat = new TubeChat();
+    this.chat = new LiveChat({ channelId: channelName });
     this.api = new YouTubeAPI();
   }
 }

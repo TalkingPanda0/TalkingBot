@@ -109,7 +109,7 @@ export class TalkingBot {
     this.wheel = new Wheel(this.server);
     this.database = new DB();
     this.twitch = new Twitch(this);
-    this.youTube = new YouTube("sweetbaboostreams1351", this);
+    this.youTube = new YouTube("UCTZw5BSoA8PcKyHbdHJ3hQg", this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
