@@ -1058,7 +1058,7 @@ export class MessageHandler {
                   this.bot.whereWord.resetPlayer(data.username.toLowerCase());
                   return;
                 }
-                data.reply(e as string, true);
+                data.reply(e.toString(), true);
               }
               break;
             case "guess":
