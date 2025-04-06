@@ -349,9 +349,6 @@ export class Twitch {
       this.isStreamOnline = true;
       this.bot.credits.clear();
       this.bot.whereWord.clearGame();
-      setTimeout(() => {
-        this.bot.youTube.initBot();
-      }, 1000 * 60);
       try {
         const stream = await event.getStream();
         const thumbnail = stream.getThumbnailUrl(1280, 720);
