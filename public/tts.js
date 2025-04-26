@@ -1,4 +1,11 @@
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let queue = [];
+let activeSources = [];
+let isPlaying = false;
+let playing;
+let currentUser;
+let interval;
+let queueInterval;
 
 async function loadBuffer(url) {
   const resp = await fetch(url);
@@ -13,6 +20,7 @@ async function playPlaylist(urls) {
   let endedCount = 0;
 
   return new Promise((resolve) => {
+    activeSources = [];
     buffers.forEach((buffer) => {
       const src = audioCtx.createBufferSource();
       src.buffer = buffer;
@@ -26,18 +34,22 @@ async function playPlaylist(urls) {
           resolve(); // All tracks finished!
         }
       };
-
+      activeSources.push(src);
       when += buffer.duration;
     });
   });
 }
 
-let queue = [];
-let isPlaying = false;
-let playing;
-let currentUser;
-let interval;
-let queueInterval;
+function stopPlaylist() {
+  activeSources.forEach((src) => {
+    try {
+      src.stop();
+    } catch (e) {
+      /* already stopped */
+    }
+  });
+  activeSources = [];
+}
 
 let soundEffectRegex;
 fetch("/soundEffects").then((res) =>
@@ -154,6 +166,10 @@ function playTTS(message, voice, _onerror, onended) {
   console.log(audioQueue);
   console.log(`Found ${audioQueue.length} segments.`);
   playPlaylist(audioQueue).then(() => {
+    playing = null;
+    isPlaying = false;
+    clearInterval(interval);
+    interval = null;
     onended();
   });
 }

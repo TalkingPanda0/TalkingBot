@@ -64,7 +64,7 @@
     }
 
     function stopCurrentTTS() {
-      playing.pause();
+      stopPlaylist();
       playing.currentTime = 0;
       playing = null;
       isPlaying = false;
