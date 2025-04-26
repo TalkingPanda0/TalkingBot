@@ -1,3 +1,37 @@
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+async function loadBuffer(url) {
+  const resp = await fetch(url);
+  const arrayBuf = await resp.arrayBuffer();
+  return await audioCtx.decodeAudioData(arrayBuf);
+}
+
+async function playPlaylist(urls) {
+  const buffers = await Promise.all(urls.map(loadBuffer));
+
+  let when = audioCtx.currentTime;
+  let endedCount = 0;
+
+  return new Promise((resolve) => {
+    buffers.forEach((buffer) => {
+      const src = audioCtx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(audioCtx.destination);
+
+      src.start(when);
+
+      src.onended = () => {
+        endedCount++;
+        if (endedCount === buffers.length) {
+          resolve(); // All tracks finished!
+        }
+      };
+
+      when += buffer.duration;
+    });
+  });
+}
+
 let queue = [];
 let isPlaying = false;
 let playing;
@@ -42,7 +76,7 @@ audio.play().catch(function (err) {
   }
 });
 
-function getTTSAudio(message) {
+function getTTSAudioSource(message) {
   if (
     message.voice == null ||
     message.voice == "" ||
@@ -50,9 +84,14 @@ function getTTSAudio(message) {
     message.text == ""
   )
     return null;
-  return new Audio(
-    `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(message.text)}`,
-  );
+  return `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(message.text)}`;
+}
+
+function getTTSAudio(message) {
+  const source = getTTSAudioSource(message);
+  if (source == null) return null;
+
+  return new Audio(source);
 }
 function playQueue(audioQueue, onerror, onended) {
   if (audioQueue == null || audioQueue.length == 0) return;
@@ -91,22 +130,22 @@ function playQueue(audioQueue, onerror, onended) {
     onerror(err);
   });
 }
-function playTTS(message, voice, onerror, onended) {
-  const audioQueue = [];
+function playTTS(message, voice, _onerror, onended) {
+  const audioQueue = []; // as urls of the audios
 
   let match;
   let lastIndex = 0;
   while ((match = soundEffectRegex.exec(message)) !== null) {
-    const beforeEmote = getTTSAudio({
+    const beforeEmote = getTTSAudioSource({
       voice: voice,
       text: message.slice(lastIndex, match.index),
     });
     if (beforeEmote) audioQueue.push(beforeEmote);
 
-    audioQueue.push(new Audio(encodeURIComponent(`${match[0]}.mp3`)));
+    audioQueue.push(encodeURIComponent(`${match[0]}.mp3`));
     lastIndex = match.index + match[0].length;
   }
-  const afterLastEmote = getTTSAudio({
+  const afterLastEmote = getTTSAudioSource({
     voice: voice,
     text: message.slice(lastIndex),
   });
@@ -114,6 +153,7 @@ function playTTS(message, voice, onerror, onended) {
 
   console.log(audioQueue);
   console.log(`Found ${audioQueue.length} segments.`);
-
-  playQueue(audioQueue, onerror, onended);
+  playPlaylist(audioQueue).then(() => {
+    onended();
+  });
 }
