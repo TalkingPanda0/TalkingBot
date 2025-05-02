@@ -412,10 +412,10 @@ export class Twitch {
     }
 
     this.eventListener.onChannelSubscription(this.channel.id, (data) => {
+      if (data.tier != "prime") return;
       data.getUser().then((user) => {
         this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
       });
-      if (data.tier != "prime") return;
       this.bot.credits.addToCredits(
         data.userDisplayName,
         CreditType.Subscription,
