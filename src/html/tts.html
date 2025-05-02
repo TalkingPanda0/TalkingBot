@@ -65,8 +65,6 @@
 
     function stopCurrentTTS() {
       stopPlaylist();
-      playing.currentTime = 0;
-      playing = null;
       isPlaying = false;
       setTimeout(removePopup, 1000);
     }
