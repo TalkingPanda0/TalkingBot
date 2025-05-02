@@ -413,7 +413,7 @@ export class Twitch {
 
     this.eventListener.onChannelSubscription(this.channel.id, (data) => {
       data.getUser().then((user) => {
-        this.bot.setLatestSubPfp(user.profilePictureUrl);
+        this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
       });
       if (data.tier != "prime") return;
       this.bot.credits.addToCredits(
@@ -431,7 +431,7 @@ export class Twitch {
 
     this.eventListener.onChannelSubscriptionMessage(this.channel.id, (data) => {
       data.getUser().then((user) => {
-        this.bot.setLatestSubPfp(user.profilePictureUrl);
+        this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
       });
       this.bot.credits.addToCredits(
         data.userDisplayName,
@@ -447,7 +447,7 @@ export class Twitch {
     });
     this.eventListener.onChannelSubscriptionGift(this.channel.id, (data) => {
       data.getGifter().then((user) => {
-        this.bot.setLatestSubPfp(user.profilePictureUrl);
+        this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
       });
       this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
       this.bot.ioalert.emit("alert", {

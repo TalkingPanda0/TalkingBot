@@ -228,8 +228,8 @@ export class TalkingBot {
         break;
     }
   }
-  public setLatestSubPfp(url: string) {
-    this.modtext = `<img src="${url}" height="100px" style="top: 200px;position: absolute">`;
+  public setLatestSub(name: string, pfpurl: string) {
+    this.modtext = `<div style='display:grid; top: 150px;left: 5px;position: absolute; width:100px; height:150px '><div style="text-wrap: nowrap; text-align: center; font-size: 15px;">${name}</div> <img src="${pfpurl}" height="100px" width="100px"></img></div>`;
     this.updateModText();
   }
 }
