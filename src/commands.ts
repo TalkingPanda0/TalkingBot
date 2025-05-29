@@ -59,7 +59,7 @@ export class MessageHandler {
   public counter: Counter;
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
-  private keys: any;
+  public keys: any;
   private timeout = new Set();
   private bot: TalkingBot;
   private dynamicTitle?: string;

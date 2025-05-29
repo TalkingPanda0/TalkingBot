@@ -706,6 +706,7 @@ export class Twitch {
     const stream = await this.bot.twitch.apiClient.streams.getStreamByUserId(
       this.bot.twitch.channel.id,
     );
+
     if (stream == null) return null;
     return stream.title;
   }
