@@ -29,6 +29,8 @@ import {
 import { CreditType } from "./credits";
 import { PollOption } from "./poll";
 
+import { updateCategory } from "./category";
+
 const pollRegex = /^(.*?):\s*(.*)$/;
 
 export const userColors = [
@@ -78,6 +80,7 @@ export class Twitch {
     __dirname + "/../config/token-broadcaster.json",
   );
   private botFile = Bun.file(__dirname + "/../config/token-bot.json");
+  private updateCategoryInterval: Timer;
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -368,6 +371,8 @@ export class Twitch {
         console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
         this.bot.discord.sendStreamPing();
       }
+
+      this.updateCategoryInterval = setInterval(() => {updateCategory(this.bot)}, 5 * 60 * 1000);
     });
 
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
@@ -382,6 +387,8 @@ export class Twitch {
         this.bot.database.userLeave(chatter.userId, true);
         this.bot.database.userJoin(chatter.userId, false);
       });
+
+      clearTimeout(this.updateCategoryInterval);
     });
 
     this.eventListener.onChannelFollow(

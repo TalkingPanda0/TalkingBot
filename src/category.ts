@@ -1,27 +1,32 @@
-import { TalkingBot } from "./talkingbot.ts";
+import { TalkingBot } from "./talkingbot";
 
+let game_name: string = null;
 
 async function getGameName(bot: TalkingBot) {
-    return fetch(
+    const response = await fetch(
         `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${bot.commandHandler.keys.steam}&steamids=76561198800357802`,
         {method: "GET"}
-    ).then(
-        (response) => response.json()
-    ).then(
-        (data) => {return data.response.players[0].gameextrainfo}
     );
+    if (!response.ok) return null;
+
+    const json = await response.json();
+
+    return json.response.players[0].gameextrainfo;
 }
 
 export async function updateCategory(bot: TalkingBot) {
     const name = await getGameName(bot);
-    if (!name) return;
+    if (!name || name == game_name) return;
+    game_name = name;
 
     const game = await bot.twitch.apiClient.search.searchCategories(name, {limit: 1});
-    const gameid = game.data[0].id;
-    if (!gameid) return;
+    const data = game.data[0];
+    if (!data) return;
 
     await bot.twitch.apiClient.channels.updateChannelInfo(
         bot.twitch.channel.id,
-        { gameId: gameid }
+        { gameId: data.id }
     );
+
+    await bot.broadcastMessage(`Game has been changed to ${data.name}!`);
 }
