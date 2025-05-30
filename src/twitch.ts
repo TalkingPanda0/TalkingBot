@@ -372,7 +372,12 @@ export class Twitch {
         this.bot.discord.sendStreamPing();
       }
 
-      this.updateCategoryInterval = setInterval(() => {updateCategory(this.bot)}, 5 * 60 * 1000);
+      this.updateCategoryInterval = setInterval(
+        () => {
+          updateCategory(this.bot);
+        },
+        5 * 60 * 1000,
+      );
     });
 
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
@@ -718,9 +723,9 @@ export class Twitch {
     return stream.title;
   }
 
-  public say(message: string) {
+  public async say(message: string) {
     if (!message || message == "") return;
-    this.chatClient.say(this.channel.name, message);
+    await this.chatClient.say(this.channel.name, message);
     this.bot.iochat.emit("message", {
       badges: [],
       text: message,

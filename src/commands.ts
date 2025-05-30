@@ -180,20 +180,23 @@ export class MessageHandler {
           );
           await this.bot.youTube.api.setTitle(data.message);
 
-          this.bot.broadcastMessage(
+          await this.bot.broadcastMessage(
             `Title has been changed to "${data.message}"`,
           );
 
-          setTimeout(
-            async () => {
-              await this.bot.twitch.apiClient.channels.updateChannelInfo(
-                this.bot.twitch.channel.id,
-                { title: oldTitle },
-              );
-              await this.bot.youTube.api.setTitle(oldTitle);
-            },
-            15 * 60 * 1000,
-          );
+          await new Promise((resolve) => {
+            setTimeout(
+              async () => {
+                await this.bot.twitch.apiClient.channels.updateChannelInfo(
+                  this.bot.twitch.channel.id,
+                  { title: oldTitle },
+                );
+                await this.bot.youTube.api.setTitle(oldTitle);
+                resolve();
+              },
+              15 * 60 * 1000,
+            );
+          });
         },
       },
     ],
@@ -620,11 +623,11 @@ export class MessageHandler {
             );
             await this.bot.youTube.api.setTitle(data.message);
 
-            this.bot.broadcastMessage(
+            await this.bot.broadcastMessage(
               `Title has been changed to "${data.message}"`,
             );
           } catch (e) {
-            this.bot.broadcastMessage("Couldn't change title");
+            await this.bot.broadcastMessage("Couldn't change title");
             console.error(e);
           }
         },
@@ -641,7 +644,7 @@ export class MessageHandler {
             this.bot.twitch.channel.id,
             { title: data.message },
           );
-          this.bot.broadcastMessage(
+          await this.bot.broadcastMessage(
             `Title has been changed to "${data.message}"`,
           );
           await this.bot.youTube.api.setTitle(data.message);
@@ -1152,10 +1155,10 @@ export class MessageHandler {
       "!createpoll",
       {
         showOnChat: false,
-        commandFunction: (data) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod) return;
           try {
-            this.bot.broadcastMessage(
+            await this.bot.broadcastMessage(
               this.bot.poll.startPoll(data.message, (results) => {
                 const winner = results.toSorted((a, b) => a.score - b.score)[
                   results.length - 1

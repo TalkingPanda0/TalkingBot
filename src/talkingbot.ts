@@ -160,9 +160,11 @@ export class TalkingBot {
     return text;
   }
 
-  public broadcastMessage(message: string) {
-    this.twitch.say(message);
-    this.youTube.api.sendMessage(message);
+  public async broadcastMessage(message: string) {
+    await Promise.all([
+      this.twitch.say(message),
+      this.youTube.api.sendMessage(message),
+    ]);
   }
   public updateModText() {
     if (!this.modtext) return;
