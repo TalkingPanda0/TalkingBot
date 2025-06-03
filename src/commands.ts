@@ -18,6 +18,8 @@ import { CreditType } from "./credits";
 import { calculatePoints } from "./whereword";
 import { UserIdentifier } from "./users";
 
+import { addRecentChatter } from "./levels";
+
 export interface MessageData {
   badges: string[];
   isUserMod: boolean;
@@ -1334,6 +1336,8 @@ export class MessageHandler {
     if (data.isUserMod)
       this.bot.credits.addToCredits(data.username, CreditType.Moderator);
     this.bot.credits.addToCredits(data.username, CreditType.Chatter);
+
+    if (this.bot.twitch.isStreamOnline) addRecentChatter(this.bot, data);
 
     this.bot.whereWord.proccesMessage(
       data.username.toLowerCase(),

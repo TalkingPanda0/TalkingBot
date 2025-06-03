@@ -15,6 +15,8 @@ import { Users } from "./users";
 import { WhereWord } from "./whereword";
 import { Poll } from "./poll";
 
+import { levelUp } from "./levels";
+
 export interface AuthSetup {
   twitchClientId: string;
   twitchClientSecret: string;
@@ -132,6 +134,8 @@ export class TalkingBot {
 
     this.modtext = this.database.getOrSetConfig("currentModtext", "");
     this.updateModText();
+
+    setInterval(() => {levelUp(this)}, 60 * 1000);
   }
 
   public async cleanUp() {
