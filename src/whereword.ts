@@ -125,7 +125,6 @@ export class WhereWord {
     if (player == null || player.guessed) return;
     const wordRegex = new RegExp(player.word, "gi");
     const times = (message.match(wordRegex) || []).length;
-    console.log(times);
     player.times += times;
   }
 
