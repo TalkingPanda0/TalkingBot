@@ -355,7 +355,7 @@ export class Twitch {
       try {
         const stream = await event.getStream();
         const thumbnail = stream.getThumbnailUrl(1280, 720);
-        this.bot.discord.sendStreamPing({
+        await this.bot.discord.sendStreamPing({
           title: stream.title,
           game: stream.gameName,
           thumbnailUrl: thumbnail,
@@ -369,7 +369,7 @@ export class Twitch {
         });
       } catch (e) {
         console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
-        this.bot.discord.sendStreamPing();
+        await this.bot.discord.sendStreamPing();
       }
 
       this.updateCategoryInterval = setInterval(
@@ -897,7 +897,7 @@ export class Twitch {
     const stream =
       await this.apiClient.streams.getStreamByUserName("SweetbabooO_o");
     const thumbnail = stream.getThumbnailUrl(1280, 720);
-    this.bot.discord.sendStreamPing({
+    await this.bot.discord.sendStreamPing({
       title: stream.title,
       game: stream.gameName,
       thumbnailUrl: thumbnail,
