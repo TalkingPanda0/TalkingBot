@@ -1,4 +1,3 @@
-import { chat } from "googleapis/build/src/apis/chat";
 import { TalkingBot } from "./talkingbot";
 
 export let recentChatters: Set<string> = new Set();
