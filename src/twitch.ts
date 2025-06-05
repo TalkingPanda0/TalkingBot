@@ -384,7 +384,7 @@ export class Twitch {
         () => {
           this.bot.broadcastMessage(`Buy me a food!\nhttps://ko-fi.com/sweetbaboo`);
         },
-        5 * 60 * 1000,
+        30 * 60 * 1000,
       );
     });
 

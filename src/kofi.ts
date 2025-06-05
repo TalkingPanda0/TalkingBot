@@ -1,7 +1,6 @@
 const http = require('http');
 
 const server = http.createServer((req, res) => {
-    console.log(req);
     if (req.method === 'POST' && req.url === '/kofi/webhook') {
         let body = '';
 
