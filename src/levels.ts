@@ -43,7 +43,7 @@ function getChatPoints(bot: TalkingBot, chatter: string) {
 }
 
 function chatPointsToLevel(points: number) {
-    //level = (1.5th root of chat points)/2
-    let level = Math.pow(points, 1 / 1.5)/2;
+    //level = (1.5th root of chat points)/8
+    let level = Math.pow(points, 1 / 1.5)/8;
     return Math.floor(level);
 }
