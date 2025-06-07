@@ -135,7 +135,9 @@ export class TalkingBot {
     this.modtext = this.database.getOrSetConfig("currentModtext", "");
     this.updateModText();
 
-    setInterval(() => {levelUp(this)}, 60 * 1000);
+    setInterval(() => {
+      levelUp(this);
+    }, 60 * 1000);
   }
 
   public async cleanUp() {
@@ -180,7 +182,7 @@ export class TalkingBot {
       ),
     );
   }
-  public async getUserIdFromCode(code: string): Promise<string> {
+  public async getDiscordAccessToken(code: string): Promise<DiscordAuthData> {
     if (!code) return;
     try {
       const response = await fetch("https://discord.com/api/oauth2/token", {
@@ -197,14 +199,7 @@ export class TalkingBot {
           "Content-Type": "application/x-www-form-urlencoded",
         },
       });
-      const data: DiscordAuthData = await response.json();
-      const result = await fetch("https://discord.com/api/users/@me", {
-        headers: {
-          authorization: `${data.token_type} ${data.access_token}`,
-        },
-      });
-      const userData = await result.json();
-      return userData.id;
+      return await response.json();
     } catch (e) {
       console.error(e);
       return null;

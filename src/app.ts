@@ -2,11 +2,12 @@ import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import * as http from "http";
-import { TalkingBot } from "./talkingbot";
+import { DiscordAuthData, TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 import { readdir } from "node:fs/promises";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import { MessageData } from "./commands";
+import { getDiscordAccessToken, getDiscordUserId } from "./util";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -31,14 +32,18 @@ app.get("/soundEffects", async (_req, res) => {
 
 app.use("/control", async (req, res) => {
   try {
-    var discordId = verify(req.cookies.discord_id, bot.jwtSecret);
-    const isMod = await bot.discord.isStreamMod(discordId.toString());
+    const discordAuth: DiscordAuthData = verify(
+      req.cookies.discord_auth,
+      bot.jwtSecret,
+    ) as DiscordAuthData;
+    var discordId = await getDiscordUserId(discordAuth);
+    const isMod = await bot.discord.isStreamMod(discordId);
     if (!isMod) {
       res.sendStatus(403);
       return;
     }
   } catch (e) {
-    // No discord_id cookie was found
+    // No discord_auth cookie was found
     res.redirect(bot.discordLoginUri);
     return;
   }
@@ -329,14 +334,14 @@ app.get("/auth", async (req, res) => {
     res.send(400);
     return;
   }
-  const userId = await bot.getUserIdFromCode(req.query.code.toString());
-  if (userId == null) {
+  const accessData = await bot.getDiscordAccessToken(req.query.code.toString());
+  if (accessData == null) {
     res.sendStatus(403);
     return;
   }
-  const token = sign(userId, bot.jwtSecret);
+  const token = sign(accessData, bot.jwtSecret);
   res.set({
-    "Set-Cookie": `discord_id=${token};path=/control;max-age=604800;HttpOnly;`,
+    "Set-Cookie": `discord_auth=${token};path=/control;max-age=${accessData.expires_in};HttpOnly;`,
     Location: "/control",
   });
   res.sendStatus(302);

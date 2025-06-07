@@ -99,15 +99,15 @@ export class Discord {
     this.client.destroy();
   }
 
-  public sendStreamPing(stream?: streamInfo) {
+  public async sendStreamPing(stream?: streamInfo) {
     if (stream === undefined) {
-      this.channel.send({
+      await this.channel.send({
         content:
           "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
         allowedMentions: { roles: ["965609596087595018"] },
       });
     }
-    this.channel.send({
+    await this.channel.send({
       content:
         "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
       allowedMentions: { roles: ["965609596087595018"] },

@@ -1,3 +1,5 @@
+import { DiscordAuthData } from "./talkingbot";
+
 export function getTimeDifference(startDate: Date, endDate: Date): string {
   const timeDifference = endDate.getTime() - startDate.getTime();
   const years = Math.floor(timeDifference / (1000 * 60 * 60 * 24 * 365));
@@ -109,4 +111,14 @@ export function arraytoHashMap<Key, Value>(
     map.set(element.key, element.value);
   });
   return map;
+}
+
+export async function getDiscordUserId(data: DiscordAuthData): Promise<string> {
+  const result = await fetch("https://discord.com/api/users/@me", {
+    headers: {
+      authorization: `${data.token_type} ${data.access_token}`,
+    },
+  });
+  const userData = await result.json();
+  return userData.id;
 }
