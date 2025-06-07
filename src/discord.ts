@@ -210,6 +210,7 @@ export class Discord {
         "\x1b[34m%s\x1b[0m",
         `Discord - ${message.author.displayName}: ${message.content}`,
       );
+      const rolesCache = message.member.roles.cache;
 
       this.bot.commandHandler.handleCommand({
         platform: "discord",
@@ -229,7 +230,9 @@ export class Discord {
           });
         },
         badges: [],
-        isUserMod: message.member.roles.cache.has("886305448251261018"),
+        isUserMod: rolesCache.has("886305448251261018"),
+        isUserVip: rolesCache.has("853223830645112843"),
+        isUserSub: rolesCache.has("883443686103461948"),
         banUser: () => {},
         message: message.content,
         parsedMessage: message.content,

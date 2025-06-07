@@ -1532,6 +1532,10 @@ export class MessageHandler {
     context.result = "";
     context.command = commandName;
     context.user = data.sender;
+    context.userId = data.senderId;
+    context.isUserMod = data.isUserMod;
+    context.isUserVip = data.isUserVip;
+    context.isUserSub = data.isUserSub;
     context.args = data.message.split(" ");
     context.platform = data.platform;
     context.pet = this.bot.pet;
