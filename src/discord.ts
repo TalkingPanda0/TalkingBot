@@ -229,7 +229,7 @@ export class Discord {
           });
         },
         badges: [],
-        isUserMod: false,
+        isUserMod: message.member.roles.cache.has("886305448251261018"),
         banUser: () => {},
         message: message.content,
         parsedMessage: message.content,
