@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
@@ -8,6 +10,7 @@ import { readdir } from "node:fs/promises";
 import { UploadedFile } from "express-fileupload";
 import { MessageData } from "./commands";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
+import { handleKofiEvent, isKofiEvent } from "./kofi";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -18,6 +21,7 @@ app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(bodyParser.text());
 app.use(cookieParser());
+app.use(express.urlencoded({ extended: true }));
 
 app.get("/soundEffects", async (_req, res) => {
   const files = await readdir(__dirname + "/../config/sounds");
@@ -306,6 +310,20 @@ app.use("/control", async (req, res) => {
       }
       break;
   }
+});
+
+app.post("/kofi/webhook", (req, res) => {
+  const data = JSON.parse(req.body.data);
+  if (!isKofiEvent(data)) {
+    res.sendStatus(400);
+    return;
+  }
+  if (data.verification_token !== process.env.KOFI_SECRET) {
+    res.sendStatus(403);
+    return;
+  }
+  handleKofiEvent(bot, data);
+  res.sendStatus(200);
 });
 
 app.get("/creditsList", (_req, res) => {

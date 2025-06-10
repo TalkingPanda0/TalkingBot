@@ -2,3 +2,4 @@ node_modules
 config/*
 dist
 bun.lockb
+.env

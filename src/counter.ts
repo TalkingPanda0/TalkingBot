@@ -6,6 +6,8 @@ export class Counter {
 
   constructor(db: DB) {
     this.db = db;
+  }
+  public init() {
     this.loadCounters();
   }
 

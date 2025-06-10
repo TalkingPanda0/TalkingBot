@@ -58,7 +58,7 @@ interface BuiltinCommand {
 }
 
 export class MessageHandler {
-  public counter: Counter;
+  public counter!: Counter;
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
   public keys: any;
@@ -78,7 +78,10 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+  }
+  public init() {
     this.counter = new Counter(this.bot.database);
+    this.counter.init();
   }
 
   private commandMap: Map<string, BuiltinCommand> = new Map([

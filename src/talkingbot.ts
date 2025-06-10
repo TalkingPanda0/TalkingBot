@@ -128,6 +128,7 @@ export class TalkingBot {
     await this.twitch.initBot();
     this.youTube.initBot();
     this.users.init();
+    this.commandHandler.init();
     await this.whereWord.init();
 
     this.modtext = this.database.getOrSetConfig("currentModtext", "");

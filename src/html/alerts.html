@@ -103,6 +103,7 @@
         else if (alert.follower !== undefined) followAlert(alert);
         else if (alert.bits !== undefined) bitsAlert(alert);
         else if (alert.member !== undefined) discordJoinAlert(alert);
+        else if (alert.is_subscription !== undefined) kofiAlert(alert);
         else subAlert(alert);
       }
       function drawRaiders(raiders, ctx) {
@@ -168,6 +169,26 @@
           cheerInfo.bits == 1 && cheerInfo.message != ""
             ? cheerInfo.message
             : `${cheerInfo.user} cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}: ${cheerInfo.message},`,
+          "Brian",
+          (err) => {},
+          () => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              isPlaying = false;
+            }, 1000);
+          },
+        );
+      }
+      function kofiAlert(paymentInfo) {
+        isPlaying = true;
+        const message = paymentInfo.is_subscription
+          ? `became a ${paymentInfo.tier_name != null ? paymentInfo.tier_name : paymentInfo.amount + " " + paymentInfo.currency} member!`
+          : `donated ${paymentInfo.amount} ${paymentInfo.currency}!`;
+        alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${paymentInfo.sender} </span>${message} </span> `;
+        alertElement.style = "opacity: 100%;";
+        playTTS(
+          `${paymentInfo.sender} ${message}`,
           "Brian",
           (err) => {},
           () => {
