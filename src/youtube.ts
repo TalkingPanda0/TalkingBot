@@ -5,21 +5,20 @@ import { MessageFragments } from "tubechat/lib/types/Client";
 import { YouTubeAPI } from "./youtubeapi";
 export function parseYTMessage(message: MessageFragments[]): string {
   let text = "";
-  for (let i = 0; i < message.length; i++) {
-    const fragment: MessageFragments = message.at(i);
+  message.some((fragment) => {
     if (fragment.text !== undefined) {
       text += fragment.text;
     } else if (fragment.emoji !== undefined) {
       text += `<img onload="emoteLoaded()" src="${fragment.emoji}" class="emote" />`;
     }
-  }
+  });
   return text;
 }
 
 export class YouTube {
   public isConnected: boolean = false;
   public api: YouTubeAPI;
-  public permTitle: string;
+  public permTitle: string | null = null;
 
   private bot: TalkingBot;
   private chat: TubeChat;
@@ -123,11 +122,15 @@ export class YouTube {
     });
 
     this.chat.on("deleted_message_author", (event) => {
-      this.bot.iochat.emit("banUser", `youtube-${event.externalChannelId}`);
+      const e = event as unknown as { externalChannelId: string | null }; // nothing weird going on here.
+      if (!e.externalChannelId) {
+        return;
+      }
+      this.bot.iochat.emit("banUser", `youtube-${e.externalChannelId}`);
     });
 
     this.chat.on("unkown", (event) => {
-      console.log("unknwoı event: " + event);
+      console.log("unknwoı event: " + JSON.stringify(event));
     });
   }
   constructor(channelName: string, bot: TalkingBot) {

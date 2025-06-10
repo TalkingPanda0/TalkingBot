@@ -51,7 +51,7 @@ export class TalkingBot {
   public database: DB;
   public commandHandler: MessageHandler;
   public wheel: Wheel;
-  public modtext: string;
+  public modtext: string = "";
   public ttsManager: TTSManager;
   public credits: Credits;
   public users: Users;
@@ -59,9 +59,9 @@ export class TalkingBot {
 
   private server: http.Server;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
-  public jwtSecret: string;
-  public discordRedirectUri: string;
-  public discordLoginUri: string;
+  public jwtSecret: string | null = null;
+  public discordRedirectUri: string = "";
+  public discordLoginUri: string = "";
 
   constructor(server: http.Server) {
     this.server = server;
@@ -124,11 +124,9 @@ export class TalkingBot {
     this.discordRedirectUri = secrets.discordRedirectUri;
     this.discordLoginUri = secrets.discordLoginUri;
 
-    this.database.init();
     this.discord.initBot();
     await this.twitch.initBot();
     this.youTube.initBot();
-    this.commandHandler.init();
     this.users.init();
     await this.whereWord.init();
 
@@ -177,13 +175,17 @@ export class TalkingBot {
     this.database.setConfig("currentModtext", this.modtext);
     this.iomodtext.emit(
       "message",
-      this.modtext.replaceAll(/counter\((\w+)\)/g, (_modtext, counter) =>
-        this.commandHandler.counter.getCounter(counter).toString(),
-      ),
+      this.modtext.replaceAll(/counter\((\w+)\)/g, (_modtext, counterName) => {
+        const counter = this.commandHandler.counter.getCounter(counterName);
+        if (counter) return counter.toString();
+        else return "";
+      }),
     );
   }
-  public async getDiscordAccessToken(code: string): Promise<DiscordAuthData> {
-    if (!code) return;
+  public async getDiscordAccessToken(
+    code: string,
+  ): Promise<DiscordAuthData | null> {
+    if (!code) return null;
     try {
       const response = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",

@@ -34,11 +34,11 @@ export interface MessageData {
   id: string;
   platform: string;
   isFirst: boolean;
-  replyTo: string;
-  replyId: string;
-  replyText: string;
+  replyTo?: string;
+  replyId?: string;
+  replyText?: string;
   isCommand: boolean;
-  rewardName: string;
+  rewardName?: string;
   isOld: boolean;
   isAction?: boolean;
   isTestRun?: boolean;
@@ -78,9 +78,6 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-  }
-
-  public init() {
     this.counter = new Counter(this.bot.database);
   }
 
@@ -161,7 +158,7 @@ export class MessageHandler {
             );
           } else {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream ?? Date.now()).getTime() : 0))} watching the stream.`,
               false,
             );
           }
@@ -176,6 +173,10 @@ export class MessageHandler {
           if (!data.isUserMod || data.message.length == 0) return;
 
           const oldTitle = await this.bot.twitch.getCurrentTitle();
+          if (!oldTitle) {
+            data.reply("Failed getting current stream info.", true);
+            return;
+          }
           await this.bot.twitch.apiClient.channels.updateChannelInfo(
             this.bot.twitch.channel.id,
             { title: data.message },
@@ -186,7 +187,7 @@ export class MessageHandler {
             `Title has been changed to "${data.message}"`,
           );
 
-          await new Promise((resolve) => {
+          await new Promise<void>((resolve) => {
             setTimeout(
               async () => {
                 await this.bot.twitch.apiClient.channels.updateChannelInfo(
@@ -1063,7 +1064,8 @@ export class MessageHandler {
                   this.bot.whereWord.resetPlayer(data.username.toLowerCase());
                   return;
                 }
-                data.reply(e.toString(), true);
+                const errorMessage = e instanceof Error ? e.message : String(e);
+                data.reply(errorMessage, true);
               }
               break;
             case "guess":

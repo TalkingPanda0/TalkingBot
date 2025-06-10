@@ -49,14 +49,14 @@ interface DiscordCommand {
 }
 
 export class Discord {
-  private token: string;
-  public clientId: string;
-  public clientSecret: string;
-  private guildId: string;
-  private commands: Collection<string, DiscordCommand>;
+  private token!: string;
+  public clientId!: string;
+  public clientSecret!: string;
+  private guildId!: string;
+  private commands!: Collection<string, DiscordCommand>;
   private bot: TalkingBot;
-  private client: Client;
-  private channel: TextChannel;
+  private client!: Client;
+  private channel!: TextChannel;
   private shouldPing: boolean = true;
   private discordFile: BunFile = Bun.file(
     __dirname + "/../config/discord.json",
@@ -76,6 +76,10 @@ export class Discord {
       .then((messagePage) =>
         messagePage.size === 1 ? messagePage.at(0) : null,
       );
+    if (!message) {
+      console.error("Couldn't get first message.");
+      return;
+    }
     messages.push(message.toJSON());
 
     do {
@@ -100,12 +104,13 @@ export class Discord {
   }
 
   public async sendStreamPing(stream?: streamInfo) {
-    if (stream === undefined) {
+    if (!stream) {
       await this.channel.send({
         content:
           "<@&965609596087595018> SWEETBABOO IS STREAMIIONG!'!!!!! https://twitch.tv/sweetbabooo_o",
         allowedMentions: { roles: ["965609596087595018"] },
       });
+      return;
     }
     await this.channel.send({
       content:
@@ -130,9 +135,9 @@ export class Discord {
   }
 
   public say(message: string, channelId: string) {
-    const channel = this.client.guilds.cache
-      .get("853223679664062465")
-      .channels.cache.get(channelId) as TextChannel;
+    const guild = this.client.guilds.cache.get("853223679664062465");
+    if (!guild) throw Error("Can't get guild.");
+    const channel = guild.channels.cache.get(channelId) as TextChannel;
     if (!channel) throw Error(`Can't find channel with id ${channelId}`);
     message.match(/.{1,1024}/g)?.forEach((chunk) => {
       channel.send({
@@ -169,9 +174,11 @@ export class Discord {
 
     this.client.once(Events.ClientReady, async (_readyClient) => {
       console.log("\x1b[34m%s\x1b[0m", `Discord setup complete`);
-      this.channel = this.client.guilds.cache
-        .get("853223679664062465")
-        .channels.cache.get("947160971883982919") as TextChannel;
+      const guild = this.client.guilds.cache.get("853223679664062465");
+      if (!guild) return;
+      this.channel = guild.channels.cache.get(
+        "947160971883982919",
+      ) as TextChannel;
       //this.client.guilds.cache.get(this.guildId).members.me.setNickname("");
     });
 
@@ -210,6 +217,10 @@ export class Discord {
         "\x1b[34m%s\x1b[0m",
         `Discord - ${message.author.displayName}: ${message.content}`,
       );
+      if (!message.member) {
+        console.error("Discord: Failed getting message.");
+        return;
+      }
       const rolesCache = message.member.roles.cache;
 
       this.bot.commandHandler.handleCommand({
@@ -247,6 +258,7 @@ export class Discord {
         replyText: "",
         isAction: false,
         rewardName: "",
+        username: message.author.username,
       });
 
       if (doReact && message.content.toLowerCase().includes("gay"))
@@ -256,32 +268,31 @@ export class Discord {
     });
 
     this.client.on(Events.MessageDelete, async (message) => {
-      if (message.author.bot) return;
+      if (!message.author || message.author.bot) return;
       if (message.partial) await message.fetch();
+      if (!message.content) return;
 
       console.log(
         "\x1b[34m%s\x1b[0m",
         `${message.author.id} deleted ${message.content}`,
       );
 
-      this.removeEmotes(message);
+      this.removeEmotes(message.author.id, message.content);
     });
 
-    this.client.on(
-      Events.MessageUpdate,
-      async (oldMessage: Message, newMessage: Message) => {
-        if (oldMessage.author.bot) return;
-        if (oldMessage.partial) await oldMessage.fetch();
-        if (newMessage.partial) await newMessage.fetch();
-        console.log(
-          "\x1b[34m%s\x1b[0m",
-          `${oldMessage.author.id} updated ${oldMessage.content} to ${newMessage.content}`,
-        );
+    this.client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
+      if (!oldMessage.author || oldMessage.author.bot) return;
+      if (oldMessage.partial) await oldMessage.fetch();
+      if (newMessage.partial) await newMessage.fetch();
+      console.log(
+        "\x1b[34m%s\x1b[0m",
+        `${oldMessage.author.id} updated ${oldMessage.content} to ${newMessage.content}`,
+      );
 
-        this.removeEmotes(oldMessage);
-        this.addEmotes(newMessage);
-      },
-    );
+      if (oldMessage.content)
+        this.removeEmotes(oldMessage.author.id, oldMessage.content);
+      this.addEmotes(newMessage);
+    });
 
     this.client.on(Events.MessageReactionAdd, async (reaction, user) => {
       if (user.bot) return;
@@ -304,6 +315,7 @@ export class Discord {
     this.client.on(
       Events.VoiceStateUpdate,
       async (oldstate: VoiceState, newState: VoiceState) => {
+        if (!newState.member) return;
         // is sweetbaboo
         if (newState.member.id !== "350054317811564544") return;
 
@@ -312,7 +324,8 @@ export class Discord {
           this.shouldPing &&
           newState.channelId === "858430399380979721" &&
           newState.streaming &&
-          oldstate.streaming === false
+          oldstate.streaming === false &&
+          newState.channel
         ) {
           newState.channel.send({
             content:
@@ -370,6 +383,10 @@ export class Discord {
             return;
           }
           const emoji = parseEmoji(emote);
+          if (!emoji) {
+            interaction.reply({ content: "Couldn't parse emoji." });
+            return;
+          }
           interaction.reply({
             content: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? "gif" : "png"}`,
           });
@@ -701,6 +718,11 @@ export class Discord {
           if (suffix == null || suffix == "both")
             suffix = "messages and reactions";
 
+          if (!filter) {
+            await interaction.reply("Can't find emote.");
+            return;
+          }
+
           const emotes: EmoteStat[] = this.bot.database.getEmoteUsage(
             emoteList,
             filter,
@@ -761,7 +783,7 @@ export class Discord {
     }
   }
 
-  private findEmotes(message: string): string[] {
+  private findEmotes(message: string): string[] | null {
     return message.match(/<a?:.+?:\d+>|\p{Extended_Pictographic}/gu);
   }
 
@@ -789,7 +811,7 @@ export class Discord {
       .setLabel("Next")
       .setCustomId("next");
 
-    const row = new ActionRowBuilder().addComponents(prev, next);
+    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(prev, next);
 
     let page = 0;
 
@@ -820,11 +842,11 @@ export class Discord {
     });
   }
 
-  private removeEmotes(message: { content: string; author: { id: string } }) {
-    const emotes = this.findEmotes(message.content);
+  private removeEmotes(authorId: string, message: string) {
+    const emotes = this.findEmotes(message);
     if (emotes == null) return;
     emotes.forEach((emote) => {
-      this.bot.database.emoteUsage(message.author.id, emote, -1);
+      this.bot.database.emoteUsage(authorId, emote, -1);
     });
   }
 

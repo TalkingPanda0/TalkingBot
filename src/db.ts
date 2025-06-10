@@ -2,7 +2,7 @@ import { Database, Statement } from "bun:sqlite";
 
 interface WatchTime {
   userId: string;
-  lastSeenOnStream: string; // in json
+  lastSeenOnStream: string | null; // in json
   watchTime: number; // in ms
   lastSeen: string; // in json
   chatTime: number; // in ms
@@ -57,9 +57,6 @@ export class DB {
       create: true,
       strict: true,
     });
-  }
-
-  public init() {
     this.database
       .query(
         "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY,value BLOB);",
@@ -230,7 +227,9 @@ export class DB {
         watchTime.chatTime += date.getTime() - lastSeen.getTime();
         watchTime.lastSeen = date.toJSON();
       } else {
-        const lastSeenOnStream = new Date(watchTime.lastSeenOnStream);
+        const lastSeenOnStream = new Date(
+          watchTime.lastSeenOnStream ?? Date.now(),
+        );
         watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
         watchTime.lastSeenOnStream = date.toJSON();
       }

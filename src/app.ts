@@ -5,9 +5,9 @@ import * as http from "http";
 import { DiscordAuthData, TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 import { readdir } from "node:fs/promises";
-import fileUpload, { UploadedFile } from "express-fileupload";
+import { UploadedFile } from "express-fileupload";
 import { MessageData } from "./commands";
-import { getDiscordAccessToken, getDiscordUserId } from "./util";
+import { getDiscordUserId, isDiscordAuthData } from "./util";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -32,10 +32,17 @@ app.get("/soundEffects", async (_req, res) => {
 
 app.use("/control", async (req, res) => {
   try {
-    const discordAuth: DiscordAuthData = verify(
-      req.cookies.discord_auth,
-      bot.jwtSecret,
-    ) as DiscordAuthData;
+    if (!bot.jwtSecret) {
+      res.send(500);
+      return;
+    }
+    const decoded = verify(req.cookies.discord_auth, bot.jwtSecret);
+    if (!isDiscordAuthData(decoded)) {
+      res.sendStatus(403);
+      return;
+    }
+
+    const discordAuth: DiscordAuthData = decoded;
     var discordId = await getDiscordUserId(discordAuth);
     const isMod = await bot.discord.isStreamMod(discordId);
     if (!isMod) {
@@ -337,6 +344,10 @@ app.get("/auth", async (req, res) => {
   const accessData = await bot.getDiscordAccessToken(req.query.code.toString());
   if (accessData == null) {
     res.sendStatus(403);
+    return;
+  }
+  if (!bot.jwtSecret) {
+    res.send(500);
     return;
   }
   const token = sign(accessData, bot.jwtSecret);

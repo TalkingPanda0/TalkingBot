@@ -42,13 +42,13 @@ export async function replaceAsync(
   regex: RegExp,
   asyncFn: Function,
 ) {
-  const promises = [];
+  const promises: string[] = [];
   str.replace(regex, (full, ...args) => {
     promises.push(asyncFn(full, ...args));
     return full;
   });
   const data = await Promise.all(promises);
-  return str.replace(regex, () => data.shift());
+  return str.replace(regex, () => data.shift() ?? "");
 }
 
 export function getSuffix(i: number) {
@@ -121,4 +121,15 @@ export async function getDiscordUserId(data: DiscordAuthData): Promise<string> {
   });
   const userData = await result.json();
   return userData.id;
+}
+export function isDiscordAuthData(obj: any): obj is DiscordAuthData {
+  return (
+    typeof obj === "object" &&
+    obj !== null &&
+    typeof obj.token_type === "string" &&
+    typeof obj.access_token === "string" &&
+    typeof obj.expires_in === "number" &&
+    typeof obj.refresh_token === "string" &&
+    typeof obj.scope === "string"
+  );
 }

@@ -2,11 +2,11 @@ import { OAuth2Client } from "google-auth-library";
 import { google, youtube_v3 } from "googleapis";
 
 export class YouTubeAPI {
-  private chatId: string;
-  private videoId: string;
-  private youtubeClient: youtube_v3.Youtube;
-  private oAuth2Client: OAuth2Client;
-  private editoroAuth2Client: OAuth2Client;
+  private chatId: string | null | undefined = null;
+  private videoId: string | null | undefined = null;
+  private youtubeClient!: youtube_v3.Youtube;
+  private oAuth2Client!: OAuth2Client;
+  private editoroAuth2Client!: OAuth2Client;
   private tokenFile = Bun.file(__dirname + "/../config/yt.json");
 
   private log(message: any) {
@@ -19,13 +19,16 @@ export class YouTubeAPI {
   public async getChatId(videoId: string) {
     try {
       this.videoId = videoId;
-      const chatId = (
-        await this.youtubeClient.videos.list({
-          auth: this.oAuth2Client,
-          id: [this.videoId],
-          part: ["liveStreamingDetails"],
-        })
-      ).data.items[0].liveStreamingDetails.activeLiveChatId;
+
+      const response = await this.youtubeClient.videos.list({
+        auth: this.oAuth2Client,
+        id: [this.videoId],
+        part: ["liveStreamingDetails"],
+      });
+
+      const chatId =
+        response.data.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
+
       this.chatId = chatId;
       this.log(`Connected to chat: ${chatId}`);
       return true;
@@ -104,7 +107,7 @@ export class YouTubeAPI {
             type: seconds == null ? "permanant" : "temporary",
             liveChatId: this.chatId,
             bannedUserDetails: { channelId: userId },
-            banDurationSeconds: seconds.toString(),
+            banDurationSeconds: seconds != null ? seconds.toString() : seconds,
           },
         },
       });

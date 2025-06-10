@@ -53,22 +53,22 @@ export const userColors = [
 export class Twitch {
   public clientId = "";
   public clientSecret = "";
-  public apiClient: ApiClient;
-  public channel: HelixUser;
-  public publicClientId: string;
-  public chatClient: ChatClient;
+  public apiClient!: ApiClient;
+  public channel!: HelixUser;
+  public publicClientId!: string;
+  public chatClient!: ChatClient;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
   public isStreamOnline = false;
-  public cheerEmotes: HelixCheermoteList;
+  public cheerEmotes!: HelixCheermoteList;
   public BTTVEmotes = new Map<string, string>();
   public badges = new Map<string, string>();
 
-  private channelName: string;
-  private eventListener: EventSubListener;
+  private channelName!: string;
+  private eventListener!: EventSubListener;
   private bot: TalkingBot;
-  private authProvider: RefreshingAuthProvider;
+  private authProvider!: RefreshingAuthProvider;
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
@@ -80,8 +80,8 @@ export class Twitch {
     __dirname + "/../config/token-broadcaster.json",
   );
   private botFile = Bun.file(__dirname + "/../config/token-bot.json");
-  private updateCategoryInterval: Timer;
-  private sendTipReminderInterval: Timer;
+  private updateCategoryInterval: Timer | null = null;
+  private sendTipReminderInterval: Timer | null = null;
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -142,6 +142,7 @@ export class Twitch {
     msg: ChatMessage,
     isAction: boolean,
     isOld: boolean,
+    isCommand: boolean = false,
   ) {
     try {
       console.log(
@@ -167,10 +168,10 @@ export class Twitch {
       if (badge != undefined) {
         badges.push(this.badges.get(badge));
       }
-      let replyTo = "";
-      let replyId = "";
-      let replyText = "";
-      let rewardName = "";
+      let replyTo = null;
+      let replyId = null;
+      let replyText = null;
+      let rewardName = null;
       if (msg.isReply) {
         parsedMessage = parsedMessage.replace(
           new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
@@ -185,12 +186,12 @@ export class Twitch {
         rewardName = "Highlight My message";
       }
 
-      if (msg.isRedemption) {
+      if (msg.isRedemption && msg.rewardId) {
         const reward = await this.apiClient.channelPoints.getCustomRewardById(
           this.channel.id,
           msg.rewardId,
         );
-        rewardName = reward.title;
+        if (reward) rewardName = reward.title;
       }
       const indexes: number[] = [];
       msg.emoteOffsets.forEach((emote) => {
@@ -212,7 +213,7 @@ export class Twitch {
       const isUserSub = isUserVip || msg.userInfo.isSubscriber;
 
       this.bot.commandHandler.handleMessage({
-        badges: badges,
+        badges: badges.filter((s): s is string => !!s),
         username: msg.userInfo.userName,
         sender: this.formatDisplayName(msg),
         senderId: msg.userInfo.userId,
@@ -224,18 +225,21 @@ export class Twitch {
         message: messageWithoutPrefix,
         parsedMessage: parsedMessage,
         isFirst: msg.isFirst,
-        replyText: replyText,
-        replyId: replyId,
-        replyTo: replyTo,
-        rewardName: rewardName,
+        replyText: replyText ?? undefined,
+        replyId: replyId ?? undefined,
+        replyTo: replyTo ?? undefined,
+        rewardName: rewardName ?? undefined,
         isOld: isOld,
         isAction: isAction,
-        isCommand: user == "botrixoficial" || user == "talkingboto_o",
+        isCommand:
+          isCommand || user == "botrixoficial" || user == "talkingboto_o",
         id: msg.id,
         reply: async (message: string, replyToUser: boolean) => {
           if (!message || message == "") return;
-          const replyId = replyToUser ? msg.id : null;
-          await this.chatClient.say(channel, message, { replyTo: replyId });
+          const replyId = replyToUser ? msg.id : undefined;
+          await this.chatClient.say(channel, message, {
+            replyTo: replyId,
+          });
           this.bot.iochat.emit("message", {
             badges: [],
             text: message,
@@ -250,7 +254,7 @@ export class Twitch {
           });
           console.log(`TalkingBot - ${message}`);
         },
-        banUser: async (message: string, duration: number) => {
+        banUser: async (message: string, duration?: number) => {
           try {
             await this.apiClient.moderation.banUser(this.channel.id, {
               user: msg.userInfo.userId,
@@ -304,9 +308,13 @@ export class Twitch {
     ]);
 
     this.apiClient = new ApiClient({ authProvider: this.authProvider });
+    const channel = await this.apiClient.users.getUserByName(this.channelName);
+    if (!channel) {
+      console.error("failed getting channel.");
+      return;
+    }
 
-    this.channel = await this.apiClient.users.getUserByName(this.channelName);
-
+    this.channel = channel;
     const channelBadges = await this.apiClient.chat.getChannelBadges(
       this.channel.id,
     );
@@ -355,6 +363,9 @@ export class Twitch {
       this.bot.whereWord.clearGame();
       try {
         const stream = await event.getStream();
+        if (!stream) {
+          throw Error("getStream returned null.");
+        }
         const thumbnail = stream.getThumbnailUrl(1280, 720);
         await this.bot.discord.sendStreamPing({
           title: stream.title,
@@ -382,7 +393,9 @@ export class Twitch {
 
       this.sendTipReminderInterval = setInterval(
         () => {
-          this.bot.broadcastMessage(`Buy me a food!\nhttps://ko-fi.com/sweetbaboo`);
+          this.bot.broadcastMessage(
+            `Buy me a food!\nhttps://ko-fi.com/sweetbaboo`,
+          );
         },
         30 * 60 * 1000,
       );
@@ -401,8 +414,10 @@ export class Twitch {
         this.bot.database.userJoin(chatter.userId, false);
       });
 
-      clearTimeout(this.updateCategoryInterval);
-      clearTimeout(this.sendTipReminderInterval);
+      if (this.updateCategoryInterval)
+        clearTimeout(this.updateCategoryInterval);
+      if (this.sendTipReminderInterval)
+        clearTimeout(this.sendTipReminderInterval);
     });
 
     this.eventListener.onChannelFollow(
@@ -433,7 +448,7 @@ export class Twitch {
     }
 
     this.eventListener.onChannelSubscription(this.channel.id, (data) => {
-      if (data.tier != "prime") return;
+      if ((data.tier as string) != "prime") return; // it can be prime, convert it to a string to supress the error.
       data.getUser().then((user) => {
         this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
       });
@@ -481,7 +496,7 @@ export class Twitch {
     });
 
     this.eventListener.onChannelPollBegin(this.channel.id, (data) => {
-      const pollOptions: PollOption[] = data.choices.reduce(
+      const pollOptions: PollOption[] = data.choices.reduce<PollOption[]>(
         (options, choice, index) => {
           const option: PollOption = {
             id: index,
@@ -502,7 +517,7 @@ export class Twitch {
     });
 
     this.eventListener.onChannelPollProgress(this.channel.id, (data) => {
-      const pollOptions: PollOption[] = data.choices.reduce(
+      const pollOptions: PollOption[] = data.choices.reduce<PollOption[]>(
         (options, choice, index) => {
           const option: PollOption = {
             id: index,
@@ -526,7 +541,7 @@ export class Twitch {
         console.log(
           `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
         );
-        let completed: boolean;
+        let completed: boolean | null = null;
         if (data.input === "") {
           this.bot.iochat.emit("redeem", {
             id: data.id,
@@ -553,7 +568,7 @@ export class Twitch {
             break;
           case this.timeoutid:
             const username = data.input.split(" ")[0].replace("@", "");
-            const user: HelixUser =
+            const user: HelixUser | null =
               await this.apiClient.users.getUserByName(username);
 
             if (user == null || user.id == data.broadcasterId) {
@@ -653,6 +668,10 @@ export class Twitch {
       console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user} joined.`);
 
       const userInfo = await this.apiClient.users.getUserByName(user);
+      if (!userInfo) {
+        console.error(`Failed getting user ${user}.`);
+        return;
+      }
       this.bot.database.userJoin(userInfo.id, this.isStreamOnline);
     });
 
@@ -666,6 +685,10 @@ export class Twitch {
       console.log("\x1b[35m%s\x1b[0m", `Twitch - ${user} left.`);
 
       const userInfo = await this.apiClient.users.getUserByName(user);
+      if (!userInfo) {
+        console.error(`Failed getting user ${user}.`);
+        return;
+      }
       this.bot.database.userLeave(userInfo.id, this.isStreamOnline);
     });
 
@@ -723,7 +746,7 @@ export class Twitch {
     );
   }
 
-  public async getCurrentTitle(): Promise<string> {
+  public async getCurrentTitle(): Promise<string | null> {
     const stream = await this.bot.twitch.apiClient.streams.getStreamByUserId(
       this.bot.twitch.channel.id,
     );
@@ -752,6 +775,7 @@ export class Twitch {
   public async handleRedeemQueue(accept?: Boolean) {
     try {
       const redeem = this.redeemQueue.shift();
+      if (!redeem) return;
       if (accept) {
         switch (redeem.rewardId) {
           case this.pollid:
@@ -784,6 +808,13 @@ export class Twitch {
             await this.apiClient.channels.updateChannelInfo(this.channel.id, {
               title: redeem.input,
             });
+            if (!currentInfo) {
+              this.chatClient.say(
+                this.channelName,
+                `Failed getting current stream title.`,
+              );
+              return;
+            }
             this.chatClient.say(
               this.channelName,
               `Changed title to: ${redeem.input} requested by @${redeem.userName}`,
@@ -837,6 +868,7 @@ export class Twitch {
           message,
           isAction,
           true,
+          isCommand,
         );
       } catch (e) {
         console.error(
@@ -905,6 +937,10 @@ export class Twitch {
   public async sendStreamPing() {
     const stream =
       await this.apiClient.streams.getStreamByUserName("SweetbabooO_o");
+    if (!stream) {
+      console.error(`Stream is null.`);
+      return;
+    }
     const thumbnail = stream.getThumbnailUrl(1280, 720);
     await this.bot.discord.sendStreamPing({
       title: stream.title,

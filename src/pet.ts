@@ -10,9 +10,9 @@ enum DeathReason {
 interface DeadPet {
   name: number;
   deathReason: DeathReason;
-  age?: number;
-  deathDate?: string;
-  birthDate?: string;
+  age: number;
+  deathDate: string;
+  birthDate: string;
 }
 
 interface CurrentPet {
@@ -22,7 +22,11 @@ interface CurrentPet {
 }
 
 export class Pet {
-  public currentPet: CurrentPet;
+  public currentPet: CurrentPet = {
+    deadPets: [],
+    murderers: [],
+    slaughterers: [],
+  };
   private petFile: BunFile = Bun.file(__dirname + "/../config/pet.json");
 
   public async readPet() {
@@ -38,9 +42,8 @@ export class Pet {
   }
 
   public graveyard(hapboo?: string): string {
-    if (this.currentPet.deadPets.length === 0) {
+    if (this.currentPet.deadPets.length === 0)
       return "The graveyard is empty for now...";
-    }
     if (hapboo == null) {
       const longestSurvivingHapboos = this.currentPet.deadPets
         .toSorted((a, b) => {

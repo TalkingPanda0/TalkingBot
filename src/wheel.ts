@@ -90,7 +90,7 @@ export class Wheel {
     let remanining = Math.random() * 360;
     do {
       index++;
-      remanining -= wheel[index].size;
+      remanining -= wheel[index].size ?? 0;
     } while (remanining > 0);
     return wheel[index].text;
   }
@@ -99,7 +99,8 @@ export class Wheel {
     return calculatedSegments
       .map((value) => {
         if (weights) return `${value.text}: ${value.weight}`;
-        else return `${value.text}: ${Math.round((value.size / 360) * 100)}%`;
+        else
+          return `${value.text}: ${Math.round((value.size ?? 0 / 360) * 100)}%`;
       })
       .join(", ");
   }

@@ -27,10 +27,10 @@ export function calculatePoints(data: PlayerData): number {
 
 export class WhereWord {
   private players = new Map<string, PlayerData>();
-  private easyWords: string[];
-  private mediumWords: string[];
-  private hardWords: string[];
-  private insaneWords: string[];
+  private easyWords: string[] = [];
+  private mediumWords: string[] = [];
+  private hardWords: string[] = [];
+  private insaneWords: string[] = [];
 
   async loadWords() {
     this.easyWords = await Bun.file(
@@ -132,7 +132,8 @@ export class WhereWord {
     if (this.players.size == 0) {
       return null;
     }
-    let winner: { name: string; data: PlayerData; points: number };
+    let winner: { name: string; data: PlayerData; points: number } | null =
+      null;
     for (const [name, data] of this.players) {
       if (data.guessed) continue;
       const points = calculatePoints(data);
@@ -140,7 +141,7 @@ export class WhereWord {
         winner = { name, data, points };
       }
     }
-    if (winner.data.times == 0) return null;
+    if (!winner || winner.data.times == 0) return null;
     return winner;
   }
 
