@@ -118,6 +118,24 @@ export class Twitch {
       JSON.stringify(tokenData, null, 4),
     );
   }
+  // only things that should run when the bot starts during a stream and on the start of stream.
+  private onStreamOnline() {
+    this.updateCategoryInterval = setInterval(
+      () => {
+        updateCategory(this.bot);
+      },
+      5 * 60 * 1000,
+    );
+
+    this.sendTipReminderInterval = setInterval(
+      () => {
+        this.bot.broadcastMessage(
+          `Buy me a food! https://ko-fi.com/sweetbaboo`,
+        );
+      },
+      30 * 60 * 1000,
+    );
+  }
   private formatDisplayName(message: ChatMessage) {
     const display = message.userInfo.displayName;
     const login = message.userInfo.userName;
@@ -383,22 +401,7 @@ export class Twitch {
         console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
         await this.bot.discord.sendStreamPing();
       }
-
-      this.updateCategoryInterval = setInterval(
-        () => {
-          updateCategory(this.bot);
-        },
-        5 * 60 * 1000,
-      );
-
-      this.sendTipReminderInterval = setInterval(
-        () => {
-          this.bot.broadcastMessage(
-            `Buy me a food!\nhttps://ko-fi.com/sweetbaboo`,
-          );
-        },
-        30 * 60 * 1000,
-      );
+      this.onStreamOnline();
     });
 
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
@@ -739,11 +742,13 @@ export class Twitch {
     this.chatClient.connect();
     this.eventListener.start();
     // Apis ready
-    this.apiClient.channelPoints.updateCustomReward(
+    this.isStreamOnline = !!(await this.apiClient.streams.getStreamByUserId(
       this.channel.id,
-      this.wheelid,
-      { maxRedemptionsPerUserPerStream: 1, maxRedemptionsPerStream: 5 },
-    );
+    ));
+    if (this.isStreamOnline) {
+      this.onStreamOnline();
+      this.say("AAAAAAAAAAAAAAA!");
+    }
   }
 
   public async getCurrentTitle(): Promise<string | null> {
