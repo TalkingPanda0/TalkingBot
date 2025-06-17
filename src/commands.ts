@@ -904,10 +904,6 @@ export class MessageHandler {
                 data.reply(`${args[1]} won ${result}!!!`, false);
               }, 5000);
               break;
-            case "spin":
-              this.bot.wheel.spinWheel();
-              data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
-              break;
             case "add":
               if (args.length < 3) {
                 return;
@@ -935,9 +931,6 @@ export class MessageHandler {
               if (this.bot.wheel.removeSegment(segment)) {
                 data.reply(`Removed segment ${segment}`, true);
               }
-              break;
-            case "update":
-              this.bot.wheel.updateWheel();
               break;
             case "read":
               this.bot.wheel.readWheel();

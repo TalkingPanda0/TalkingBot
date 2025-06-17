@@ -108,7 +108,7 @@ export class TalkingBot {
 
     this.credits = new Credits(this);
     this.pet = new Pet();
-    this.wheel = new Wheel(this.server);
+    this.wheel = new Wheel();
     this.database = new DB();
     this.twitch = new Twitch(this);
     this.youTube = new YouTube("sweetbaboostreams1351", this);

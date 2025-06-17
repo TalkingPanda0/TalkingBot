@@ -1,45 +1,29 @@
-import { Server } from "socket.io";
-import * as http from "http";
 import { BunFile } from "bun";
 import { userColors } from "./twitch";
 import { getRandomElement } from "./util";
 
 interface WheelSegment {
   weight: number;
-  size?: number;
   text: string;
-  fillStyle?: string;
+  fillStyle: string;
 }
 
 export class Wheel {
-  private iowheel: Server;
-  private wheelSegments: WheelSegment[] = [];
+  public wheelSegments: WheelSegment[] = [];
   private wheelFile: BunFile = Bun.file(__dirname + "/../config/wheel.json");
-
-  constructor(server: http.Server) {
-    this.readWheel();
-    this.iowheel = new Server(server, {
-      path: "/wheel/",
-    });
-
-    this.iowheel.on("connect", (socket) => {
-      socket.emit("createWheel", this.calculateWheel());
-    });
-  }
 
   private calculateWheel(): WheelSegment[] {
     const multiplier =
       360 /
-      this.wheelSegments.reduce((sum, value) => {
-        return (sum += value.weight);
-      }, 0);
+      this.wheelSegments.reduce((sum, segment) => sum + segment.weight, 0);
+    return this.wheelSegments.map((segment) => ({
+      ...segment,
+      weight: segment.weight * multiplier,
+    }));
+  }
 
-    const calculatedSegments = this.wheelSegments;
-    calculatedSegments.forEach((value) => {
-      value.size = value.weight * multiplier;
-    });
-
-    return calculatedSegments;
+  constructor() {
+    this.readWheel();
   }
 
   private async writeWheel() {
@@ -60,7 +44,6 @@ export class Wheel {
       weight: weight,
     });
     this.writeWheel();
-    this.updateWheel();
   }
 
   public removeSegment(text: string): boolean {
@@ -70,37 +53,28 @@ export class Wheel {
     });
     if (this.wheelSegments.length != oldLength) {
       this.writeWheel();
-
-      this.updateWheel();
       return true;
     }
     return false;
   }
 
-  public updateWheel() {
-    this.iowheel.emit("updateWheel", this.calculateWheel());
-  }
-
-  public spinWheel() {
-    this.iowheel.emit("spinWheel");
-  }
   public spinInChat(): string {
     const wheel = this.calculateWheel();
     let index = -1;
     let remanining = Math.random() * 360;
     do {
       index++;
-      remanining -= wheel[index].size ?? 0;
+      remanining -= wheel[index].weight;
     } while (remanining > 0);
     return wheel[index].text;
   }
+
   public toString(weights: boolean): string {
-    const calculatedSegments = this.calculateWheel();
-    return calculatedSegments
+    const wheel = weights ? this.wheelSegments : this.calculateWheel();
+    return wheel
       .map((value) => {
         if (weights) return `${value.text}: ${value.weight}`;
-        else
-          return `${value.text}: ${Math.round((value.size ?? 0 / 360) * 100)}%`;
+        else return `${value.text}: ${Math.round((value.weight / 360) * 100)}%`;
       })
       .join(", ");
   }

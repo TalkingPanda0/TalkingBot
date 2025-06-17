@@ -326,6 +326,10 @@ app.post("/kofi/webhook", (req, res) => {
   res.sendStatus(200);
 });
 
+app.get("/wheelSegments", (_req, res) => {
+  res.send(JSON.stringify(bot.wheel.wheelSegments));
+});
+
 app.get("/creditsList", (_req, res) => {
   res.send(bot.credits.getCreditsList());
 });
