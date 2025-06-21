@@ -1207,6 +1207,17 @@ export class MessageHandler {
         },
       },
     ],
+    [
+      "!ytconnect",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          if (!data.isUserMod) return;
+          await this.bot.youTube.initBot();
+          data.reply("Connecting to youtube chat.", true);
+        },
+      },
+    ],
   ]);
 
   private async runCommand(

@@ -111,7 +111,7 @@ export class TalkingBot {
     this.wheel = new Wheel();
     this.database = new DB();
     this.twitch = new Twitch(this);
-    this.youTube = new YouTube("sweetbaboostreams1351", this);
+    this.youTube = new YouTube(this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
@@ -126,7 +126,6 @@ export class TalkingBot {
 
     this.discord.initBot();
     await this.twitch.initBot();
-    this.youTube.initBot();
     this.users.init();
     this.commandHandler.init();
     await this.whereWord.init();

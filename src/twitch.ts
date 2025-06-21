@@ -119,7 +119,7 @@ export class Twitch {
     );
   }
   // only things that should run when the bot starts during a stream and on the start of stream.
-  private onStreamOnline() {
+  private async onStreamOnline() {
     this.updateCategoryInterval = setInterval(
       () => {
         updateCategory(this.bot);
@@ -135,6 +135,7 @@ export class Twitch {
       },
       30 * 60 * 1000,
     );
+    await this.bot.youTube.initBot();
   }
   private formatDisplayName(message: ChatMessage) {
     const display = message.userInfo.displayName;
@@ -401,7 +402,7 @@ export class Twitch {
         console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
         await this.bot.discord.sendStreamPing();
       }
-      this.onStreamOnline();
+      await this.onStreamOnline();
     });
 
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
@@ -914,6 +915,7 @@ export class Twitch {
       switch (parsedPart.type) {
         case "text":
           parsed += this.replaceBTTVEmotes(DOMPurify.sanitize(parsedPart.text));
+          console.log(parsed);
           break;
         case "cheer":
           if (bits) cheerName = parsedPart.name;
