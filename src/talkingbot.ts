@@ -36,6 +36,11 @@ interface controlMessage {
   target: string;
   message: string;
 }
+export interface latestSub {
+  name: string;
+  pfpUrl: string;
+  time: Date;
+}
 
 export class TalkingBot {
   public discord: Discord;
@@ -136,6 +141,11 @@ export class TalkingBot {
     setInterval(() => {
       levelUp(this);
     }, 60 * 1000);
+
+    const latestSub = JSON.parse(
+      this.database.getOrSetConfig("latestSub", JSON.stringify(null)),
+    );
+    if (latestSub != null) this.setLatestSub(latestSub);
   }
 
   public async cleanUp() {
@@ -231,8 +241,9 @@ export class TalkingBot {
         break;
     }
   }
-  public setLatestSub(name: string, pfpurl: string) {
-    this.modtext = `<div style='display:grid; top: 150px;left: 5px;position: absolute; width:100px; height:150px '><div style="text-wrap: nowrap; text-align: center; font-size: 15px;">${name}</div> <img src="${pfpurl}" height="100px" width="100px"></img></div>`;
+  public setLatestSub(sub: latestSub) {
+    this.database.setConfig("latestSub", JSON.stringify(sub));
+    this.modtext = `<div style='display:grid; top: 150px;left: 5px;position: absolute; width:100px; height:150px '><div style="text-wrap: nowrap; text-align: center; font-size: 15px;">${sub.name}</div> <img src="${sub.pfpUrl}" height="100px" width="100px"></img></div>`;
     this.updateModText();
   }
 }

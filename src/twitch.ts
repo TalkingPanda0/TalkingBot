@@ -456,7 +456,11 @@ export class Twitch {
     this.eventListener.onChannelSubscription(this.channel.id, (data) => {
       if ((data.tier as string) != "prime") return; // it can be prime, convert it to a string to supress the error.
       data.getUser().then((user) => {
-        this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
+        this.bot.setLatestSub({
+          name: user.displayName,
+          pfpUrl: user.profilePictureUrl,
+          time: new Date(),
+        });
       });
       this.bot.credits.addToCredits(
         data.userDisplayName,
@@ -473,7 +477,11 @@ export class Twitch {
 
     this.eventListener.onChannelSubscriptionMessage(this.channel.id, (data) => {
       data.getUser().then((user) => {
-        this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
+        this.bot.setLatestSub({
+          name: user.displayName,
+          pfpUrl: user.profilePictureUrl,
+          time: new Date(),
+        });
       });
       this.bot.credits.addToCredits(
         data.userDisplayName,
@@ -489,7 +497,11 @@ export class Twitch {
     });
     this.eventListener.onChannelSubscriptionGift(this.channel.id, (data) => {
       data.getGifter().then((user) => {
-        this.bot.setLatestSub(user.displayName, user.profilePictureUrl);
+        this.bot.setLatestSub({
+          name: user.displayName,
+          pfpUrl: user.profilePictureUrl,
+          time: new Date(),
+        });
       });
       this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
       this.bot.ioalert.emit("alert", {
