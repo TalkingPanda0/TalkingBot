@@ -253,26 +253,28 @@ export class Twitch {
         isCommand:
           isCommand || user == "botrixoficial" || user == "talkingboto_o",
         id: msg.id,
-        reply: async (message: string, replyToUser: boolean) => {
-          if (!message || message == "") return;
-          const replyId = replyToUser ? msg.id : undefined;
-          await this.chatClient.say(channel, message, {
-            replyTo: replyId,
-          });
-          this.bot.iochat.emit("message", {
-            badges: [],
-            text: message,
-            parsedMessage: message,
-            sender: "TalkingBot",
-            senderId: "bot",
-            color: "green",
-            id: undefined,
-            platform: "bot",
-            isFirst: false,
-            isCommand: true,
-          });
-          console.log(`TalkingBot - ${message}`);
-        },
+        reply: isOld
+          ? () => {}
+          : async (message: string, replyToUser: boolean) => {
+              if (!message || message == "") return;
+              const replyId = replyToUser ? msg.id : undefined;
+              await this.chatClient.say(channel, message, {
+                replyTo: replyId,
+              });
+              this.bot.iochat.emit("message", {
+                badges: [],
+                text: message,
+                parsedMessage: message,
+                sender: "TalkingBot",
+                senderId: "bot",
+                color: "green",
+                id: undefined,
+                platform: "bot",
+                isFirst: false,
+                isCommand: true,
+              });
+              console.log(`TalkingBot - ${message}`);
+            },
         banUser: async (message: string, duration?: number) => {
           try {
             await this.apiClient.moderation.banUser(this.channel.id, {
@@ -915,7 +917,6 @@ export class Twitch {
       switch (parsedPart.type) {
         case "text":
           parsed += this.replaceBTTVEmotes(DOMPurify.sanitize(parsedPart.text));
-          console.log(parsed);
           break;
         case "cheer":
           if (bits) cheerName = parsedPart.name;

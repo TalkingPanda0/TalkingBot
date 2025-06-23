@@ -4,6 +4,7 @@ import { TalkingBot } from "./talkingbot";
 export let recentChatters: Set<string> = new Set();
 
 export async function addRecentChatter(bot: TalkingBot, data: MessageData) {
+  if (data.isOld) return;
   const chatter: string = `${data.platform}-${data.senderId}`;
   const chatPoints = getChatPoints(bot, chatter);
   const level = chatPointsToLevel(chatPoints);
@@ -45,4 +46,3 @@ function chatPointsToLevel(points: number) {
   let level = Math.pow(points, 1 / 1.5) / 8;
   return Math.floor(level);
 }
-

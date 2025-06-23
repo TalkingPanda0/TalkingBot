@@ -44,6 +44,7 @@ export class YouTube {
   }
 
   public async initBot() {
+    this.chat = new LiveChat({ channelId: this.channelId });
     this.chat.on("error", (err) => {
       console.error("\x1b[31m%s\x1b[0m", `Youtube-chat error: ${err}`);
     });
