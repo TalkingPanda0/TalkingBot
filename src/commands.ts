@@ -184,7 +184,6 @@ export class MessageHandler {
             this.bot.twitch.channel.id,
             { title: data.message },
           );
-          await this.bot.youTube.api.setTitle(data.message);
 
           await this.bot.broadcastMessage(
             `Title has been changed to "${data.message}"`,
@@ -197,7 +196,6 @@ export class MessageHandler {
                   this.bot.twitch.channel.id,
                   { title: oldTitle },
                 );
-                await this.bot.youTube.api.setTitle(oldTitle);
                 resolve();
               },
               15 * 60 * 1000,
@@ -627,7 +625,6 @@ export class MessageHandler {
               this.bot.twitch.channel.id,
               { title: data.message },
             );
-            await this.bot.youTube.api.setTitle(data.message);
 
             await this.bot.broadcastMessage(
               `Title has been changed to "${data.message}"`,
@@ -636,30 +633,6 @@ export class MessageHandler {
             await this.bot.broadcastMessage("Couldn't change title");
             console.error(e);
           }
-        },
-      },
-    ],
-    [
-      "!permtitle",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod || data.message.length == 0) return;
-
-          await this.bot.twitch.apiClient.channels.updateChannelInfo(
-            this.bot.twitch.channel.id,
-            { title: data.message },
-          );
-          await this.bot.broadcastMessage(
-            `Title has been changed to "${data.message}"`,
-          );
-          await this.bot.youTube.api.setTitle(data.message);
-          const streamInfo =
-            await this.bot.twitch.apiClient.streams.getStreamByUserId(
-              this.bot.twitch.channel.id,
-            );
-          if (streamInfo != null)
-            this.bot.youTube.permTitle = `${data.message} (${streamInfo.gameName})`;
         },
       },
     ],
@@ -1207,17 +1180,6 @@ export class MessageHandler {
         },
       },
     ],
-    [
-      "!ytconnect",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          await this.bot.youTube.initBot();
-          data.reply("Connecting to youtube chat.", true);
-        },
-      },
-    ],
   ]);
 
   private async runCommand(
@@ -1399,7 +1361,6 @@ export class MessageHandler {
           title: title,
         },
       );
-      this.bot.youTube.api.setTitle(title);
       this.lastDynamicTitle = title;
     }
   }

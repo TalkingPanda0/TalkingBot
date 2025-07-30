@@ -1,6 +1,5 @@
 import { Twitch } from "./twitch";
 import { Discord } from "./discord";
-import { YouTube } from "./youtube";
 import { DB } from "./db";
 
 import { Server } from "socket.io";
@@ -45,7 +44,6 @@ export interface latestSub {
 export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
-  public youTube: YouTube;
   public poll: Poll;
   public iochat: Server;
   public iomodtext: Server;
@@ -93,9 +91,6 @@ export class TalkingBot {
         ) {
           this.iochat.emit("chatDisconnect", "twitch");
         }
-        if (!this.youTube.isConnected) {
-          this.iochat.emit("chatDisconnect", "youtube");
-        }
         this.connectedtoOverlay = true;
       } catch (e) {
         console.error(e);
@@ -116,7 +111,6 @@ export class TalkingBot {
     this.wheel = new Wheel();
     this.database = new DB();
     this.twitch = new Twitch(this);
-    this.youTube = new YouTube(this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
@@ -175,10 +169,7 @@ export class TalkingBot {
   }
 
   public async broadcastMessage(message: string) {
-    await Promise.all([
-      this.twitch.say(message),
-      this.youTube.api.sendMessage(message),
-    ]);
+    await Promise.all([this.twitch.say(message)]);
   }
   public updateModText() {
     if (!this.modtext) return;

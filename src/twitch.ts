@@ -135,7 +135,6 @@ export class Twitch {
       },
       30 * 60 * 1000,
     );
-    await this.bot.youTube.initBot();
   }
   private formatDisplayName(message: ChatMessage) {
     const display = message.userInfo.displayName;
@@ -410,7 +409,6 @@ export class Twitch {
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
       this.isStreamOnline = false;
       this.chatClient.say(this.channelName, this.bot.whereWord.endGame());
-      this.bot.youTube.onStreamEnd();
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {
