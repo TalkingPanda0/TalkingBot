@@ -1261,7 +1261,7 @@ export class MessageHandler {
         return await this.runCommand(data, commandName, customCommand);
       }
       const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand == null || data.platform == "discord") {
+      if (builtinCommand == null) {
         this.regexCommands.some((command) => {
           const matches = Array.from(data.message.matchAll(command.regex));
           if (matches.length != 0) {
