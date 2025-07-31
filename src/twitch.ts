@@ -120,6 +120,7 @@ export class Twitch {
   }
   // only things that should run when the bot starts during a stream and on the start of stream.
   private async onStreamOnline() {
+    this.bot.youtube.initBot();
     this.updateCategoryInterval = setInterval(
       () => {
         updateCategory(this.bot);

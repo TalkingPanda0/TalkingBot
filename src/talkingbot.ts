@@ -127,7 +127,6 @@ export class TalkingBot {
 
     this.discord.initBot();
     await this.twitch.initBot();
-    await this.youtube.initBot();
     this.users.init();
     this.commandHandler.init();
     await this.whereWord.init();
