@@ -4,7 +4,7 @@ USER bun
 RUN mkdir /home/bun/talkingbot
 WORKDIR /home/bun/talkingbot
 
-COPY package.json ./
+COPY package.json streamlist.proto ./
 
 RUN bun install --frozen-lockfile --verbose --production
 
