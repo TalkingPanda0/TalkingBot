@@ -15,6 +15,7 @@ import { WhereWord } from "./whereword";
 import { Poll } from "./poll";
 
 import { levelUp } from "./levels";
+import { YouTube } from "./youtube";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -59,7 +60,7 @@ export class TalkingBot {
   public credits: Credits;
   public users: Users;
   public whereWord: WhereWord;
-
+  public youtube: YouTube;
   private server: http.Server;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string | null = null;
@@ -111,6 +112,7 @@ export class TalkingBot {
     this.wheel = new Wheel();
     this.database = new DB();
     this.twitch = new Twitch(this);
+    this.youtube = new YouTube(this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.users = new Users(this.database);
@@ -125,6 +127,7 @@ export class TalkingBot {
 
     this.discord.initBot();
     await this.twitch.initBot();
+    await this.youtube.initBot();
     this.users.init();
     this.commandHandler.init();
     await this.whereWord.init();

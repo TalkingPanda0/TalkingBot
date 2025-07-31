@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@grpc/grpc-js": "^1.13.4",
+    "@grpc/proto-loader": "^0.8.0",
     "@twurple/api": "^7.3.0",
     "@twurple/auth": "^7.3.0",
     "@twurple/chat": "^7.3.0",
@@ -30,8 +32,7 @@
     "isomorphic-dompurify": "^2.25.0",
     "jsdom": "^26.1.0",
     "jsonwebtoken": "^9.0.2",
-    "socket.io": "^4.8.1",
-    "youtube-chat": "^2.2.0"
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/bun": "^1.2.17",

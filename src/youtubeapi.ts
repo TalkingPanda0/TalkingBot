@@ -2,12 +2,14 @@ import { OAuth2Client } from "google-auth-library";
 import { google, youtube_v3 } from "googleapis";
 
 export class YouTubeAPI {
-  private chatId: string | null | undefined = null;
+  public chatId: string | null | undefined = null;
   private videoId: string | null | undefined = null;
   private youtubeClient!: youtube_v3.Youtube;
   private oAuth2Client!: OAuth2Client;
   private editoroAuth2Client!: OAuth2Client;
   private tokenFile = Bun.file(__dirname + "/../config/yt.json");
+  private channelId: string;
+  private apiKey: string = "";
 
   private log(message: any) {
     console.log("\x1b[31m%s\x1b[0m", message);
@@ -16,7 +18,38 @@ export class YouTubeAPI {
     console.error("\x1b[31m%s\x1b[0m", message);
   }
 
-  public async getChatId(videoId: string) {
+  public async getVideoId() {
+    try {
+      const result = await this.youtubeClient.search.list({
+        auth: this.oAuth2Client,
+        channelId: this.channelId,
+        type: ["video"],
+        eventType: "live",
+        maxResults: 1,
+        part: ["snippet"],
+      });
+      const stream = result.data.items?.at(0);
+      if (!stream) return;
+      this.videoId = stream.id?.videoId;
+    } catch (e) {
+      this.error(e);
+    }
+  }
+
+  public async getChatId() {
+    try {
+      if (!this.videoId) {
+        await this.getVideoId();
+        if (!this.videoId) return;
+      }
+      this.chatId = await this.getChatIdFromVideoID(this.videoId);
+      this.log(`Connected to chat: ${this.chatId}`);
+    } catch (e) {
+      this.error(`getChatId: ${e}`);
+    }
+  }
+
+  public async getChatIdFromVideoID(videoId: string): Promise<string | null> {
     try {
       this.videoId = videoId;
 
@@ -30,15 +63,13 @@ export class YouTubeAPI {
         response.data.items?.[0]?.liveStreamingDetails?.activeLiveChatId;
 
       this.chatId = chatId;
-      this.log(`Connected to chat: ${chatId}`);
-      return true;
+      return chatId ?? null;
     } catch (e) {
       this.error(`getChatId: ${e}`);
-      return false;
+      return null;
     }
   }
   public async sendMessage(message: string) {
-    return;
     try {
       const msg: youtube_v3.Schema$LiveChatMessage = {
         snippet: {
@@ -59,6 +90,7 @@ export class YouTubeAPI {
 
   public async setupAPI() {
     const credentials = await this.tokenFile.json();
+    this.apiKey = credentials.apiKey;
     this.oAuth2Client = new google.auth.OAuth2(
       credentials.clientId,
       credentials.clientSecret,
@@ -75,6 +107,8 @@ export class YouTubeAPI {
     this.oAuth2Client.setCredentials(credentials.token);
     this.editoroAuth2Client.setCredentials(credentials.editorToken);
     this.youtubeClient = google.youtube({ version: "v3" });
+
+    await this.getChatId();
   }
 
   public onStreamEnd() {
@@ -117,6 +151,11 @@ export class YouTubeAPI {
       this.error(`banUser: ${e}`);
     }
   }
+  public getApiKey(): string | undefined {
+    return this.apiKey;
+  }
 
-  constructor() {}
+  constructor(channelId: string) {
+    this.channelId = channelId;
+  }
 }

@@ -1,15 +1,29 @@
-import { MessageItem } from "youtube-chat/dist/types/data";
 import { TalkingBot } from "./talkingbot";
 import { userColors } from "./twitch";
 import { YouTubeAPI } from "./youtubeapi";
-import { LiveChat } from "youtube-chat";
+import { LiveChatMessageListResponse } from "./proto/youtube/api/v3/LiveChatMessageListResponse";
+import * as grpc from "@grpc/grpc-js";
+import * as protoLoader from "@grpc/proto-loader";
+import { LiveChatMessage } from "./proto/youtube/api/v3/LiveChatMessage";
+import { exit } from "process";
 
-export function parseYTMessage(message: MessageItem[]): string {
+const packageDefinition = protoLoader.loadSync(
+  __dirname + "/../streamlist.proto",
+  {
+    keepCase: true,
+    longs: String,
+    enums: String,
+    defaults: true,
+    oneofs: true,
+  },
+);
+
+export function parseYTMessage(message: String[]): string {
   return message
     .map((item) =>
       "text" in item
         ? item.text
-        : `<img onload="emoteLoaded()" src="${item.url}" class="emote" />`,
+        : `<img onload="emoteLoaded()" src="${item}" class="emote" />`,
     )
     .join(" ");
 }
@@ -20,8 +34,8 @@ export class YouTube {
   public permTitle: string | null = null;
 
   private bot: TalkingBot;
-  private chat: LiveChat;
   private channelId: string;
+  private nextPageToken: string | undefined;
   private getColor(username: string): string {
     let hash = 0,
       i: number,
@@ -34,9 +48,7 @@ export class YouTube {
     return userColors[Math.abs(hash % userColors.length)];
   }
 
-  public cleanUp() {
-    this.chat.stop();
-  }
+  public cleanUp() {}
 
   public onStreamEnd() {
     if (this.permTitle) this.api.setTitle(this.permTitle);
@@ -44,45 +56,88 @@ export class YouTube {
   }
 
   public async initBot() {
-    this.chat = new LiveChat({ channelId: this.channelId });
-    this.chat.on("error", (err) => {
-      console.error("\x1b[31m%s\x1b[0m", `Youtube-chat error: ${err}`);
+    await this.api.setupAPI();
+
+    this.streamMessages();
+  }
+  private streamMessages() {
+    let nextPageToken: string | undefined = undefined;
+    const apiKey = this.api.getApiKey();
+    if (!apiKey) {
+      console.error("Can't get yt api key.");
+      return;
+    }
+
+    const protoDescriptor = grpc.loadPackageDefinition(
+      packageDefinition,
+    ) as any;
+    const metadata = new grpc.Metadata();
+    metadata.add("x-goog-api-key", apiKey);
+
+    const LiveChatService =
+      protoDescriptor.youtube.api.v3.V3DataLiveChatMessageService;
+    const client = new LiveChatService(
+      "youtube.googleapis.com:443",
+      grpc.credentials.createSsl(),
+    );
+
+    const callStream = client.StreamList(
+      {
+        part: ["snippet", "authorDetails", "id"],
+        live_chat_id: this.api.chatId,
+        max_results: 2000,
+        page_token: this.nextPageToken,
+      },
+      metadata,
+    );
+
+    callStream.on("data", (response: LiveChatMessageListResponse) => {
+      response.items?.forEach((item) => this.handleEvent(item));
+      this.nextPageToken = response.next_page_token;
     });
 
-    this.chat.on("end", (reason) => {
-      this.bot.iochat.emit("chatDisconnect", "youtube");
-      this.isConnected = false;
-      console.log("\x1b[31m%s\x1b[0m", `Youtube disconnected: ${reason}`);
+    callStream.on("end", () => {
+      if (!this.nextPageToken) {
+        console.log("Stream ended.");
+        return;
+      }
+      setTimeout(() => {
+        this.streamMessages();
+      }, 1000);
     });
 
-    this.chat.on("start", async (videoId) => {
-      this.bot.iochat.emit("chatConnect", "youtube");
-      this.isConnected = true;
-      this.api.getChatId(videoId);
-      console.log("\x1b[31m%s\x1b[0m", `Youtube setup complete: ${videoId}`);
-      const title = await this.bot.twitch.getCurrentTitle();
-      if (title != null) this.api.setTitle(title);
+    callStream.on("error", (err: any) => {
+      console.error("Stream error:", err);
+      setTimeout(() => {
+        this.streamMessages();
+      }, 1000);
     });
+  }
 
-    this.chat.on("chat", async (event) => {
-      try {
-        let text = event.message
-          .map((item) => {
-            "text" in item ? item.text : item.emojiText;
-          })
-          .join(" ");
+  private handleEvent(message: LiveChatMessage) {
+    switch (message.snippet?.type) {
+      case "TEXT_MESSAGE_EVENT":
+        if (
+          !message.author_details?.display_name ||
+          !message.snippet.display_message ||
+          !message.author_details?.channel_id ||
+          !message.id
+        )
+          return;
         console.log(
-          "\x1b[31m%s\x1b[0m",
-          `YouTube - ${event.author.name}: ${text}`,
+          `${message.author_details?.display_name}: ${message.snippet?.display_message}`,
         );
 
         const badges = [];
-        if (event.isModerator) {
+        if (message.author_details?.is_chat_moderator) {
           badges.push("/ytmod.svg");
         }
         this.bot.commandHandler.handleMessage({
           badges: badges,
-          isUserMod: event.isModerator || event.isOwner,
+          isUserMod:
+            (message.author_details?.is_chat_moderator ||
+              message.author_details?.is_chat_owner) ??
+            false,
           reply: async (message, _replyToUser) => {
             try {
               await this.api.sendMessage(message);
@@ -90,40 +145,33 @@ export class YouTube {
               console.error(e);
             }
           },
-          message: text,
-          parsedMessage: parseYTMessage(event.message),
+          message: message.snippet.display_message,
+          parsedMessage: message.snippet.display_message,
           banUser: async (_reason, duration) => {
             try {
-              this.api.banUser(event.author.channelId, duration);
+              await this.api.banUser(
+                message.author_details?.channel_id!,
+                duration,
+              );
             } catch (e) {
               console.error(e);
             }
           },
           platform: "youtube",
-          color: this.getColor(event.author.name),
-          username: event.author.name,
-          sender: event.author.name,
-          id: event.id,
-          senderId: event.author.channelId,
+          color: this.getColor(message.author_details?.display_name),
+          username: message.author_details?.display_name,
+          sender: message.author_details?.display_name,
+          id: message.id,
+          senderId: message.author_details?.channel_id,
+          isCommand: message.author_details?.display_name == "Talking Bot",
           isFirst: false,
-          replyText: "",
-          replyId: "",
-          replyTo: "",
-          rewardName: "",
           isOld: false,
-          isCommand:
-            event.author.name === "BotRix" ||
-            event.author.name == "Talking Bot",
         });
 
-        return;
-      } catch (e) {
-        console.log(e);
-      }
-    });
-    this.api.setupAPI();
-    this.chat.start();
+        break;
+    }
   }
+
   constructor(bot: TalkingBot) {
     const channelId = process.env.YT_CHANNEL_ID;
     if (channelId == null) {
@@ -134,7 +182,6 @@ export class YouTube {
 
     this.bot = bot;
 
-    this.chat = new LiveChat({ channelId: this.channelId });
-    this.api = new YouTubeAPI();
+    this.api = new YouTubeAPI(this.channelId);
   }
 }
