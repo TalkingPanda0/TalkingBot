@@ -7,7 +7,7 @@ import * as http from "http";
 import { DiscordAuthData, TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 import { readdir } from "node:fs/promises";
-import { UploadedFile } from "express-fileupload";
+import fileUpload, { UploadedFile } from "express-fileupload";
 import { MessageData } from "./commands";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
@@ -22,7 +22,12 @@ app.use(express.static("config/sounds"));
 app.use(bodyParser.text());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  }),
+);
 app.get("/soundEffects", async (_req, res) => {
   const files = await readdir(__dirname + "/../config/sounds");
   res.send(
