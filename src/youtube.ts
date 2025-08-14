@@ -5,18 +5,6 @@ import { LiveChatMessageListResponse } from "./proto/youtube/api/v3/LiveChatMess
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { LiveChatMessage } from "./proto/youtube/api/v3/LiveChatMessage";
-import { exit } from "process";
-
-const packageDefinition = protoLoader.loadSync(
-  __dirname + "/../streamlist.proto",
-  {
-    keepCase: true,
-    longs: String,
-    enums: String,
-    defaults: true,
-    oneofs: true,
-  },
-);
 
 export function parseYTMessage(message: String[]): string {
   return message
@@ -36,19 +24,53 @@ export class YouTube {
   private bot: TalkingBot;
   private channelId: string;
   private nextPageToken: string | undefined;
+
+  private protoDescriptor: any;
+  private currentCall: grpc.ClientReadableStream<LiveChatMessageListResponse> | null =
+    null;
+  private currentClient: any = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+
+  constructor(bot: TalkingBot) {
+    const channelId = process.env.YT_CHANNEL_ID;
+    if (channelId == null) {
+      console.error("YT_CHANNEL_ID not set!");
+      process.exit(1);
+    }
+    this.channelId = channelId;
+    this.bot = bot;
+    this.api = new YouTubeAPI(this.channelId);
+
+    const packageDefinition = protoLoader.loadSync(
+      __dirname + "/../streamlist.proto",
+      {
+        keepCase: true,
+        longs: String,
+        enums: String,
+        defaults: true,
+        oneofs: true,
+      },
+    );
+    this.protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
+  }
+
   private getColor(username: string): string {
-    let hash = 0,
-      i: number,
-      chr: number;
-    for (i = 0; i < username.length; i++) {
-      chr = username.charCodeAt(i);
+    let hash = 0;
+    for (let i = 0; i < username.length; i++) {
+      const chr = username.charCodeAt(i);
       hash = (hash << 5) - hash + chr;
       hash |= 0; // Convert to 32bit integer
     }
     return userColors[Math.abs(hash % userColors.length)];
   }
 
-  public cleanUp() {}
+  public cleanUp() {
+    this.cleanupStream();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+  }
 
   public onStreamEnd() {
     if (this.permTitle) this.api.setTitle(this.permTitle);
@@ -57,29 +79,48 @@ export class YouTube {
 
   public async initBot() {
     await this.api.setupAPI();
-
     this.streamMessages();
   }
+
+  private cleanupStream() {
+    if (this.currentCall) {
+      this.currentCall.removeAllListeners();
+      this.currentCall.cancel();
+      this.currentCall = null;
+    }
+    if (this.currentClient && typeof this.currentClient.close === "function") {
+      this.currentClient.close();
+    }
+    this.currentClient = null;
+  }
+
+  private scheduleReconnect() {
+    if (this.reconnectTimer) return;
+    this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
+      this.streamMessages();
+    }, 1000);
+  }
+
   private streamMessages() {
-    let nextPageToken: string | undefined = undefined;
+    this.cleanupStream();
+
     const apiKey = this.api.getApiKey();
     if (!apiKey) {
       console.error("Can't get yt api key.");
       return;
     }
 
-    const protoDescriptor = grpc.loadPackageDefinition(
-      packageDefinition,
-    ) as any;
     const metadata = new grpc.Metadata();
     metadata.add("x-goog-api-key", apiKey);
 
     const LiveChatService =
-      protoDescriptor.youtube.api.v3.V3DataLiveChatMessageService;
+      this.protoDescriptor.youtube.api.v3.V3DataLiveChatMessageService;
     const client = new LiveChatService(
       "youtube.googleapis.com:443",
       grpc.credentials.createSsl(),
     );
+    this.currentClient = client;
 
     const callStream = client.StreamList(
       {
@@ -90,6 +131,7 @@ export class YouTube {
       },
       metadata,
     );
+    this.currentCall = callStream;
 
     callStream.on("data", (response: LiveChatMessageListResponse) => {
       response.items?.forEach((item) => this.handleEvent(item));
@@ -97,20 +139,18 @@ export class YouTube {
     });
 
     callStream.on("end", () => {
+      this.cleanupStream();
       if (!this.nextPageToken) {
         console.log("Stream ended.");
         return;
       }
-      setTimeout(() => {
-        this.streamMessages();
-      }, 1000);
+      this.scheduleReconnect();
     });
 
     callStream.on("error", (err: any) => {
       console.error("Stream error:", err);
-      setTimeout(() => {
-        this.streamMessages();
-      }, 1000);
+      this.cleanupStream();
+      this.scheduleReconnect();
     });
   }
 
@@ -124,6 +164,7 @@ export class YouTube {
           !message.id
         )
           return;
+
         console.log(
           `${message.author_details?.display_name}: ${message.snippet?.display_message}`,
         );
@@ -132,15 +173,16 @@ export class YouTube {
         if (message.author_details?.is_chat_moderator) {
           badges.push("/ytmod.svg");
         }
+
         this.bot.commandHandler.handleMessage({
-          badges: badges,
+          badges,
           isUserMod:
             (message.author_details?.is_chat_moderator ||
               message.author_details?.is_chat_owner) ??
             false,
-          reply: async (message, _replyToUser) => {
+          reply: async (msg, _replyToUser) => {
             try {
-              await this.api.sendMessage(message);
+              await this.api.sendMessage(msg);
             } catch (e) {
               console.error(e);
             }
@@ -163,25 +205,11 @@ export class YouTube {
           sender: message.author_details?.display_name,
           id: message.id,
           senderId: message.author_details?.channel_id,
-          isCommand: message.author_details?.display_name == "Talking Bot",
+          isCommand: message.author_details?.display_name === "Talking Bot",
           isFirst: false,
           isOld: false,
         });
-
         break;
     }
-  }
-
-  constructor(bot: TalkingBot) {
-    const channelId = process.env.YT_CHANNEL_ID;
-    if (channelId == null) {
-      console.error("YT_CHANNEL_ID not set!");
-      process.exit(1);
-    }
-    this.channelId = channelId;
-
-    this.bot = bot;
-
-    this.api = new YouTubeAPI(this.channelId);
   }
 }

@@ -1,4 +1,5 @@
 import { TalkingBot } from "./talkingbot";
+import v8 from "node:v8";
 import {
   arraytoHashMap,
   getRandomElement,
@@ -1177,6 +1178,16 @@ export class MessageHandler {
           } catch (error) {
             console.error(error);
           }
+        },
+      },
+    ],
+    [
+      "!snapshotheap",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          data.reply(`Wrote to ${v8.writeHeapSnapshot()}.`, true);
         },
       },
     ],

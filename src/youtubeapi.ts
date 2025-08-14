@@ -70,6 +70,7 @@ export class YouTubeAPI {
     }
   }
   public async sendMessage(message: string) {
+    return;
     try {
       const msg: youtube_v3.Schema$LiveChatMessage = {
         snippet: {
