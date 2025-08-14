@@ -15,7 +15,7 @@
   <script>
     const text = document.getElementById("text");
 
-    var socket = io("/", { path: "/modtext/" });
+    var socket = io("/modtext");
 
     socket.on("refresh", () => {
       window.location.reload();

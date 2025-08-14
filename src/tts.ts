@@ -1,5 +1,4 @@
-import { Server } from "socket.io";
-import * as http from "http";
+import { Namespace } from "socket.io";
 
 export interface TTSData {
   text: string;
@@ -10,7 +9,7 @@ export interface TTSData {
 }
 
 export class TTSManager {
-  public io: Server;
+  public io: Namespace;
   public enabled: boolean;
 
   public setPause(status: boolean) {
@@ -26,10 +25,8 @@ export class TTSManager {
     this.io.emit("message", data);
   }
 
-  constructor(server: http.Server) {
+  constructor(io: Namespace) {
     this.enabled = false;
-    this.io = new Server(server, {
-      path: "/tts/",
-    });
+    this.io = io;
   }
 }

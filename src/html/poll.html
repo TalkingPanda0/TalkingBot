@@ -124,7 +124,7 @@
           endPoll();
         }, poll.duration);
       }
-      var socket = io("/", { path: "/poll/" });
+      var socket = io("/poll");
       socket.on("createPoll", (poll) => {
         console.log(poll);
         createPoll(poll);

@@ -1,4 +1,4 @@
-import { Server } from "socket.io";
+import { Namespace } from "socket.io";
 
 export interface PollOption {
   id: number;
@@ -9,11 +9,11 @@ export interface PollOption {
 abstract class PollMethod {
   public duration: number = 0;
   public currentTitle?: string;
-  public iopoll: Server;
+  public iopoll: Namespace;
   public options: PollOption[] = [];
   public onPollEnd: (results: PollOption[]) => void | Promise<void> = () => {};
   private pollTimer: Timer | null = null;
-  constructor(iopoll: Server) {
+  constructor(iopoll: Namespace) {
     this.iopoll = iopoll;
   }
   public getStartMessage(): string {
@@ -157,10 +157,10 @@ class ScorePoll extends PollMethod {
 }
 
 export class Poll {
-  private iopoll: Server;
+  private iopoll: Namespace;
   private currentMethod?: PollMethod;
   private pollMethods: Map<string, PollMethod>;
-  public constructor(iopoll: Server) {
+  public constructor(iopoll: Namespace) {
     this.iopoll = iopoll;
     this.pollMethods = new Map<string, PollMethod>([
       ["fpp", new FPPPoll(this.iopoll)],

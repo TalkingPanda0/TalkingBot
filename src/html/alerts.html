@@ -345,7 +345,7 @@
         alertElement.style = "opacity: 100%";
       }
 
-      var socket = io("/", { path: "/alerts/" });
+      var socket = io("/alerts");
 
       socket.on("refresh", () => {
         window.location.reload();

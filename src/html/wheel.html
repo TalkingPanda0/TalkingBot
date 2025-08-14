@@ -38,7 +38,7 @@
     </table>
     <script>
       let theWheel;
-      var socket = io("/", { path: "/wheel/" });
+      var socket = io("/wheel");
 
       socket.on("spinWheel", () => {
         theWheel.startAnimation();

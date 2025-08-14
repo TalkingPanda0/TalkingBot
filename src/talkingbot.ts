@@ -2,7 +2,7 @@ import { Twitch } from "./twitch";
 import { Discord } from "./discord";
 import { DB } from "./db";
 
-import { Server } from "socket.io";
+import { Namespace, Server } from "socket.io";
 import * as http from "http";
 import { Pet } from "./pet";
 
@@ -46,10 +46,10 @@ export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
   public poll: Poll;
-  public iochat: Server;
-  public iomodtext: Server;
-  public iopoll: Server;
-  public ioalert: Server;
+  public iochat: Namespace;
+  public iomodtext: Namespace;
+  public iopoll: Namespace;
+  public ioalert: Namespace;
   public connectedtoOverlay: Boolean = false;
   public pet: Pet;
   public database: DB;
@@ -61,27 +61,22 @@ export class TalkingBot {
   public users: Users;
   public whereWord: WhereWord;
   public youtube: YouTube;
-  private server: http.Server;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string | null = null;
   public discordRedirectUri: string = "";
   public discordLoginUri: string = "";
 
   constructor(server: http.Server) {
-    this.server = server;
-    this.ttsManager = new TTSManager(server);
+    const io = new Server(server);
+    this.ttsManager = new TTSManager(io.of("tts"));
 
-    this.iomodtext = new Server(this.server, {
-      path: "/modtext/",
-    });
+    this.iomodtext = io.of("modtext");
 
     this.iomodtext.on("connection", () => {
       this.updateModText();
     });
 
-    this.iochat = new Server(this.server, {
-      path: "/chat/",
-    });
+    this.iochat = io.of("chat");
 
     this.iochat.on("connect", () => {
       try {
@@ -97,13 +92,8 @@ export class TalkingBot {
         console.error(e);
       }
     });
-    this.iopoll = new Server(this.server, {
-      path: "/poll/",
-    });
-    this.ioalert = new Server(this.server, {
-      path: "/alerts/",
-    });
-
+    this.iopoll = io.of("poll");
+    this.ioalert = io.of("alerts");
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 

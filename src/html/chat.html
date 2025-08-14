@@ -266,7 +266,7 @@
       disconnectList.innerHTML = "";
     }
 
-    var socket = io("/", { path: "/chat/" });
+    var socket = io("/chat");
 
     socket.on("refresh", () => {
       window.location.reload();

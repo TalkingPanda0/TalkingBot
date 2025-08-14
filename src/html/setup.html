@@ -109,7 +109,7 @@
       const broadcaster = document.getElementById("broadcaster");
       const setup1 = document.getElementById("setup1");
       const setup2 = document.getElementById("setup2");
-      var socket = io("/", { path: "/setup/" });
+      var socket = io("/setup");
 
       socket.on("connect", () => {
         console.log("Connected to socket server");
