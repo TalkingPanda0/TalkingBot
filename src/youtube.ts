@@ -24,11 +24,12 @@ export class YouTube {
   private bot: TalkingBot;
   private channelId: string;
   private nextPageToken: string | undefined;
+  private metadata!: grpc.Metadata;
 
   private protoDescriptor: any;
   private currentCall: grpc.ClientReadableStream<LiveChatMessageListResponse> | null =
     null;
-  private currentClient: any = null;
+  private client: any = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
 
   constructor(bot: TalkingBot) {
@@ -52,6 +53,13 @@ export class YouTube {
       },
     );
     this.protoDescriptor = grpc.loadPackageDefinition(packageDefinition);
+    const LiveChatService =
+      this.protoDescriptor.youtube.api.v3.V3DataLiveChatMessageService;
+    const client = new LiveChatService(
+      "youtube.googleapis.com:443",
+      grpc.credentials.createSsl(),
+    );
+    this.client = client;
   }
 
   private getColor(username: string): string {
@@ -79,6 +87,15 @@ export class YouTube {
 
   public async initBot() {
     await this.api.setupAPI();
+    const apiKey = this.api.getApiKey();
+    if (!apiKey) {
+      console.error("Can't get yt api key.");
+      return;
+    }
+
+    this.metadata = new grpc.Metadata();
+    this.metadata.add("x-goog-api-key", apiKey);
+
     this.streamMessages();
   }
 
@@ -88,10 +105,10 @@ export class YouTube {
       this.currentCall.cancel();
       this.currentCall = null;
     }
-    if (this.currentClient && typeof this.currentClient.close === "function") {
-      this.currentClient.close();
+    if (this.client && typeof this.client.close === "function") {
+      this.client.close();
     }
-    this.currentClient = null;
+    this.client = null;
   }
 
   private scheduleReconnect() {
@@ -105,31 +122,14 @@ export class YouTube {
   private streamMessages() {
     this.cleanupStream();
 
-    const apiKey = this.api.getApiKey();
-    if (!apiKey) {
-      console.error("Can't get yt api key.");
-      return;
-    }
-
-    const metadata = new grpc.Metadata();
-    metadata.add("x-goog-api-key", apiKey);
-
-    const LiveChatService =
-      this.protoDescriptor.youtube.api.v3.V3DataLiveChatMessageService;
-    const client = new LiveChatService(
-      "youtube.googleapis.com:443",
-      grpc.credentials.createSsl(),
-    );
-    this.currentClient = client;
-
-    const callStream = client.StreamList(
+    const callStream = this.client.StreamList(
       {
         part: ["snippet", "authorDetails", "id"],
         live_chat_id: this.api.chatId,
         max_results: 2000,
         page_token: this.nextPageToken,
       },
-      metadata,
+      this.metadata,
     );
     this.currentCall = callStream;
 
