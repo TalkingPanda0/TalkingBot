@@ -296,14 +296,14 @@ app.use("/control", async (req, res) => {
             });
           break;
         case "/soundEffects/add":
-          if (!req.files || !req.files.sound) {
+          if (!req.files || !req.files.sound || !req.body.name) {
             return res.status(422).send("No files were uploaded");
           }
           const uploadedFile = req.files.sound as UploadedFile;
           if (uploadedFile.mimetype != "audio/mpeg") {
             return res.status(422).send("This is not an mp3.");
           }
-          const filePath = `${__dirname}/../config/sounds/${uploadedFile.name}`;
+          const filePath = `${__dirname}/../config/sounds/${req.body.name}.mp3`;
           uploadedFile.mv(filePath, (e) => {
             if (e) return res.status(500).send(e);
             res.sendStatus(200);
