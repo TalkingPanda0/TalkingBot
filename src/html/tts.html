@@ -70,7 +70,7 @@
     }
 
     function listen() {
-      const socket = io("/", { path: "/tts/" });
+      const socket = io("/tts");
 
       socket.on("refresh", () => {
         window.location.reload();
