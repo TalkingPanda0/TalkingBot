@@ -78,6 +78,7 @@ export class YouTube {
       clearTimeout(this.reconnectTimer);
       this.reconnectTimer = null;
     }
+    this.client.close();
   }
 
   public onStreamEnd() {
@@ -105,10 +106,6 @@ export class YouTube {
       this.currentCall.cancel();
       this.currentCall = null;
     }
-    if (this.client && typeof this.client.close === "function") {
-      this.client.close();
-    }
-    this.client = null;
   }
 
   private scheduleReconnect() {
@@ -139,7 +136,6 @@ export class YouTube {
     });
 
     callStream.on("end", () => {
-      this.cleanupStream();
       if (!this.nextPageToken) {
         console.log("Stream ended.");
         return;
@@ -149,7 +145,6 @@ export class YouTube {
 
     callStream.on("error", (err: any) => {
       console.error("Stream error:", err);
-      this.cleanupStream();
       this.scheduleReconnect();
     });
   }

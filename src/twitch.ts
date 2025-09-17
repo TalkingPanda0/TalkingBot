@@ -118,7 +118,7 @@ export class Twitch {
       JSON.stringify(tokenData, null, 4),
     );
   }
-  // only things that should run when the bot starts during a stream and on the start of stream.
+  // only things that should also run when the bot starts during a stream and on the start of stream.
   private async onStreamOnline() {
     this.updateCategoryInterval = setInterval(
       () => {
@@ -134,6 +134,12 @@ export class Twitch {
         );
       },
       30 * 60 * 1000,
+    );
+    setTimeout(
+      () => {
+        this.bot.youtube.initBot();
+      },
+      1 * 60 * 1000,
     );
   }
   private formatDisplayName(message: ChatMessage) {
