@@ -133,3 +133,19 @@ export function isDiscordAuthData(obj: any): obj is DiscordAuthData {
     typeof obj.scope === "string"
   );
 }
+export function replaceMap(
+  map: Map<string, string>,
+  input: string,
+  replacement: (match: string) => string,
+): string {
+  // Create a regular expression from the map keys
+  if (map.size == 0) return input;
+  const pattern = Array.from(map.keys()).join("|");
+  const regex = new RegExp(`\\b(${pattern})\\b`, "g");
+
+  // Replace words in the input string using the map values
+  return input.replace(regex, (match) => {
+    const value = map.get(match);
+    return value ? replacement(value) : match;
+  });
+}

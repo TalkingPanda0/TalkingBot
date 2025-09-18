@@ -5,16 +5,7 @@ import { LiveChatMessageListResponse } from "./proto/youtube/api/v3/LiveChatMess
 import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { LiveChatMessage } from "./proto/youtube/api/v3/LiveChatMessage";
-
-export function parseYTMessage(message: String[]): string {
-  return message
-    .map((item) =>
-      "text" in item
-        ? item.text
-        : `<img onload="emoteLoaded()" src="${item}" class="emote" />`,
-    )
-    .join(" ");
-}
+import { arraytoHashMap, replaceMap } from "./util";
 
 export class YouTube {
   public isConnected: boolean = false;
@@ -31,6 +22,7 @@ export class YouTube {
     null;
   private client: any = null;
   private reconnectTimer: NodeJS.Timeout | null = null;
+  private emotes: Map<string, string>;
 
   constructor(bot: TalkingBot) {
     const channelId = process.env.YT_CHANNEL_ID;
@@ -60,6 +52,7 @@ export class YouTube {
       grpc.credentials.createSsl(),
     );
     this.client = client;
+    this.emotes = new Map();
   }
 
   private getColor(username: string): string {
@@ -87,6 +80,7 @@ export class YouTube {
   }
 
   public async initBot() {
+    this.getEmoteMap();
     await this.api.setupAPI();
     const apiKey = this.api.getApiKey();
     if (!apiKey) {
@@ -98,6 +92,20 @@ export class YouTube {
     this.metadata.add("x-goog-api-key", apiKey);
 
     this.streamMessages();
+  }
+  private async getEmoteMap() {
+    const emotes: { key: string; value: string }[] = await Bun.file(
+      `${__dirname}/../config/ytEmotes.json`,
+    ).json();
+    this.emotes = arraytoHashMap(emotes);
+  }
+
+  private parseEmotes(message: string): string {
+    return replaceMap(
+      this.emotes,
+      message,
+      (emote) => `<img onload="emoteLoaded()" src="${emote}" class="emote" />`,
+    );
   }
 
   private cleanupStream() {
@@ -183,7 +191,7 @@ export class YouTube {
             }
           },
           message: message.snippet.display_message,
-          parsedMessage: message.snippet.display_message,
+          parsedMessage: this.parseEmotes(message.snippet.display_message),
           banUser: async (_reason, duration) => {
             try {
               await this.api.banUser(

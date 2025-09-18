@@ -21,7 +21,7 @@ import {
 import { TalkingBot } from "./talkingbot";
 import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
-import { removeByIndexToUppercase } from "./util";
+import { removeByIndexToUppercase, replaceMap } from "./util";
 import {
   EventSubHttpListener,
   ReverseProxyAdapter,
@@ -902,20 +902,7 @@ export class Twitch {
       }
     });
   }
-  private replaceBTTVEmotes(input: string): string {
-    // Create a regular expression from the map keys
-    if (this.BTTVEmotes.size == 0) return input;
-    const pattern = Array.from(this.BTTVEmotes.keys()).join("|");
-    const regex = new RegExp(`\\b(${pattern})\\b`, "g");
 
-    // Replace words in the input string using the map values
-    return input.replace(
-      regex,
-      (match) =>
-        `<img onload="emoteLoaded()" src="https://cdn.betterttv.net/emote/${this.BTTVEmotes.get(match)}/1x" class="emote">` ||
-        match,
-    );
-  }
   public parseTwitchEmotes(
     text: string,
     emoteOffsets: Map<string, string[]>,
@@ -932,7 +919,12 @@ export class Twitch {
     parsedParts.forEach((parsedPart: ParsedMessagePart) => {
       switch (parsedPart.type) {
         case "text":
-          parsed += this.replaceBTTVEmotes(DOMPurify.sanitize(parsedPart.text));
+          parsed += replaceMap(
+            this.BTTVEmotes,
+            DOMPurify.sanitize(parsedPart.text),
+            (match: string) =>
+              `<img onload="emoteLoaded()" src="https://cdn.betterttv.net/emote/${match}/1x" class="emote">`,
+          );
           break;
         case "cheer":
           if (bits) cheerName = parsedPart.name;

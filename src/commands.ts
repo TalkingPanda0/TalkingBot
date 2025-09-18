@@ -1182,6 +1182,16 @@ export class MessageHandler {
       },
     ],
     [
+      "!connecttoyt",
+      {
+        showOnChat: false,
+        commandFunction: (data) => {
+          if (!data.isUserMod) return;
+          this.bot.youtube.initBot();
+        },
+      },
+    ],
+    [
       "!snapshotheap",
       {
         showOnChat: false,
