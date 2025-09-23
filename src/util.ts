@@ -148,7 +148,7 @@ export function replaceMap(
   // Create a regex pattern from the map keys
   const pattern = Array.from(map.keys()).map(escapeRegex).join("|");
 
-  const regex = new RegExp(`(${pattern})`, "g");
+  const regex = new RegExp(`(?<!\\w)(${pattern})(?!\\w)`, "g");
 
   return input.replace(regex, (match) => {
     const value = map.get(match);
