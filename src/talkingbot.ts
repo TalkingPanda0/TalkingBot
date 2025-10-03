@@ -16,6 +16,7 @@ import { Poll } from "./poll";
 
 import { levelUp } from "./levels";
 import { YouTube } from "./youtube";
+import { ModuleManager } from "./moduleManager";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -61,6 +62,7 @@ export class TalkingBot {
   public users: Users;
   public whereWord: WhereWord;
   public youtube: YouTube;
+  public moduleManager: ModuleManager;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string | null = null;
   public discordRedirectUri: string = "";
@@ -105,6 +107,7 @@ export class TalkingBot {
     this.youtube = new YouTube(this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
+    this.moduleManager = new ModuleManager(this);
     this.users = new Users(this.database);
     this.whereWord = new WhereWord();
   }
@@ -116,6 +119,7 @@ export class TalkingBot {
     this.discordLoginUri = secrets.discordLoginUri;
 
     this.discord.initBot();
+    this.moduleManager.init();
     await this.twitch.initBot();
     this.users.init();
     this.commandHandler.init();

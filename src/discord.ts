@@ -25,6 +25,7 @@ import {
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
+import { MessageData } from "botModule";
 
 const HAPBOOS = [
   "<:commonhapboo:1302651100599554172>",
@@ -222,9 +223,9 @@ export class Discord {
         return;
       }
       const rolesCache = message.member.roles.cache;
-
-      this.bot.commandHandler.handleCommand({
+      const data: MessageData = {
         platform: "discord",
+        channelId: message.channelId,
         id: message.id,
         reply: (replyMessage: string, replytoUser: boolean) => {
           if (replyMessage == null) return;
@@ -259,7 +260,10 @@ export class Discord {
         isAction: false,
         rewardName: "",
         username: message.author.username,
-      });
+      };
+
+      this.bot.commandHandler.handleCommand(data);
+      this.bot.moduleManager.onDiscordMessage(message);
 
       if (doReact && message.content.toLowerCase().includes("gay"))
         message.react("<:baboo_pride:981342135892729888>");

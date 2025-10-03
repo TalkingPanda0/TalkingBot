@@ -8,9 +8,9 @@ import { DiscordAuthData, TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 import { readdir } from "node:fs/promises";
 import fileUpload, { UploadedFile } from "express-fileupload";
-import { MessageData } from "./commands";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
+import { MessageData } from "botModule";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -64,7 +64,7 @@ app.use("/control", async (req, res) => {
     return;
   }
   console.log(
-    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
+    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
   );
 
   switch (req.method) {
@@ -88,6 +88,9 @@ app.use("/control", async (req, res) => {
         case "/soundeffect":
           res.sendFile(__dirname + "/html/soundeffectscontrol.html");
           break;
+        case "/modulemanager":
+          res.sendFile(__dirname + "/html/modulemanager.html");
+          break;
         case "/commandbuilder":
           res.sendFile(__dirname + "/html/commandbuilder.html");
           break;
@@ -109,8 +112,20 @@ app.use("/control", async (req, res) => {
         case "/command/alias/list":
           res.send(bot.commandHandler.getCommandAliasList());
           break;
-        case "/command/regex/list":
-          res.send(bot.commandHandler.getRegexCommandList());
+        case "/modulemanager/list":
+          res.send(bot.moduleManager.getModuleList());
+          break;
+        case "/modulemanager/get":
+          if (req.query.name == null) {
+            res.send(400);
+            break;
+          }
+          res.send(
+            await bot.moduleManager.getModuleFile(req.query.name.toString()),
+          );
+          break;
+        case "/modulemanager/edit":
+          res.sendFile(__dirname + "/html/editmodule.html");
           break;
 
         case "/modtext/get":
@@ -225,43 +240,54 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
-        case "/command/regex/add":
+        case "/modulemanager/enable":
           if (req.query.name == null) {
             res.send(400);
             break;
           }
-          const regex = req.query.name.toString();
-          if (!req.body || !regex) {
-            res.sendStatus(400);
-            return;
-          }
-          bot.commandHandler.addRegexCommand(regex, req.body);
+          await bot.moduleManager.enableModule(req.query.name as string);
           res.sendStatus(200);
           break;
-        case "/command/regex/delete":
-          if (req.query.name == null) {
+        case "/modulemanager/disable":
+          if (!req.query.name) {
             res.send(400);
             break;
           }
-          const regexToDelete = req.query.name.toString();
-          if (!regexToDelete) {
-            res.sendStatus(400);
-            return;
-          }
-          bot.commandHandler.removeRegexCommand(regexToDelete);
+          await bot.moduleManager.disableModule(req.query.name as string);
           res.sendStatus(200);
           break;
-        case "/command/regex/set":
+
+        case "/modulemanager/delete":
+          if (!req.query.name) {
+            res.send(400);
+            break;
+          }
+          await bot.moduleManager.deleteModule(req.query.name as string);
+          res.sendStatus(200);
+          break;
+
+        case "/modulemanager/reload":
+          await bot.moduleManager.loadModules();
+          res.sendStatus(200);
+          break;
+
+        case "/modulemanager/reloadmodule":
           if (req.query.name == null) {
             res.send(400);
             break;
           }
-          const regexToSet = req.query.name.toString();
-          if (!req.body || !regexToSet) {
+          bot.moduleManager.reloadModule(req.query.name.toString());
+          break;
+
+        case "/modulemanager/set":
+          if (!req.query.name || !req.body) {
             res.sendStatus(400);
-            return;
+            break;
           }
-          bot.commandHandler.setRegexCommand(regexToSet, req.body);
+          await bot.moduleManager.setModuleFile(
+            req.query.name.toString(),
+            req.body,
+          );
           res.sendStatus(200);
           break;
 

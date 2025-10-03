@@ -6,7 +6,13 @@
       "rootDir": "./src",
       "esModuleInterop": true,
       "strict": true,
+      "paths": {
+        "botModule": ["./src/botModule.ts"],
+        "botutil": ["./src/util.ts"]
+      },
+
       "skipLibCheck": true
+
     },
     "include": ["src/*"]
 }

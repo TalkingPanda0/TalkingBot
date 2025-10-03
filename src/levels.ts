@@ -1,4 +1,4 @@
-import { MessageData } from "./commands";
+import { MessageData } from "botModule";
 import { TalkingBot } from "./talkingbot";
 
 export let recentChatters: Set<string> = new Set();

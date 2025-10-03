@@ -20,39 +20,14 @@ import { calculatePoints } from "./whereword";
 import { UserIdentifier } from "./users";
 
 import { addRecentChatter } from "./levels";
-
-export interface MessageData {
-  badges: string[];
-  isUserMod: boolean;
-  isUserVip?: boolean;
-  isUserSub?: boolean;
-  message: string;
-  parsedMessage: string;
-  username: string;
-  sender: string;
-  senderId: string;
-  color: string;
-  id: string;
-  platform: string;
-  isFirst: boolean;
-  replyTo?: string;
-  replyId?: string;
-  replyText?: string;
-  isCommand: boolean;
-  rewardName?: string;
-  isOld: boolean;
-  isAction?: boolean;
-  isTestRun?: boolean;
-  reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-  banUser: (reason: string, duration?: number) => void | Promise<void>;
-}
+import { MessageData } from "botModule";
 
 interface RegexCommand {
   regex: RegExp;
   command: string;
 }
 
-interface BuiltinCommand {
+export interface Command {
   showOnChat: boolean;
   timeout?: number; // in ms
   commandFunction: (data: MessageData) => void | Promise<void>;
@@ -70,7 +45,6 @@ export class MessageHandler {
   private lastDynamicTitle?: string;
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
-  private regexCommands: RegexCommand[] = [];
   private argMap = new Map<string, string>();
   private argsFile = Bun.file(__dirname + "/../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../config/commands.json");
@@ -85,7 +59,7 @@ export class MessageHandler {
     this.counter.init();
   }
 
-  private commandMap: Map<string, BuiltinCommand> = new Map([
+  private commandMap: Map<string, Command> = new Map([
     [
       "!toptime",
       {
@@ -1219,9 +1193,17 @@ export class MessageHandler {
       (!viponly || data.isUserVip) &&
       (!subonly || data.isUserSub);
     const doReply = customCommand.includes("(reply)");
-    let response = (
+    let response = await replaceAsync(
+      customCommand,
+      /script\((.+)\)/g,
+      async (_message: string, script: string) => {
+        if (!canUserRunCommand) return;
+        return await this.runScript(script, data, commandName);
+      },
+    );
+    response = (
       await replaceAsync(
-        customCommand,
+        response,
         /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
 
         async (message: string, _command: string, url: string, key: string) => {
@@ -1245,14 +1227,6 @@ export class MessageHandler {
       .replace(/\(viponly\)/g, "")
       .replace(/\(subonly\)/g, "")
       .replace(/\(reply\)/g, "");
-    response = await replaceAsync(
-      response,
-      /script\((.+)\)/g,
-      async (_message: string, script: string) => {
-        if (!canUserRunCommand) return;
-        return await this.runScript(script, data, commandName);
-      },
-    );
 
     if (customCommand.includes("fetch")) {
       this.timeout.add(commandName);
@@ -1282,16 +1256,7 @@ export class MessageHandler {
         return await this.runCommand(data, commandName, customCommand);
       }
       const builtinCommand = this.commandMap.get(commandName);
-      if (builtinCommand == null) {
-        this.regexCommands.some((command) => {
-          const matches = Array.from(data.message.matchAll(command.regex));
-          if (matches.length != 0) {
-            this.runCommand(data, matches, command.command);
-            return true;
-          }
-        });
-        return commandName.startsWith("!");
-      }
+      if (builtinCommand == null) return commandName.startsWith("!");
 
       data.message = data.message.replace(commandName, "").trim();
       builtinCommand.commandFunction(data);
@@ -1338,6 +1303,8 @@ export class MessageHandler {
 
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));
+
+    this.bot.moduleManager.onChatMessage(data);
 
     data.id = `${data.platform}-${data.id}`;
     data.senderId = `${data.platform}-${data.senderId}`;
@@ -1395,16 +1362,6 @@ export class MessageHandler {
     if (!(await this.argsFile.exists())) return;
     this.argMap = arraytoHashMap(await this.argsFile.json());
 
-    this.regexCommands = JSON.parse(
-      this.bot.database.getOrSetConfig("customCommands", JSON.stringify([])),
-    ).map((command: { command: string; regex: string }) => {
-      console.log(command);
-      return {
-        command: command.command,
-        regex: new RegExp(command.regex, "gi"),
-      };
-    });
-
     this.keys = await this.keysFile.json();
   }
 
@@ -1418,8 +1375,6 @@ export class MessageHandler {
       JSON.stringify(hashMaptoArray(this.commandAliasMap)),
     );
     Bun.write(this.argsFile, JSON.stringify(hashMaptoArray(this.argMap)));
-
-    this.bot.database.setConfig("customCommands", this.getRegexCommandList());
   }
 
   public getCommandAliasList(): string {
@@ -1478,39 +1433,17 @@ export class MessageHandler {
     this.writeCustomCommands();
   }
 
-  public getRegexCommandList(): string {
-    return JSON.stringify(
-      this.regexCommands.map((command) => {
-        return { command: command.command, regex: command.regex.source };
-      }),
-    );
+  public addCommand(name: string, command: Command): boolean {
+    if (this.commandMap.has(name)) {
+      console.error(`Command: ${name} already exists.`);
+      return false;
+    }
+    this.commandMap.set(name, command);
+    return true;
   }
 
-  public addRegexCommand(regexString: string, command: string) {
-    if (
-      this.regexCommands.some((command) => command.regex.source == regexString)
-    )
-      return;
-    this.regexCommands.push({
-      regex: new RegExp(regexString, "gi"),
-      command: command,
-    });
-    this.writeCustomCommands();
-  }
-
-  public setRegexCommand(regexString: string, newCommand: string) {
-    this.regexCommands.forEach((command, index) => {
-      if (command.regex.source != regexString) return false;
-      command.command = newCommand;
-      this.regexCommands[index] = command;
-      return true;
-    });
-  }
-
-  public removeRegexCommand(regexString: string) {
-    this.regexCommands = this.regexCommands.filter(
-      (command) => command.regex.source != regexString,
-    );
+  public removeCommand(name: string): boolean {
+    return this.commandMap.delete(name);
   }
 
   public async runScript(

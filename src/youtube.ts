@@ -146,6 +146,7 @@ export class YouTube {
     callStream.on("end", () => {
       if (!this.nextPageToken) {
         console.log("Stream ended.");
+        this.cleanUp();
         return;
       }
       this.scheduleReconnect();
@@ -208,6 +209,7 @@ export class YouTube {
           sender: message.author_details?.display_name,
           id: message.id,
           senderId: message.author_details?.channel_id,
+          channelId: message.snippet.live_chat_id || "",
           isCommand: message.author_details?.display_name === "Talking Bot",
           isFirst: false,
           isOld: false,

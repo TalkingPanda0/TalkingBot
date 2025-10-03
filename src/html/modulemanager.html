@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      /* The switch - the box around the slider */
+      .switch {
+        position: relative;
+        display: block;
+        width: 60px;
+        height: 24px;
+      }
+
+      /* Hide default HTML checkbox */
+      .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+
+      /* The slider */
+      .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+      }
+
+      .slider::before {
+        position: absolute;
+        content: "";
+        height: 21px;
+        width: 21px;
+        left: 7px;
+        bottom: 2px;
+        background-color: white;
+        -webkit-transition: 0.4s;
+        transition: 0.4s;
+      }
+
+      input:checked + .slider {
+        background-color: #2196f3;
+      }
+
+      input:focus + .slider {
+        box-shadow: 0 0 1px #2196f3;
+      }
+
+      input:checked + .slider:before {
+        -webkit-transform: translateX(26px);
+        -ms-transform: translateX(26px);
+        transform: translateX(26px);
+      }
+
+      /* Rounded sliders */
+      .slider.round {
+        border-radius: 34px;
+      }
+
+      .slider.round:before {
+        border-radius: 50%;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        padding: 5px;
+        background-color: #15171c;
+        color: white;
+      }
+
+      * {
+        font-family: Roboto, Arial, sans-serif;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .button {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      table {
+        border-collapse: collapse;
+        border: 2px solid rgb(140 140 140);
+      }
+
+      th,
+      td {
+        border: 1px solid rgb(160 160 160);
+        padding: 8px 10px;
+      }
+
+      td:last-of-type {
+        text-align: center;
+      }
+
+      tfoot th {
+        text-align: right;
+      }
+    </style>
+
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.slim.min.js"
+      integrity="sha256-kmHvs0B+OpCW5GVHUNjv9rOmY0IvSIRcf7zGUDTDQM8="
+      crossorigin="anonymous"
+    ></script>
+  </head>
+
+  <body>
+    <h1>Modules</h1>
+    <table>
+      <thead>
+        <th scope="col">Module</th>
+        <th scope="col">Actions</th>
+      </thead>
+      <tbody id="moduleTable"></tbody>
+      <tfoot>
+        <th scope="row" colspan="2">Add a module</th>
+        <td>
+          <div onclick="addModule()" class="material-icons button">
+            add_circle
+          </div>
+        </td>
+      </tfoot>
+    </table>
+
+    <script>
+      const gmodules = [];
+      const moduleTable = document.getElementById("moduleTable");
+
+      async function addModule() {
+        const result = await new swal({
+          title: "Add a module",
+          showCancelButton: true,
+          showLoaderOnConfirm: true,
+
+          html:
+            '<label for="swal2-input" class="swal2-input-label">Module</label>' +
+            '<input id="swal2-input" class="swal2-input">',
+          preConfirm: async () => {
+            const module = $("#swal2-input").val();
+            if (gmodules.some((m) => m == module))
+              return Swal.showValidationMessage(`${module} already exists.`);
+
+            window.location.href = `/control/modulemanager/edit?name=${module}`;
+          },
+          didOpen: function () {
+            $("#swal-input1").focus();
+          },
+        });
+      }
+
+      async function getModules() {
+        moduleTable.innerText = "";
+
+        const modules = await (
+          await fetch("/control/modulemanager/list")
+        ).json();
+        modules.forEach((module) => {
+          gmodules.push(module.module);
+          const moduleRow = document.createElement("tr");
+
+          const moduleCol = document.createElement("th");
+          moduleCol.scope = "row";
+          moduleCol.innerText = module.module;
+
+          moduleRow.appendChild(moduleCol);
+
+          const buttonDiv = document.createElement("td");
+
+          const editElement = document.createElement("div");
+          editElement.classList.add("material-icons");
+          editElement.classList.add("button");
+          editElement.innerText = "edit";
+          editElement.addEventListener("click", () => {
+            window.location.href = `/control/modulemanager/edit?name=${module.module}`;
+          });
+
+          buttonDiv.appendChild(editElement);
+
+          const deleteElement = document.createElement("div");
+          deleteElement.classList.add("material-icons");
+          deleteElement.classList.add("button");
+          deleteElement.innerText = "delete";
+          deleteElement.addEventListener("click", async () => {
+            const result = await Swal.fire({
+              title: `Are you sure you want to delete ${module.module} ?`,
+              text: "You won't be able to revert this!",
+              icon: "warning",
+              showCancelButton: true,
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+              confirmButtonText: "Yes, delete it!",
+            });
+            if (!result.isConfirmed) return;
+            try {
+              const response = await fetch(
+                `/control/modulemanager/delete?name=${module.module}`,
+                {
+                  method: "POST",
+                },
+              );
+              if (response.status == 200) {
+                getModules();
+                Swal.fire({
+                  title: "Deleted!",
+                  text: `${module.module} has been deleted.`,
+                  icon: "success",
+                });
+              } else {
+                Swal.fire({
+                  title: "Failed!",
+                  text: `${await response.text()}`,
+                  icon: "error",
+                });
+              }
+            } catch (e) {
+              Swal.fire({
+                title: "Failed!",
+                text: e,
+                icon: "error",
+              });
+            }
+          });
+
+          buttonDiv.appendChild(deleteElement);
+
+          const switchElement = document.createElement("label");
+          switchElement.classList.add("switch");
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = module.enabled;
+          checkbox.addEventListener("change", async (event) => {
+            const enabled = event.target.checked;
+            const response = await fetch(
+              `/control/modulemanager/${enabled ? "enable" : "disable"}?name=${module.module}`,
+              {
+                method: "POST",
+              },
+            );
+            if (response.status == 200) getModules();
+          });
+          const slider = document.createElement("span");
+          slider.classList.add("slider");
+          slider.classList.add("round");
+          switchElement.appendChild(checkbox);
+          switchElement.appendChild(slider);
+
+          buttonDiv.appendChild(switchElement);
+
+          moduleRow.appendChild(buttonDiv);
+          moduleTable.appendChild(moduleRow);
+        });
+      }
+
+      getModules();
+    </script>
+  </body>
+</html>

@@ -155,3 +155,11 @@ export function replaceMap(
     return value ? replacement(value) : match;
   });
 }
+export function toPascalCase(input: string): string {
+  return input
+    .replace(/[_\-\s]+/g, " ") // replace separators with spaces
+    .trim() // remove leading/trailing spaces
+    .split(/\s+/) // split by spaces
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join("");
+}

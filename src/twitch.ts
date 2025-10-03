@@ -246,6 +246,7 @@ export class Twitch {
         isUserSub: isUserSub,
         isUserVip: isUserVip,
         platform: "twitch",
+        channelId: msg.channelId || "",
         message: messageWithoutPrefix,
         parsedMessage: parsedMessage,
         isFirst: msg.isFirst,
