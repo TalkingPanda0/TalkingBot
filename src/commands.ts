@@ -1201,7 +1201,7 @@ export class MessageHandler {
       .replace(/\(reply\)/g, "");
 
     response = await replaceAsync(
-      customCommand,
+      response,
       /script\((.+)\)/g,
       async (_message: string, script: string) => {
         if (!canUserRunCommand) return;
