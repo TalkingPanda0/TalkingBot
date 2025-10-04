@@ -1193,7 +1193,14 @@ export class MessageHandler {
       (!viponly || data.isUserVip) &&
       (!subonly || data.isUserSub);
     const doReply = customCommand.includes("(reply)");
-    let response = await replaceAsync(
+
+    let response = customCommand
+      .replace(/\(modonly\)/g, "")
+      .replace(/\(viponly\)/g, "")
+      .replace(/\(subonly\)/g, "")
+      .replace(/\(reply\)/g, "");
+
+    response = await replaceAsync(
       customCommand,
       /script\((.+)\)/g,
       async (_message: string, script: string) => {
@@ -1222,11 +1229,7 @@ export class MessageHandler {
         return getSuffix(parseInt(number));
       })
       .replace(/\$user/g, data.sender)
-      .replace(/\$args/g, message)
-      .replace(/\(modonly\)/g, "")
-      .replace(/\(viponly\)/g, "")
-      .replace(/\(subonly\)/g, "")
-      .replace(/\(reply\)/g, "");
+      .replace(/\$args/g, message);
 
     if (customCommand.includes("fetch")) {
       this.timeout.add(commandName);
