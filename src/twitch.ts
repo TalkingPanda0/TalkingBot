@@ -748,7 +748,6 @@ export class Twitch {
       console.log("\x1b[35m%s\x1b[0m", "Twitch setup complete");
       if (this.bot.connectedtoOverlay) {
         this.bot.iochat.emit("chatConnect", "Twitch");
-        this.sendRecentMessages();
       }
     });
     this.chatClient.onDisconnect((manually: boolean, reason?: Error) => {
@@ -872,38 +871,6 @@ export class Twitch {
       console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem queue: ${e}`);
     }
   }
-  public async sendRecentMessages() {
-    const url = `https://recent-messages.robotty.de/api/v2/recent-messages/${this.channelName.toLowerCase()}?hide_moderation_messages=true&hide_moderated_messages=true&limit=20`;
-    const recentMessages = JSON.parse(await (await fetch(url)).text());
-    recentMessages.messages.forEach((element: string) => {
-      try {
-        if (!element.includes("PRIVMSG")) return;
-        const message = parseTwitchMessage(element) as ChatMessage;
-
-        const isCommand =
-          message.text.startsWith("!") ||
-          message.userInfo.userId === "736013381" ||
-          message.userInfo.userName == "botrixoficial";
-        const isAction = message.text.startsWith("\u0001ACTION");
-
-        this.handleMessage(
-          "",
-          message.userInfo.userName,
-          message.text,
-          message,
-          isAction,
-          true,
-          isCommand,
-        );
-      } catch (e) {
-        console.error(
-          "\x1b[35m%s\x1b[0m",
-          `Failed parsing message ${element} : ${e}`,
-        );
-      }
-    });
-  }
-
   public parseTwitchEmotes(
     text: string,
     emoteOffsets: Map<string, string[]>,

@@ -82,7 +82,6 @@ export class TalkingBot {
 
     this.iochat.on("connect", () => {
       try {
-        this.twitch.sendRecentMessages();
         if (
           this.twitch.chatClient != null &&
           !this.twitch.chatClient.isConnected

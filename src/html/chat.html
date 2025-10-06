@@ -23,10 +23,13 @@
   </body>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="/spriteRenderer.js"></script>
   <script src="//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 
   <script>
+    let recentMessagesInterval;
+    let getRecentMessages = () => {
+      console.error("a");
+    };
     const mentionRegex = /@(\w+)/g;
     const emoteWallRegex =
       /<img\b[^>]*?\bsrc\s*=\s*["']?([^"'\s>]+)["']? class="emote"/g;
@@ -255,9 +258,16 @@
       disconnectElement.classList.add("badge");
       disconnectElement.id = id;
       disconnectList.appendChild(disconnectElement);
+      if (id == "twitch" || id == "bot") {
+        recentMessagesInterval = setInterval(getRecentMessages, 1000 * 60);
+      }
     }
 
     function removeFromDisconnectList(id) {
+      if (id == "twitch" || id == "bot") {
+        clearInterval(recentMessagesInterval);
+        getRecentMessages();
+      }
       const elementToRemove = document.getElementById(id);
       if (elementToRemove != null) elementToRemove.remove();
     }
@@ -287,9 +297,6 @@
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
       addToMessageList(message);
-      if (message.sender == "TalkingPanda" && message.text == "refresh") {
-        location.reload();
-      }
     });
 
     socket.on("deleteMessage", (messageId) => {
@@ -348,6 +355,182 @@
         inline: "nearest",
       });
     }
+  </script>
+  <script type="module">
+    import {
+      parseTwitchMessage,
+      parseChatMessage,
+      buildEmoteImageUrl,
+    } from "https://esm.run/@twurple/chat";
+
+    const userColors = [
+      "#ff0000",
+      "#0000ff",
+      "#b22222",
+      "#ff7f50",
+      "#9acd32",
+      "#ff4500",
+      "#2e8b57",
+      "#daa520",
+      "#d2691e",
+      "#5f9ea0",
+      "#1e90ff",
+      "#ff69b4",
+      "#8a2be2",
+      "#00ff7f",
+    ];
+
+    function formatDisplayName(message) {
+      const display = message.userInfo.displayName;
+      const login = message.userInfo.userName;
+      if (display && display.toLowerCase().replaceAll(/\s/g, "") !== login) {
+        return `${display} (${login})`;
+      }
+      return display || login;
+    }
+    function getUserColor(message) {
+      let color = message.userInfo.color;
+
+      // User hasn't set a color or failed to get the color, get a "random" color
+      if (!color) {
+        color =
+          userColors[parseInt(message.userInfo.userId) % userColors.length];
+      }
+
+      return color;
+    }
+    function parseEmotes(text, emoteOffsets) {
+      let parsed = "";
+      const parsedParts = parseChatMessage(text, emoteOffsets, []);
+
+      parsedParts.forEach((parsedPart) => {
+        switch (parsedPart.type) {
+          case "text":
+            parsed += parsedPart.text;
+            break;
+
+          case "emote":
+            const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
+              size: "3.0",
+              backgroundType: "dark",
+              animationSettings: "default",
+            });
+            parsed += ` <img onload="emoteLoaded()" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+            break;
+        }
+      });
+      return parsed;
+    }
+    async function handleMessage(
+      channel,
+      user,
+      text,
+      msg,
+      isAction,
+      isOld,
+      isCommand,
+    ) {
+      let parsedMessage = parseEmotes(msg.text, msg.emoteOffsets);
+
+      let badges = [];
+
+      /*if (msg.userInfo.isMod) {
+                      badges.push(this.badges.get("moderator"));
+                    } else if (msg.userInfo.isBroadcaster) {
+                      badges.push(this.badges.get("broadcaster"));
+                    }
+
+                    if (msg.userInfo.isVip) badges.push(this.badges.get("vip"));*/
+
+      /*const badge = msg.userInfo.badges.get("subscriber");
+                if (badge != undefined) {
+                  badges.push(this.badges.get(badge));
+                }*/
+      let replyTo = null;
+      let replyId = null;
+      let replyText = null;
+      let rewardName = null;
+      if (msg.isReply) {
+        parsedMessage = parsedMessage.replace(
+          new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
+          "",
+        );
+        replyTo = msg.parentMessageUserDisplayName;
+        replyId = msg.parentMessageUserId;
+        replyText = msg.parentMessageText;
+      }
+
+      if (msg.isHighlight) {
+        rewardName = "Highlight My message";
+      }
+
+      const indexes = [];
+      msg.emoteOffsets.forEach((emote) => {
+        emote.forEach((index) => {
+          indexes.push(parseInt(index));
+        });
+      });
+      console.log(indexes);
+
+      const isUserMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
+      const isUserVip = isUserMod || msg.userInfo.isVip;
+      const isUserSub = isUserVip || msg.userInfo.isSubscriber;
+
+      let message = {
+        badges: badges.filter((s) => !!s),
+        username: msg.userInfo.userName,
+        sender: formatDisplayName(msg),
+        senderId: msg.userInfo.userId,
+        color: getUserColor(msg),
+        isUserMod: isUserMod,
+        isUserSub: isUserSub,
+        isUserVip: isUserVip,
+        platform: "twitch",
+        channelId: msg.channelId || "",
+        parsedMessage: parsedMessage,
+        isFirst: msg.isFirst,
+        replyText: replyText ?? undefined,
+        replyId: replyId ?? undefined,
+        replyTo: replyTo ?? undefined,
+        rewardName: rewardName ?? undefined,
+        isOld: isOld,
+        isAction: isAction,
+        isCommand:
+          isCommand || user == "botrixoficial" || user == "talkingboto_o",
+        id: `twitch-${msg.id}`,
+      };
+      addToMessageList(message);
+      console.log(message);
+    }
+    async function getMessages() {
+      console.log("getting new messages.");
+      const messages = await (
+        await fetch(
+          "https://recent-messages.robotty.de/api/v2/recent-messages/sweetbabooo_o",
+        )
+      ).json();
+      messages.messages.forEach((msg) => {
+        if (!msg.includes("PRIVMSG")) return;
+        const message = parseTwitchMessage(msg);
+        console.log(message);
+        const isCommand =
+          message.text.startsWith("!") ||
+          message.userInfo.userId === "736013381" ||
+          message.userInfo.userName == "botrixoficial";
+        const isAction = message.text.startsWith("\u0001ACTION");
+        handleMessage(
+          "",
+          message.userInfo.userName,
+          message.text,
+          message,
+          isAction,
+          true,
+          isCommand,
+        );
+      });
+    }
+    getRecentMessages = getMessages;
+    getRecentMessages();
   </script>
   <style>
     #emote-wall {
