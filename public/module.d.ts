@@ -84,7 +84,7 @@ declare module "botModule" {
   export abstract class BotModule {
     name: string;
 
-    init(ctx: ModuleContext): void;
+    init(ctx: ModuleContext): Promise<void>;
     onUnload(): void;
   }
 }

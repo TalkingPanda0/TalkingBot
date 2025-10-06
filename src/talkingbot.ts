@@ -119,11 +119,11 @@ export class TalkingBot {
     this.discordLoginUri = secrets.discordLoginUri;
 
     this.discord.initBot();
-    this.moduleManager.init();
     await this.twitch.initBot();
     this.users.init();
     this.commandHandler.init();
     await this.whereWord.init();
+    this.moduleManager.init();
 
     this.modtext = this.database.getOrSetConfig("currentModtext", "");
     this.updateModText();

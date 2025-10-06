@@ -45,7 +45,7 @@ export class ModuleManager {
 class ${Name} extends BotModule {
   name: string = "${name}";
 
-  init(ctx: ModuleContext): void {
+  async init(ctx: ModuleContext) {
     // Add commands and listeners here.
     super.init(ctx);
   }
@@ -73,7 +73,10 @@ export default ${Name};`;
   }
 
   public async setModuleFile(name: string, module: string) {
-    const modPath = path.join(modulesDir, `${name}.ts`);
+    const modPath = path.join(
+      modulesDir,
+      `${name}.ts${this.modules.get(name) === null ? ".disabled" : ""}`,
+    );
     await Bun.write(modPath, module);
     await this.loadModules();
     await this.reloadModule(name);
@@ -157,7 +160,7 @@ export default ${Name};`;
       if (!module) return;
       const context = this.getContext();
       this.modules.set(name, { module, cleanups: context.cleanups });
-      module.init(context.context);
+      await module.init(context.context);
     } catch (e) {
       console.error(`Error loading module, ${name}: ${e}`);
     }

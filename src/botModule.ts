@@ -42,7 +42,7 @@ export interface ModuleContext {
 export abstract class BotModule {
   name: string = "";
 
-  init(ctx: ModuleContext) {
+  async init(ctx: ModuleContext) {
     console.log(`${this.name} loaded!`);
   }
 

@@ -6,6 +6,7 @@ import * as grpc from "@grpc/grpc-js";
 import * as protoLoader from "@grpc/proto-loader";
 import { LiveChatMessage } from "./proto/youtube/api/v3/LiveChatMessage";
 import { arraytoHashMap, replaceMap } from "./util";
+import GRPCError from "grpc-error";
 
 export class YouTube {
   public isConnected: boolean = false;
@@ -152,7 +153,11 @@ export class YouTube {
       this.scheduleReconnect();
     });
 
-    callStream.on("error", (err: any) => {
+    callStream.on("error", (err: GRPCError) => {
+      if (err.code === 8) {
+        this.cleanUp();
+        return;
+      }
       console.error("Stream error:", err);
       this.scheduleReconnect();
     });
