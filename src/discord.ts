@@ -53,10 +53,10 @@ export class Discord {
   private token!: string;
   public clientId!: string;
   public clientSecret!: string;
-  private guildId!: string;
+  public guildId!: string;
   private commands!: Collection<string, DiscordCommand>;
   private bot: TalkingBot;
-  private client!: Client;
+  public client!: Client;
   private channel!: TextChannel;
   private shouldPing: boolean = true;
   private discordFile: BunFile = Bun.file(
@@ -135,16 +135,18 @@ export class Discord {
     });
   }
 
-  public say(message: string, channelId: string) {
+  public async say(message: string, channelId: string) {
     const guild = this.client.guilds.cache.get("853223679664062465");
     if (!guild) throw Error("Can't get guild.");
     const channel = guild.channels.cache.get(channelId) as TextChannel;
     if (!channel) throw Error(`Can't find channel with id ${channelId}`);
-    message.match(/.{1,1024}/g)?.forEach((chunk) => {
-      channel.send({
+    const chunks = message.match(/.{1,1024}/g);
+    if (!chunks) return;
+    for (const chunk of chunks) {
+      await channel.send({
         embeds: [{ fields: [{ name: "", value: chunk }] }],
       });
-    });
+    }
   }
 
   public async initBot() {

@@ -74,47 +74,50 @@
       });
 
       require(["vs/editor/editor.main"], async function () {
-        monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
-          noSemanticValidation: true,
+        // Basic Monaco setup
+        monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+          noSemanticValidation: false,
           noSyntaxValidation: false,
         });
 
-        // compiler options
-        monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
-          target: monaco.languages.typescript.ScriptTarget.ES2015,
+        monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+          target: monaco.languages.typescript.ScriptTarget.ES2020,
           allowNonTsExtensions: true,
+          module: monaco.languages.typescript.ModuleKind.ESNext,
+          strict: true,
         });
-        // extra libraries
+
+        // Load your custom types
         const libSource = await (await fetch("/module.d.ts")).text();
         const libUri = "ts:filename/module.d.ts";
-        monaco.languages.typescript.javascriptDefaults.addExtraLib(
-          libSource,
-          libUri,
-        );
-        // When resolving definitions and references, the editor will try to use created models.
-        // Creating a model for the library allows "peek definition/references" commands to work with the library.
-        monaco.editor.createModel(
-          libSource,
-          "typescript",
-          monaco.Uri.parse(libUri),
-        );
+
+        // Create the editor
         editor = monaco.editor.create(document.getElementById("container"), {
           value: editorValue,
           language: "typescript",
           automaticLayout: true,
           theme: "vs-dark",
+          minimap: { enabled: false },
         });
-        const autoTypings = await monacoEditorAutoTypings.AutoTypings.create(
-          editor,
-          {
-            sourceCache: new monacoEditorAutoTypings.LocalStorageCache(), // Cache loaded sources in localStorage. May be omitted
-            monaco: monaco,
-            // Other options...
-          },
+
+        // Initialize auto-typings (for Discord.js etc)
+        await monacoEditorAutoTypings.AutoTypings.create(editor, {
+          monaco,
+          sourceCache: new monacoEditorAutoTypings.LocalStorageCache(),
+          onError: (e) => console.error("[AutoTypings]", e),
+          onUpdateVersions: (a) => console.log(a),
+        });
+        monaco.languages.typescript.typescriptDefaults.addExtraLib(
+          libSource,
+          libUri,
+        );
+        monaco.editor.createModel(
+          libSource,
+          "typescript",
+          monaco.Uri.parse(libUri),
         );
       });
     </script>
-
     <div
       id="container"
       style="width: 100%; height: 97vh; border: 1px solid grey"

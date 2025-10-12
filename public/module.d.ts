@@ -10,12 +10,55 @@ declare module "botModule" {
 
     public disableModule(name: string): Promise<void>;
   }
+  export class Discord {
+    public client: {};
+    public guildId: string;
+
+    public say(message: string, channelId: string): void;
+  }
+  export class Twitch {
+    public apiClient: {};
+    public channel: {};
+    public chatClient: {};
+    public isStreamOnline: boolean;
+    public cheerEmotes: {};
+    public BTTVEmotes: Map<string, string>;
+    public badges: Map<string, string>;
+    public getCurrentTitle(): Promise<string | null>;
+    public say(message: string): Promise<void>;
+  }
+  export class YouTubeAPI {
+    public sendMessage(message: string): Promise<void>;
+
+    public setTitle(title: string): Promise<void>;
+    public banUser(userId: string, seconds?: number): Promise<void>;
+  }
+  export class YouTube {
+    public isConnected: boolean;
+    public api: YouTubeAPI;
+    public permTitle: string | null;
+  }
+  export class Namespace {}
+  export class DB {}
+
   export class TalkingBot {
     /**
      * Will say message in every chat.
      */
     public broadcastMessage(message: string): Promise<void>;
+    public discord: Discord;
+    public twitch: Twitch;
+    public youtube: YouTube;
+
+    public iochat: Namespace;
+    public iomodtext: Namespace;
+    public iopoll: Namespace;
+    public ioalert: Namespace;
+
+    public database: DB;
     public moduleManager: ModuleManager;
+
+    public modtext: string;
   }
   export interface MessageData {
     /**
