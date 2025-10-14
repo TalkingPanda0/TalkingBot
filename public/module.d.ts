@@ -143,7 +143,8 @@ declare module "botutil" {
 
   export function getSuffix(i: number): string;
 
-  export function getRandomElement(array: string[]): string;
+  export function getRandomElement<T>(array: T[]): T;
+
   function removeByIndex(str: string, index: number): string;
 
   export function removeByIndexToUppercase(

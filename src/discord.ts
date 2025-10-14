@@ -26,12 +26,13 @@ import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
 import { MessageData } from "botModule";
+import { getRandomElement } from "botutil";
 
 const HAPBOOS = [
-  "<:commonhapboo:1302651100599554172>",
-  "<a:baboo_hapboo:1032341515365793884>",
-  "<a:baboo_hyperhapboo:1263893880403922974>",
-  "<a:squishedboo:1306943140128620545>",
+  ["<:commonhapboo:1302651100599554172>"],
+  ["<a:baboo_hapboo:1032341515365793884>", "<a:habpoo:1427757568448790601>"],
+  ["<a:baboo_hyperhapboo:1263893880403922974>"],
+  ["<a:squishedboo:1306943140128620545>"],
 ];
 
 export interface streamInfo {
@@ -205,8 +206,7 @@ export class Discord {
           for (hapbooIndex = 0; hapbooIndex < HAPBOOS.length - 1; hapbooIndex++)
             if (randomInt(10) !== 0) break;
 
-          console.log(`HAPBOO ${hapbooIndex}`);
-          await message.react(HAPBOOS[hapbooIndex]);
+          await message.react(getRandomElement(HAPBOOS[hapbooIndex]));
           this.bot.database.hapbooReaction(message.author.id);
         } catch (e) {
           console.error(e);
@@ -266,9 +266,6 @@ export class Discord {
 
       this.bot.commandHandler.handleCommand(data);
       this.bot.moduleManager.onDiscordMessage(message);
-
-      if (doReact && message.content.toLowerCase().includes("gay"))
-        message.react("<:baboo_pride:981342135892729888>");
 
       this.addEmotes(message);
     });

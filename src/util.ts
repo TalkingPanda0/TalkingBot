@@ -66,7 +66,8 @@ export function getSuffix(i: number) {
   return i + "th";
 }
 
-export function getRandomElement(array: string[]): string {
+export function getRandomElement<T>(array: T[]): T {
+  if (array.length < 2) return array[0];
   const randomIndex = Math.floor(Math.random() * array.length);
   return array[randomIndex];
 }
