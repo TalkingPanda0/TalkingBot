@@ -10,18 +10,26 @@ declare module "botModule" {
 
     public disableModule(name: string): Promise<void>;
   }
+
+  export interface DiscordCommand {
+    commandBuilder: any;
+    execute: (interaction: any) => Promise<void> | void;
+  }
+
   export class Discord {
-    public client: {};
+    public client: any;
     public guildId: string;
 
+    public registerDiscordCommand(command: DiscordCommand): Promise<void>;
     public say(message: string, channelId: string): void;
   }
+
   export class Twitch {
-    public apiClient: {};
-    public channel: {};
-    public chatClient: {};
+    public apiClient: any;
+    public channel: any;
+    public chatClient: any;
     public isStreamOnline: boolean;
-    public cheerEmotes: {};
+    public cheerEmotes: any;
     public BTTVEmotes: Map<string, string>;
     public badges: Map<string, string>;
     public getCurrentTitle(): Promise<string | null>;

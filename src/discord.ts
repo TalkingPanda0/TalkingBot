@@ -41,7 +41,7 @@ export interface streamInfo {
   thumbnailUrl: string;
 }
 
-interface DiscordCommand {
+export interface DiscordCommand {
   commandBuilder:
     | SlashCommandBuilder
     | SlashCommandSubcommandsOnlyBuilder
@@ -66,6 +66,11 @@ export class Discord {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+  }
+
+  public async registerDiscordCommand(command: DiscordCommand) {
+    this.commands.set(command.commandBuilder.name, command);
+    await this.updateCommands();
   }
 
   public async getAllMessages(channelId: string) {
@@ -770,7 +775,10 @@ export class Discord {
     discordCommands.forEach((value) => {
       this.commands.set(value.commandBuilder.name, value);
     });
+    await this.updateCommands();
+  }
 
+  private async updateCommands() {
     const commandsArray = this.commands.map((value) => {
       return value.commandBuilder.toJSON();
     });
@@ -786,7 +794,6 @@ export class Discord {
       console.error(error);
     }
   }
-
   private findEmotes(message: string): string[] | null {
     return message.match(/<a?:.+?:\d+>|\p{Extended_Pictographic}/gu);
   }

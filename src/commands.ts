@@ -812,12 +812,23 @@ export class MessageHandler {
       },
     ],
     [
+      "!testicle",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          if (!data.isUserMod) return;
+          data.reply("Testicling", true);
+          await this.bot.discord.getAllMessages("   853223680200409100");
+        },
+      },
+    ],
+    [
       "!restart",
       {
         showOnChat: false,
         commandFunction: async (data) => {
           if (!data.isUserMod) return;
-          data.reply("Restarting", true);
+          await data.reply("Restarting", true);
           await exit();
         },
       },
