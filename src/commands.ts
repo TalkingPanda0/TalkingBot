@@ -1167,22 +1167,14 @@ export class MessageHandler {
       },
     ],
     [
-      "!connecttoyt",
+      "!commands",
       {
         showOnChat: false,
         commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          this.bot.youtube.initBot();
-        },
-      },
-    ],
-    [
-      "!snapshotheap",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          data.reply(`Wrote to ${v8.writeHeapSnapshot()}.`, true);
+          const commands =
+            Array.from(this.commandMap.keys()).join(", ") +
+            Array.from(this.customCommandMap.keys()).join(", ");
+          data.reply(`Commands: ${commands}`, true);
         },
       },
     ],
