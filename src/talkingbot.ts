@@ -17,6 +17,7 @@ import { Poll } from "./poll";
 import { levelUp } from "./levels";
 import { YouTube } from "./youtube";
 import { ModuleManager } from "./moduleManager";
+import { ChatLogger } from "./chatLogger";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -54,6 +55,7 @@ export class TalkingBot {
   public connectedtoOverlay: Boolean = false;
   public pet: Pet;
   public database: DB;
+  public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
   public wheel: Wheel;
   public modtext: string = "";
@@ -102,6 +104,7 @@ export class TalkingBot {
     this.pet = new Pet();
     this.wheel = new Wheel();
     this.database = new DB();
+    this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
     this.youtube = new YouTube(this);
     this.poll = new Poll(this.iopoll);

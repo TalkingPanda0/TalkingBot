@@ -1,3 +1,4 @@
+import { MessageData } from "botModule";
 import { Database, Statement } from "bun:sqlite";
 
 interface WatchTime {
@@ -23,7 +24,7 @@ export interface HapbooReaction {
 export class DB {
   public getHapbooReaction: Statement;
 
-  private database: Database;
+  public database: Database;
   private insertWatchTime: CallableFunction;
   private getWatchTimeQuery: Statement;
   private getTopWatchTimeQuery: Statement;

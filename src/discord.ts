@@ -267,6 +267,7 @@ export class Discord {
         isAction: false,
         rewardName: "",
         username: message.author.username,
+        timestamp: new Date(message.createdTimestamp),
       };
 
       this.bot.commandHandler.handleCommand(data);

@@ -1,0 +1,343 @@
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+  </head>
+  <body id="body">
+    <div id="message-list"></div>
+  </body>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <script>
+    const mentionRegex = /@(\w+)/g;
+    const platformIcons = {
+      bot: "https://talkingpanda.dev/bot.png",
+      twitch: "https://twitch.tv/favicon.ico",
+      youtube: "https://www.youtube.com/favicon.ico",
+    };
+
+    const messageList = document.getElementById("message-list");
+    const queryString = window.location.search;
+    const searchParams = new URLSearchParams(queryString);
+    function addToMessageList(message) {
+      /*if (message.isFake) message.badges.unshift(platformIcons["bot"]);
+      else message.badges.unshift(platformIcons[message.platform]);*/
+
+      const messageElement = document.createElement("div");
+
+      const archiveElement = document.createElement("span");
+      const timestampElement = document.createElement("span");
+      timestampElement.classList.add("timestamp");
+      timestampElement.innerText = new Date(message.timestamp)
+        .toLocaleTimeString()
+        .toLowerCase();
+
+      const downloadElement = document.createElement("div");
+      downloadElement.classList.add("material-icons");
+      downloadElement.classList.add("badge");
+      downloadElement.classList.add("action");
+      downloadElement.addEventListener("click", async () => {
+        archiveElement.style.display = "none";
+        await downloadHTML(messageElement);
+        archiveElement.style.display = null;
+      });
+
+      downloadElement.innerText = "download";
+
+      archiveElement.appendChild(timestampElement);
+      archiveElement.appendChild(downloadElement);
+
+      messageElement.appendChild(archiveElement);
+
+      const spanElement = document.createElement("span");
+      if (message.isFirst)
+        messageElement.style = "background: rgba(176, 11, 105, 0.5)";
+      messageElement.id = message.id;
+      messageElement.classList.add("message");
+      messageElement.classList.add(message.platform);
+      messageElement.classList.add(message.senderId);
+      // message is a reply
+      if (message.replyTo != null && message.replyTo != "") {
+        let replyColor = "#a5a5a5";
+        const messagesOfParentSender = document.querySelectorAll(
+          `.${message.replyId} .sender`,
+        );
+
+        if (messagesOfParentSender.length != 0)
+          replyColor =
+            messagesOfParentSender[messagesOfParentSender.length - 1].style
+              .color;
+
+        const replyElement = document.createElement("span");
+        replyElement.classList.add("reply");
+        replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}:</span> ${message.replyText}`;
+        messageElement.appendChild(replyElement);
+        messageElement.appendChild(document.createElement("br"));
+      }
+      if (message.rewardName) {
+        const rewardElement = document.createElement("span");
+        rewardElement.classList.add("reply");
+        rewardElement.innerHTML = `Redeemed ${message.rewardName}`;
+        messageElement.appendChild(rewardElement);
+        messageElement.appendChild(document.createElement("br"));
+        if (message.rewardName.toLowerCase() === "highlight my message")
+          messageElement.style.background = "#755ebc";
+      }
+      if (message.isOld) {
+        messageElement.style.opacity = "75%";
+      }
+
+      const badgesElement = document.createElement("span");
+      badgesElement.classList.add("badges");
+      message.badges.forEach((badge) => {
+        const badgeElement = document.createElement("img");
+        badgeElement.src = badge;
+        badgeElement.height = "25";
+        badgeElement.classList.add("badge");
+        badgesElement.appendChild(badgeElement);
+      });
+      const textElement = document.createElement("span");
+      textElement.classList.add("sender");
+      textElement.dataset.name =
+        `${message.platform}-${message.username}`.toLowerCase();
+      textElement.style = `color:${message.color}`;
+      let text = message.parsedMessage.trim();
+
+      text = text.replaceAll(mentionRegex, (mention, user) => {
+        const nameTag = `${message.platform}-${user}`.toLowerCase();
+        const elements = document.querySelectorAll(`[data-name="${nameTag}"]`);
+        if (elements.length == 0) {
+          return mention;
+        }
+
+        const targetElement = elements[elements.length - 1];
+        const color = targetElement.style.color;
+        return `<span style="color:${color}">${mention}</span>`;
+      });
+      const faceChars = [
+        ")",
+        "(",
+        "3",
+        "}",
+        "{",
+        "@",
+        "[",
+        "]",
+        "D",
+        "O",
+        "/",
+        "\\",
+        "$",
+        "X",
+        "&",
+        "E",
+        "P",
+        "p",
+        "b",
+      ];
+      const firstChar = text.charAt(0);
+      if (firstChar != null && faceChars.includes(firstChar))
+        textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
+      else if (message.isAction) {
+        text = text.replace(/ACTION/, "").replaceAll("\u0001", "");
+        textElement.innerHTML = `${message.sender.trim()}<span class="text" style='color: ${message.color}'> ${text}</span>`;
+      } else
+        textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
+
+      spanElement.appendChild(badgesElement);
+      spanElement.appendChild(textElement);
+      messageElement.appendChild(spanElement);
+      messageList.appendChild(messageElement);
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }
+
+    function emoteLoaded() {
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }
+
+    async function getMessages() {
+      const { value: date } = await Swal.fire({
+        title: "Select stream date",
+        input: "date",
+        didOpen: () => {
+          const today = new Date().toISOString();
+          Swal.getInput().max = today.split("T")[0];
+        },
+      });
+      if (date) {
+        const messages = await (
+          await fetch(`/getMessages?date=${date}`)
+        ).json();
+        messages.forEach(addToMessageList);
+      }
+    }
+    /**
+     * Converts the element into a png and downloads it.
+     * @param {HTMLElement} element - The element to convert.
+     */
+    async function downloadHTML(element) {
+      const canvas = await html2canvas(element, {
+        allowTaint: false,
+        backgroundColor: "rgba(0,0,0,0.5)",
+        useCORS: true,
+        scale: 5,
+      });
+      const img = document.createElement("a");
+      img.href = canvas.toDataURL("image/png"); // Convert canvas to PNG
+      img.download = "message.png";
+      img.click();
+      messageList.appendChild(img);
+    }
+    getMessages();
+  </script>
+  <style>
+    #emote-wall {
+      position: fixed;
+      z-index: 1;
+    }
+
+    .emote-wall-emote {
+      position: absolute;
+      height: 56px;
+      min-width: 56px;
+      vertical-align: middle;
+      padding-left: 5px;
+      padding-right: 5px;
+      transition: opacity 1s ease-in-out;
+      z-index: 2;
+    }
+
+    #message-list {
+      background-color: rgba(0, 0, 0, 0.5);
+      display: table;
+      bottom: 0;
+      left: 0;
+      table-layout: fixed;
+      overflow-y: scroll;
+      width: 100%;
+    }
+
+    body::-webkit-scrollbar {
+      width: 0;
+      /* WebKit (Safari, Chrome) */
+    }
+    .message {
+      padding-right: 4px;
+      padding-left: 4px;
+      border-radius: 2px;
+      margin: 2px;
+      padding-bottom: 7px;
+      padding-top: 7px;
+      overflow-wrap: break-word;
+      width: fit-content;
+    }
+
+    .text {
+      color: white;
+    }
+    .sender {
+      vertical-align: middle;
+    }
+    .badge {
+      display: inline-table;
+      vertical-align: middle;
+      height: 25px;
+      width: 25px;
+
+      margin: 2px;
+      filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+        drop-shadow(0 0 0 #000);
+    }
+    .badges {
+      display: inline-table;
+      padding: 2px;
+      margin-right: 4px;
+      z-index: 1;
+    }
+    * {
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif, "Noto Color Emoji";
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1em;
+    }
+    .emote {
+      width: 28px;
+      vertical-align: middle;
+      padding-left: 5px;
+      padding-right: 5px;
+      top: 0px;
+      left: 0px;
+    }
+    .reply {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+      white-space: nowrap;
+    }
+    .replyText {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+      height: 15px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .redeem {
+      color: #a5a5a5;
+      font-size: 20px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+    }
+    body {
+      margin: 0px;
+      background-color: #2b2e38;
+    }
+    .redeem {
+      color: #a5a5a5;
+      font-size: 20px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+    }
+    .hapboo {
+      height: 128px;
+      width: 128px;
+    }
+    .action {
+      cursor: pointer;
+    }
+    .timestamp {
+      font-size: 15px;
+      font-weight: 400;
+      color: gray;
+    }
+  </style>
+</html>

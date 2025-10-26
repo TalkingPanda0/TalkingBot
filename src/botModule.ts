@@ -25,6 +25,7 @@ export interface MessageData {
   isOld: boolean;
   isAction?: boolean;
   isTestRun?: boolean;
+  timestamp: Date;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   banUser: (reason: string, duration?: number) => void | Promise<void>;
 }

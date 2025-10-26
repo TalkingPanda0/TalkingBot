@@ -259,6 +259,7 @@ export class Twitch {
         isCommand:
           isCommand || user == "botrixoficial" || user == "talkingboto_o",
         id: msg.id,
+        timestamp: msg.date,
         reply: isOld
           ? () => {}
           : async (message: string, replyToUser: boolean) => {

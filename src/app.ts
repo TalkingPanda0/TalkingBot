@@ -39,6 +39,19 @@ app.get("/soundEffects", async (_req, res) => {
   );
 });
 
+app.get("/messageArchive", async (_, res) => {
+  res.sendFile(__dirname + "/html/messagearchive.html");
+});
+
+app.get("/getMessages", async (req, res) => {
+  if (!req.query.date) {
+    res.sendStatus(400);
+    return;
+  }
+  const messages = bot.chatLogger.getMessages(req.query.date.toString());
+  res.send(messages);
+});
+
 app.use("/control", async (req, res) => {
   try {
     if (!bot.jwtSecret) {

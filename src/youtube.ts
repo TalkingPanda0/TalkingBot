@@ -218,6 +218,7 @@ export class YouTube {
           isCommand: message.author_details?.display_name === "Talking Bot",
           isFirst: false,
           isOld: false,
+          timestamp: new Date(message.snippet.published_at || new Date()),
         });
         break;
     }

@@ -47,8 +47,19 @@ declare module "botModule" {
     public permTitle: string | null;
   }
   export class Namespace {}
-  export class DB {}
+  export class DB {
+    public database: any;
 
+    public getOrSetConfig(key: string, defaultValue: string): string;
+
+    public setConfig(key: string, value: string): void;
+  }
+
+  export interface latestSub {
+    name: string;
+    pfpUrl: string;
+    time: Date;
+  }
   export class TalkingBot {
     /**
      * Will say message in every chat.
@@ -67,6 +78,7 @@ declare module "botModule" {
     public moduleManager: ModuleManager;
 
     public modtext: string;
+    public setLatestSub(sub: latestSub): void;
   }
   export interface MessageData {
     /**
@@ -101,6 +113,7 @@ declare module "botModule" {
     isCommand: boolean;
     rewardName?: string;
     isOld: boolean;
+    timestamp: Date;
     reply: (message: string, replyToUser: boolean) => void | Promise<void>;
     /*
      * if duration is null bans permanently.
