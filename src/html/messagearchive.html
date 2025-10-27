@@ -161,20 +161,9 @@
       spanElement.appendChild(textElement);
       messageElement.appendChild(spanElement);
       messageList.appendChild(messageElement);
-      messageList.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "nearest",
-      });
     }
 
-    function emoteLoaded() {
-      messageList.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "nearest",
-      });
-    }
+    function emoteLoaded() {}
 
     async function getMessages() {
       const { value: date } = await Swal.fire({
