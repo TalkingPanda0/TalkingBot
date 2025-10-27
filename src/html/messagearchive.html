@@ -189,6 +189,10 @@
         const messages = await (
           await fetch(`/getMessages?date=${date}`)
         ).json();
+        if (!messages || messages.length == 0) {
+          Swal.fire("No messages for that day was found.");
+          return;
+        }
         messages.forEach(addToMessageList);
       }
     }

@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import compression from "compression";
 dotenv.config({ path: __dirname + "/../config/.env" });
 import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
@@ -17,6 +18,7 @@ const server = http.createServer(app);
 
 const bot: TalkingBot = new TalkingBot(server);
 
+app.use(compression());
 app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(bodyParser.text());
