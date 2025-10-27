@@ -51,7 +51,10 @@
       downloadElement.classList.add("action");
       downloadElement.addEventListener("click", async () => {
         archiveElement.style.display = "none";
-        await downloadHTML(messageElement);
+        await downloadHTML(
+          messageElement,
+          `${formatDate(new Date(message.timestamp))} ${message.sender}`,
+        );
         archiveElement.style.display = null;
       });
 
@@ -185,11 +188,23 @@
         messages.forEach(addToMessageList);
       }
     }
+
+    function formatDate(d) {
+      const pad = (n) => String(n).padStart(2, "0");
+
+      return (
+        [d.getFullYear(), pad(d.getMonth() + 1), pad(d.getDate())].join("-") +
+        " " +
+        [pad(d.getHours()), pad(d.getMinutes()), pad(d.getSeconds())].join("-")
+      );
+    }
+
     /**
      * Converts the element into a png and downloads it.
      * @param {HTMLElement} element - The element to convert.
+     * @param {string} name - The name it'll be downloaded as.
      */
-    async function downloadHTML(element) {
+    async function downloadHTML(element, name) {
       const canvas = await html2canvas(element, {
         allowTaint: false,
         backgroundColor: "rgba(0,0,0,0.5)",
@@ -198,7 +213,7 @@
       });
       const img = document.createElement("a");
       img.href = canvas.toDataURL("image/png"); // Convert canvas to PNG
-      img.download = "message.png";
+      img.download = `${name}.png`;
       img.click();
       messageList.appendChild(img);
     }
