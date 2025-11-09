@@ -196,6 +196,8 @@ export class YouTube {
               console.error(e);
             }
           },
+          isUserSub: false,
+          isUserVip: false,
           message: message.snippet.display_message,
           parsedMessage: this.parseEmotes(message.snippet.display_message),
           banUser: async (_reason, duration) => {
