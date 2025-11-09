@@ -222,6 +222,11 @@ export class YouTube {
           isOld: false,
           timestamp: new Date(message.snippet.published_at || new Date()),
           rewardName: "",
+          replyId: "",
+          replyText: "",
+          replyTo: "",
+          isAction: false,
+          isTestRun: false,
         });
         break;
     }
