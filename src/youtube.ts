@@ -221,6 +221,7 @@ export class YouTube {
           isFirst: false,
           isOld: false,
           timestamp: new Date(message.snippet.published_at || new Date()),
+          rewardName: "",
         });
         break;
     }
