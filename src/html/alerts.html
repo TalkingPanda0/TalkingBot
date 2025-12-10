@@ -165,20 +165,13 @@
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
         alertElement.style = "opacity: 100%;";
-        playTTS(
-          cheerInfo.bits == 1 && cheerInfo.message != ""
-            ? cheerInfo.message
-            : `${cheerInfo.user} cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}: ${cheerInfo.message},`,
-          "Brian",
-          (err) => {},
-          () => {
-            alertElement.style = "opacity: 0%";
-            setTimeout(() => {
-              alertElement.innerHTML = "";
-              isPlaying = false;
-            }, 1000);
-          },
-        );
+        playTTS(cheerInfo.audioList, () => {
+          alertElement.style = "opacity: 0%";
+          setTimeout(() => {
+            alertElement.innerHTML = "";
+            isPlaying = false;
+          }, 1000);
+        });
       }
       function kofiAlert(paymentInfo) {
         isPlaying = true;
@@ -187,18 +180,13 @@
           : `donated ${paymentInfo.amount} ${paymentInfo.currency}!`;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${paymentInfo.sender} </span>${message} </span> `;
         alertElement.style = "opacity: 100%;";
-        playTTS(
-          `${paymentInfo.sender} ${message}`,
-          "Brian",
-          (err) => {},
-          () => {
-            alertElement.style = "opacity: 0%";
-            setTimeout(() => {
-              alertElement.innerHTML = "";
-              isPlaying = false;
-            }, 1000);
-          },
-        );
+        playTTS(paymentInfo.audioList, () => {
+          alertElement.style = "opacity: 0%";
+          setTimeout(() => {
+            alertElement.innerHTML = "";
+            isPlaying = false;
+          }, 1000);
+        });
       }
 
       function raidAlert(raidInfo) {
@@ -234,18 +222,13 @@
           if (raiders.length === 0) {
             clearInterval(interval);
             clearInterval(hapboointerval);
-            playTTS(
-              `${raidInfo.raider} raided with ${raidInfo.viewers} viewers`,
-              "Brian",
-              (err) => {},
-              () => {
-                alertElement.style.opacity = "0%";
-                setTimeout(() => {
-                  alertElement.innerHTML = "";
-                  isPlaying = false;
-                }, 1000);
-              },
-            );
+            playTTS(raidInfo.audioList, () => {
+              alertElement.style.opacity = "0%";
+              setTimeout(() => {
+                alertElement.innerHTML = "";
+                isPlaying = false;
+              }, 1000);
+            });
           }
         }, 10);
       }
@@ -326,19 +309,14 @@
             return;
           }
 
-          playTTS(
-            subInfo.message,
-            "Brian",
-            (err) => {},
-            () => {
-              alertElement.style = "opacity: 0%";
-              setTimeout(() => {
-                alertElement.innerHTML = "";
-                alertElement.style.display = "inline-block";
-                isPlaying = false;
-              }, 1000);
-            },
-          );
+          playTTS(subInfo.audioList, () => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
+              isPlaying = false;
+            }, 1000);
+          });
         };
 
         exp.play();

@@ -142,29 +142,9 @@ function playQueue(audioQueue, onerror, onended) {
     onerror(err);
   });
 }
-function playTTS(message, voice, _onerror, onended) {
-  const audioQueue = []; // as urls of the audios
+function playTTS(audioList, onended) {
+  const audioQueue = audioList; // as urls of the audios
 
-  let match;
-  let lastIndex = 0;
-  while ((match = soundEffectRegex.exec(message)) !== null) {
-    const beforeEmote = getTTSAudioSource({
-      voice: voice,
-      text: message.slice(lastIndex, match.index),
-    });
-    if (beforeEmote) audioQueue.push(beforeEmote);
-
-    audioQueue.push(encodeURIComponent(`${match[0]}.mp3`));
-    lastIndex = match.index + match[0].length;
-  }
-  const afterLastEmote = getTTSAudioSource({
-    voice: voice,
-    text: message.slice(lastIndex),
-  });
-  if (afterLastEmote) audioQueue.push(afterLastEmote);
-
-  console.log(audioQueue);
-  console.log(`Found ${audioQueue.length} segments.`);
   playPlaylist(audioQueue).then(() => {
     playing = null;
     isPlaying = false;

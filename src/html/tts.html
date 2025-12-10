@@ -31,23 +31,9 @@
 
       createPopup(message);
       currentUser = message.sender;
-      playTTS(
-        text,
-        voice,
-        (err) => {
-          removePopup();
-          createPopup({
-            sender: "Brian himself",
-            text: err,
-            parsedText: err,
-            color: "red",
-          });
-          setTimeout(removePopup, 10000);
-        },
-        () => {
-          setTimeout(removePopup, 10000);
-        },
-      );
+      playTTS(message.audioList, () => {
+        setTimeout(removePopup, 10000);
+      });
       return;
     }
 

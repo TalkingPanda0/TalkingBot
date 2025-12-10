@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 import * as http from "http";
 import { DiscordAuthData, TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
-import { readdir } from "node:fs/promises";
+import { getTTSSounds } from "./tts";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
@@ -31,14 +31,7 @@ app.use(
   }),
 );
 app.get("/soundEffects", async (_req, res) => {
-  const files = await readdir(__dirname + "/../config/sounds");
-  res.send(
-    JSON.stringify(
-      files
-        .filter((file) => file.endsWith(".mp3"))
-        .map((file) => file.replace(/.mp3$/, "")),
-    ),
-  );
+  res.send(JSON.stringify(await getTTSSounds()));
 });
 
 app.get("/messageArchive", async (_, res) => {
