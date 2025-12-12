@@ -38,6 +38,8 @@
       <option value="raid">Raid</option>
       <option value="bits">Bits</option>
       <option value="follower">Follower</option>
+      <option value="discord">Discord Join</option>
+      <option value="kofi">Kofi</option>
     </select>
     <button onclick="send()" id="button">Send</button>
     <div id="bits" style="display: none">
@@ -67,6 +69,52 @@
         id="followerName"
         type="text"
         placeholder="Follower"
+      />
+    </div>
+    <div id="discord" style="display: none">
+      <input
+        class="input"
+        id="discordName"
+        type="text"
+        placeholder="Joiner"
+      />
+    </div>
+   <div id="kofi" style="display: none">
+      <input
+        class="input"
+        id="kofiSender"
+        type="text"
+        placeholder="Sender"
+      />
+      <input
+        class="input"
+        id="kofiSub"
+        type="checkbox"
+      />
+      Is a subscription
+      <input
+        class="input"
+        id="kofiTier"
+        type="text"
+        placeholder="Tier Name" 
+      />
+      <input
+        class="input"
+        id="kofiAmount"
+        type="text"
+        placeholder="Amount" 
+      />
+ <input
+        class="input"
+        id="kofiCurrency"
+        type="text"
+        placeholder="Currency" 
+      />
+ <input
+        class="input"
+        id="kofiMessage"
+        type="text"
+        placeholder="Message" 
       />
     </div>
     <div id="sub">
@@ -122,6 +170,17 @@
         switch (currentAlert) {
           case "follower":
             message.follower = document.getElementById("followerName").value;
+            break;
+          case "discord":
+            message.member = document.getElementById("discordName").value;
+            break;
+          case "kofi": 
+            message.is_subscription = document.getElementById("kofiSub").checked;
+            message.message = document.getElementById("kofiMessage").value;
+            message.sender = document.getElementById("kofiSender").value;
+            message.tier_name = document.getElementById("kofiTier").value;
+            message.amount = document.getElementById("kofiAmount").value;
+            message.currency = document.getElementById("kofiCurrency").value;
             break;
           case "bits":
             message.user = document.getElementById("bitSender").value;

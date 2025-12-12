@@ -39,7 +39,7 @@ export async function getRaidAudio(
   viewers: number,
 ): Promise<string[]> {
   return await getAudioList(
-    `${name} raided with ${viewers} ${viewers == 1 ? "hapboo" : "hapboos"}`,
+    `${name} just raided with ${viewers} ${viewers == 1 ? "hapboo" : "hapboos"}!`,
   );
 }
 
