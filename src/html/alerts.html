@@ -127,11 +127,7 @@
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${event.member} </span>just joined the fish tank.</span> `;
         alertElement.style = "opacity: 100%;";
-        const name = getTTSAudio({
-          voice: "Brian",
-          text: `${event.member} just joined the fish tank.`,
-        });
-        name.onended = () => {
+        playTTS(event.audioList, () => {
           setTimeout(() => {
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
@@ -139,18 +135,13 @@
               isPlaying = false;
             }, 1000);
           }, 4000);
-        };
-        name.play();
+        });
       }
       function followAlert(followInfo) {
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
         alertElement.style = "opacity: 100%;";
-        const name = getTTSAudio({
-          voice: "Brian",
-          text: `${followInfo.follower} just followed`,
-        });
-        name.onended = () => {
+        playTTS(followInfo.audioList, () => {
           setTimeout(() => {
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
@@ -158,8 +149,7 @@
               isPlaying = false;
             }, 1000);
           }, 4000);
-        };
-        name.play();
+        });
       }
       function bitsAlert(cheerInfo) {
         isPlaying = true;
@@ -265,7 +255,6 @@
 
         const imgElement = document.getElementById("image");
         const exp = new Audio("/explosions.mp3");
-        const usera = getTTSAudio({ voice: "Brian", text: subInfo.name });
         const sub = new Audio("/sub.mp3");
         const exp0 = document.getElementById("exp0");
         const exp1 = document.getElementById("exp1");
@@ -290,13 +279,12 @@
         }, 1553 + 2550);
 
         exp.onended = () => {
-          usera.play();
-        };
-        usera.onended = () => {
-          sub.play();
-          setTimeout(() => {
-            exp0.src = "/explosion1.gif";
-          }, 2005);
+          playTTS(subInfo.audioList, () => {
+            sub.play();
+            setTimeout(() => {
+              exp0.src = "/explosion1.gif";
+            }, 2005);
+          });
         };
         sub.onended = () => {
           exp0.style.display = "none";
@@ -309,7 +297,7 @@
             return;
           }
 
-          playTTS(subInfo.audioList, () => {
+          playTTS(subInfo.messageAudioList, () => {
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";

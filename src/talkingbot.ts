@@ -18,6 +18,14 @@ import { levelUp } from "./levels";
 import { YouTube } from "./youtube";
 import { ModuleManager } from "./moduleManager";
 import { ChatLogger } from "./chatLogger";
+import {
+  getCheerAudio,
+  getDiscordJoinAudio,
+  getFollowAudio,
+  getKofiAudio,
+  getRaidAudio,
+  getSubAudio,
+} from "./alerts";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -226,9 +234,69 @@ export class TalkingBot {
         break;
 
       case "alerts":
-        this.ioalert.emit(data.target, data.message);
+        const alert: any = data.message;
+        if (alert.viewers !== undefined) this.raidAlert(alert);
+        else if (alert.follower !== undefined) this.followAlert(alert);
+        else if (alert.bits !== undefined) this.bitsAlert(alert);
+        else if (alert.member !== undefined) this.discordJoinAlert(alert);
+        else if (alert.is_subscription !== undefined) this.kofiAlert(alert);
+        else this.subAlert(alert);
         break;
     }
+  }
+  private async raidAlert(alert: { raider: string; viewers: number }) {
+    this.ioalert.emit("alert", {
+      audioList: await getRaidAudio(alert.raider, alert.viewers),
+      ...alert,
+    });
+  }
+  private async followAlert(alert: { follower: string }) {
+    this.ioalert.emit("alert", {
+      audioList: await getFollowAudio(alert.follower),
+      ...alert,
+    });
+  }
+  private async bitsAlert(alert: {
+    user: string;
+    bits: number;
+    message: string;
+  }) {
+    this.ioalert.emit("alert", {
+      audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
+      ...alert,
+    });
+  }
+  private async discordJoinAlert(alert: { member: string }) {
+    this.ioalert.emit("alert", {
+      audioList: await getDiscordJoinAudio(alert.member),
+      ...alert,
+    });
+  }
+  private async kofiAlert(alert: {
+    is_subscription: boolean;
+    message: string | null;
+    sender: string;
+    tier_name: string | null;
+    amount: string;
+    currency: string;
+  }) {
+    this.ioalert.emit("alert", {
+      audioList: await getKofiAudio(
+        alert.sender,
+        alert.is_subscription,
+        alert.tier_name ?? "",
+        alert.amount,
+        alert.currency,
+      ),
+      ...alert,
+    });
+  }
+  private async subAlert(alert: { name: string; message: string }) {
+    this.ioalert.emit("alert", {
+      audioList: await getSubAudio(alert.name),
+      messageAudioList: alert.message ? await getSubAudio(alert.message) : [],
+      ...alert,
+    });
   }
   public setLatestSub(sub: latestSub) {
     this.database.setConfig("latestSub", JSON.stringify(sub));

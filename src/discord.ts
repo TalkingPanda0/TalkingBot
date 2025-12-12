@@ -27,6 +27,7 @@ import { EmoteStat, HapbooReaction } from "./db";
 import { randomInt } from "crypto";
 import { MessageData } from "botModule";
 import { getRandomElement } from "botutil";
+import { getDiscordJoinAudio } from "./alerts";
 
 const HAPBOOS = [
   ["<:commonhapboo:1302651100599554172>"],
@@ -371,7 +372,10 @@ export class Discord {
     this.client.on(Events.GuildMemberAdd, async (event) => {
       if (event.guild.id !== this.guildId) return;
       console.log(`${event.user.displayName} joined the fish tank.`);
-      this.bot.ioalert.emit("alert", { member: event.user.displayName });
+      this.bot.ioalert.emit("alert", {
+        member: event.user.displayName,
+        audioList: await getDiscordJoinAudio(event.user.displayName),
+      });
     });
 
     this.client.login(this.token);

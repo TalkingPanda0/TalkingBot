@@ -1,3 +1,4 @@
+import { getKofiAudio } from "./alerts";
 import { TalkingBot } from "./talkingbot";
 
 export type KofiEventType =
@@ -5,7 +6,8 @@ export type KofiEventType =
   | "Subscription"
   | "Commission"
   | "Shop Order";
-interface KofiAlertData {
+export interface KofiAlertData {
+  audioList: string[];
   is_subscription: boolean;
   message: string | null;
   sender: string;
@@ -93,11 +95,18 @@ export function isKofiEvent(obj: any): obj is KofiEvent {
     (obj.shipping === null || isShippingInfo(obj.shipping))
   );
 }
-export function handleKofiEvent(bot: TalkingBot, event: KofiEvent) {
+export async function handleKofiEvent(bot: TalkingBot, event: KofiEvent) {
   switch (event.type) {
     case "Donation":
     case "Subscription":
       const alert: KofiAlertData = {
+        audioList: await getKofiAudio(
+          event.from_name,
+          event.is_subscription_payment,
+          event.tier_name ?? "",
+          event.amount,
+          event.currency,
+        ),
         tier_name: event.tier_name,
         is_subscription: event.is_subscription_payment,
         message: event.is_public ? event.message : null,

@@ -88,23 +88,6 @@ audio.play().catch(function (err) {
   }
 });
 
-function getTTSAudioSource(message) {
-  if (
-    message.voice == null ||
-    message.voice == "" ||
-    message.text == null ||
-    message.text == ""
-  )
-    return null;
-  return `https://api.streamelements.com/kappa/v2/speech?voice=${message.voice}&text=${encodeURIComponent(message.text)}`;
-}
-
-function getTTSAudio(message) {
-  const source = getTTSAudioSource(message);
-  if (source == null) return null;
-
-  return new Audio(source);
-}
 function playQueue(audioQueue, onerror, onended) {
   if (audioQueue == null || audioQueue.length == 0) return;
   const audio = audioQueue.shift();

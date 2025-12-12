@@ -9,7 +9,6 @@ import {
   parseChatMessage,
   ParsedMessagePart,
   buildEmoteImageUrl,
-  parseTwitchMessage,
 } from "@twurple/chat";
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
@@ -30,6 +29,12 @@ import { CreditType } from "./credits";
 import { PollOption } from "./poll";
 
 import { updateCategory } from "./category";
+import {
+  getCheerAudio,
+  getFollowAudio,
+  getRaidAudio,
+  getSubAudio,
+} from "./alerts";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -72,7 +77,7 @@ export class Twitch {
   private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
   private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
   private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
-  private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
+  //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private eventSubSecret?: string;
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private oauthFile = Bun.file(__dirname + "/../config/oauth.json");
@@ -299,13 +304,18 @@ export class Twitch {
       console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
     }
   }
-  private onCheer(event: {
+  private async onCheer(event: {
     userDisplayName: string;
     bits: number;
     message: string;
   }) {
     this.bot.credits.addToCredits(event.userDisplayName, CreditType.Cheer);
     this.bot.ioalert.emit("alert", {
+      audioList: await getCheerAudio(
+        event.userDisplayName,
+        event.bits,
+        event.message,
+      ),
       bits: event.bits,
       user: event.userDisplayName,
       message: event.message.replaceAll(/cheer\d+/gi, ""),
@@ -436,10 +446,11 @@ export class Twitch {
     this.eventListener.onChannelFollow(
       this.channel.id,
       this.channel.id,
-      (event) => {
+      async (event) => {
         if (this.allreadyFollowed.has(event.userId)) return;
         this.bot.credits.addToCredits(event.userDisplayName, CreditType.Follow);
         this.bot.ioalert.emit("alert", {
+          audioList: await getFollowAudio(event.userDisplayName),
           follower: event.userDisplayName,
         });
         this.allreadyFollowed.add(event.userId);
@@ -462,7 +473,7 @@ export class Twitch {
       });
     }
 
-    this.eventListener.onChannelSubscription(this.channel.id, (data) => {
+    this.eventListener.onChannelSubscription(this.channel.id, async (data) => {
       if ((data.tier as string) != "prime") return; // it can be prime, convert it to a string to supress the error.
       data.getUser().then((user) => {
         this.bot.setLatestSub({
@@ -476,6 +487,8 @@ export class Twitch {
         CreditType.Subscription,
       );
       this.bot.ioalert.emit("alert", {
+        audioList: await getSubAudio(data.userDisplayName),
+        messageAudioList: [],
         name: data.userDisplayName,
         message: "",
         plan: data.tier,
@@ -484,43 +497,53 @@ export class Twitch {
       });
     });
 
-    this.eventListener.onChannelSubscriptionMessage(this.channel.id, (data) => {
-      data.getUser().then((user) => {
-        this.bot.setLatestSub({
-          name: user.displayName,
-          pfpUrl: user.profilePictureUrl,
-          time: new Date(),
+    this.eventListener.onChannelSubscriptionMessage(
+      this.channel.id,
+      async (data) => {
+        data.getUser().then((user) => {
+          this.bot.setLatestSub({
+            name: user.displayName,
+            pfpUrl: user.profilePictureUrl,
+            time: new Date(),
+          });
         });
-      });
-      this.bot.credits.addToCredits(
-        data.userDisplayName,
-        CreditType.Subscription,
-      );
-      this.bot.ioalert.emit("alert", {
-        name: data.userDisplayName,
-        message: data.messageText,
-        plan: data.tier,
-        months: data.cumulativeMonths,
-        gift: false,
-      });
-    });
-    this.eventListener.onChannelSubscriptionGift(this.channel.id, (data) => {
-      data.getGifter().then((user) => {
-        this.bot.setLatestSub({
-          name: user.displayName,
-          pfpUrl: user.profilePictureUrl,
-          time: new Date(),
+        this.bot.credits.addToCredits(
+          data.userDisplayName,
+          CreditType.Subscription,
+        );
+        this.bot.ioalert.emit("alert", {
+          audioList: await getSubAudio(data.userDisplayName),
+          messageAudioList: await getSubAudio(data.messageText),
+          name: data.userDisplayName,
+          message: data.messageText,
+          plan: data.tier,
+          months: data.cumulativeMonths,
+          gift: false,
         });
-      });
-      this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
-      this.bot.ioalert.emit("alert", {
-        name: data.gifterName,
-        gifted: data.amount,
-        plan: data.tier,
-        months: data.cumulativeAmount,
-        gift: true,
-      });
-    });
+      },
+    );
+    this.eventListener.onChannelSubscriptionGift(
+      this.channel.id,
+      async (data) => {
+        data.getGifter().then((user) => {
+          this.bot.setLatestSub({
+            name: user.displayName,
+            pfpUrl: user.profilePictureUrl,
+            time: new Date(),
+          });
+        });
+        this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
+        this.bot.ioalert.emit("alert", {
+          audioList: await getSubAudio(data.gifterName),
+          messageAudioList: [],
+          name: data.gifterName,
+          gifted: data.amount,
+          plan: data.tier,
+          months: data.cumulativeAmount,
+          gift: true,
+        });
+      },
+    );
 
     this.eventListener.onChannelPollBegin(this.channel.id, (data) => {
       const pollOptions: PollOption[] = data.choices.reduce<PollOption[]>(
@@ -673,13 +696,17 @@ export class Twitch {
     });
 
     this.chatClient.onRaid(
-      (
+      async (
         _channel: string,
         _user: string,
         raidInfo: ChatRaidInfo,
         _msg: UserNotice,
       ) => {
         this.bot.ioalert.emit("alert", {
+          audioList: await getRaidAudio(
+            raidInfo.displayName,
+            raidInfo.viewerCount,
+          ),
           raider: raidInfo.displayName,
           viewers: raidInfo.viewerCount,
         });
