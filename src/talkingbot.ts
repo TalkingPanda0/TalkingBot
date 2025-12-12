@@ -15,7 +15,6 @@ import { WhereWord } from "./whereword";
 import { Poll } from "./poll";
 
 import { levelUp } from "./levels";
-import { YouTube } from "./youtube";
 import { ModuleManager } from "./moduleManager";
 import { ChatLogger } from "./chatLogger";
 import {
@@ -71,7 +70,6 @@ export class TalkingBot {
   public credits: Credits;
   public users: Users;
   public whereWord: WhereWord;
-  public youtube: YouTube;
   public moduleManager: ModuleManager;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string | null = null;
@@ -114,7 +112,6 @@ export class TalkingBot {
     this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
-    this.youtube = new YouTube(this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.moduleManager = new ModuleManager(this);

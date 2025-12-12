@@ -141,12 +141,6 @@ export class Twitch {
       },
       30 * 60 * 1000,
     );
-    setTimeout(
-      () => {
-        this.bot.youtube.initBot();
-      },
-      1 * 60 * 1000,
-    );
   }
   private formatDisplayName(message: ChatMessage) {
     const display = message.userInfo.displayName;
