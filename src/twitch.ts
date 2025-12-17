@@ -197,13 +197,17 @@ export class Twitch {
       let replyText = null;
       let rewardName = null;
       if (msg.isReply) {
+        replyTo = msg.parentMessageUserDisplayName;
+        replyId = msg.parentMessageUserId;
+        replyText = msg.parentMessageText;
         parsedMessage = parsedMessage.replace(
           new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
           "",
         );
-        replyTo = msg.parentMessageUserDisplayName;
-        replyId = msg.parentMessageUserId;
-        replyText = msg.parentMessageText;
+        text = text.replace(
+          new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
+          "",
+        ).trim();
       }
 
       if (msg.isHighlight) {
@@ -521,14 +525,14 @@ export class Twitch {
       async (data) => {
         data.getGifter().then((user) => {
           this.bot.setLatestSub({
-            name: user.displayName,
-            pfpUrl: user.profilePictureUrl,
+            name: user == null ? "Anonymous" : user.displayName,
+            pfpUrl: user == null ? "https://talkingpanda.dev/hapboo.gif" : user.profilePictureUrl,
             time: new Date(),
           });
         });
-        this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
+        if(data.gifterName) this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
         this.bot.ioalert.emit("alert", {
-          audioList: await getSubAudio(data.gifterName),
+          audioList: await getSubAudio(data.gifterName ?? "Anonymous"),
           messageAudioList: [],
           name: data.gifterName,
           gifted: data.amount,
