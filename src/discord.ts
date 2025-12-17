@@ -21,6 +21,7 @@ import {
   parseEmoji,
   APIEmbed,
   Message,
+  EmbedBuilder,
 } from "discord.js";
 import { TalkingBot } from "./talkingbot";
 import { EmoteStat, HapbooReaction } from "./db";
@@ -885,5 +886,8 @@ export class Discord {
     } catch (e) {
       return false;
     }
+  }
+  public async onGameChange(name: string, art: string) {
+    await this.channel.send({embeds: [new EmbedBuilder().setTitle(`SweetbabooO_o is now playing ${name}.`).setImage(art).setTimestamp(new Date())]});
   }
 }

@@ -30,5 +30,6 @@ export async function updateCategory(bot: TalkingBot) {
   });
 
   await bot.broadcastMessage(`Game has been changed to ${data.name}!`);
+  await bot.discord.onGameChange(data.name,data.boxArtUrl.replace("52x72","520x720"));
 }
 
