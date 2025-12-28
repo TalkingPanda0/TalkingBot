@@ -140,7 +140,8 @@
           async function sendToOverlay() {
             // Export the canvas as a JSON object
             const layoutData = canvas.toJSON();
-            layoutData.backgroundImage = null;
+            layoutData.backgroundImage = undefined;
+            layoutData.background = undefined;
             const response = await fetch("/control/modtext/setobjects", {
               method: "POST",
               body: JSON.stringify(layoutData),
