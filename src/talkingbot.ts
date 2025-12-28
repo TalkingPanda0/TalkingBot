@@ -67,7 +67,7 @@ export class TalkingBot {
   public commandHandler: MessageHandler;
   public wheel: Wheel;
   public modtext: string = "";
-  public modtextObjects: Object[] = [];
+  public modtextObjects: any[] = [];
   public ttsManager: TTSManager;
   public credits: Credits;
   public users: Users;
@@ -191,7 +191,7 @@ export class TalkingBot {
   public updateModTextObjects() {
     if (!this.modtextObjects) return;
     console.log(this.modtextObjects);
-    this.database.setConfig("currentModtextObjects", this.modtextObjects);
+    //this.database.setConfig("currentModtextObjects", this.modtextObjects);
     this.iomodtext.emit(
       "objects",
       this.modtextObjects,
