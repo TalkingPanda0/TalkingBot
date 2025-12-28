@@ -2,21 +2,25 @@
 <html>
   <head>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        background-color: #15171c;
-        color: white;
+      canvas {
+        border: 1px solid #ccc;
       }
-      .ql-snow .ql-picker-options {
-        background-color: #15171c !important;
+      .controls {
+        margin-bottom: 10px;
+        padding: 10px;
       }
-      .button {
+      button {
         background-color: #15171c;
         color: white;
         padding: 6px;
         border: 1px solid #ccc;
         border-radius: 5px;
         cursor: pointer;
+      }
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #15171c;
+        color: white;
       }
       #textarea {
         width: 95%;
@@ -29,103 +33,175 @@
         cursor: pointer;
       }
     </style>
-    <link
-      href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css"
-      rel="stylesheet"
-    />
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   </head>
 
   <body>
+    <div class="controls">
+      <button onclick="addText()">Add Text</button>
+      <button onclick="addImage()">Add Image</button>
+      <button onclick="updateBackground()">Update Background</button>
+      <button class="button" onclick="getModText()">Update Mod Text</button>
+      <button class="button" id="button" onclick="toggleMode()">
+        Nerd Mode
+      </button>
+      <button
+        onclick="sendToOverlay()"
+        style="background: #9146ff; color: white"
+      >
+        Send
+      </button>
+    </div>
+    <div
+      id="canvasContainer"
+      style="border: 2px solid #333; display: inline-block"
+    >
+      <canvas id="editorCanvas"></canvas>
+    </div>
+
     <textarea style="display: none" id="textarea" rows="10"></textarea>
-    <div data-editable data-name="main-content" id="text"></div>
-    <div id="editor"></div>
-    <br />
-    <button class="button" onclick="sendModtext()">Send</button>
-    <button class="button" onclick="getModText()">Update</button>
-    <button class="button" id="button" onclick="toggleMode()">Nerd Mode</button>
-
-    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-
     <script>
-      const button = document.getElementById("button");
-      const normalEditor = document.getElementById("editor");
-      const textArea = document.getElementById("textarea");
-      let mode = false;
+          const button = document.getElementById("button");
+          const textArea = document.getElementById("textarea");
+          let mode = false;
 
-      const toolbarOptions = [
-        ["bold", "italic", "underline", "strike"], // toggled buttons
-        ["image"],
+          const deleteIcon =
+            "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
 
-        [{ size: ["small", false, "large", "huge"] }], // custom dropdown
-        [{ header: [1, 2, 3, 4, 5, 6, false] }],
+          var deleteImg = document.createElement("img");
+          deleteImg.src = deleteIcon;
+          // 1. Initialize Canvas (1080p internal resolution)
+          const normalEditor = document.getElementById("canvasContainer");
+          const canvas = new fabric.Canvas("editorCanvas", {
+            width: 1920,
+            height: 1080,
+            backgroundColor: "#1a1a1a",
+          });
 
-        [{ color: [] }, { background: [] }], // dropdown with defaults from theme
-        [{ align: [] }],
-      ];
+          const deleteControl = new fabric.Control({
+            x: 0.5,
+            y: -0.5,
+            offsetY: -16,
+            offsetX: 16,
+            cursorStyle: "pointer",
+            mouseUpHandler: deleteObject,
+            render: renderIcon,
+            cornerSize: 24,
+          });
 
-      const quill = new Quill("#editor", {
-        modules: {
-          toolbar: toolbarOptions,
-        },
-        theme: "snow",
-      });
-
-      const toolbar = quill.getModule("toolbar");
-      toolbar.addHandler("image", (value) => {
-        if (value) {
-          const href = prompt("Enter the URL");
-          quill.format("image", href);
-        } else {
-          quill.format("image", false);
-        }
-      });
-
-      const editor = document.querySelector(".ql-editor");
-      const toolbarElement = document.querySelector(".ql-toolbar");
-
-      async function sendModtext() {
-        const html = mode ? textArea.value : quill.getSemanticHTML();
-        textArea.value = html;
-        editor.innerHTML = html;
-
-        const response = await fetch("/control/modtext/set", {
-          method: "POST",
-          body: html,
-        });
-        console.log(await response.text());
-      }
-
-      function toggleMode() {
-        if (mode) {
-          normalEditor.style.display = "block";
-          toolbarElement.style.display = "block";
-          textArea.style.display = "none";
-          button.innerHTML = "Nerd Mode";
-        } else {
-          normalEditor.style.display = "none";
-          toolbarElement.style.display = "none";
-          textArea.style.display = "block";
-          button.innerHTML = "Normal Mode";
-        }
-        mode = !mode;
-      }
-
-      async function getModText() {
-        try {
-          const response = await fetch("/control/modtext/get");
-          const responseText = await response.text();
-          if (!response.ok) {
-            alert(`Error updating modtext ${responseText}`);
-            return;
+          function deleteObject(_eventData, transform) {
+            const canvas = transform.target.canvas;
+            canvas.remove(transform.target);
+            canvas.requestRenderAll();
           }
-          console.log("GOT MESSAGE:", responseText);
-          editor.innerHTML = responseText;
-          textArea.value = responseText;
-        } catch (e) {
-          alert(`Error updating modtext ${e}`);
-        }
-      }
-      getModText();
+
+          function renderIcon(ctx, left, top, _styleOverride, fabricObject) {
+            const size = this.cornerSize;
+            ctx.save();
+            ctx.translate(left, top);
+            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+            ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
+            ctx.restore();
+          }
+
+          // Scale the display down so it fits the browser window
+          canvas.setZoom(0.5);
+          canvas.setWidth(1920 * 0.5);
+          canvas.setHeight(1080 * 0.5);
+
+          // 2. Add Functions
+          function addText() {
+            const text = new fabric.IText("Type something...", {
+              left: 100,
+              top: 100,
+              fontFamily: "sans-serif",
+              fill: "#ffffff",
+            });
+            text.controls.deleteControl = deleteControl;
+            canvas.add(text);
+          }
+
+          function addImage() {
+            const url = prompt("Enter Image URL:");
+            if (!url) return;
+            fabric.Image.fromURL(
+              url,
+              function (img) {
+                img.scaleToWidth(200);
+                img.controls.deleteControl = deleteControl;
+                canvas.add(img);
+              },
+              { crossOrigin: "anonymous" },
+            );
+          }
+
+          // 3. Sync Logic
+          async function sendToOverlay() {
+            // Export the canvas as a JSON object
+            const layoutData = canvas.toJSON();
+            layoutData.backgroundImage = null;
+            const response = await fetch("/control/modtext/setobjects", {
+              method: "POST",
+              body: JSON.stringify(layoutData),
+            });
+            console.log(await response.text());
+            // Send via your existing WebSocket connection
+            // socket.send(JSON.stringify({ type: 'UPDATE_OVERLAY', data: layoutData }));
+            console.log("Sent to Server:", layoutData);
+          }
+          function updateBackground() {
+            fabric.Image.fromURL(
+              "https://static-cdn.jtvnw.net/previews-ttv/live_user_sweetbabooo_o-1920x1080.jpg",
+              function (img) {
+                // add background image
+
+                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+              },
+            );
+          }
+          updateBackground();
+
+          async function sendModtext() {
+            const html = mode ? textArea.value : quill.getSemanticHTML();
+            textArea.value = html;
+            editor.innerHTML = html;
+
+            const response = await fetch("/control/modtext/set", {
+              method: "POST",
+              body: html,
+            });
+            console.log(await response.text());
+          }
+
+          function toggleMode() {
+            if (mode) {
+              normalEditor.style.display = "block";
+              textArea.style.display = "none";
+              button.innerHTML = "Nerd Mode";
+            } else {
+              normalEditor.style.display = "none";
+              textArea.style.display = "block";
+              button.innerHTML = "Normal Mode";
+            }
+            mode = !mode;
+          }
+
+          async function getModText() {
+            try {
+              const response = await fetch("/control/modtext/get");
+              const responseText = await response.text();
+              if (!response.ok) {
+                alert(`Error updating modtext ${responseText}`);
+                return;
+              }
+              console.log("GOT MESSAGE:", responseText);
+              textArea.value = responseText;
+            } catch (e) {
+              alert(`Error updating modtext ${e}`);
+            }
+          }
+          getModText();
     </script>
   </body>
 </html>

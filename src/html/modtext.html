@@ -7,12 +7,20 @@
     />
   </head>
   <body>
+    <div style="display: inline-block">
+      <canvas id="editorCanvas"></canvas>
+    </div>
     <div class="ql-editor" id="text"></div>
   </body>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
+    const canvas = new fabric.Canvas("editorCanvas", {
+      width: 1920,
+      height: 1080,
+    });
     const text = document.getElementById("text");
 
     var socket = io("/modtext");
@@ -23,6 +31,10 @@
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
       text.innerHTML = message;
+    });
+    socket.on("objects", (message) => {
+      console.log("GOT OBJECTS:", message);
+      canvas.loadFromJSON(message);
     });
   </script>
   <style>

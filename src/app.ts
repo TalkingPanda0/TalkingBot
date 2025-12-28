@@ -305,6 +305,12 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
+        case "/modtext/setobjects":
+          bot.modtextObjects = JSON.parse(req.body);
+          bot.updateModTextObjects();
+          res.sendStatus(200);
+          break;
+
         case "/overlay":
           bot.handleControl(JSON.parse(req.body));
           res.sendStatus(200);
