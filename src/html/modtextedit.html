@@ -19,6 +19,7 @@
       }
       body {
         font-family: Arial, sans-serif;
+        color-scheme: dark;
         background-color: #15171c;
         color: white;
       }
@@ -56,6 +57,36 @@
         pointer-events: auto;
         z-index: 1;
       }
+
+      dialog {
+        width: 500px;
+        border: none;
+        border-radius: 6px;
+        padding: 16px;
+      }
+
+      #imageGrid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      #imageGrid img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        cursor: pointer;
+        border: 2px solid transparent;
+      }
+
+      #imageGrid img:hover {
+        border-color: #888;
+      }
+
+      .actions {
+        text-align: right;
+      }
     </style>
     <link
       rel="stylesheet"
@@ -63,13 +94,16 @@
     />
     <script src=" https://cdn.jsdelivr.net/npm/fabric@7.0.0/dist/index.min.js "></script>
     <script src="https://player.twitch.tv/js/embed/v1.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
   </head>
 
   <body>
     <div class="controls">
       <button class="normalMode" onclick="addText()">Add Text</button>
-      <button class="normalMode" onclick="addImagePrompt()">Add Image</button>
+      <button class="normalMode" onclick="addImagePrompt()">
+        Add Image URL
+      </button>
+      <button class="normalMode" onclick="pickImage()">Choose Image</button>
       <button class="normalMode" onclick="addSubName()">Add Sub Name</button>
       <button class="normalMode" onclick="addSubPfp()">Add Sub Pfp</button>
       <button class="normalMode" onclick="addCounter()">Add Counter</button>
@@ -89,6 +123,33 @@
       >
         Send
       </button>
+
+      <dialog id="imageDialog">
+        <form
+          id="imageUploadForm"
+          action="/control/modtext/addimage"
+          method="POST"
+          enctype="multipart/form-data"
+          method="dialog"
+          class="dialog-body"
+        >
+          <h3>Select an image</h3>
+
+          <div id="imageGrid"></div>
+
+          <hr />
+
+          <label>
+            Upload new image:
+            <input type="file" name="image" accept="image/*" />
+          </label>
+
+          <div class="actions">
+            <button type="submit">Upload Image</button>
+            <button type="button" id="cancelBtn">Cancel</button>
+          </div>
+        </form>
+      </dialog>
     </div>
     <div
       id="canvasContainer"
@@ -100,6 +161,10 @@
 
     <textarea style="display: none" id="textarea" rows="10"></textarea>
     <script>
+      const dialog = document.getElementById("imageDialog");
+      const grid = document.getElementById("imageGrid");
+      const form = document.getElementById("imageUploadForm");
+
       fabric.FabricObject.customProperties = ["dataId", "counterName"];
       let data = {};
       const playPauseButton = document.getElementById("playPauseButton");
@@ -194,7 +259,7 @@
           fontFamily: "sans-serif",
           fill: "#ffffff",
           dataId: "counter",
-          counterName: counter
+          counterName: counter,
         });
         addCustomProperties(text);
         canvas.add(text);
@@ -348,11 +413,53 @@
         }
       }
 
-function formatNumber(n) {
-  return Number.isInteger(n)
-    ? String(n)
-    : String(Number(n.toFixed(2)));
-}
+      function formatNumber(n) {
+        return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
+      }
+      async function pickImage() {
+        loadImages();
+        dialog.showModal();
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(form);
+
+        const res = await fetch(form.action, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          alert("Upload failed");
+          return;
+        }
+
+        await loadImages();
+
+        form.reset();
+      });
+
+      document.getElementById("cancelBtn").onclick = () => dialog.close();
+
+      async function loadImages() {
+        const res = await fetch("/control/modtext/getimages");
+        const images = (await res.json()).map((i) => `/${i}`);
+
+        grid.innerHTML = "";
+
+        for (const url of images) {
+          const img = document.createElement("img");
+          img.src = url;
+          img.onclick = () => {
+            const img = getImage(url);
+            canvas.add(img);
+            dialog.close();
+          };
+          grid.appendChild(img);
+        }
+      }
       getModText();
     </script>
   </body>

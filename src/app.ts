@@ -12,6 +12,7 @@ import fileUpload, { UploadedFile } from "express-fileupload";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
 import { MessageData } from "botModule";
+import { readdir } from "node:fs/promises";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -21,6 +22,7 @@ const bot: TalkingBot = new TalkingBot(server);
 app.use(compression());
 app.use(express.static("public"));
 app.use(express.static("config/sounds"));
+app.use(express.static("config/images"));
 app.use(bodyParser.text());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -144,6 +146,9 @@ app.use("/control", async (req, res) => {
           break;
         case "/modtext/getdata":
           res.send(bot.getModTextData());
+          break;
+        case "/modtext/getimages":
+          res.send(await readdir(__dirname + "/../config/images"));
           break;
 
         default:
@@ -351,6 +356,20 @@ app.use("/control", async (req, res) => {
           }
           const filePath = `${__dirname}/../config/sounds/${req.body.name}.mp3`;
           uploadedFile.mv(filePath, (e) => {
+            if (e) return res.status(500).send(e);
+            res.sendStatus(200);
+          });
+          break;
+        case "/modtext/addimage":
+          if (!req.files || !req.files.image) {
+            return res.status(422).send("No files were uploaded");
+          }
+          const uploadedImage = req.files.image as UploadedFile;
+          if (!uploadedImage.mimetype.startsWith("image/")) {
+            return res.status(422).send("This is not an image.");
+          }
+          const imagePath = `${__dirname}/../config/images/${uploadedImage.name}`;
+          uploadedImage.mv(imagePath, (e) => {
             if (e) return res.status(500).send(e);
             res.sendStatus(200);
           });

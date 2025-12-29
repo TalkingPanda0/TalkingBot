@@ -41,7 +41,7 @@
     socket.on("data", (newData) => {
       console.log("GOT DATA: ", newData);
       data = JSON.parse(newData);
-      canvas.getObjects().forEach(applyData);
+      canvas.getObjects().forEach((obj) => applyData(null, obj));
     });
 
     function applyData(_, obj) {

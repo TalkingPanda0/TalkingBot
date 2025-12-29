@@ -888,6 +888,6 @@ export class Discord {
     }
   }
   public async onGameChange(name: string, art: string) {
-     //await this.channel.send({embeds: [new EmbedBuilder().setTitle(`SweetbabooO_o is now playing ${name}.`).setImage(art).setTimestamp(new Date())]});
+    await this.channel.send({embeds: [new EmbedBuilder().setTitle(`SweetbabooO_o is now playing ${name}.`).setImage(art).setTimestamp(new Date())]});
   }
 }
