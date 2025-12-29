@@ -32,20 +32,57 @@
         border-radius: 5px;
         cursor: pointer;
       }
-    </style>
+      #canvasContainer {
+        position: relative;
+        width: 960px; /* 1920 * 0.5 */
+        height: 540px; /* 1080 * 0.5 */
+        border: 2px solid #333;
+      }
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+      #player {
+        position: absolute;
+      }
+
+      #editorCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1;
+      }
+      #canvasContainer canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: auto;
+        z-index: 1;
+      }
+    </style>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css"
+    />
+    <script src=" https://cdn.jsdelivr.net/npm/fabric@7.0.0/dist/index.min.js "></script>
+    <script src="https://player.twitch.tv/js/embed/v1.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
 
   <body>
     <div class="controls">
-      <button onclick="addText()">Add Text</button>
-      <button onclick="addImage()">Add Image</button>
-      <button onclick="updateBackground()">Update Background</button>
-      <button class="button" onclick="getModText()">Update Mod Text</button>
+      <button class="normalMode" onclick="addText()">Add Text</button>
+      <button class="normalMode" onclick="addImagePrompt()">Add Image</button>
+      <button class="normalMode" onclick="addSubName()">Add Sub Name</button>
+      <button class="normalMode" onclick="addSubPfp()">Add Sub Pfp</button>
+      <button class="normalMode" onclick="addCounter()">Add Counter</button>
+      <button class="normalMode" id="playPauseButton" onclick="playPause()">
+        Pause
+      </button>
+
+      <button onclick="getModText()">Update Mod Text</button>
+
       <button class="button" id="button" onclick="toggleMode()">
         Nerd Mode
       </button>
+
       <button
         onclick="sendToOverlay()"
         style="background: #9146ff; color: white"
@@ -57,152 +94,266 @@
       id="canvasContainer"
       style="border: 2px solid #333; display: inline-block"
     >
+      <div id="player"></div>
       <canvas id="editorCanvas"></canvas>
     </div>
 
     <textarea style="display: none" id="textarea" rows="10"></textarea>
     <script>
-          const button = document.getElementById("button");
-          const textArea = document.getElementById("textarea");
-          let mode = false;
+      fabric.FabricObject.customProperties = ["dataId", "counterName"];
+      let data = {};
+      const playPauseButton = document.getElementById("playPauseButton");
+      const player = new Twitch.Player("player", {
+        width: 1920 / 2,
+        height: 1080 / 2,
+        channel: "sweetbabooo_o",
+        parent: ["localhost", "talkingpanda.dev"],
+        autoplay: true,
+        muted: true,
+      });
+      const button = document.getElementById("button");
+      const textArea = document.getElementById("textarea");
+      let mode = false;
 
-          const deleteIcon =
-            "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
+      function playPause() {
+        if (player.isPaused()) {
+          playPauseButton.innerText = "Pause";
+          player.play();
+        } else {
+          playPauseButton.innerText = "Play";
+          player.pause();
+        }
+      }
 
-          var deleteImg = document.createElement("img");
-          deleteImg.src = deleteIcon;
-          // 1. Initialize Canvas (1080p internal resolution)
-          const normalEditor = document.getElementById("canvasContainer");
-          const canvas = new fabric.Canvas("editorCanvas", {
-            width: 1920,
-            height: 1080,
-            backgroundColor: "#1a1a1a",
-          });
+      const deleteIcon =
+        "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
 
-          const deleteControl = new fabric.Control({
-            x: 0.5,
-            y: -0.5,
-            offsetY: -16,
-            offsetX: 16,
-            cursorStyle: "pointer",
-            mouseUpHandler: deleteObject,
-            render: renderIcon,
-            cornerSize: 24,
-          });
+      var deleteImg = document.createElement("img");
+      deleteImg.src = deleteIcon;
+      const normalEditor = document.getElementById("canvasContainer");
+      const canvas = new fabric.Canvas("editorCanvas", {
+        width: 1920,
+        height: 1080,
+      });
 
-          function deleteObject(_eventData, transform) {
-            const canvas = transform.target.canvas;
-            canvas.remove(transform.target);
-            canvas.requestRenderAll();
-          }
+      const deleteControl = new fabric.Control({
+        x: 0.5,
+        y: -0.5,
+        offsetY: -16,
+        offsetX: 16,
+        cursorStyle: "pointer",
+        mouseUpHandler: deleteObject,
+        render: renderIcon,
+        cornerSize: 24,
+      });
 
-          function renderIcon(ctx, left, top, _styleOverride, fabricObject) {
-            const size = this.cornerSize;
-            ctx.save();
-            ctx.translate(left, top);
-            ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
-            ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
-            ctx.restore();
-          }
+      function deleteObject(_eventData, transform) {
+        const canvas = transform.target.canvas;
+        canvas.remove(transform.target);
+        canvas.requestRenderAll();
+      }
 
-          // Scale the display down so it fits the browser window
-          canvas.setZoom(0.5);
-          canvas.setWidth(1920 * 0.5);
-          canvas.setHeight(1080 * 0.5);
+      function renderIcon(ctx, left, top, _styleOverride, fabricObject) {
+        const size = this.cornerSize;
+        ctx.save();
+        ctx.translate(left, top);
+        ctx.rotate(fabric.util.degreesToRadians(fabricObject.angle));
+        ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      }
 
-          // 2. Add Functions
-          function addText() {
-            const text = new fabric.IText("Type something...", {
-              left: 100,
-              top: 100,
-              fontFamily: "sans-serif",
-              fill: "#ffffff",
-            });
-            text.controls.deleteControl = deleteControl;
-            canvas.add(text);
-          }
+      canvas.setZoom(0.5);
+      canvas.setDimensions({ width: 1920 * 0.5, height: 1080 * 0.5 });
 
-          function addImage() {
-            const url = prompt("Enter Image URL:");
-            if (!url) return;
-            fabric.Image.fromURL(
-              url,
-              function (img) {
-                img.scaleToWidth(200);
-                img.controls.deleteControl = deleteControl;
-                canvas.add(img);
-              },
-              { crossOrigin: "anonymous" },
-            );
-          }
+      function addText() {
+        const text = new fabric.IText("Type something...", {
+          left: 100,
+          top: 100,
+          fontFamily: "sans-serif",
+          fill: "#ffffff",
+        });
+        addCustomProperties(text);
+        canvas.add(text);
+      }
 
-          // 3. Sync Logic
-          async function sendToOverlay() {
-            // Export the canvas as a JSON object
-            const layoutData = canvas.toJSON();
-            layoutData.backgroundImage = undefined;
-            layoutData.background = undefined;
-            const response = await fetch("/control/modtext/setobjects", {
-              method: "POST",
-              body: JSON.stringify(layoutData),
-            });
-            console.log(await response.text());
-            // Send via your existing WebSocket connection
-            // socket.send(JSON.stringify({ type: 'UPDATE_OVERLAY', data: layoutData }));
-            console.log("Sent to Server:", layoutData);
-          }
-          function updateBackground() {
-            fabric.Image.fromURL(
-              "https://static-cdn.jtvnw.net/previews-ttv/live_user_sweetbabooo_o-1920x1080.jpg",
-              function (img) {
-                // add background image
+      async function addCounter() {
+        const options = Object.fromEntries(
+          Object.entries(data.counters).map(([key, value]) => [
+            key,
+            `${key}: ${value}`,
+          ]),
+        );
+        const { value: counter } = await Swal.fire({
+          title: "Select a counter to show",
+          input: "select",
+          inputOptions: options,
+        });
+        const text = new fabric.IText(counter, {
+          left: 100,
+          top: 100,
+          fontFamily: "sans-serif",
+          fill: "#ffffff",
+          dataId: "counter",
+          counterName: counter
+        });
+        addCustomProperties(text);
+        canvas.add(text);
+      }
 
-                canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-              },
-            );
-          }
-          updateBackground();
-
-          async function sendModtext() {
-            const html = mode ? textArea.value : quill.getSemanticHTML();
-            textArea.value = html;
-            editor.innerHTML = html;
-
-            const response = await fetch("/control/modtext/set", {
-              method: "POST",
-              body: html,
-            });
-            console.log(await response.text());
-          }
-
-          function toggleMode() {
-            if (mode) {
-              normalEditor.style.display = "block";
-              textArea.style.display = "none";
-              button.innerHTML = "Nerd Mode";
-            } else {
-              normalEditor.style.display = "none";
-              textArea.style.display = "block";
-              button.innerHTML = "Normal Mode";
+      async function addImagePrompt() {
+        const { value: url } = await Swal.fire({
+          title: "Enter Image URL",
+          input: "text",
+          inputLabel: "image URL",
+          showCancelButton: true,
+          inputValidator: (value) => {
+            if (!isValidUrl(value)) {
+              return "Not a valid URL!";
             }
-            mode = !mode;
-          }
+          },
+        });
+        if (!url) return;
+        const img = getImage(url);
+        canvas.add(img);
+      }
 
-          async function getModText() {
-            try {
-              const response = await fetch("/control/modtext/get");
-              const responseText = await response.text();
-              if (!response.ok) {
-                alert(`Error updating modtext ${responseText}`);
-                return;
-              }
-              console.log("GOT MESSAGE:", responseText);
-              textArea.value = responseText;
-            } catch (e) {
-              alert(`Error updating modtext ${e}`);
-            }
+      function addSubName() {
+        const text = new fabric.IText("Subscriber", {
+          left: 100,
+          top: 100,
+          fontFamily: "sans-serif",
+          fill: "#ffffff",
+          dataId: "latest_sub",
+        });
+        addCustomProperties(text);
+        canvas.add(text);
+      }
+
+      function addCustomProperties(obj) {
+        obj.controls.deleteControl = deleteControl;
+      }
+
+      function getImage(url) {
+        const image = new Image();
+        image.src = url;
+        const obj = new fabric.FabricImage(image);
+        obj.controls.deleteControl = deleteControl;
+        return obj;
+      }
+
+      function addSubPfp() {
+        const img = getImage(
+          "https://static-cdn.jtvnw.net/user-default-pictures-uv/13e5fa74-defa-11e9-809c-784f43822e80-profile_image-300x300.png",
+        );
+        img.dataId = "sub_pfp";
+        addCustomProperties(img);
+        canvas.add(img);
+      }
+
+      async function sendToOverlay() {
+        if (mode) {
+          sendModtext();
+          return;
+        }
+        const layoutData = canvas.toJSON();
+        const response = await fetch("/control/modtext/setcanvas", {
+          method: "POST",
+          body: JSON.stringify(layoutData),
+        });
+        console.log(await response.text());
+        console.log("Sent to Server:", layoutData);
+      }
+
+      async function sendModtext() {
+        const html = textArea.value;
+        textArea.value = html;
+        editor.innerHTML = html;
+
+        const response = await fetch("/control/modtext/set", {
+          method: "POST",
+          body: html,
+        });
+        console.log(await response.text());
+      }
+
+      function toggleMode() {
+        if (mode) {
+          normalEditor.style.display = "block";
+          textArea.style.display = "none";
+          button.innerHTML = "Nerd Mode";
+        } else {
+          normalEditor.style.display = "none";
+          textArea.style.display = "block";
+          button.innerHTML = "Normal Mode";
+        }
+        mode = !mode;
+        document.querySelectorAll(".nerdMode").forEach((el) => {
+          el.style.display = mode ? "inline" : "none";
+        });
+
+        document.querySelectorAll(".normalMode").forEach((el) => {
+          el.style.display = mode ? "none" : "inline";
+        });
+      }
+
+      async function getModTextdata() {
+        try {
+          const response = await fetch("/control/modtext/getdata");
+          const responseJSON = await response.json();
+          console.log("GOT DATA: ", responseJSON);
+          data = responseJSON;
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function getModTextCanvas() {
+        try {
+          const response = await fetch("/control/modtext/getcanvas");
+          const responseJSON = await response.json();
+          console.log("GOT CANVAS:", responseJSON);
+          await getModTextdata();
+          await canvas
+            .loadFromJSON(responseJSON, (_, obj) => addCustomProperties(obj))
+            .then(() => canvas.renderAll());
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function getModText() {
+        if (!mode) {
+          getModTextCanvas();
+          return;
+        }
+        try {
+          const response = await fetch("/control/modtext/get");
+          const responseText = await response.text();
+          if (!response.ok) {
+            alert(`Error updating modtext ${responseText}`);
+            return;
           }
-          getModText();
+          console.log("GOT MESSAGE:", responseText);
+          textArea.value = responseText;
+        } catch (e) {
+          alert(`Error updating modtext ${e}`);
+        }
+      }
+      function isValidUrl(string) {
+        try {
+          new URL(string);
+          return true;
+        } catch (err) {
+          return false;
+        }
+      }
+
+function formatNumber(n) {
+  return Number.isInteger(n)
+    ? String(n)
+    : String(Number(n.toFixed(2)));
+}
+      getModText();
     </script>
   </body>
 </html>

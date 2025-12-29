@@ -13,10 +13,11 @@
     <div class="ql-editor" id="text"></div>
   </body>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+  <script src=" https://cdn.jsdelivr.net/npm/fabric@7.0.0/dist/index.min.js "></script>
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 
   <script>
+    let data = {};
     const canvas = new fabric.Canvas("editorCanvas", {
       width: 1920,
       height: 1080,
@@ -24,7 +25,7 @@
     });
     const text = document.getElementById("text");
 
-    var socket = io("/modtext");
+    const socket = io("/modtext");
 
     socket.on("refresh", () => {
       window.location.reload();
@@ -33,10 +34,33 @@
       console.log("GOT MESSAGE:", message);
       text.innerHTML = message;
     });
-    socket.on("objects", (message) => {
-      console.log("GOT OBJECTS:", message);
-      canvas.loadFromJSON(message);
+    socket.on("canvas", (message) => {
+      console.log("GOT CANVAS:", message);
+      canvas.loadFromJSON(message, applyData).then(() => canvas.renderAll());
     });
+    socket.on("data", (newData) => {
+      console.log("GOT DATA: ", newData);
+      data = JSON.parse(newData);
+      canvas.getObjects().forEach(applyData);
+    });
+
+    function applyData(_, obj) {
+      switch (obj.dataId) {
+        case "latest_sub":
+          obj.set("text", data.latestSub);
+          break;
+        case "sub_pfp":
+          obj.setSrc(data.latestSubPfp).then(() => canvas.renderAll());
+          break;
+        case "counter":
+          obj.set("text", formatNumber(data.counters[obj.counterName]));
+          break;
+      }
+    }
+
+    function formatNumber(n) {
+      return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(2)));
+    }
   </script>
   <style>
     * {

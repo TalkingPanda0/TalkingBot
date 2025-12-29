@@ -139,6 +139,12 @@ app.use("/control", async (req, res) => {
         case "/modtext/get":
           res.send(bot.modtext);
           break;
+        case "/modtext/getcanvas":
+          res.send(bot.modtextCanvas);
+          break;
+        case "/modtext/getdata":
+          res.send(bot.getModTextData());
+          break;
 
         default:
           res.sendFile(__dirname + "/html/control.html");
@@ -305,9 +311,9 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
-        case "/modtext/setobjects":
-          bot.modtextObjects = JSON.parse(req.body);
-          bot.updateModTextObjects();
+        case "/modtext/setcanvas":
+          bot.modtextCanvas = JSON.parse(req.body);
+          bot.updateModTextCanvas();
           res.sendStatus(200);
           break;
 

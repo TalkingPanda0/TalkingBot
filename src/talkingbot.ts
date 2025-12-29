@@ -25,7 +25,7 @@ import {
   getRaidAudio,
   getSubAudio,
 } from "./alerts";
-import { Object } from "fabric/fabric-impl";
+import { Canvas } from "fabric/fabric-impl";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -66,8 +66,9 @@ export class TalkingBot {
   public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
   public wheel: Wheel;
+  public latestSub: latestSub | null = null;
   public modtext: string = "";
-  public modtextObjects: any[] = [];
+  public modtextCanvas: Canvas | null = null;
   public ttsManager: TTSManager;
   public credits: Credits;
   public users: Users;
@@ -86,6 +87,8 @@ export class TalkingBot {
 
     this.iomodtext.on("connection", () => {
       this.updateModText();
+      this.updateModTextCanvas();
+      this.updateModTextData();
     });
 
     this.iochat = io.of("chat");
@@ -134,17 +137,21 @@ export class TalkingBot {
     await this.whereWord.init();
     this.moduleManager.init();
 
+    this.latestSub = JSON.parse(
+      this.database.getOrSetConfig("latestSub", JSON.stringify(null)),
+    );
+
     this.modtext = this.database.getOrSetConfig("currentModtext", "");
+    this.modtextCanvas = JSON.parse(
+      this.database.getOrSetConfig("currentModtextCanvas", "null"),
+    );
     this.updateModText();
+    this.updateModTextCanvas();
+    this.updateModTextData();
 
     setInterval(() => {
       levelUp(this);
     }, 60 * 1000);
-
-    const latestSub = JSON.parse(
-      this.database.getOrSetConfig("latestSub", JSON.stringify(null)),
-    );
-    if (latestSub != null) this.setLatestSub(latestSub);
   }
 
   public async cleanUp() {
@@ -188,15 +195,33 @@ export class TalkingBot {
       }),
     );
   }
-  public updateModTextObjects() {
-    if (!this.modtextObjects) return;
-    console.log(this.modtextObjects);
-    //this.database.setConfig("currentModtextObjects", this.modtextObjects);
-    this.iomodtext.emit(
-      "objects",
-      this.modtextObjects,
+  public updateModTextCanvas() {
+    if (!this.modtextCanvas) return;
+    this.database.setConfig(
+      "currentModtextCanvas",
+      JSON.stringify(this.modtextCanvas),
     );
+    this.iomodtext.emit("canvas", this.modtextCanvas);
   }
+
+  public getModTextData(): any {
+    const data: any = {};
+    if (this.latestSub) {
+      data.latestSub = this.latestSub.name;
+      data.latestSubPfp = this.latestSub.pfpUrl;
+    }
+    data.counters = {};
+    if (this.commandHandler.counter)
+      this.commandHandler.counter.counters.forEach((value, counter) => {
+        data.counters[counter] = value;
+      });
+    return data;
+  }
+
+  public updateModTextData() {
+    this.iomodtext.emit("data", JSON.stringify(this.getModTextData()));
+  }
+
   public async getDiscordAccessToken(
     code: string,
   ): Promise<DiscordAuthData | null> {
@@ -308,7 +333,7 @@ export class TalkingBot {
   }
   public setLatestSub(sub: latestSub) {
     this.database.setConfig("latestSub", JSON.stringify(sub));
-    this.modtext = `<div style='display:grid; top: 150px;left: 5px;position: absolute; width:100px; height:150px '><div style="text-wrap: nowrap; text-align: center; font-size: 15px;">${sub.name}</div> <img src="${sub.pfpUrl}" height="100px" width="100px"></img></div>`;
-    this.updateModText();
+    this.latestSub = sub;
+    this.updateModTextData();
   }
 }

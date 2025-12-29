@@ -1,5 +1,4 @@
 import { TalkingBot } from "./talkingbot";
-import v8 from "node:v8";
 import {
   arraytoHashMap,
   getRandomElement,
@@ -21,11 +20,6 @@ import { UserIdentifier } from "./users";
 
 import { addRecentChatter } from "./levels";
 import { MessageData } from "botModule";
-
-interface RegexCommand {
-  regex: RegExp;
-  command: string;
-}
 
 export interface Command {
   showOnChat: boolean;
@@ -278,6 +272,7 @@ export class MessageHandler {
               true,
             );
             this.bot.updateModText();
+            this.bot.updateModTextData();
 
             return;
           }
