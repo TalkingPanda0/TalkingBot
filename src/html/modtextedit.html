@@ -136,7 +136,7 @@
         chess_knightbadge
       </button>
       <button
-        class="normalMode  material-symbols-outlined"
+        class="normalMode material-symbols-outlined"
         title="Add Subscriber PFP"
         onclick="addSubPfp()"
       >
@@ -343,7 +343,7 @@
       }
 
       function addSubName() {
-        const text = new fabric.IText("Subscriber", {
+        const text = new fabric.IText(data.latestSub, {
           left: 1920 / 2,
           top: 1080 / 2,
           fontFamily: "sans-serif",
@@ -356,6 +356,7 @@
 
       function addCustomProperties(obj) {
         obj.controls.deleteControl = deleteControl;
+        applyData(obj)
       }
 
       function getImage(url) {
@@ -370,9 +371,7 @@
       }
 
       function addSubPfp() {
-        const img = getImage(
-          "https://static-cdn.jtvnw.net/user-default-pictures-uv/13e5fa74-defa-11e9-809c-784f43822e80-profile_image-300x300.png",
-        );
+        const img = getImage(data.latestSubPfp);
         img.dataId = "sub_pfp";
         addCustomProperties(img);
         canvas.add(img);
@@ -584,6 +583,17 @@
       getModText().then(() => {
         events.forEach((event) => canvas.on(event, () => saveState()));
       });
+
+      function applyData(obj) {
+        switch (obj.dataId) {
+          case "latest_sub":
+            obj.set("text", data.latestSub);
+            break;
+          case "sub_pfp":
+            obj.setSrc(data.latestSubPfp).then(() => canvas.renderAll());
+            break;
+        }
+      }
     </script>
   </body>
 </html>
