@@ -89,6 +89,14 @@
       }
     </style>
     <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+    <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-dark@5/dark.css"
     />
@@ -99,29 +107,80 @@
 
   <body>
     <div class="controls">
-      <button class="normalMode" onclick="addText()">Add Text</button>
-      <button class="normalMode" onclick="addImagePrompt()">
-        Add Image URL
+      <button
+        class="normalMode material-icons"
+        title="Add Text"
+        onclick="addText()"
+      >
+        text_format
       </button>
-      <button class="normalMode" onclick="pickImage()">Choose Image</button>
-      <button class="normalMode" onclick="addSubName()">Add Sub Name</button>
-      <button class="normalMode" onclick="addSubPfp()">Add Sub Pfp</button>
-      <button class="normalMode" onclick="addCounter()">Add Counter</button>
-      <button class="normalMode" id="playPauseButton" onclick="playPause()">
-        Pause
+      <button
+        class="normalMode material-icons"
+        title="Add Image From URL"
+        onclick="addImagePrompt()"
+      >
+        image_search
       </button>
-
-      <button onclick="getModText()">Update Mod Text</button>
-
-      <button class="button" id="button" onclick="toggleMode()">
-        Nerd Mode
+      <button
+        class="normalMode material-icons"
+        title="Choose Image"
+        onclick="pickImage()"
+      >
+        image
+      </button>
+      <button
+        class="normalMode material-symbols-outlined"
+        title="Add Subscriber Name"
+        onclick="addSubName()"
+      >
+        chess_knightbadge
+      </button>
+      <button
+        class="normalMode  material-symbols-outlined"
+        title="Add Subscriber PFP"
+        onclick="addSubPfp()"
+      >
+        chess_knightperson
+      </button>
+      <button
+        class="normalMode material-icons"
+        title="Add Counter"
+        onclick="addCounter()"
+      >
+        exposure_plus_1
+      </button>
+      <button
+        class="normalMode material-icons"
+        id="playPauseButton"
+        title="Play/Pause"
+        onclick="playPause()"
+      >
+        pause
       </button>
 
       <button
+        class="material-icons"
+        onclick="getModText()"
+        title="Update Mod Text"
+      >
+        update
+      </button>
+
+      <button
+        class="material-icons"
+        class="button"
+        id="button"
+        onclick="toggleMode()"
+      >
+        settings
+      </button>
+
+      <button
+        class="material-icons"
         onclick="sendToOverlay()"
         style="background: #9146ff; color: white"
       >
-        Send
+        send
       </button>
 
       <dialog id="imageDialog">
@@ -161,6 +220,7 @@
 
     <textarea style="display: none" id="textarea" rows="10"></textarea>
     <script>
+      const events = ["object:added", "object:modified", "object:removed"];
       const dialog = document.getElementById("imageDialog");
       const grid = document.getElementById("imageGrid");
       const form = document.getElementById("imageUploadForm");
@@ -182,10 +242,10 @@
 
       function playPause() {
         if (player.isPaused()) {
-          playPauseButton.innerText = "Pause";
+          playPauseButton.innerText = "pause";
           player.play();
         } else {
-          playPauseButton.innerText = "Play";
+          playPauseButton.innerText = "play";
           player.pause();
         }
       }
@@ -232,8 +292,8 @@
 
       function addText() {
         const text = new fabric.IText("Type something...", {
-          left: 100,
-          top: 100,
+          left: 1920 / 2,
+          top: 1080 / 2,
           fontFamily: "sans-serif",
           fill: "#ffffff",
         });
@@ -254,8 +314,8 @@
           inputOptions: options,
         });
         const text = new fabric.IText(counter, {
-          left: 100,
-          top: 100,
+          left: 1920 / 2,
+          top: 1080 / 2,
           fontFamily: "sans-serif",
           fill: "#ffffff",
           dataId: "counter",
@@ -284,8 +344,8 @@
 
       function addSubName() {
         const text = new fabric.IText("Subscriber", {
-          left: 100,
-          top: 100,
+          left: 1920 / 2,
+          top: 1080 / 2,
           fontFamily: "sans-serif",
           fill: "#ffffff",
           dataId: "latest_sub",
@@ -301,7 +361,10 @@
       function getImage(url) {
         const image = new Image();
         image.src = url;
-        const obj = new fabric.FabricImage(image);
+        const obj = new fabric.FabricImage(image, {
+          left: 1920 / 2,
+          top: 1080 / 2,
+        });
         obj.controls.deleteControl = deleteControl;
         return obj;
       }
@@ -344,11 +407,9 @@
         if (mode) {
           normalEditor.style.display = "block";
           textArea.style.display = "none";
-          button.innerHTML = "Nerd Mode";
         } else {
           normalEditor.style.display = "none";
           textArea.style.display = "block";
-          button.innerHTML = "Normal Mode";
         }
         mode = !mode;
         document.querySelectorAll(".nerdMode").forEach((el) => {
@@ -380,6 +441,7 @@
           await canvas
             .loadFromJSON(responseJSON, (_, obj) => addCustomProperties(obj))
             .then(() => canvas.renderAll());
+          saveState();
         } catch (e) {
           console.error(e);
         }
@@ -387,7 +449,7 @@
 
       async function getModText() {
         if (!mode) {
-          getModTextCanvas();
+          await getModTextCanvas();
           return;
         }
         try {
@@ -459,7 +521,69 @@
           grid.appendChild(img);
         }
       }
-      getModText();
+      const undoStack = [];
+      const redoStack = [];
+      let isRestoring = false;
+
+      function saveState() {
+        if (isRestoring) return;
+
+        redoStack.length = 0;
+        undoStack.push(canvas.toJSON());
+
+        if (undoStack.length > 50) {
+          undoStack.shift();
+        }
+      }
+
+      function undo() {
+        if (undoStack.length < 2 || isRestoring) return;
+
+        isRestoring = true;
+
+        const current = undoStack.pop();
+        redoStack.push(current);
+
+        const previous = undoStack[undoStack.length - 1];
+        canvas
+          .loadFromJSON(previous, (_, obj) => addCustomProperties(obj))
+          .then(() => {
+            canvas.renderAll();
+            isRestoring = false;
+          });
+      }
+
+      function redo() {
+        if (redoStack.length === 0) return;
+
+        isRestoring = true;
+
+        const state = redoStack.pop();
+        undoStack.push(state);
+
+        canvas
+          .loadFromJSON(state, (_, obj) => addCustomProperties(obj))
+          .then(() => {
+            canvas.renderAll();
+            isRestoring = false;
+          });
+      }
+
+      window.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "z") {
+          e.preventDefault();
+          undo();
+        }
+
+        if (e.ctrlKey && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
+          e.preventDefault();
+          redo();
+        }
+      });
+
+      getModText().then(() => {
+        events.forEach((event) => canvas.on(event, () => saveState()));
+      });
     </script>
   </body>
 </html>
