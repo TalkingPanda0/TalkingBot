@@ -332,7 +332,6 @@
       async function sendModtext() {
         const html = textArea.value;
         textArea.value = html;
-        editor.innerHTML = html;
 
         const response = await fetch("/control/modtext/set", {
           method: "POST",
