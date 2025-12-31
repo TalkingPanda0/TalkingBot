@@ -628,9 +628,8 @@ export class MessageHandler {
             this.bot.twitch.channel.id,
             { gameId: game.id },
           );
+          this.bot.twitch.currentGame = game.id;
           if(this.bot.twitch.isStreamOnline) await this.bot.discord.onGameChange(game.name,game.boxArtUrl.replace("52x72","520x720"));
-          // TODO change game in yt
-
           data.reply(`Game has been changed to "${game.name}"`, true);
         },
       },

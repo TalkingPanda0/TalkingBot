@@ -1,8 +1,8 @@
 import { TalkingBot } from "./talkingbot";
 
-let game_name: string | null = null;
+let currentSteamGame: string | null = null;
 
-async function getGameName(bot: TalkingBot) {
+async function getGameName(bot: TalkingBot): Promise<string | null> {
   const response = await fetch(
     `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${bot.commandHandler.keys.steam}&steamids=76561198800357802`,
     { method: "GET" },
@@ -15,21 +15,25 @@ async function getGameName(bot: TalkingBot) {
 }
 
 export async function updateCategory(bot: TalkingBot) {
-  const name = await getGameName(bot);
-  if (!name || name == game_name) return;
-  game_name = name;
+  const newSteamGame = await getGameName(bot);
+  if (!newSteamGame || newSteamGame == currentSteamGame) return;
+  currentSteamGame = newSteamGame;
 
-  const game = await bot.twitch.apiClient.search.searchCategories(name, {
-    limit: 1,
-  });
-  const data = game.data[0];
-  if (!data) return;
+  const helixGame = (
+    await bot.twitch.apiClient.search.searchCategories(currentSteamGame, {
+      limit: 1,
+    })
+  ).data[0];
+  if (!helixGame || bot.twitch.currentGame == helixGame.id) return;
 
   await bot.twitch.apiClient.channels.updateChannelInfo(bot.twitch.channel.id, {
-    gameId: data.id,
+    gameId: helixGame.id,
   });
+  bot.twitch.currentGame = helixGame.id;
 
-  await bot.broadcastMessage(`Game has been changed to ${data.name}!`);
-  await bot.discord.onGameChange(data.name,data.boxArtUrl.replace("52x72","520x720"));
+  await bot.broadcastMessage(`Game has been changed to ${helixGame.name}!`);
+  await bot.discord.onGameChange(
+    helixGame.name,
+    helixGame.boxArtUrl.replace("52x72", "520x720"),
+  );
 }
-

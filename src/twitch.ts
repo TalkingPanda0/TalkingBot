@@ -69,6 +69,7 @@ export class Twitch {
   public cheerEmotes!: HelixCheermoteList;
   public BTTVEmotes = new Map<string, string>();
   public badges = new Map<string, string>();
+  public currentGame: string | null = null;
 
   private channelName!: string;
   private eventListener!: EventSubListener;
@@ -404,6 +405,7 @@ export class Twitch {
           throw Error("getStream returned null.");
         }
         const thumbnail = stream.getThumbnailUrl(1280, 720);
+        this.currentGame = stream.gameId;
         await this.bot.discord.sendStreamPing({
           title: stream.title,
           game: stream.gameName,
@@ -790,10 +792,11 @@ export class Twitch {
     this.chatClient.connect();
     this.eventListener.start();
     // Apis ready
-    this.isStreamOnline = !!(await this.apiClient.streams.getStreamByUserId(
+    const stream = (await this.apiClient.streams.getStreamByUserId(
       this.channel.id,
     ));
-    if (this.isStreamOnline) {
+    if (stream) {
+      this.currentGame = stream.gameId;
       this.onStreamOnline();
       this.say("AAAAAAAAAAAAAAA!");
     }
