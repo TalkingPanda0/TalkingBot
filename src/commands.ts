@@ -1293,8 +1293,8 @@ export class MessageHandler {
     data.color = user.color ?? data.color;
 
     if (data.isUserMod)
-      this.bot.credits.addToCredits(data.id,data.sender,data.color, CreditType.Moderator);
-    this.bot.credits.addToCredits(data.id,data.sender,data.color, CreditType.Chatter);
+      this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Moderator);
+    this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Chatter);
 
     if (this.bot.twitch.isStreamOnline) addRecentChatter(this.bot, data);
 
