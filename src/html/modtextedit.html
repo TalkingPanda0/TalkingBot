@@ -595,14 +595,29 @@
       }
 
       window.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.key === "z") {
+        if (!e.ctrlKey || !canvas) return;
+
+        if (e.key === "d") {
+          const obj = canvas.getActiveObject();
+          if (!obj) return;
           e.preventDefault();
-          undo();
+          obj.clone().then((cloned) => {
+            addCustomProperties(cloned);
+            canvas.add(cloned);
+            canvas.renderAll();
+          });
         }
 
-        if (e.ctrlKey && (e.key === "y" || (e.shiftKey && e.key === "Z"))) {
+        if (e.key === "z") {
+          e.preventDefault();
+          undo();
+          return;
+        }
+
+        if (e.key === "y" || (e.shiftKey && e.key === "Z")) {
           e.preventDefault();
           redo();
+          return;
         }
       });
 
