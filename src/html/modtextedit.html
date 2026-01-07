@@ -215,7 +215,7 @@
       style="border: 2px solid #333; display: inline-block"
     >
       <div id="player"></div>
-      <canvas id="editorCanvas"></canvas>
+      <canvas id="editorCanvas" style="display: none"></canvas>
     </div>
 
     <textarea style="display: none" id="textarea" rows="10"></textarea>
@@ -236,6 +236,11 @@
         autoplay: true,
         muted: true,
       });
+      player.addEventListener(Twitch.Player.PLAYING, () => {
+        if(!canvas) initCanvas();
+      });
+
+      let canvas;
       const button = document.getElementById("button");
       const textArea = document.getElementById("textarea");
       let mode = false;
@@ -245,7 +250,7 @@
           playPauseButton.innerText = "pause";
           player.play();
         } else {
-          playPauseButton.innerText = "play";
+          playPauseButton.innerText = "play_arrow";
           player.pause();
         }
       }
@@ -253,14 +258,9 @@
       const deleteIcon =
         "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
 
-      var deleteImg = document.createElement("img");
+      const deleteImg = document.createElement("img");
       deleteImg.src = deleteIcon;
       const normalEditor = document.getElementById("canvasContainer");
-      const canvas = new fabric.Canvas("editorCanvas", {
-        width: 1920,
-        height: 1080,
-      });
-
       const deleteControl = new fabric.Control({
         x: 0.5,
         y: -0.5,
@@ -286,11 +286,21 @@
         ctx.drawImage(deleteImg, -size / 2, -size / 2, size, size);
         ctx.restore();
       }
-
-      canvas.setZoom(0.5);
-      canvas.setDimensions({ width: 1920 * 0.5, height: 1080 * 0.5 });
+      function initCanvas() {
+        document.getElementById("editorCanvas").style.display = "block";
+        canvas = new fabric.Canvas("editorCanvas", {
+          width: 1920,
+          height: 1080,
+        });
+        canvas.setZoom(0.5);
+        canvas.setDimensions({ width: 1920 * 0.5, height: 1080 * 0.5 });
+        getModText().then(() => {
+          events.forEach((event) => canvas.on(event, () => saveState()));
+        });
+      }
 
       function addText() {
+        if (!canvas) return;
         const text = new fabric.IText("Type something...", {
           left: 1920 / 2,
           top: 1080 / 2,
@@ -302,6 +312,7 @@
       }
 
       async function addCounter() {
+        if (!canvas) return;
         const options = Object.fromEntries(
           Object.entries(data.counters).map(([key, value]) => [
             key,
@@ -326,6 +337,7 @@
       }
 
       async function addImagePrompt() {
+        if (!canvas) return;
         const { value: url } = await Swal.fire({
           title: "Enter Image URL",
           input: "text",
@@ -343,6 +355,7 @@
       }
 
       function addSubName() {
+        if (!canvas) return;
         const text = new fabric.IText(data.latestSub, {
           left: 1920 / 2,
           top: 1080 / 2,
@@ -356,10 +369,11 @@
 
       function addCustomProperties(obj) {
         obj.controls.deleteControl = deleteControl;
-        applyData(obj)
+        applyData(obj);
       }
 
       function getImage(url) {
+        if (!canvas) return;
         const image = new Image();
         image.src = url;
         const obj = new fabric.FabricImage(image, {
@@ -371,6 +385,7 @@
       }
 
       function addSubPfp() {
+        if (!canvas) return;
         const img = getImage(data.latestSubPfp);
         img.dataId = "sub_pfp";
         addCustomProperties(img);
@@ -378,6 +393,7 @@
       }
 
       async function sendToOverlay() {
+        if (!canvas) return;
         if (mode) {
           sendModtext();
           return;
@@ -578,10 +594,6 @@
           e.preventDefault();
           redo();
         }
-      });
-
-      getModText().then(() => {
-        events.forEach((event) => canvas.on(event, () => saveState()));
       });
 
       function applyData(obj) {
