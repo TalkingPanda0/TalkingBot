@@ -46,6 +46,9 @@
     const searchParams = new URLSearchParams(queryString);
     const showCommands = searchParams.get("showcmd") === "yes";
     const showEmoteWall = searchParams.get("emotewall") === "sure";
+    const transparent = searchParams.has("transparent");
+    if(transparent) 
+      messageList.style.backgroundColor = "rgba(0,0,0,0)";
 
     const currentEmotes = [];
 
@@ -456,7 +459,7 @@
           "",
         );
         replyTo = msg.parentMessageUserDisplayName;
-        replyId = msg.parentMessageUserId;
+        replyId = `twitch-${msg.parentMessageUserId}`;
         replyText = msg.parentMessageText;
       }
 
@@ -470,7 +473,6 @@
           indexes.push(parseInt(index));
         });
       });
-      console.log(indexes);
 
       const isUserMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
       const isUserVip = isUserMod || msg.userInfo.isVip;
@@ -500,7 +502,6 @@
         id: `twitch-${msg.id}`,
       };
       addToMessageList(message);
-      console.log(message);
     }
     async function getMessages() {
       console.log("getting new messages.");
@@ -512,7 +513,6 @@
       messages.messages.forEach((msg) => {
         if (!msg.includes("PRIVMSG")) return;
         const message = parseTwitchMessage(msg);
-        console.log(message);
         const isCommand =
           message.text.startsWith("!") ||
           message.userInfo.userId === "736013381" ||
@@ -637,7 +637,6 @@
     }
     body {
       margin: 0px;
-      background-color: #2b2e38;
     }
     .redeem {
       color: #a5a5a5;

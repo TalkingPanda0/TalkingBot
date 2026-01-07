@@ -94,15 +94,13 @@ export class Twitch {
     this.bot = bot;
   }
 
+  // User hasn't set a color or failed to get the color, get a "random" color
+  colorFromId(id: string): string {
+    return userColors[parseInt(id) % userColors.length];
+  }
+
   getUserColor(message: ChatMessage): string {
-    let color = message.userInfo.color;
-
-    // User hasn't set a color or failed to get the color, get a "random" color
-    if (!color) {
-      color = userColors[parseInt(message.userInfo.userId) % userColors.length];
-    }
-
-    return color;
+    return message.userInfo.color ?? this.colorFromId(message.userInfo.userId);
   }
 
   public async cleanUp() {
@@ -143,13 +141,16 @@ export class Twitch {
       30 * 60 * 1000,
     );
   }
-  private formatDisplayName(message: ChatMessage) {
-    const display = message.userInfo.displayName;
-    const login = message.userInfo.userName;
+
+  getDisplayName(display: string, login: string) {
     if (display && display.toLowerCase().replaceAll(/\s/g, "") !== login) {
       return `${display} (${login})`;
     }
     return display || login;
+  }
+
+  private formatDisplayName(message: ChatMessage) {
+    return this.getDisplayName(message.userInfo.displayName,message.userInfo.userName);
   }
 
   public async readAuth() {
@@ -205,10 +206,9 @@ export class Twitch {
           new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
           "",
         );
-        text = text.replace(
-          new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
-          "",
-        ).trim();
+        text = text
+          .replace(new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"), "")
+          .trim();
       }
 
       if (msg.isHighlight) {
@@ -231,9 +231,8 @@ export class Twitch {
       const messageWithoutPrefix = removeByIndexToUppercase(text, indexes);
       if (msg.isCheer) {
         this.onCheer({
-          bits: msg.bits,
+          msg: msg,
           message: messageWithoutPrefix,
-          userDisplayName: this.formatDisplayName(msg),
         });
       }
 
@@ -303,21 +302,21 @@ export class Twitch {
       console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
     }
   }
-  private async onCheer(event: {
-    userDisplayName: string;
-    bits: number;
-    message: string;
-  }) {
-    this.bot.credits.addToCredits(event.userDisplayName, CreditType.Cheer);
+  private async onCheer(event: { msg: ChatMessage; message: string }) {
+    const name = this.formatDisplayName(event.msg);
+    this.bot.credits.addToCredits(
+      `twitch-${event.msg.userInfo.userId}`,
+      this.getUserColor(event.msg),
+      name,
+      CreditType.Cheer,
+    );
+    const message = event.message.replaceAll(/cheer\d+/gi, "");
+
     this.bot.ioalert.emit("alert", {
-      audioList: await getCheerAudio(
-        event.userDisplayName,
-        event.bits,
-        event.message,
-      ),
-      bits: event.bits,
-      user: event.userDisplayName,
-      message: event.message.replaceAll(/cheer\d+/gi, ""),
+      audioList: await getCheerAudio(name, event.msg.bits, message),
+      bits: event.msg.bits,
+      user: name,
+      message: message,
     });
   }
 
@@ -448,9 +447,14 @@ export class Twitch {
       this.channel.id,
       async (event) => {
         if (this.allreadyFollowed.has(event.userId)) return;
-        this.bot.credits.addToCredits(event.userDisplayName, CreditType.Follow);
+        this.bot.credits.addToCredits(
+          `twitch-${event.userId}`,
+          this.getDisplayName(event.userDisplayName,event.userName),
+          this.colorFromId(event.userId),
+          CreditType.Follow,
+        );
         this.bot.ioalert.emit("alert", {
-          audioList: await getFollowAudio(event.userDisplayName),
+          audioList: await getFollowAudio(event.userName),
           follower: event.userDisplayName,
         });
         this.allreadyFollowed.add(event.userId);
@@ -483,11 +487,13 @@ export class Twitch {
         });
       });
       this.bot.credits.addToCredits(
-        data.userDisplayName,
+        `twitch-${data.userId}`,
+        this.getDisplayName(data.userDisplayName,data.userName),
+        this.colorFromId(data.userId),
         CreditType.Subscription,
       );
       this.bot.ioalert.emit("alert", {
-        audioList: await getSubAudio(data.userDisplayName),
+        audioList: await getSubAudio(data.userName),
         messageAudioList: [],
         name: data.userDisplayName,
         message: "",
@@ -508,7 +514,9 @@ export class Twitch {
           });
         });
         this.bot.credits.addToCredits(
-          data.userDisplayName,
+          `twitch-${data.userId}`,
+          this.colorFromId(data.userId),
+          this.getDisplayName(data.userDisplayName,data.userName),
           CreditType.Subscription,
         );
         this.bot.ioalert.emit("alert", {
@@ -528,11 +536,20 @@ export class Twitch {
         data.getGifter().then((user) => {
           this.bot.setLatestSub({
             name: user == null ? "Anonymous" : user.displayName,
-            pfpUrl: user == null ? "https://talkingpanda.dev/hapboo.gif" : user.profilePictureUrl,
+            pfpUrl:
+              user == null
+                ? "https://talkingpanda.dev/hapboo.gif"
+                : user.profilePictureUrl,
             time: new Date(),
           });
         });
-        if(data.gifterName) this.bot.credits.addToCredits(data.gifterName, CreditType.Subscription);
+        if (data.gifterName)
+          this.bot.credits.addToCredits(
+            `twitch-${data.gifterId}`,
+            this.getDisplayName(data.gifterDisplayName ?? "anonymous",data.gifterName ?? "anonymous"),
+            this.colorFromId(data.gifterId ?? "0"),
+            CreditType.Subscription,
+          );
         this.bot.ioalert.emit("alert", {
           audioList: await getSubAudio(data.gifterName ?? "Anonymous"),
           messageAudioList: [],
@@ -792,9 +809,9 @@ export class Twitch {
     this.chatClient.connect();
     this.eventListener.start();
     // Apis ready
-    const stream = (await this.apiClient.streams.getStreamByUserId(
+    const stream = await this.apiClient.streams.getStreamByUserId(
       this.channel.id,
-    ));
+    );
     if (stream) {
       this.currentGame = stream.gameId;
       this.onStreamOnline();

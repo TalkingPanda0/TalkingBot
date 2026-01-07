@@ -9,6 +9,7 @@ import { DiscordAuthData, TalkingBot } from "./talkingbot";
 import { sign, verify } from "jsonwebtoken";
 import { getTTSSounds } from "./tts";
 import fileUpload, { UploadedFile } from "express-fileupload";
+import cors from "cors";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
 import { MessageData } from "botModule";
@@ -24,6 +25,7 @@ app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(express.static("config/images"));
 app.use(bodyParser.text());
+app.use(cors());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(
@@ -402,10 +404,6 @@ app.get("/wheelSegments", (_req, res) => {
 
 app.get("/creditsList", (_req, res) => {
   res.send(bot.credits.getCreditsList());
-});
-
-app.get("/credits", (_req, res) => {
-  res.sendFile(__dirname + "/html/credits.html");
 });
 
 app.get("/tts", (_req: Request, res: Response) => {

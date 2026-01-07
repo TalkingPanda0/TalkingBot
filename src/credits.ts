@@ -1,12 +1,16 @@
 import { TalkingBot } from "./talkingbot";
 
+export interface Chatter {
+  name: string,
+  color: string,
+}
+
 interface CreditsList {
-  followers: string[];
-  subscribers: string[];
-  moderators: string[];
-  cheers: string[];
-  chatters: string[];
-  whereWordWinner?: string;
+  followers: Chatter[];
+  subscribers: Chatter[];
+  moderators: Chatter[];
+  cheers: Chatter[];
+  chatters: Chatter[];
 }
 
 export enum CreditType {
@@ -18,11 +22,12 @@ export enum CreditType {
 }
 
 export class Credits {
-  private followers: Set<string> = new Set();
-  private subscribers: Set<string> = new Set();
-  private moderators: Set<string> = new Set();
-  private cheers: Set<string> = new Set();
-  private chatters: Set<string> = new Set();
+  private followers: Map<string,Chatter> = new Map();
+  private subscribers:  Map<string,Chatter> = new Map();
+
+  private moderators: Map<string,Chatter> = new Map();
+  private cheers: Map<string,Chatter> = new Map();
+  private chatters:Map<string,Chatter> = new Map();
   private bot: TalkingBot;
 
   constructor(bot: TalkingBot) {
@@ -37,22 +42,22 @@ export class Credits {
     this.chatters.clear();
   }
 
-  public addToCredits(name: string, type: CreditType) {
+  public addToCredits(id: string,name: string,color: string, type: CreditType) {
     switch (type) {
       case CreditType.Follow:
-        this.followers.add(name);
+        this.followers.set(id,{name,color});
         break;
       case CreditType.Moderator:
-        this.moderators.add(name);
+        this.moderators.set(id,{name,color})
         break;
       case CreditType.Subscription:
-        this.subscribers.add(name);
+        this.subscribers.set(id,{name,color})
         break;
       case CreditType.Cheer:
-        this.cheers.add(name);
+        this.cheers.set(id,{name,color})
         break;
       case CreditType.Chatter:
-        this.chatters.add(name);
+        this.chatters.set(id,{name,color});
         break;
     }
   }
@@ -66,12 +71,11 @@ export class Credits {
 
   public getCreditsList(): string {
     const list: CreditsList = {
-      followers: Array.from(this.followers),
-      subscribers: Array.from(this.subscribers),
-      moderators: Array.from(this.moderators),
-      cheers: Array.from(this.cheers),
-      chatters: Array.from(this.chatters),
-      whereWordWinner: this.bot.whereWord.getWinner()?.name,
+      followers: Array.from(this.followers.values()),
+      subscribers: Array.from(this.subscribers.values()),
+      moderators: Array.from(this.moderators.values()),
+      cheers: Array.from(this.cheers.values()),
+      chatters: Array.from(this.chatters.values()),
     };
     return JSON.stringify(list);
   }
