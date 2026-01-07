@@ -370,10 +370,15 @@ app.use("/control", async (req, res) => {
           if (!uploadedImage.mimetype.startsWith("image/")) {
             return res.status(422).send("This is not an image.");
           }
-          const imagePath = `${__dirname}/../config/images/${uploadedImage.name}`;
-          uploadedImage.mv(imagePath, (e) => {
+          let ext = "png";
+          const match = uploadedImage.name.match(/\.[0-9a-z]+$/i);
+          if(match) {
+            ext = match[0];
+          }
+          const imagePath = `/${uploadedImage.md5}.${ext}`;
+          uploadedImage.mv(`${__dirname}/../config/images${imagePath}`, (e) => {
             if (e) return res.status(500).send(e);
-            res.sendStatus(200);
+            res.send(imagePath);
           });
           break;
         default:

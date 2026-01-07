@@ -237,7 +237,7 @@
         muted: true,
       });
       player.addEventListener(Twitch.Player.PLAYING, () => {
-        if(!canvas) initCanvas();
+        if (!canvas) initCanvas();
       });
 
       let canvas;
@@ -350,7 +350,7 @@
           },
         });
         if (!url) return;
-        const img = getImage(url);
+        const img = await getImage(url);
         canvas.add(img);
       }
 
@@ -372,10 +372,20 @@
         applyData(obj);
       }
 
-      function getImage(url) {
+      function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+
+          img.src = url;
+        });
+      }
+      async function getImage(url) {
         if (!canvas) return;
-        const image = new Image();
-        image.src = url;
+        const image = await loadImage(url);
         const obj = new fabric.FabricImage(image, {
           left: 1920 / 2,
           top: 1080 / 2,
@@ -384,9 +394,9 @@
         return obj;
       }
 
-      function addSubPfp() {
+      async function addSubPfp() {
         if (!canvas) return;
-        const img = getImage(data.latestSubPfp);
+        const img = await getImage(data.latestSubPfp);
         img.dataId = "sub_pfp";
         addCustomProperties(img);
         canvas.add(img);
@@ -528,8 +538,8 @@
         for (const url of images) {
           const img = document.createElement("img");
           img.src = url;
-          img.onclick = () => {
-            const img = getImage(url);
+          img.onclick = async () => {
+            const img = await getImage(url);
             canvas.add(img);
             dialog.close();
           };
@@ -606,6 +616,48 @@
             break;
         }
       }
+
+      async function uploadAndAddImage(file) {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const res = await fetch("/control/modtext/addimage", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          alert("Image upload failed");
+          return;
+        }
+
+        // Backend should return filename or path
+        const imagePath = await res.text();
+        const url = imagePath;
+
+        const img = await getImage(url);
+        canvas.add(img);
+        canvas.setActiveObject(img);
+        canvas.requestRenderAll();
+      }
+
+      document.addEventListener("paste", async (e) => {
+        if (!canvas) return;
+
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (const item of items) {
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            if (!file) continue;
+
+            await uploadAndAddImage(file);
+            e.preventDefault();
+            return;
+          }
+        }
+      });
     </script>
   </body>
 </html>
