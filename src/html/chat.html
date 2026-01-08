@@ -47,8 +47,7 @@
     const showCommands = searchParams.get("showcmd") === "yes";
     const showEmoteWall = searchParams.get("emotewall") === "sure";
     const transparent = searchParams.has("transparent");
-    if(transparent) 
-      messageList.style.backgroundColor = "rgba(0,0,0,0)";
+    if (transparent) document.body.style.backgroundColor = "rgba(0,0,0,0)";
 
     const currentEmotes = [];
 
@@ -507,7 +506,7 @@
       console.log("getting new messages.");
       const messages = await (
         await fetch(
-          "https://recent-messages.robotty.de/api/v2/recent-messages/sweetbabooo_o",
+          "https://recent-messages.robotty.de/api/v2/recent-messages/sweetbabooo_o?limit=10",
         )
       ).json();
       messages.messages.forEach((msg) => {
@@ -637,6 +636,7 @@
     }
     body {
       margin: 0px;
+      background-color: #2b2e38;
     }
     .redeem {
       color: #a5a5a5;
