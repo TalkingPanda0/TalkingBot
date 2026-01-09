@@ -63,66 +63,27 @@
     <div id="container" />
 
     <div id="alert"></div>
-    <div style="display: none">
-      <img id="hapboo0" src="/hapboo0.png" />
-      <img id="hapboo1" src="/hapboo1.png" />
-      <img id="hapboo2" src="/hapboo2.png" />
-      <img id="hapboo3" src="/hapboo3.png" />
-      <img id="hapboo4" src="/hapboo4.png" />
-      <img id="hapboo5" src="/hapboo5.png" />
-      <img id="hapboo6" src="/hapboo6.png" />
-    </div>
+
 
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/tts.js"></script>
 
     <script>
-      const hapbooFrames = [
-        document.getElementById("hapboo0"),
-        document.getElementById("hapboo1"),
-        document.getElementById("hapboo2"),
-        document.getElementById("hapboo3"),
-        document.getElementById("hapboo4"),
-        document.getElementById("hapboo5"),
-        document.getElementById("hapboo6"),
-      ];
-      const trollbab = document.getElementById("trollbab");
       const alertQueue = [];
       const alertElement = document.getElementById("alert");
-      let hapbooAudio = new Audio("HapBoo.mp3");
-      hapbooAudio.volume = 0.2;
-      let hapbooIndex = 0;
 
-      function getRandomArbitrary(min, max) {
-        return Math.random() * (max - min) + min;
-      }
+
       function handleQueue() {
         if (isPlaying || alertQueue.length == 0) return;
         const alert = alertQueue.shift();
-        if (alert.viewers !== undefined) raidAlert(alert);
+        if (alert.viewers !== undefined) return;
         else if (alert.follower !== undefined) followAlert(alert);
         else if (alert.bits !== undefined) bitsAlert(alert);
         else if (alert.member !== undefined) discordJoinAlert(alert);
         else if (alert.is_subscription !== undefined) kofiAlert(alert);
         else subAlert(alert);
       }
-      function drawRaiders(raiders, ctx) {
-        ctx.clearRect(0, 0, 1000, 1000);
-        raiders.forEach((raider) => {
-          ctx.drawImage(
-            hapbooFrames[hapbooIndex],
-            raider.x,
-            raider.y,
-            100,
-            100,
-          );
-          raider.y += 2;
-          if (raider.y >= 1000) {
-            hapbooAudio.cloneNode().play();
-            return;
-          }
-        });
-      }
+
       function discordJoinAlert(event) {
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${event.member} </span>just joined the fish tank.</span> `;
@@ -179,49 +140,6 @@
         });
       }
 
-      function raidAlert(raidInfo) {
-        let raiders = [];
-
-        alertElement.style.opacity = "100%";
-        alertElement.innerHTML = `<canvas height=1000 width=1000 id="raiders"></canvas><br><span class="raider" ><span class="sender">${raidInfo.raider} </span>just raided with ${raidInfo.viewers} viewers</span>`;
-
-        isPlaying = true;
-        raidInfo.viewers = Math.min(raidInfo.viewers, 100);
-
-        for (let i = 0; i < raidInfo.viewers; i++) {
-          let raider = {};
-          raider.x = getRandomArbitrary(0, 900);
-          raider.y = getRandomArbitrary(0, 400);
-          raiders.push(raider);
-        }
-
-        const canvas = document.getElementById("raiders");
-        const ctx = canvas.getContext("2d");
-        drawRaiders(raiders, ctx);
-
-        const hapboointerval = setInterval(() => {
-          hapbooIndex = hapbooIndex == 5 ? 0 : hapbooIndex + 1;
-        }, 80);
-
-        const interval = setInterval(() => {
-          drawRaiders(raiders, ctx);
-          raiders = raiders.filter((value) => {
-            return value.y < 1000;
-          });
-          // everyone reached the ending
-          if (raiders.length === 0) {
-            clearInterval(interval);
-            clearInterval(hapboointerval);
-            playTTS(raidInfo.audioList, () => {
-              alertElement.style.opacity = "0%";
-              setTimeout(() => {
-                alertElement.innerHTML = "";
-                isPlaying = false;
-              }, 1000);
-            });
-          }
-        }, 10);
-      }
       function subAlert(subInfo) {
         isPlaying = true;
         let tier = "";
@@ -311,7 +229,7 @@
         alertElement.style = "opacity: 100%";
       }
 
-      var socket = io("/alerts");
+      const socket = io("/alerts");
 
       socket.on("refresh", () => {
         window.location.reload();
