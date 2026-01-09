@@ -13,7 +13,7 @@ export async function getCheerAudio(
   bits: number,
   message: string,
 ): Promise<string[]> {
-  if (bits == 1 && !message) return await getAudioList(message);
+  if (bits == 1 && message) return await getAudioList(message);
   return await getAudioList(
     `${name} cheered ${bits} ${bits == 1 ? "bit" : "bits"} ${message ? `: \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ ${message}` : ""}`,
   );
