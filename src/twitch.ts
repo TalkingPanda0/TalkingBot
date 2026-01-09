@@ -306,8 +306,8 @@ export class Twitch {
     const name = this.formatDisplayName(event.msg);
     this.bot.credits.addToCredits(
       `twitch-${event.msg.userInfo.userId}`,
-      this.getUserColor(event.msg),
       name,
+      this.getUserColor(event.msg),
       CreditType.Cheer,
     );
     const message = event.message.replaceAll(/cheer\d+/gi, "");
