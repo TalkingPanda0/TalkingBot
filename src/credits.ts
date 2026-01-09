@@ -6,11 +6,11 @@ export interface Chatter {
 }
 
 interface CreditsList {
-  followers: Chatter[];
-  subscribers: Chatter[];
-  moderators: Chatter[];
-  cheers: Chatter[];
-  chatters: Chatter[];
+  Followers: Chatter[];
+  Subscribers: Chatter[];
+  Moderators: Chatter[];
+  Cheers: Chatter[];
+  Chatters: Chatter[];
 }
 
 export enum CreditType {
@@ -71,11 +71,11 @@ export class Credits {
 
   public getCreditsList(): string {
     const list: CreditsList = {
-      followers: Array.from(this.followers.values()),
-      subscribers: Array.from(this.subscribers.values()),
-      moderators: Array.from(this.moderators.values()),
-      cheers: Array.from(this.cheers.values()),
-      chatters: Array.from(this.chatters.values()),
+      Moderators: Array.from(this.moderators.values()),
+      Subscribers: Array.from(this.subscribers.values()),
+      Cheers: Array.from(this.cheers.values()),
+      Followers: Array.from(this.followers.values()),
+      Chatters: Array.from(this.chatters.values()),
     };
     return JSON.stringify(list);
   }
