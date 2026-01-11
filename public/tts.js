@@ -126,6 +126,7 @@ function playQueue(audioQueue, onerror, onended) {
   });
 }
 function playTTS(audioList, onended) {
+  if(Array.isArray(audioList) && audioList.length === 0) return;
   const audioQueue = audioList; // as urls of the audios
 
   playPlaylist(audioQueue).then(() => {
