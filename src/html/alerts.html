@@ -64,14 +64,15 @@
 
     <div id="alert"></div>
 
-
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="/tts.js"></script>
 
     <script>
       const alertQueue = [];
       const alertElement = document.getElementById("alert");
-
+      const queryString = window.location.search;
+      const searchParams = new URLSearchParams(queryString);
+      const silent = searchParams.has("silent");
 
       function handleQueue() {
         if (isPlaying || alertQueue.length == 0) return;
@@ -88,41 +89,74 @@
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${event.member} </span>just joined the fish tank.</span> `;
         alertElement.style = "opacity: 100%;";
-        playTTS(event.audioList, () => {
+        if (silent) {
           setTimeout(() => {
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
               isPlaying = false;
             }, 1000);
-          }, 4000);
-        });
+          }, 10 * 1000);
+        } else {
+          playTTS(event.audioList, () => {
+            setTimeout(() => {
+              alertElement.style = "opacity: 0%";
+              setTimeout(() => {
+                alertElement.innerHTML = "";
+                isPlaying = false;
+              }, 1000);
+            }, 4000);
+          });
+        }
       }
       function followAlert(followInfo) {
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
         alertElement.style = "opacity: 100%;";
-        playTTS(followInfo.audioList, () => {
+        if (silent) {
           setTimeout(() => {
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
               isPlaying = false;
             }, 1000);
-          }, 4000);
-        });
+          }, 10 * 1000);
+        } else {
+          playTTS(followInfo.audioList, () => {
+            setTimeout(() => {
+              alertElement.style = "opacity: 0%";
+              setTimeout(() => {
+                alertElement.innerHTML = "";
+                isPlaying = false;
+              }, 1000);
+            }, 4000);
+          });
+        }
       }
       function bitsAlert(cheerInfo) {
         isPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
         alertElement.style = "opacity: 100%;";
-        playTTS(cheerInfo.audioList, () => {
-          alertElement.style = "opacity: 0%";
+        if (silent) {
           setTimeout(() => {
-            alertElement.innerHTML = "";
-            isPlaying = false;
-          }, 1000);
-        });
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
+              isPlaying = false;
+            }, 1000);
+          }, 10 * 1000);
+        } else {
+          playTTS(cheerInfo.audioList, () => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              isPlaying = false;
+            }, 1000);
+          });
+        }
       }
       function kofiAlert(paymentInfo) {
         isPlaying = true;
@@ -131,13 +165,24 @@
           : `donated ${paymentInfo.amount} ${paymentInfo.currency}!`;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${paymentInfo.sender} </span>${message} </span> `;
         alertElement.style = "opacity: 100%;";
-        playTTS(paymentInfo.audioList, () => {
-          alertElement.style = "opacity: 0%";
+        if (silent) {
           setTimeout(() => {
-            alertElement.innerHTML = "";
-            isPlaying = false;
-          }, 1000);
-        });
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
+              isPlaying = false;
+            }, 1000);
+          }, 10 * 1000);
+        } else {
+          playTTS(paymentInfo.audioList, () => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              isPlaying = false;
+            }, 1000);
+          });
+        }
       }
 
       function subAlert(subInfo) {
@@ -225,7 +270,16 @@
           });
         };
 
-        exp.play();
+        if (silent) {
+          setTimeout(() => {
+            alertElement.style = "opacity: 0%";
+            setTimeout(() => {
+              alertElement.innerHTML = "";
+              alertElement.style.display = "inline-block";
+              isPlaying = false;
+            }, 1000);
+          }, 10 * 1000);
+        } else exp.play();
         alertElement.style = "opacity: 100%";
       }
 
