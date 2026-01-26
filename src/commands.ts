@@ -722,7 +722,7 @@ export class MessageHandler {
     [
       "!playtime",
       {
-        timeout: 60 * 1000,
+        timeout: 0,
         showOnChat: false,
         commandFunction: async (data) => {
           try {
