@@ -324,6 +324,11 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
+        case "/modtext/updatecanvas":
+          bot.iomodtext.send("canvasUpdated", JSON.parse(req.body));
+          res.sendStatus(200);
+          break;
+
         case "/overlay":
           bot.handleControl(JSON.parse(req.body));
           res.sendStatus(200);
@@ -372,7 +377,7 @@ app.use("/control", async (req, res) => {
           }
           let ext = "png";
           const match = uploadedImage.name.match(/\.[0-9a-z]+$/i);
-          if(match) {
+          if (match) {
             ext = match[0];
           }
           const imagePath = `/${uploadedImage.md5}.${ext}`;
