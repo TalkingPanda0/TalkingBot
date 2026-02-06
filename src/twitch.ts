@@ -477,32 +477,6 @@ export class Twitch {
       });
     }
 
-    this.eventListener.onChannelSubscription(this.channel.id, async (data) => {
-      if ((data.tier as string) != "prime") return; // it can be prime, convert it to a string to supress the error.
-      data.getUser().then((user) => {
-        this.bot.setLatestSub({
-          name: user.displayName,
-          pfpUrl: user.profilePictureUrl,
-          time: new Date(),
-        });
-      });
-      this.bot.credits.addToCredits(
-        `twitch-${data.userId}`,
-        this.getDisplayName(data.userDisplayName,data.userName),
-        this.colorFromId(data.userId),
-        CreditType.Subscription,
-      );
-      this.bot.ioalert.emit("alert", {
-        audioList: await getSubAudio(data.userName),
-        messageAudioList: [],
-        name: data.userDisplayName,
-        message: "",
-        plan: data.tier,
-        months: 1,
-        gift: false,
-      });
-    });
-
     this.eventListener.onChannelSubscriptionMessage(
       this.channel.id,
       async (data) => {
