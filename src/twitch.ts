@@ -100,7 +100,7 @@ export class Twitch {
   }
 
   getUserColor(message: ChatMessage): string {
-    return message.userInfo.color ?? this.colorFromId(message.userInfo.userId);
+    return message.userInfo.color ? message.userInfo.color : this.colorFromId(message.userInfo.userId);
   }
 
   public async cleanUp() {
