@@ -4,7 +4,6 @@ import { DB } from "./db";
 
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
-import { Pet } from "./pet";
 
 import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
@@ -61,7 +60,6 @@ export class TalkingBot {
   public iopoll: Namespace;
   public ioalert: Namespace;
   public connectedtoOverlay: Boolean = false;
-  public pet: Pet;
   public database: DB;
   public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
@@ -112,7 +110,6 @@ export class TalkingBot {
     this.commandHandler.readCustomCommands();
 
     this.credits = new Credits(this);
-    this.pet = new Pet();
     this.wheel = new Wheel();
     this.database = new DB();
     this.chatLogger = new ChatLogger(this);

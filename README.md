@@ -21,14 +21,6 @@
 - `platform` the platform command was used in (twitch/youtube).
 - `result` `script()` will be replaced with `result`.
 
-- `pet.currentPet.birthDate` string, the date pet was born on in JSON format   
-- `pet.currentPet.name` number, the name of the pet. like 21 of Hapboo #21
-- `pet.currentPet.stomach` number, pet's current stomach between 0 and 4 (inclusive)
-- `pet.currentPet.age` number
-- `pet.currentPet.status` enum, 0: egg, 1: hatching, 2: alive, 3: dead
-
-- `pet.feedOrFuel(username: string)` takes the username and returns true if the pet shield was active and the user tried to kill.
-
 - `getOrSetConfig(key, defaultvalue)` gets config `key` if it doesn't exists creates it and sets it to `defaultvalue`.
 - `setConfig(key,value)` sets config `key` to `value`.
 
@@ -103,13 +95,5 @@ after the stream is over the YouTube title will be set to `[title] (game)`.
 `[text]` can have `$counter` which will show the current counter.
 # Game
 `!setgame [game]` will change the stream category to `[game]`.
-# Pet
-- `!pet sleep` will make him sleep as if the stream ended.
-- `!pet continue` will wake up the hapboo but won't continue the hatching or increase the age.
-- `!pet start` will wake up the hapboo and will continue the hatching or increase the age.
-- `!pet write` will save the hapboo state on the config file.
-- `'pet read` will read the hapboo state from the config file.
-- `!pet protect` will activate the hapboo shield.
-- `!pet tick` will do a hapboo tick.
 # Misc 
 - `!senddiscordping` will send stream ping on discord

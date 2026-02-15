@@ -34,9 +34,6 @@ export class MessageHandler {
   public keys: any;
   private timeout = new Set();
   private bot: TalkingBot;
-  private dynamicTitle?: string;
-  private dynamicTitleInterval?: Timer;
-  private lastDynamicTitle?: string;
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
   private argMap = new Map<string, string>();
@@ -133,95 +130,6 @@ export class MessageHandler {
               `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream ?? Date.now()).getTime() : 0))} watching the stream.`,
               false,
             );
-          }
-        },
-      },
-    ],
-    [
-      "!tempsettitle",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod || data.message.length == 0) return;
-
-          const oldTitle = await this.bot.twitch.getCurrentTitle();
-          if (!oldTitle) {
-            data.reply("Failed getting current stream info.", true);
-            return;
-          }
-          await this.bot.twitch.apiClient.channels.updateChannelInfo(
-            this.bot.twitch.channel.id,
-            { title: data.message },
-          );
-
-          await this.bot.broadcastMessage(
-            `Title has been changed to "${data.message}"`,
-          );
-
-          await new Promise<void>((resolve) => {
-            setTimeout(
-              async () => {
-                await this.bot.twitch.apiClient.channels.updateChannelInfo(
-                  this.bot.twitch.channel.id,
-                  { title: oldTitle },
-                );
-                resolve();
-              },
-              15 * 60 * 1000,
-            );
-          });
-        },
-      },
-    ],
-    [
-      "!tempmodtext",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          const oldModText = this.bot.modtext;
-          this.bot.modtext = data.parsedMessage.split(" ").slice(1).join(" ");
-          this.bot.updateModText();
-          setTimeout(
-            () => {
-              this.bot.modtext = oldModText;
-              this.bot.updateModText();
-            },
-            15 * 60 * 1000,
-          );
-        },
-      },
-    ],
-    [
-      "!modtext",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          this.bot.modtext = `<h1>${data.parsedMessage.split(" ").slice(1).join(" ")}</h1>`;
-          this.bot.updateModText();
-        },
-      },
-    ],
-    [
-      "!dyntitle",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          if (data.message == "stop") {
-            clearInterval(this.dynamicTitleInterval);
-            data.reply("Stopped dynamic title", true);
-          } else {
-            this.dynamicTitle = data.message;
-            this.setDynamicTitle();
-            this.dynamicTitleInterval = setInterval(
-              this.setDynamicTitle.bind(this.bot),
-              1000 * 60,
-            );
-            if (this.dynamicTitleInterval != null) {
-              data.reply("Started dynamic title", true);
-            }
           }
         },
       },
@@ -689,21 +597,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!bsr",
-      {
-        showOnChat: false,
-        commandFunction: (data): void | Promise<void> => {
-          if (data.platform == "twitch") return;
-          this.bot.twitch.say(`!bsr ${data.message}`);
-          setTimeout(() => {
-            this.bot.twitch.say(
-              `!songmsg ${data.message} Requested by @${data.sender}`,
-            );
-          }, 1000);
-        },
-      },
-    ],
-    [
       "!tts",
       {
         showOnChat: true,
@@ -807,17 +700,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!testicle",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          data.reply("Testicling", true);
-          await this.bot.discord.getAllMessages("   853223680200409100");
-        },
-      },
-    ],
-    [
       "!restart",
       {
         showOnChat: false,
@@ -828,17 +710,6 @@ export class MessageHandler {
         },
       },
     ],
-    [
-      "!senddiscordping",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          this.bot.twitch.sendStreamPing();
-        },
-      },
-    ],
-
     [
       "!wheel",
       {
@@ -960,28 +831,6 @@ export class MessageHandler {
           const id = { platform: data.platform, username: username };
           this.bot.users.setNickname(id, undefined);
           data.reply(`${username} is now not nicknamed.`, true);
-        },
-      },
-    ],
-    [
-      "!pet",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          const args = data.message.split(" ");
-          switch (args[0]) {
-            case "graveyard":
-              data.reply(this.bot.pet.graveyard(args[1]), true);
-              break;
-            case "murderers":
-              data.reply(this.bot.pet.murdererList(), true);
-              break;
-            case "read":
-              if (data.isUserMod) {
-                this.bot.pet.readPet();
-                break;
-              }
-          }
         },
       },
     ],
@@ -1168,7 +1017,8 @@ export class MessageHandler {
         commandFunction: (data) => {
           const commands =
             Array.from(this.commandMap.keys()).join(", ") +
-            Array.from(this.customCommandMap.keys()).join(", ");
+            Array.from(this.customCommandMap.keys()).join(", ") + 
+            Array.from(this.commandAliasMap.keys()).join(", ");
           data.reply(`Commands: ${commands}`, true);
         },
       },
@@ -1315,46 +1165,6 @@ export class MessageHandler {
     this.sendToChatList(data);
   }
 
-  private async setDynamicTitle() {
-    if (this.dynamicTitle == null) return;
-    const title = (
-      await replaceAsync(
-        this.dynamicTitle,
-        /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
-
-        async (
-          _message: string,
-          _command: string,
-          url: string,
-          key: string,
-        ) => {
-          const req = await fetch(url);
-          if (key === undefined) {
-            return await req.text();
-          } else {
-            const json = await req.json();
-            return json[key];
-          }
-        },
-      )
-    ).replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
-      return getSuffix(parseInt(number));
-    });
-    if (title != this.lastDynamicTitle) {
-      this.bot.twitch.chatClient.say(
-        this.bot.twitch.channel.name,
-        `Title has been set to ${title}`,
-      );
-      this.bot.twitch.apiClient.channels.updateChannelInfo(
-        this.bot.twitch.channel.id,
-        {
-          title: title,
-        },
-      );
-      this.lastDynamicTitle = title;
-    }
-  }
-
   public async readCustomCommands() {
     if (!(await this.commandsFile.exists())) return;
 
@@ -1464,7 +1274,6 @@ export class MessageHandler {
     context.isUserSub = data.isUserSub;
     context.args = data.message.split(" ");
     context.platform = data.platform;
-    context.pet = this.bot.pet;
     context.getOrSetConfig = (key: string, defaultValue: any): any => {
       return JSON.parse(
         this.bot.database.getOrSetConfig(key, JSON.stringify(defaultValue)),

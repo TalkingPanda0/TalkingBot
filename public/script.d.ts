@@ -27,20 +27,6 @@ declare var platform: "bot" | "discord" | "twitch" | "youtube";
  */
 declare var result: string;
 
-declare class Pet {
-  currentPet: {
-    birthDate: string;
-    name: number;
-    stomach: number;
-    age: number;
-    status: number;
-  };
-  /**
-   * Takes the username and returns true if the pet shield was active and the user tried to kill.
-   */
-  feedOrFuel(username: string): boolean;
-}
-
 /**
  * Gets config key if it doesn't exist, creates it and sets it to default value
  */
