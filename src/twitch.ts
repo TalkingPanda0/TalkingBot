@@ -18,7 +18,6 @@ import {
   EventSubListener,
 } from "@twurple/eventsub-base";
 import { TalkingBot } from "./talkingbot";
-import DOMPurify from "isomorphic-dompurify";
 import { getBTTVEmotes } from "./bttv";
 import { removeByIndexToUppercase, replaceMap } from "./util";
 import {
@@ -912,7 +911,7 @@ export class Twitch {
         case "text":
           parsed += replaceMap(
             this.BTTVEmotes,
-            DOMPurify.sanitize(parsedPart.text),
+            parsedPart.text.replaceAll("<","&lt").replaceAll(">","&gt"),
             (match: string) =>
               `<img onload="emoteLoaded()" src="https://cdn.betterttv.net/emote/${match}/1x" class="emote">`,
           );
