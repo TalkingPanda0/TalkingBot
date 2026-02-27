@@ -488,8 +488,8 @@ export class Twitch {
         });
         this.bot.credits.addToCredits(
           `twitch-${data.userId}`,
-          this.colorFromId(data.userId),
           this.getDisplayName(data.userDisplayName,data.userName),
+          this.colorFromId(data.userId),
           CreditType.Subscription,
         );
         this.bot.ioalert.emit("alert", {
