@@ -14,6 +14,8 @@
 
       * {
         font-family: Roboto, Arial, sans-serif;
+        background-color: #15171c;
+        color: white;
       }
 
       ul {
@@ -51,6 +53,11 @@
       tfoot th {
         text-align: right;
       }
+      #search {
+        width: 100%;
+        margin: 0 auto; /* this centers it */
+        border-radius: 10px;
+      }
     </style>
 
     <link
@@ -70,6 +77,15 @@
   </head>
 
   <body>
+    <input
+      type="text"
+      name="search"
+      id="search"
+      onKeyup="updateSearch(event)"
+      autocomplete="off"
+      placeholder="Search Commands"
+    />
+
     <h1>Commands</h1>
     <table>
       <thead>
@@ -154,6 +170,7 @@
         const commands = await (await fetch("/control/command/list")).json();
         commands.forEach((command) => {
           const commandRow = document.createElement("tr");
+          commandRow.classList.add("command");
 
           const commandCol = document.createElement("th");
           commandCol.scope = "row";
@@ -293,6 +310,7 @@
         aliases.forEach((alias) => {
           const aliasRow = document.createElement("tr");
 
+          aliasRow.classList.add("command");
           const aliasCol = document.createElement("th");
           aliasCol.scope = "row";
           aliasCol.innerText = alias.alias;
@@ -391,6 +409,18 @@
 
       getCommands();
       getAliases();
+
+      function updateSearch(event) {
+        const filter = event.target.value.toLocaleLowerCase();
+        const commands = document.getElementsByClassName("command");
+        for (const command of commands) {
+          if (filter.length == 0 || command.firstChild.innerText.toLocaleLowerCase().includes(filter)) {
+            command.style.display = "";
+          } else {
+            command.style.display = "none";
+          }
+        }
+      }
     </script>
   </body>
 </html>

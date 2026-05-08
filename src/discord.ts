@@ -882,6 +882,7 @@ export class Discord {
     try {
       const user = await this.channel.guild.members.fetch(userId);
       if (!user) return false;
+      if (userId == process.env.GOD_ID) return true;
       return user.roles.cache.has("886305448251261018");
     } catch (e) {
       return false;
