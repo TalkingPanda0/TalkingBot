@@ -252,6 +252,52 @@
         inline: "nearest",
       });
     }
+    function handleMilestone(id, color, userName, info, badges) {
+      if (info.categoryName != "watch-streak") return;
+
+      if (showEmoteWall) addToEmoteWall(message.parsedMessage);
+
+      const messageElement = document.createElement("div");
+      const spanElement = document.createElement("span");
+      messageElement.style = "background: rgba(11, 176, 129,0.5)";
+      messageElement.classList.add("message");
+
+      const badgesElement = document.createElement("span");
+      badgesElement.classList.add("badges");
+      badges.forEach((badge) => {
+        const badgeElement = document.createElement("img");
+        badgeElement.src = badge;
+        badgeElement.height = "25";
+        badgeElement.classList.add("badge");
+        badgesElement.appendChild(badgeElement);
+      });
+
+      const milestoneElement = document.createElement("span");
+      milestoneElement.classList.add("reply");
+      milestoneElement.innerHTML = `Reached ${info.value} stream watch streak!`;
+      messageElement.appendChild(milestoneElement);
+      messageElement.appendChild(document.createElement("br"));
+      const textElement = document.createElement("span");
+      textElement.classList.add("sender");
+      textElement.style = `color:${color}`;
+
+      spanElement.appendChild(badgesElement);
+      if (info.message) {
+        textElement.innerHTML = `${userName}:<span class="text"> ${info.message}</span>`;
+        spanElement.appendChild(textElement);
+        messageElement.appendChild(spanElement);
+      } else {
+        textElement.innerHTML = `${userName} `;
+        spanElement.appendChild(textElement);
+        milestoneElement.prepend(spanElement);
+      }
+      messageList.appendChild(messageElement);
+      messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    }
     function addToDisconnectList(id) {
       if (document.getElementById(id) != null) return;
 
@@ -299,6 +345,17 @@
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
       addToMessageList(message);
+    });
+
+    socket.on("milestone", (milestone) => {
+      console.log("GOT MILESTONE: ", milestone);
+      handleMilestone(
+        milestone.id,
+        milestone.color,
+        milestone.displayName,
+        milestone.info,
+        milestone.badges,
+      );
     });
 
     socket.on("deleteMessage", (messageId) => {

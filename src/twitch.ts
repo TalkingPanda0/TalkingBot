@@ -9,6 +9,8 @@ import {
   parseChatMessage,
   ParsedMessagePart,
   buildEmoteImageUrl,
+  ChatViewerMilestoneInfo,
+  ChatUser,
 } from "@twurple/chat";
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
@@ -98,8 +100,8 @@ export class Twitch {
     return userColors[parseInt(id) % userColors.length];
   }
 
-  getUserColor(message: ChatMessage): string {
-    return message.userInfo.color ? message.userInfo.color : this.colorFromId(message.userInfo.userId);
+  getUserColor(user: ChatUser): string {
+    return user.color ? user.color : this.colorFromId(user.userId);
   }
 
   public async cleanUp() {
@@ -149,7 +151,10 @@ export class Twitch {
   }
 
   private formatDisplayName(message: ChatMessage) {
-    return this.getDisplayName(message.userInfo.displayName,message.userInfo.userName);
+    return this.getDisplayName(
+      message.userInfo.displayName,
+      message.userInfo.userName,
+    );
   }
 
   public async readAuth() {
@@ -244,7 +249,7 @@ export class Twitch {
         username: msg.userInfo.userName,
         sender: this.formatDisplayName(msg),
         senderId: msg.userInfo.userId,
-        color: this.getUserColor(msg),
+        color: this.getUserColor(msg.userInfo),
         isUserMod: isUserMod,
         isUserSub: isUserSub,
         isUserVip: isUserVip,
@@ -306,7 +311,7 @@ export class Twitch {
     this.bot.credits.addToCredits(
       `twitch-${event.msg.userInfo.userId}`,
       name,
-      this.getUserColor(event.msg),
+      this.getUserColor(event.msg.userInfo),
       CreditType.Cheer,
     );
     const message = event.message.replaceAll(/cheer\d+/gi, "");
@@ -448,7 +453,7 @@ export class Twitch {
         if (this.allreadyFollowed.has(event.userId)) return;
         this.bot.credits.addToCredits(
           `twitch-${event.userId}`,
-          this.getDisplayName(event.userDisplayName,event.userName),
+          this.getDisplayName(event.userDisplayName, event.userName),
           this.colorFromId(event.userId),
           CreditType.Follow,
         );
@@ -488,7 +493,7 @@ export class Twitch {
         });
         this.bot.credits.addToCredits(
           `twitch-${data.userId}`,
-          this.getDisplayName(data.userDisplayName,data.userName),
+          this.getDisplayName(data.userDisplayName, data.userName),
           this.colorFromId(data.userId),
           CreditType.Subscription,
         );
@@ -519,7 +524,10 @@ export class Twitch {
         if (data.gifterName)
           this.bot.credits.addToCredits(
             `twitch-${data.gifterId}`,
-            this.getDisplayName(data.gifterDisplayName ?? "anonymous",data.gifterName ?? "anonymous"),
+            this.getDisplayName(
+              data.gifterDisplayName ?? "anonymous",
+              data.gifterName ?? "anonymous",
+            ),
             this.colorFromId(data.gifterId ?? "0"),
             CreditType.Subscription,
           );
@@ -761,6 +769,40 @@ export class Twitch {
       },
     );
 
+    this.chatClient.onViewerMilestone(
+      async (
+        channel: string,
+        user: string,
+        info: ChatViewerMilestoneInfo,
+        msg: UserNotice,
+      ) => {
+        let badges = [];
+
+        if (msg.userInfo.isMod) {
+          badges.push(this.badges.get("moderator"));
+        } else if (msg.userInfo.isBroadcaster) {
+          badges.push(this.badges.get("broadcaster"));
+        }
+
+        if (msg.userInfo.isVip) badges.push(this.badges.get("vip"));
+
+        const badge = msg.userInfo.badges.get("subscriber");
+        if (badge != undefined) {
+          badges.push(this.badges.get(badge));
+        }
+        this.bot.iochat.emit("milestone", {
+          id: msg.id,
+          color: this.getUserColor(msg.userInfo),
+          displayName: this.getDisplayName(
+            msg.userInfo.displayName,
+            msg.userInfo.userName,
+          ),
+          info,
+          badges: badges.filter((s): s is string => !!s),
+        });
+      },
+    );
+
     this.chatClient.onAction((channel, user, text, msg) => {
       this.handleMessage(channel, user, text, msg, true, false);
     });
@@ -911,7 +953,7 @@ export class Twitch {
         case "text":
           parsed += replaceMap(
             this.BTTVEmotes,
-            parsedPart.text.replaceAll("<","&lt").replaceAll(">","&gt"),
+            parsedPart.text.replaceAll("<", "&lt").replaceAll(">", "&gt"),
             (match: string) =>
               `<img onload="emoteLoaded()" src="https://cdn.betterttv.net/emote/${match}/1x" class="emote">`,
           );
