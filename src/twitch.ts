@@ -776,7 +776,14 @@ export class Twitch {
         info: ChatViewerMilestoneInfo,
         msg: UserNotice,
       ) => {
-        let badges = [];
+        let parsedMessage = null;
+        if (info.message) {
+          parsedMessage = await this.bot.parseClips(
+            this.parseTwitchEmotes(info.message, msg.emoteOffsets, 0),
+          );
+        }
+
+        const badges = [];
 
         if (msg.userInfo.isMod) {
           badges.push(this.badges.get("moderator"));
@@ -799,6 +806,7 @@ export class Twitch {
           ),
           info,
           badges: badges.filter((s): s is string => !!s),
+          parsedMessage
         });
       },
     );

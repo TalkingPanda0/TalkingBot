@@ -252,10 +252,10 @@
         inline: "nearest",
       });
     }
-    function handleMilestone(id, color, userName, info, badges) {
+    function handleMilestone(id, color, userName, info, badges,parsedMessage ) {
       if (info.categoryName != "watch-streak") return;
 
-      if (showEmoteWall) addToEmoteWall(message.parsedMessage);
+      if (showEmoteWall) addToEmoteWall(parsedMessage);
 
       const messageElement = document.createElement("div");
       const spanElement = document.createElement("span");
@@ -282,8 +282,8 @@
       textElement.style = `color:${color}`;
 
       spanElement.appendChild(badgesElement);
-      if (info.message) {
-        textElement.innerHTML = `${userName}:<span class="text"> ${info.message}</span>`;
+      if (parsedMessage) {
+        textElement.innerHTML = `${userName}:<span class="text"> ${parsedMessage}</span>`;
         spanElement.appendChild(textElement);
         messageElement.appendChild(spanElement);
       } else {
@@ -355,6 +355,7 @@
         milestone.displayName,
         milestone.info,
         milestone.badges,
+        milestone.parsedMessage,
       );
     });
 
