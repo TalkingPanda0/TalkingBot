@@ -73,9 +73,10 @@
       const queryString = window.location.search;
       const searchParams = new URLSearchParams(queryString);
       const silent = searchParams.has("silent");
+      let alertPlaying = false;
 
       function handleQueue() {
-        if (isPlaying || alertQueue.length == 0) return;
+        if (isPlaying || alertPlaying || alertQueue.length == 0) return;
         const alert = alertQueue.shift();
         if (alert.viewers !== undefined) return;
         else if (alert.follower !== undefined) followAlert(alert);
@@ -86,7 +87,7 @@
       }
 
       function discordJoinAlert(event) {
-        isPlaying = true;
+        alertPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${event.member} </span>just joined the fish tank.</span> `;
         alertElement.style = "opacity: 100%;";
         if (silent) {
@@ -95,7 +96,7 @@
             setTimeout(() => {
               alertElement.innerHTML = "";
               alertElement.style.display = "inline-block";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           }, 10 * 1000);
         } else {
@@ -104,14 +105,14 @@
               alertElement.style = "opacity: 0%";
               setTimeout(() => {
                 alertElement.innerHTML = "";
-                isPlaying = false;
+                alertPlaying = false;
               }, 1000);
             }, 4000);
           });
         }
       }
       function followAlert(followInfo) {
-        isPlaying = true;
+        alertPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
         alertElement.style = "opacity: 100%;";
         if (silent) {
@@ -120,7 +121,7 @@
             setTimeout(() => {
               alertElement.innerHTML = "";
               alertElement.style.display = "inline-block";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           }, 10 * 1000);
         } else {
@@ -129,14 +130,14 @@
               alertElement.style = "opacity: 0%";
               setTimeout(() => {
                 alertElement.innerHTML = "";
-                isPlaying = false;
+                alertPlaying = false;
               }, 1000);
             }, 4000);
           });
         }
       }
       function bitsAlert(cheerInfo) {
-        isPlaying = true;
+        alertPlaying = true;
         alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
         alertElement.style = "opacity: 100%;";
         if (silent) {
@@ -145,7 +146,7 @@
             setTimeout(() => {
               alertElement.innerHTML = "";
               alertElement.style.display = "inline-block";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           }, 10 * 1000);
         } else {
@@ -153,13 +154,13 @@
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           });
         }
       }
       function kofiAlert(paymentInfo) {
-        isPlaying = true;
+        alertPlaying = true;
         const message = paymentInfo.is_subscription
           ? `became a ${paymentInfo.tier_name != null ? paymentInfo.tier_name : paymentInfo.amount + " " + paymentInfo.currency} member!`
           : `donated ${paymentInfo.amount} ${paymentInfo.currency}!`;
@@ -171,7 +172,7 @@
             setTimeout(() => {
               alertElement.innerHTML = "";
               alertElement.style.display = "inline-block";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           }, 10 * 1000);
         } else {
@@ -179,14 +180,14 @@
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           });
         }
       }
 
       function subAlert(subInfo) {
-        isPlaying = true;
+        alertPlaying = true;
         let tier = "";
 
         switch (subInfo.plan) {
@@ -255,7 +256,7 @@
             alertElement.style = "opacity: 0%";
             setTimeout(() => {
               alertElement.innerHTML = "";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
             return;
           }
@@ -265,7 +266,7 @@
             setTimeout(() => {
               alertElement.innerHTML = "";
               alertElement.style.display = "inline-block";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           });
         };
@@ -276,7 +277,7 @@
             setTimeout(() => {
               alertElement.innerHTML = "";
               alertElement.style.display = "inline-block";
-              isPlaying = false;
+              alertPlaying = false;
             }, 1000);
           }, 10 * 1000);
         } else exp.play();
