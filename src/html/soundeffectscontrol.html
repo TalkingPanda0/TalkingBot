@@ -136,11 +136,34 @@
             });
             loadEffects();
           });
+          const editButton = document.createElement("div");
+          editButton.classList.add("material-icons");
+          editButton.classList.add("button");
+          editButton.innerText = "edit";
+          editButton.addEventListener("click", async () => {
+            const {value: newName }= await Swal.fire({
+              title: `Enter new name for: ${effect}`,
+              theme: "dark",
+              input: "text",
+              showCancelButton: true,
+              confirmButtonColor: "#3085d6",
+              cancelButtonColor: "#d33",
+            });
+
+            if (!newName) return;
+            
+            await fetch(`/control/soundEffects/rename?name=${effect}&newName=${newName}`, {
+              method: "POST",
+            });
+
+            loadEffects();
+          });
 
           const header = document.createElement("div");
           header.classList.add("header");
           header.appendChild(name);
           header.appendChild(delButton);
+          header.appendChild(editButton);
 
           li.appendChild(header);
           li.appendChild(audio);

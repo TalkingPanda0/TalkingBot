@@ -13,7 +13,7 @@ import cors from "cors";
 import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
 import { MessageData } from "botModule";
-import { readdir } from "node:fs/promises";
+import { readdir, rename } from "node:fs/promises";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -350,7 +350,25 @@ app.use("/control", async (req, res) => {
             })
             .catch((e) => {
               console.error(e);
-              res.sendStatus(400);
+              res.status(400).send(e);
+            });
+          break;
+        case "/soundEffects/rename":
+          if (req.query.name == null || req.query.newName == null) {
+            res.send(400);
+            break;
+          }
+          const path = `${__dirname}/../config/sounds`;
+          const oldFile = `${path}/${req.query.name.toString()}.mp3`;
+          const newFile = `${path}/${req.query.newName.toString()}.mp3`;
+          console.log(`moving ${oldFile} to ${newFile}`);
+          rename(oldFile, newFile)
+            .then(() => {
+              res.sendStatus(200);
+            })
+            .catch((e) => {
+              console.error(e);
+              res.status(400).send(e);
             });
           break;
         case "/soundEffects/add":
