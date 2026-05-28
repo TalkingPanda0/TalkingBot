@@ -252,7 +252,7 @@
         inline: "nearest",
       });
     }
-    function handleMilestone(id, color, userName, info, badges,parsedMessage ) {
+    function handleMilestone(id, color, userName, info, badges, parsedMessage) {
       if (info.categoryName != "watch-streak") return;
 
       if (showEmoteWall) addToEmoteWall(parsedMessage);
@@ -273,24 +273,28 @@
       });
 
       const milestoneElement = document.createElement("span");
-      milestoneElement.classList.add("reply");
       milestoneElement.innerHTML = `Reached ${info.value} stream watch streak!`;
-      messageElement.appendChild(milestoneElement);
-      messageElement.appendChild(document.createElement("br"));
       const textElement = document.createElement("span");
       textElement.classList.add("sender");
       textElement.style = `color:${color}`;
 
       spanElement.appendChild(badgesElement);
       if (parsedMessage) {
+        milestoneElement.classList.add("reply");
         textElement.innerHTML = `${userName}:<span class="text"> ${parsedMessage}</span>`;
         spanElement.appendChild(textElement);
+        messageElement.appendChild(milestoneElement);
+        messageElement.appendChild(document.createElement("br"));
         messageElement.appendChild(spanElement);
       } else {
         textElement.innerHTML = `${userName} `;
         spanElement.appendChild(textElement);
-        milestoneElement.prepend(spanElement);
+        const container = document.createElement("span");
+        messageElement.appendChild(spanElement);
+        milestoneElement.style.verticalAlign = "middle";
+        messageElement.appendChild(milestoneElement);
       }
+      
       messageList.appendChild(messageElement);
       messageList.scrollIntoView({
         behavior: "smooth",
@@ -674,6 +678,7 @@
       display: inline-table;
       white-space: nowrap;
     }
+
     .replyText {
       color: #a5a5a5;
       font-size: 15px;
