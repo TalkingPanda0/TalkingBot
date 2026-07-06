@@ -65,28 +65,27 @@
       const deltaTime = timeStamp - lastTimeStamp;
       lastTimeStamp = timeStamp;
 
-      currentEmotes.forEach((emote) => {
+      currentEmotes.forEach((emote,index) => {
         emote.remainingTime -= deltaTime;
-
-        if (emote.remainingTime <= 0) {
+        if (emote.remainingTime <= -1000) {
+          currentEmotes.splice(index,1);
+          emote.img.remove();
+          delete emote;
+        } else if (emote.remainingTime <= 0) {
           emote.img.style.opacity = "0%";
-          setTimeout(() => {
-            emote.img.remove();
-            delete emote;
-          }, 1000);
         }
 
-        if (emote.x + emote.img.clientWidth + 5 >= window.innerWidth) {
+        if (emote.x + emote.width + 5 >= window.innerWidth) {
           emote.vx *= -1;
-          emote.x = window.innerWidth - emote.img.clientWidth - 5;
+          emote.x = window.innerWidth - emote.width - 5;
         } else if (emote.x <= 0) {
           emote.vx *= -1;
           emote.x = 0;
         }
 
-        if (emote.y + emote.img.clientHeight + 5 >= window.innerHeight) {
+        if (emote.y + emote.height + 5 >= window.innerHeight) {
           emote.vy *= -1;
-          emote.y = window.innerHeight - emote.img.clientHeight - 5;
+          emote.y = window.innerHeight - emote.height - 5;
         } else if (emote.y <= 0) {
           emote.vy *= -1;
           emote.y = 0;
@@ -115,17 +114,21 @@
           "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3c2386e9c7064294811122aff92173c6/default/dark/3.0"
             ? 0.5
             : 0.25;
+        const width = img.width;
+        const height = img.height;
         currentEmotes.push({
           img: img,
           vx: reverseX ? -speed : speed,
           vy: reverseY ? -speed : speed,
+          width: width,
+          height: height,
           x: getRandomArbitrary(
-            10 + img.clientWidth,
-            window.innerWidth - img.clientWidth - 10,
+            10 + width,
+            window.innerWidth - width - 10,
           ),
           y: getRandomArbitrary(
-            10 + img.clientWidth,
-            window.innerHeight - img.clientHeight - 10,
+            10 + height,
+            window.innerHeight - height - 10,
           ),
           remainingTime: 5 * 1000,
         });
@@ -294,7 +297,7 @@
         milestoneElement.style.verticalAlign = "middle";
         messageElement.appendChild(milestoneElement);
       }
-      
+
       messageList.appendChild(messageElement);
       messageList.scrollIntoView({
         behavior: "smooth",
