@@ -963,7 +963,7 @@ export class Twitch {
             this.BTTVEmotes,
             parsedPart.text.replaceAll("<", "&lt").replaceAll(">", "&gt"),
             (match: string) =>
-              `<img onload="emoteLoaded()" src="https://cdn.betterttv.net/emote/${match}/1x" class="emote">`,
+              `<img onload="emoteLoaded(event)" src="https://cdn.betterttv.net/emote/${match}/1x" class="emote">`,
           );
           break;
         case "cheer":
@@ -976,7 +976,7 @@ export class Twitch {
             backgroundType: "dark",
             animationSettings: "default",
           });
-          parsed += ` <img onload="emoteLoaded()" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+          parsed += ` <img onload="emoteLoaded(event)" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
           break;
       }
     });
@@ -986,7 +986,7 @@ export class Twitch {
       bits,
       { background: "dark", state: "animated", scale: "4" },
     );
-    parsed += `<img onload="emoteLoaded()" src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
+    parsed += `<img onload="emoteLoaded(event)" src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
 
     return parsed;
   }

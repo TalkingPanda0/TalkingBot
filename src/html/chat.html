@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -9,7 +9,7 @@
     />
   </head>
   <body id="body">
-    <div id="emote-wall"></div>
+    <canvas id="emote-wall" height="100%" width="100%"></canvas>
     <div id="message-list"></div>
     <div
       id="disconnect-list"
@@ -24,7 +24,6 @@
   </body>
 
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
 
   <script>
     let recentMessagesInterval;
@@ -32,8 +31,6 @@
       console.error("a");
     };
     const mentionRegex = /@(\w+)/g;
-    const emoteWallRegex =
-      /<img\b[^>]*?\bsrc\s*=\s*["']?([^"'\s>]+)["']? class="emote"/g;
     const platformIcons = {
       bot: "https://talkingpanda.dev/bot.png",
       twitch: "https://twitch.tv/favicon.ico",
@@ -42,7 +39,6 @@
 
     const messageList = document.getElementById("message-list");
     const disconnectList = document.getElementById("disconnect-list");
-    const emoteWall = document.getElementById("emote-wall");
     const queryString = window.location.search;
     const searchParams = new URLSearchParams(queryString);
     const showCommands = searchParams.get("showcmd") === "yes";
@@ -50,11 +46,22 @@
     const transparent = searchParams.has("transparent");
     const windowHeight = window.innerHeight;
     const windowWidth = window.innerWidth;
+    const emoteWall = document.getElementById("emote-wall");
+    const ctx = emoteWall.getContext("2d");
+
     if (transparent) document.body.style.backgroundColor = "rgba(0,0,0,0)";
 
     const currentEmotes = [];
 
     let lastTimeStamp;
+    window.addEventListener("resize", resizeCanvas, false);
+
+    function resizeCanvas() {
+      emoteWall.width = window.innerWidth;
+      emoteWall.height = window.innerHeight;
+    }
+
+    resizeCanvas();
 
     function getRandomArbitrary(min, max) {
       return Math.random() * (max - min) + min;
@@ -68,32 +75,31 @@
       const deltaTime = timeStamp - lastTimeStamp;
       lastTimeStamp = timeStamp;
 
+      ctx.clearRect(0, 0, emoteWall.width, emoteWall.height);
+
       for (let i = currentEmotes.length - 1; i >= 0; --i) {
         emote = currentEmotes[i];
         emote.remainingTime -= deltaTime;
+
         if (emote.remainingTime <= -1000) {
-          emote.img.remove();
 
           currentEmotes[i] = currentEmotes[currentEmotes.length - 1];
           currentEmotes.pop();
 
           continue;
-        } else if (emote.remainingTime <= 0 && !emote.dying) {
-          emote.img.classList.add("invis");
-          emote.dying = true;
         }
 
-        if (emote.x + emote.width + 5 >= windowWidth) {
+        if (emote.x + emote.width >= emoteWall.width) {
           emote.vx *= -1;
-          emote.x = windowWidth - emote.width - 5;
+          emote.x = emoteWall.width - emote.width;
         } else if (emote.x <= 0) {
           emote.vx *= -1;
           emote.x = 0;
         }
 
-        if (emote.y + emote.height + 5 >= windowHeight) {
+        if (emote.y + emote.height >= emoteWall.height) {
           emote.vy *= -1;
-          emote.y = windowHeight - emote.height - 5;
+          emote.y = emoteWall.height - emote.height;
         } else if (emote.y <= 0) {
           emote.vy *= -1;
           emote.y = 0;
@@ -101,46 +107,37 @@
 
         emote.x += emote.vx * deltaTime;
         emote.y += emote.vy * deltaTime;
-        updateEmote(emote);
+
+        ctx.globalAlpha =
+          emote.remainingTime > 0 ? 1.0 : 1 - emote.remainingTime / -1000;
+
+        ctx.drawImage(emote.img, emote.x, emote.y, emote.width, emote.height);
       }
 
       window.requestAnimationFrame(animateEmoteWall);
     }
 
-    function updateEmote(emote) {
-      emote.style.transform = `translate3d(${emote.x}px, ${emote.y}px, 0px)`;
-    }
 
-    async function addToEmoteWall(text) {
-      text.replaceAll(emoteWallRegex, (text, emote) => {
-        const img = new Image();
-        img.src = emote;
-        img.classList.add("emote-wall-emote");
-        img.onload = () => {
-          const reverseX = Math.random() < 0.5;
-          const reverseY = Math.random() < 0.5;
-          const speed =
-            emote ==
-            "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3c2386e9c7064294811122aff92173c6/default/dark/3.0"
-              ? 0.5
-              : 0.25;
-          const height = 56;
-          const width = height * (img.naturalWidth / img.naturalHeight);
-          currentEmotes.push({
-            img: img,
-            vx: reverseX ? -speed : speed,
-            vy: reverseY ? -speed : speed,
-            width: width,
-            height: height,
-            x: getRandomArbitrary(10 + width, windowWidth - width - 10),
-            y: getRandomArbitrary(10 + height, windowHeight - height - 10),
-            remainingTime: 5 * 1000,
-            style: img.style,
-            dying: false,
-          });
+    function addToEmoteWall(img) {
+      const height = 56;
+      const width = height * (img.naturalWidth / img.naturalHeight);
+      const reverseX = Math.random() < 0.5;
+      const reverseY = Math.random() < 0.5;
+      const speed =
+        img.src ==
+        "https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_3c2386e9c7064294811122aff92173c6/default/dark/3.0"
+          ? 0.5
+          : 0.25;
 
-          emoteWall.appendChild(img);
-        };
+      currentEmotes.push({
+        img: img,
+        vx: reverseX ? -speed : speed,
+        vy: reverseY ? -speed : speed,
+        width: width,
+        height: height,
+        x: getRandomArbitrary(10 + width, windowWidth - width - 10),
+        y: getRandomArbitrary(10 + height, windowHeight - height - 10),
+        remainingTime: 5 * 1000,
       });
     }
 
@@ -150,9 +147,6 @@
       // Don't add if a message with the same id already exits or if it's from the bot
       if (message.id !== undefined && document.getElementById(message.id))
         return;
-
-      if (showEmoteWall && !message.isOld)
-        addToEmoteWall(message.parsedMessage);
 
       if (message.isFake && showCommands)
         message.badges.unshift(platformIcons["bot"]);
@@ -424,7 +418,8 @@
       });
     });
     if (showEmoteWall) window.requestAnimationFrame(animateEmoteWall);
-    function emoteLoaded() {
+    function emoteLoaded(event) {
+      if (event != null && showEmoteWall) addToEmoteWall(event.target);
       messageList.scrollIntoView({
         behavior: "smooth",
         block: "end",
@@ -609,17 +604,6 @@
     #emote-wall {
       position: fixed;
       z-index: 1;
-    }
-
-    .emote-wall-emote {
-      position: absolute;
-      height: 56px;
-      min-width: 56px;
-      vertical-align: middle;
-      padding-left: 5px;
-      padding-right: 5px;
-      transition: opacity 1s ease-in-out;
-      z-index: 2;
     }
 
     #message-list {

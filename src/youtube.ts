@@ -105,7 +105,7 @@ export class YouTube {
     return replaceMap(
       this.emotes,
       message,
-      (emote) => `<img onload="emoteLoaded()" src="${emote}" class="emote" />`,
+      (emote) => `<img onload="emoteLoaded(event)" src="${emote}" class="emote" />`,
     );
   }
 
