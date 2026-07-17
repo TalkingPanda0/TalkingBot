@@ -106,6 +106,7 @@ export class Twitch {
 
   public async cleanUp() {
     this.chatClient.quit();
+    await this.apiClient.eventSub.deleteAllSubscriptions();
     this.eventListener.stop();
     this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
     this.bot.database.cleanDataBase();
@@ -481,64 +482,71 @@ export class Twitch {
       });
     }
 
-    this.eventListener.onChannelSubscriptionMessage(
+    this.eventListener.onChannelChatNotification(
       this.channel.id,
+      "736013381",
       async (data) => {
-        data.getUser().then((user) => {
-          this.bot.setLatestSub({
-            name: user.displayName,
-            pfpUrl: user.profilePictureUrl,
-            time: new Date(),
-          });
+        let months: number | null = 0;
+        let tier = "";
+        let gift = false;
+        let gifted = 0;
+
+        switch (data.type) {
+          case "sub":
+            if (data.isPrime && data.durationMonths != 1) return;
+            months = data.durationMonths;
+            tier = data.tier;
+            break;
+          case "resub":
+            if (data.isGift) return;
+            months = data.cumulativeMonths;
+            tier = data.tier;
+            break;
+          case "sub_gift":
+            if (data.communityGiftId != null) return;
+            months = data.durationMonths;
+            gift = true;
+            gifted = 1;
+            tier = data.tier;
+            break;
+          case "community_sub_gift":
+            months = data.cumulativeAmount;
+            gift = true;
+            gifted = data.amount;
+            tier = data.tier;
+            break;
+          default:
+            return;
+        }
+
+        const displayName = this.getDisplayName(
+          data.chatterDisplayName,
+          data.chatterName,
+        );
+
+        this.bot.ioalert.emit("alert", {
+          audioList: await getSubAudio(displayName),
+          messageAudioList: await getSubAudio(data.messageText),
+          name: displayName,
+          message: data.messageText,
+          plan: tier,
+          months,
+          gift,
+          gifted,
         });
+
         this.bot.credits.addToCredits(
-          `twitch-${data.userId}`,
-          this.getDisplayName(data.userDisplayName, data.userName),
-          this.colorFromId(data.userId),
+          `twitch-${data.chatterId}`,
+          this.colorFromId(data.chatterId),
+          displayName,
           CreditType.Subscription,
         );
-        this.bot.ioalert.emit("alert", {
-          audioList: await getSubAudio(data.userDisplayName),
-          messageAudioList: await getSubAudio(data.messageText),
-          name: data.userDisplayName,
-          message: data.messageText,
-          plan: data.tier,
-          months: data.cumulativeMonths,
-          gift: false,
-        });
-      },
-    );
-    this.eventListener.onChannelSubscriptionGift(
-      this.channel.id,
-      async (data) => {
-        data.getGifter().then((user) => {
-          this.bot.setLatestSub({
-            name: user == null ? "Anonymous" : user.displayName,
-            pfpUrl:
-              user == null
-                ? "https://talkingpanda.dev/hapboo.gif"
-                : user.profilePictureUrl,
-            time: new Date(),
-          });
-        });
-        if (data.gifterName)
-          this.bot.credits.addToCredits(
-            `twitch-${data.gifterId}`,
-            this.getDisplayName(
-              data.gifterDisplayName ?? "anonymous",
-              data.gifterName ?? "anonymous",
-            ),
-            this.colorFromId(data.gifterId ?? "0"),
-            CreditType.Subscription,
-          );
-        this.bot.ioalert.emit("alert", {
-          audioList: await getSubAudio(data.gifterName ?? "Anonymous"),
-          messageAudioList: [],
-          name: data.gifterName,
-          gifted: data.amount,
-          plan: data.tier,
-          months: data.cumulativeAmount,
-          gift: true,
+
+        let user = await data.getChatter();
+        this.bot.setLatestSub({
+          name: user.displayName,
+          pfpUrl: user.profilePictureUrl,
+          time: new Date(),
         });
       },
     );
@@ -806,7 +814,7 @@ export class Twitch {
           ),
           info,
           badges: badges.filter((s): s is string => !!s),
-          parsedMessage
+          parsedMessage,
         });
       },
     );
