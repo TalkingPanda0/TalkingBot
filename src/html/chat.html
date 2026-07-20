@@ -9,7 +9,7 @@
     />
   </head>
   <body id="body">
-    <canvas id="emote-wall" height="100%" width="100%"></canvas>
+    <canvas id="emote-wall" class="invis" height="100%" width="100%"></canvas>
     <div id="message-list"></div>
     <div
       id="disconnect-list"
@@ -417,7 +417,10 @@
         inline: "nearest",
       });
     });
-    if (showEmoteWall) window.requestAnimationFrame(animateEmoteWall);
+    if (showEmoteWall) {
+      emoteWall.classList.remove("invis");
+      window.requestAnimationFrame(animateEmoteWall);
+    }
     function emoteLoaded(event) {
       if (event != null && showEmoteWall) addToEmoteWall(event.target);
       messageList.scrollIntoView({
@@ -710,7 +713,7 @@
     }
 
     .invis {
-      opacity: 0%;
+      display: none;
     }
   </style>
 </html>
