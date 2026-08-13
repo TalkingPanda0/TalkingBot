@@ -714,69 +714,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!wheel",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) {
-            data.reply(this.bot.wheel.toString(false), true);
-            return;
-          }
-          const args = data.message.split(" ");
-          switch (args[0]) {
-            case "chat": {
-              if (args[1] == null) break;
-              data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
-              setTimeout(() => {
-                const result = this.bot.wheel.spinInChat();
-                data.reply(`${args[1]} won ${result}!!!`, false);
-              }, 5000);
-              break;
-            }
-            case "add": {
-              if (args.length < 3) {
-                return;
-              }
-              let weight = parseInt(args[args.length - 1]);
-              let color: string = "";
-              let text: string;
-
-              if (isNaN(weight)) {
-                weight = parseInt(args[args.length - 2]);
-                color = args[-1];
-                text = args.slice(1, -2).join(" ");
-              } else {
-                text = args.slice(1, -1).join(" ");
-              }
-              if (text == null || isNaN(weight)) {
-                return;
-              }
-              this.bot.wheel.addSegment(text, weight, color);
-              data.reply(`Added segment ${text}`, true);
-              break;
-            }
-            case "remove": {
-              const segment = args.splice(1).join(" ");
-              if (segment == null) return;
-              if (this.bot.wheel.removeSegment(segment)) {
-                data.reply(`Removed segment ${segment}`, true);
-              }
-              break;
-            }
-            case "read":
-              this.bot.wheel.readWheel();
-              break;
-            case "weights":
-              data.reply(this.bot.wheel.toString(true), true);
-              break;
-            default:
-              data.reply(this.bot.wheel.toString(false), true);
-              break;
-          }
-        },
-      },
-    ],
-    [
       "!color",
       {
         showOnChat: false,

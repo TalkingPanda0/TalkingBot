@@ -5,7 +5,6 @@ import { DB } from "./db";
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
 
-import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
 import { Credits } from "./credits";
@@ -89,7 +88,6 @@ export class TalkingBot {
   public chatLogger: ChatLogger;
   public LevelManager: LevelManager;
   public commandHandler: MessageHandler;
-  public wheel: Wheel;
   public latestSub: latestSub | null = null;
   public modtext: string = "";
   public modtextCanvas: Canvas | null = null;
@@ -135,7 +133,6 @@ export class TalkingBot {
     this.commandHandler.readCustomCommands();
 
     this.credits = new Credits(this);
-    this.wheel = new Wheel();
     this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
