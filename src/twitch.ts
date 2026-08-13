@@ -140,6 +140,7 @@ export class Twitch {
       },
       30 * 60 * 1000,
     );
+    this.bot.onStreamOnline();
   }
 
   getDisplayName(display: string, login: string) {
@@ -441,6 +442,7 @@ export class Twitch {
         clearTimeout(this.updateCategoryInterval);
       if (this.sendTipReminderInterval)
         clearTimeout(this.sendTipReminderInterval);
+      this.bot.onStreamOffline();
     });
 
     this.eventListener.onChannelFollow(

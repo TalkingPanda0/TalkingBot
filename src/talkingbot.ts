@@ -12,7 +12,7 @@ import { Credits } from "./credits";
 import { Users } from "./users";
 import { Poll } from "./poll";
 
-import { levelUp } from "./levels";
+import { LevelManager } from "./levels";
 import { ModuleManager } from "./moduleManager";
 import { ChatLogger } from "./chatLogger";
 import {
@@ -87,6 +87,7 @@ export class TalkingBot {
   public connectedtoOverlay: boolean = false;
   public database: DB;
   public chatLogger: ChatLogger;
+  public LevelManager: LevelManager;
   public commandHandler: MessageHandler;
   public wheel: Wheel;
   public latestSub: latestSub | null = null;
@@ -142,6 +143,7 @@ export class TalkingBot {
     this.discord = new Discord(this);
     this.moduleManager = new ModuleManager(this);
     this.users = new Users(this.database);
+    this.LevelManager = new LevelManager(this);
   }
 
   public async initBot() {
@@ -167,10 +169,14 @@ export class TalkingBot {
     this.updateModText();
     this.updateModTextCanvas();
     this.updateModTextData();
+  }
 
-    setInterval(() => {
-      levelUp(this);
-    }, 60 * 1000);
+  public onStreamOnline() {
+    this.LevelManager.onStreamOnline();
+  }
+
+  public onStreamOffline() {
+    this.LevelManager.onStreamOffline();
   }
 
   public async cleanUp() {

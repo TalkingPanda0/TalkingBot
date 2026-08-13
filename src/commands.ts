@@ -16,7 +16,6 @@ import { exit } from "./app";
 import { CreditType } from "./credits";
 import { UserIdentifier } from "./users";
 
-import { addRecentChatter } from "./levels";
 import { MessageData } from "botModule";
 
 export interface Command {
@@ -1044,7 +1043,7 @@ export class MessageHandler {
       CreditType.Chatter,
     );
 
-    if (this.bot.twitch.isStreamOnline) addRecentChatter(this.bot, data);
+    if (this.bot.twitch.isStreamOnline) this.bot.LevelManager.addRecentChatter(data);
 
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));
