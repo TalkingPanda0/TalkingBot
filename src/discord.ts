@@ -77,7 +77,7 @@ export class Discord {
 
   public async getAllMessages(channelId: string) {
     const channel = this.client.channels.cache.get(channelId) as TextChannel;
-    let messages = [];
+    const messages = [];
 
     // Create message pointer
     let message = await channel.messages
@@ -183,7 +183,7 @@ export class Discord {
       partials: [Partials.Message, Partials.Channel, Partials.Reaction],
     });
 
-    this.client.once(Events.ClientReady, async (_readyClient) => {
+    this.client.once(Events.ClientReady, async () => {
       console.log("\x1b[34m%s\x1b[0m", `Discord setup complete`);
       const guild = this.client.guilds.cache.get("853223679664062465");
       if (!guild) return;
@@ -885,6 +885,7 @@ export class Discord {
       if (userId == process.env.GOD_ID) return true;
       return user.roles.cache.has("886305448251261018");
     } catch (e) {
+      console.error(`Failed getting isStreamMod for ${userId}: ${e}`);
       return false;
     }
   }

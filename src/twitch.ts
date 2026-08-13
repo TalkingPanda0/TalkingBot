@@ -3,8 +3,6 @@ import {
   ChatClient,
   ChatMessage,
   ChatRaidInfo,
-  ClearChat,
-  ClearMsg,
   UserNotice,
   parseChatMessage,
   ParsedMessagePart,
@@ -113,7 +111,7 @@ export class Twitch {
   }
 
   public async addUser(code: string, scope: string) {
-    const isBroadcaster: Boolean = scope.startsWith("bits:read");
+    const isBroadcaster: boolean = scope.startsWith("bits:read");
     const tokenData = await exchangeCode(
       this.clientId,
       this.clientSecret,
@@ -185,7 +183,7 @@ export class Twitch {
         this.parseTwitchEmotes(msg.text, msg.emoteOffsets, msg.bits),
       );
 
-      let badges = [];
+      const badges = [];
 
       if (msg.userInfo.isMod) {
         badges.push(this.badges.get("moderator"));
@@ -334,7 +332,7 @@ export class Twitch {
     });
 
     this.authProvider.onRefresh(async (_userId, newTokenData) => {
-      let isBroadcaster: Boolean =
+      const isBroadcaster: boolean =
         newTokenData.scope[0].startsWith("bits:read");
       Bun.write(
         isBroadcaster ? this.broadcasterFile : this.botFile,
@@ -428,7 +426,7 @@ export class Twitch {
       await this.onStreamOnline();
     });
 
-    this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
+    this.eventListener.onStreamOffline(this.channel.id, async () => {
       this.isStreamOnline = false;
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
@@ -484,8 +482,8 @@ export class Twitch {
       this.channel.id,
       "736013381",
       async (data) => {
-        let months: number | null = 0;
-        let tier = "";
+        let months: number | null;
+        let tier: string;
         let gift = false;
         let gifted = 0;
 
@@ -540,7 +538,7 @@ export class Twitch {
           CreditType.Subscription,
         );
 
-        let user = await data.getChatter();
+        const user = await data.getChatter();
         this.bot.setLatestSub({
           name: user.displayName,
           pfpUrl: user.profilePictureUrl,
@@ -586,7 +584,7 @@ export class Twitch {
       this.bot.iopoll.emit("updatePoll", pollOptions);
     });
 
-    this.eventListener.onChannelPollEnd(this.channel.id, (_data) => {
+    this.eventListener.onChannelPollEnd(this.channel.id, () => {
       this.bot.iopoll.emit("pollEnd");
     });
 
@@ -604,7 +602,7 @@ export class Twitch {
           });
         }
         switch (data.rewardId) {
-          case this.selftimeoutid:
+          case this.selftimeoutid: {
             const modlist = await this.apiClient.moderation.getModerators(
               this.channel.id,
               { userId: data.userId },
@@ -620,7 +618,8 @@ export class Twitch {
             });
             completed = true;
             break;
-          case this.timeoutid:
+          }
+          case this.timeoutid: {
             const username = data.input.split(" ")[0].replace("@", "");
             const user: HelixUser | null =
               await this.apiClient.users.getUserByName(username);
@@ -652,6 +651,7 @@ export class Twitch {
             });
             completed = true;
             break;
+          }
           case this.pollid:
             // message like Which is better?: hapboo, realboo, habpoo, hapflat
             this.redeemQueue.push(data);
@@ -700,12 +700,7 @@ export class Twitch {
     });
 
     this.chatClient.onRaid(
-      async (
-        _channel: string,
-        _user: string,
-        raidInfo: ChatRaidInfo,
-        _msg: UserNotice,
-      ) => {
+      async (_channel: string, _user: string, raidInfo: ChatRaidInfo) => {
         this.bot.ioalert.emit("alert", {
           audioList: await getRaidAudio(
             raidInfo.displayName,
@@ -759,13 +754,11 @@ export class Twitch {
       );
     });
 
-    this.chatClient.onMessageRemove(
-      (_channel: string, messageId: string, _msg: ClearMsg) => {
-        this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
-      },
-    );
+    this.chatClient.onMessageRemove((_channel: string, messageId: string) => {
+      this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
+    });
 
-    this.chatClient.onChatClear((_channel: string, _msg: ClearChat) => {
+    this.chatClient.onChatClear(() => {
       this.bot.iochat.emit("clearChat", "twitch");
     });
 
@@ -874,13 +867,13 @@ export class Twitch {
     });
   }
 
-  public async handleRedeemQueue(accept?: Boolean) {
+  public async handleRedeemQueue(accept?: boolean) {
     try {
       const redeem = this.redeemQueue.shift();
       if (!redeem) return;
       if (accept) {
         switch (redeem.rewardId) {
-          case this.pollid:
+          case this.pollid: {
             const matches = redeem.input.match(pollRegex);
             if (matches) {
               const question = matches[1];
@@ -904,7 +897,8 @@ export class Twitch {
               accept = false;
             }
             break;
-          case this.titleid:
+          }
+          case this.titleid: {
             const currentInfo =
               await this.apiClient.channels.getChannelInfoById(this.channel.id);
             await this.apiClient.channels.updateChannelInfo(this.channel.id, {
@@ -934,6 +928,7 @@ export class Twitch {
               15 * 60 * 1000,
             );
             break;
+          }
         }
       } else if (accept === null) {
         // scam
@@ -976,7 +971,7 @@ export class Twitch {
           if (bits) cheerName = parsedPart.name;
           else parsed += `${parsedPart.name}${parsedPart.amount}`;
           break;
-        case "emote":
+        case "emote": {
           const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
             size: "3.0",
             backgroundType: "dark",
@@ -984,6 +979,7 @@ export class Twitch {
           });
           parsed += ` <img onload="emoteLoaded(event)" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
           break;
+        }
       }
     });
     if (!bits || this.cheerEmotes == null) return parsed;

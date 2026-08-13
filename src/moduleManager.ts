@@ -15,10 +15,12 @@ import { Message } from "discord.js";
 
 const modulesDir = path.resolve(__dirname, "../config/modules");
 
+type CleanupFunction = () => void;
+
 export class ModuleManager {
   private modules: Map<
     string,
-    { module: BotModule; cleanups: Function[] } | null
+    { module: BotModule; cleanups: CleanupFunction[] } | null
   >;
   private messageListeners: MessageListener[];
   private discordMessageListeners: DiscordMessageListener[];
@@ -95,9 +97,9 @@ export default ${Name};`;
 
   private getContext(): {
     context: ModuleContext;
-    cleanups: Function[];
+    cleanups: CleanupFunction[];
   } {
-    const cleanups: Function[] = [];
+    const cleanups: CleanupFunction[] = [];
 
     const addCommand = (name: string, command: Command): boolean => {
       return this.bot.commandHandler.addCommand(name, command);

@@ -1,3 +1,4 @@
+import { JwtPayload } from "jsonwebtoken";
 import { DiscordAuthData } from "./talkingbot";
 
 export function getTimeDifference(startDate: Date, endDate: Date): string {
@@ -40,9 +41,9 @@ export function milliSecondsToString(timeDifference: number): string {
 export async function replaceAsync(
   str: string,
   regex: RegExp,
-  asyncFn: Function,
+  asyncFn: (substring: string, ...args: string[]) => Promise<string | null>,
 ) {
-  const promises: string[] = [];
+  const promises: Promise<string | null>[] = [];
   str.replace(regex, (full, ...args) => {
     promises.push(asyncFn(full, ...args));
     return full;
@@ -52,7 +53,7 @@ export async function replaceAsync(
 }
 
 export function getSuffix(i: number) {
-  var j = i % 10,
+  const j = i % 10,
     k = i % 100;
   if (j == 1 && k != 11) {
     return i + "st";
@@ -81,7 +82,7 @@ export function removeByIndexToUppercase(
 ): string {
   let deletedChars = 0;
   indexes.forEach((index) => {
-    let i = index - deletedChars;
+    const i = index - deletedChars;
     while (
       !isNaN(parseInt(str.charAt(i), 10)) ||
       str.charAt(i) !== str.charAt(i).toUpperCase()
@@ -123,7 +124,7 @@ export async function getDiscordUserId(data: DiscordAuthData): Promise<string> {
   const userData = await result.json();
   return userData.id;
 }
-export function isDiscordAuthData(obj: any): obj is DiscordAuthData {
+export function isDiscordAuthData(obj: string | JwtPayload): obj is DiscordAuthData {
   return (
     typeof obj === "object" &&
     obj !== null &&

@@ -20,7 +20,7 @@ const server = http.createServer(app);
 
 const bot: TalkingBot = new TalkingBot(server);
 
-app.use(compression());
+app.use(compression() as any);
 app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(express.static("config/images"));
@@ -32,7 +32,7 @@ app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "/tmp/",
-  }),
+  }) as any,
 );
 app.get("/soundEffects", async (_req, res) => {
   res.send(JSON.stringify(await getTTSSounds()));
@@ -64,20 +64,20 @@ app.use("/control", async (req, res) => {
     }
 
     const discordAuth: DiscordAuthData = decoded;
-    var discordId = await getDiscordUserId(discordAuth);
+    const discordId = await getDiscordUserId(discordAuth);
     const isMod = await bot.discord.isStreamMod(discordId);
     if (!isMod) {
       res.sendStatus(403);
       return;
     }
-  } catch (e) {
+    console.log(
+      `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
+    );
+  } catch {
     // No discord_auth cookie was found
     res.redirect(bot.discordLoginUri);
     return;
   }
-  console.log(
-    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
-  );
 
   switch (req.method) {
     case "GET":
@@ -106,7 +106,7 @@ app.use("/control", async (req, res) => {
         case "/commandbuilder":
           res.sendFile(__dirname + "/html/commandbuilder.html");
           break;
-        case "/command/get":
+        case "/command/get": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -117,6 +117,7 @@ app.use("/control", async (req, res) => {
           if (command == null) res.send(404);
           res.send(command);
           break;
+        }
         case "/command/list":
           res.send(bot.commandHandler.getCustomCommandList());
           break;
@@ -160,20 +161,17 @@ app.use("/control", async (req, res) => {
       break;
     case "POST":
       switch (req.path) {
-        case "/command/add":
+        case "/command/add": {
           if (req.query.name == null) {
             res.send(400);
             break;
           }
-          const commandToAdd = req.query.name.toString();
-          if (!req.body || !commandToAdd) {
+          const command = req.query.name.toString();
+          if (!req.body || !command) {
             res.sendStatus(400);
             return;
           }
-          const result = bot.commandHandler.addCustomCommand(
-            commandToAdd,
-            req.body,
-          );
+          const result = bot.commandHandler.addCustomCommand(command, req.body);
           if (result == "") {
             res.sendStatus(200);
             return;
@@ -181,8 +179,9 @@ app.use("/control", async (req, res) => {
           res.status(400);
           res.send(result);
           break;
+        }
 
-        case "/command/set":
+        case "/command/set": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -195,7 +194,8 @@ app.use("/control", async (req, res) => {
           bot.commandHandler.setCustomCommand(name, req.body);
           res.sendStatus(200);
           break;
-        case "/command/run":
+        }
+        case "/command/run": {
           if (!req.body) {
             res.sendStatus(400);
             return;
@@ -210,6 +210,7 @@ app.use("/control", async (req, res) => {
           );
           res.send(commandOutput);
           break;
+        }
         case "/command/delete":
           if (req.query.name == null) {
             res.send(400);
@@ -219,18 +220,18 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
-        case "/command/alias/add":
+        case "/command/alias/add": {
           if (req.query.name == null) {
             res.send(400);
             break;
           }
-          const aliasToAdd = req.query.name.toString();
-          if (!req.body || !aliasToAdd) {
+          const alias = req.query.name.toString();
+          if (!req.body || !alias) {
             res.sendStatus(400);
             return;
           }
           const aliasAddResult = bot.commandHandler.addCommandAlias(
-            aliasToAdd,
+            alias,
             req.body,
           );
           if (aliasAddResult == "") {
@@ -239,7 +240,9 @@ app.use("/control", async (req, res) => {
           }
           res.status(400);
           res.send(aliasAddResult);
-        case "/command/alias/set":
+          break;
+        }
+        case "/command/alias/set": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -252,6 +255,7 @@ app.use("/control", async (req, res) => {
           bot.commandHandler.setCommandAlias(alias, req.body);
           res.sendStatus(200);
           break;
+        }
         case "/command/alias/delete":
           if (req.query.name == null) {
             res.send(400);
@@ -334,7 +338,7 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
-        case "/soundEffects/delete":
+        case "/soundEffects/delete": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -353,7 +357,8 @@ app.use("/control", async (req, res) => {
               res.status(400).send(e);
             });
           break;
-        case "/soundEffects/rename":
+        }
+        case "/soundEffects/rename": {
           if (req.query.name == null || req.query.newName == null) {
             res.send(400);
             break;
@@ -371,7 +376,8 @@ app.use("/control", async (req, res) => {
               res.status(400).send(e);
             });
           break;
-        case "/soundEffects/add":
+        }
+        case "/soundEffects/add": {
           if (!req.files || !req.files.sound || !req.body.name) {
             return res.status(422).send("No files were uploaded");
           }
@@ -385,7 +391,8 @@ app.use("/control", async (req, res) => {
             res.sendStatus(200);
           });
           break;
-        case "/modtext/addimage":
+        }
+        case "/modtext/addimage": {
           if (!req.files || !req.files.image) {
             return res.status(422).send("No files were uploaded");
           }
@@ -404,6 +411,7 @@ app.use("/control", async (req, res) => {
             res.send(imagePath);
           });
           break;
+        }
         default:
           res.sendStatus(404);
           break;

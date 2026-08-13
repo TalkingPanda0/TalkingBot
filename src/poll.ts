@@ -16,9 +16,9 @@ abstract class PollMethod {
   constructor(iopoll: Namespace) {
     this.iopoll = iopoll;
   }
-  public getStartMessage(): string {
-    return "";
-  }
+
+  abstract getStartMessage(): string; 
+
   public startPoll(
     onPollEnd: (results: PollOption[]) => void | Promise<void>,
     message: string,
@@ -46,18 +46,16 @@ abstract class PollMethod {
     }, this.duration);
     return this.getStartMessage();
   }
-  public addVote(_user: string, _args: string): string {
-    this.updatePoll();
-    return "";
-  }
-  public getScores(): PollOption[] {
-    return [];
-  }
+
+  abstract addVote(user: string, args: string): string;
+
+  abstract getScores(): PollOption[]; 
+
   public updatePoll() {
     this.iopoll.emit("updatePoll", this.getScores());
   }
 
-  public cleanUp() {}
+  abstract cleanUp(): void;
 
   public endPoll() {
     const scores = this.getScores();
@@ -193,13 +191,10 @@ export class Poll {
   public addVote(user: string, message: string): string {
     console.log(`${user} voted for ${message}`);
     if (this.currentMethod == null) throw "no poll.";
-    try {
-      const response = this.currentMethod.addVote(user, message);
-      return response;
-    } catch (error) {
-      throw error;
-    }
+    const response = this.currentMethod.addVote(user, message);
+    return response;
   }
+
   public endPoll() {
     if (this.currentMethod == null) throw "no poll";
     this.currentMethod.endPoll();

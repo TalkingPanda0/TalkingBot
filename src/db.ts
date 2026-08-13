@@ -1,4 +1,3 @@
-import { MessageData } from "botModule";
 import { Database, Statement } from "bun:sqlite";
 
 interface WatchTime {

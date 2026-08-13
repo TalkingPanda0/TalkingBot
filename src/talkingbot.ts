@@ -42,13 +42,39 @@ export interface DiscordAuthData {
 interface controlMessage {
   overlay: string;
   target: string;
-  message: string;
+  message: Alert;
 }
 export interface latestSub {
   name: string;
   pfpUrl: string;
   time: Date;
 }
+
+type RaidAlert = { raider: string; viewers: number };
+type FollowAlert = { follower: string };
+type BitsAlert = {
+  user: string;
+  bits: number;
+  message: string;
+};
+type DiscordJoinAlert = { member: string };
+type KofiAlert = {
+  is_subscription: boolean;
+  message: string | null;
+  sender: string;
+  tier_name: string | null;
+  amount: string;
+  currency: string;
+};
+type SubAlert = { name: string; message: string };
+type Alert =
+  | RaidAlert
+  | FollowAlert
+  | BitsAlert
+  | SubAlert
+  | DiscordJoinAlert
+  | KofiAlert
+  | string;
 
 export class TalkingBot {
   public discord: Discord;
@@ -58,7 +84,7 @@ export class TalkingBot {
   public iomodtext: Namespace;
   public iopoll: Namespace;
   public ioalert: Namespace;
-  public connectedtoOverlay: Boolean = false;
+  public connectedtoOverlay: boolean = false;
   public database: DB;
   public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
@@ -251,61 +277,63 @@ export class TalkingBot {
           this.iomodtext.emit("refresh");
           return;
         }
-        this.modtext = data.message;
-        this.updateModText();
+        if (typeof data.message == "string") {
+          this.modtext = data.message;
+          this.updateModText();
+        }
         break;
 
       case "tts":
         this.ttsManager.io.emit(data.target, data.message);
         break;
 
-      case "alerts":
-        const alert: any = data.message;
-        if (alert.viewers !== undefined) this.raidAlert(alert);
-        else if (alert.follower !== undefined) this.followAlert(alert);
-        else if (alert.bits !== undefined) this.bitsAlert(alert);
-        else if (alert.member !== undefined) this.discordJoinAlert(alert);
-        else if (alert.is_subscription !== undefined) this.kofiAlert(alert);
-        else this.subAlert(alert);
+      case "alerts": {
+        const alert: Alert = data.message;
+        if (typeof alert == "string") break;
+
+        if ("viewers" in alert) {
+          this.raidAlert(alert);
+        } else if ("follower" in alert) {
+          this.followAlert(alert);
+        } else if ("bits" in alert) {
+          this.bitsAlert(alert);
+        } else if ("member" in alert) {
+          this.discordJoinAlert(alert);
+        } else if ("is_subscription" in alert) {
+          this.kofiAlert(alert);
+        } else if ("name " in alert) {
+          this.subAlert(alert);
+        }
+
         break;
+      }
     }
   }
-  private async raidAlert(alert: { raider: string; viewers: number }) {
+  private async raidAlert(alert: RaidAlert) {
     this.ioalert.emit("alert", {
       audioList: await getRaidAudio(alert.raider, alert.viewers),
       ...alert,
     });
   }
-  private async followAlert(alert: { follower: string }) {
+  private async followAlert(alert: FollowAlert) {
     this.ioalert.emit("alert", {
       audioList: await getFollowAudio(alert.follower),
       ...alert,
     });
   }
-  private async bitsAlert(alert: {
-    user: string;
-    bits: number;
-    message: string;
-  }) {
+  private async bitsAlert(alert: BitsAlert) {
     this.ioalert.emit("alert", {
       audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
       ...alert,
     });
   }
-  private async discordJoinAlert(alert: { member: string }) {
+  private async discordJoinAlert(alert: DiscordJoinAlert) {
     this.ioalert.emit("alert", {
       audioList: await getDiscordJoinAudio(alert.member),
       ...alert,
     });
   }
-  private async kofiAlert(alert: {
-    is_subscription: boolean;
-    message: string | null;
-    sender: string;
-    tier_name: string | null;
-    amount: string;
-    currency: string;
-  }) {
+  private async kofiAlert(alert: KofiAlert) {
     this.ioalert.emit("alert", {
       audioList: await getKofiAudio(
         alert.sender,
@@ -317,7 +345,7 @@ export class TalkingBot {
       ...alert,
     });
   }
-  private async subAlert(alert: { name: string; message: string }) {
+  private async subAlert(alert: SubAlert) {
     this.ioalert.emit("alert", {
       audioList: await getSubAudio(alert.name),
       messageAudioList: alert.message ? await getSubAudio(alert.message) : [],

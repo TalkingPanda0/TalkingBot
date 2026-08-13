@@ -11,7 +11,6 @@ import {
 } from "./util";
 
 import { HelixGame } from "@twurple/api";
-import { HttpStatusCodeError } from "@twurple/api-call";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
@@ -30,7 +29,7 @@ export class MessageHandler {
   public counter!: Counter;
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
-  public keys: any;
+  public keys: { steam: string } = { steam: "" };
   private timeout = new Set();
   private bot: TalkingBot;
   private customCommandMap = new Map<string, string>();
@@ -233,7 +232,7 @@ export class MessageHandler {
             return;
           }
           data.reply(
-            `\"${stream.title}\" - ${stream.gameName}: ${stream.tags}`,
+            `"${stream.title}" - ${stream.gameName}: ${stream.tags}`,
             true,
           );
         },
@@ -278,13 +277,13 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = splitMessage[0];
+          const commandName = splitMessage[0];
           const response = data.message.substring(
             data.message.indexOf(" ") + 1,
             data.message.length,
           );
 
-          let command = this.customCommandMap.get(commandName);
+          const command = this.customCommandMap.get(commandName);
           if (!command) {
             data.reply(`Command ${commandName} does not exist!`, true);
             return;
@@ -308,7 +307,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = `${splitMessage[0]} ${splitMessage[1]}`;
+          const commandName = `${splitMessage[0]} ${splitMessage[1]}`;
 
           if (!this.customCommandMap.has(splitMessage[0])) {
             data.reply(`Command ${commandName} does not exist!`, true);
@@ -339,7 +338,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = splitMessage[0];
+          const commandName = splitMessage[0];
           const response = data.message.substring(
             data.message.indexOf(" ") + 1,
             data.message.length,
@@ -371,7 +370,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = splitMessage[0];
+          const commandName = splitMessage[0];
           const response = data.message.substring(
             data.message.indexOf(" ") + 1,
             data.message.length,
@@ -399,7 +398,7 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          let commandName = data.message.split(" ")[0];
+          const commandName = data.message.split(" ")[0];
           const command = this.customCommandMap.get(commandName);
           if (command) {
             data.reply(`${commandName}: ${command}`, true);
@@ -536,7 +535,11 @@ export class MessageHandler {
             { gameId: game.id },
           );
           this.bot.twitch.currentGame = game.id;
-          if(this.bot.twitch.isStreamOnline) await this.bot.discord.onGameChange(game.name,game.boxArtUrl.replace("52x72","520x720"));
+          if (this.bot.twitch.isStreamOnline)
+            await this.bot.discord.onGameChange(
+              game.name,
+              game.boxArtUrl.replace("52x72", "520x720"),
+            );
           data.reply(`Game has been changed to "${game.name}"`, true);
         },
       },
@@ -558,36 +561,38 @@ export class MessageHandler {
           const args = data.message.toLowerCase().split(" ");
 
           switch (args[0]) {
-            case "add":
-              const newTags = stream.tags.concat(args.slice(1));
-              if (newTags.length >= 10) {
+            case "add": {
+              const tags = stream.tags.concat(args.slice(1));
+              if (tags.length >= 10) {
                 data.reply("Reached maxiumum amount of tags", true);
                 break;
               }
               try {
                 await this.bot.twitch.apiClient.channels.updateChannelInfo(
                   this.bot.twitch.channel.id,
-                  { tags: newTags },
+                  { tags },
                 );
               } catch (e) {
                 data.reply(e as string, true);
                 return;
               }
-              data.reply(`Tags ${newTags} has been added`, true);
+              data.reply(`Tags ${tags} has been added`, true);
               break;
-            case "remove":
-              const tagsToRemove = args.slice(1);
+            }
+            case "remove": {
+              const tags = args.slice(1);
               await this.bot.twitch.apiClient.channels.updateChannelInfo(
                 this.bot.twitch.channel.id,
                 {
                   tags: stream.tags.filter((value) => {
-                    return !tagsToRemove.includes(value.toLowerCase());
+                    return !tags.includes(value.toLowerCase());
                   }),
                 },
               );
 
-              data.reply(`Tags ${tagsToRemove} has been removed`, true);
+              data.reply(`Tags ${tags} has been removed`, true);
               break;
+            }
             default:
               data.reply(`Current tags: ${stream.tags}`, true);
               return;
@@ -720,7 +725,7 @@ export class MessageHandler {
           }
           const args = data.message.split(" ");
           switch (args[0]) {
-            case "chat":
+            case "chat": {
               if (args[1] == null) break;
               data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
               setTimeout(() => {
@@ -728,7 +733,8 @@ export class MessageHandler {
                 data.reply(`${args[1]} won ${result}!!!`, false);
               }, 5000);
               break;
-            case "add":
+            }
+            case "add": {
               if (args.length < 3) {
                 return;
               }
@@ -749,13 +755,15 @@ export class MessageHandler {
               this.bot.wheel.addSegment(text, weight, color);
               data.reply(`Added segment ${text}`, true);
               break;
-            case "remove":
+            }
+            case "remove": {
               const segment = args.splice(1).join(" ");
               if (segment == null) return;
               if (this.bot.wheel.removeSegment(segment)) {
                 data.reply(`Removed segment ${segment}`, true);
               }
               break;
+            }
             case "read":
               this.bot.wheel.readWheel();
               break;
@@ -779,10 +787,11 @@ export class MessageHandler {
             username: data.username || "",
           };
           switch (data.message.trim()) {
-            case "":
+            case "": {
               const user = this.bot.users.getUser(id);
               data.reply(`Your color is currently set to ${user.color}.`, true);
               break;
+            }
             case "clear":
               this.bot.users.setColor(id, undefined);
               data.reply(`Your color has been cleared.`, true);
@@ -896,7 +905,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           const commands =
             Array.from(this.commandMap.keys()).join(", ") +
-            Array.from(this.customCommandMap.keys()).join(", ") + 
+            Array.from(this.customCommandMap.keys()).join(", ") +
             Array.from(this.commandAliasMap.keys()).join(", ");
           data.reply(`Commands: ${commands}`, true);
         },
@@ -931,7 +940,7 @@ export class MessageHandler {
       response,
       /script\((.+)\)/g,
       async (_message: string, script: string) => {
-        if (!canUserRunCommand) return;
+        if (!canUserRunCommand) return null;
         return await this.runScript(script, data, commandName);
       },
     );
@@ -980,7 +989,7 @@ export class MessageHandler {
         data.message = data.message.replace(commandName, commandAlias);
         commandName = data.message.split(" ")[0];
       }
-      let customCommand = this.customCommandMap.get(commandName);
+      const customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
         data.message = data.message.replace(commandName, "").trim();
         return await this.runCommand(data, commandName, customCommand);
@@ -1022,8 +1031,18 @@ export class MessageHandler {
     data.color = user.color ?? data.color;
 
     if (data.isUserMod)
-      this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Moderator);
-    this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Chatter);
+      this.bot.credits.addToCredits(
+        data.senderId,
+        data.sender,
+        data.color,
+        CreditType.Moderator,
+      );
+    this.bot.credits.addToCredits(
+      data.senderId,
+      data.sender,
+      data.color,
+      CreditType.Chatter,
+    );
 
     if (this.bot.twitch.isStreamOnline) addRecentChatter(this.bot, data);
 
