@@ -15,7 +15,6 @@ import { HttpStatusCodeError } from "@twurple/api-call";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
-import { calculatePoints } from "./whereword";
 import { UserIdentifier } from "./users";
 
 import { addRecentChatter } from "./levels";
@@ -835,126 +834,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!whereword",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (data.platform != "twitch") return;
-          const args = data.message.toLowerCase().split(" ");
-          switch (args[0]) {
-            case "join":
-              try {
-                const word = this.bot.whereWord.playerJoin(
-                  data.username.toLowerCase(),
-                  args[1],
-                );
-                await this.bot.twitch.apiClient.whispers.sendWhisper(
-                  "736013381",
-                  data.senderId,
-                  `Your secret word is "${word}", good luck!`,
-                );
-                data.reply("Your word has been sent.", true);
-              } catch (e) {
-                if (e instanceof HttpStatusCodeError) {
-                  data.reply(
-                    "Couldn't whisper to you, try whipsering to @TalkingBotO_o.",
-                    true,
-                  );
-                  this.bot.whereWord.resetPlayer(data.username.toLowerCase());
-                  return;
-                }
-                const errorMessage = e instanceof Error ? e.message : String(e);
-                data.reply(errorMessage, true);
-              }
-              break;
-            case "guess":
-              if (args.length != 3) {
-                data.reply("Usage !whereword guess [name] [word]", true);
-                return;
-              }
-              data.reply(
-                this.bot.whereWord.guess(
-                  data.username.toLowerCase(),
-                  args[1].replace("@", "").toLowerCase(),
-                  args[2],
-                ),
-                true,
-              );
-              break;
-            case "status":
-              const name = args[1]?.replace("@", "").toLowerCase();
-              if (name) {
-                const status = this.bot.whereWord.getPlayer(name);
-                if (status == null) {
-                  data.reply(`@${name} is not playing the game`, true);
-                  return;
-                }
-                const correctGuess = status.guesses.find(
-                  (guess) => guess.correct,
-                );
-
-                if (status.guessed) {
-                  data.reply(
-                    `@${name}'s word has been guessed by @${correctGuess != null ? correctGuess.guesser : "[Can't find guesser]"}. It was "${status.word}". They have used it ${status.times} times. They had ${calculatePoints(status)} points.`,
-                    true,
-                  );
-                  return;
-                }
-                let statusmsg = `@${name} is playing the game.`;
-                if (status.guesses.length != 0) {
-                  statusmsg += ` Guesses: ${status.guesses.map((guess) => guess.word).join(", ")}`;
-                }
-                data.reply(statusmsg, true);
-
-                if (data.isUserMod && args[2] == "mod") {
-                  await this.bot.twitch.apiClient.whispers.sendWhisper(
-                    "736013381",
-                    data.senderId,
-                    `Their word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. They have used it ${status.times} times. They have ${calculatePoints(status)} points.`,
-                  );
-                }
-                break;
-              }
-
-              const status = this.bot.whereWord.getPlayer(
-                data.username.toLowerCase(),
-              );
-              if (status == null) {
-                data.reply("You are not playing the game", true);
-                return;
-              }
-              if (status.guessed) {
-                const correctGuess = status.guesses.find(
-                  (guess) => guess.correct,
-                );
-                data.reply(
-                  `Your word has been guessed by @${correctGuess != null ? correctGuess.guesser : "[Can't find guesser]"}. It was "${status.word}". You have used it ${status.times} times. You had ${calculatePoints(status)} points.`,
-                  true,
-                );
-                return;
-              }
-              await this.bot.twitch.apiClient.whispers.sendWhisper(
-                "736013381",
-                data.senderId,
-                `Your secret word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. You have used it ${status.times} times. You have ${calculatePoints(status)} points.`,
-              );
-              break;
-            case "reset":
-              if (data.isUserMod) {
-                this.bot.whereWord.resetPlayer(
-                  args[1].replaceAll("@", "").toLowerCase(),
-                );
-                data.reply(`Reset ${args[1]}.`, true);
-                break;
-              }
-            default:
-              data.reply("Usage !whereword join|guess|status.", true);
-              break;
-          }
-        },
-      },
-    ],
-    [
       "!createpoll",
       {
         showOnChat: false,
@@ -1147,11 +1026,6 @@ export class MessageHandler {
     this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Chatter);
 
     if (this.bot.twitch.isStreamOnline) addRecentChatter(this.bot, data);
-
-    this.bot.whereWord.proccesMessage(
-      data.username.toLowerCase(),
-      data.message.toLowerCase(),
-    );
 
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));

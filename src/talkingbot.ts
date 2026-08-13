@@ -10,7 +10,6 @@ import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
 import { Credits } from "./credits";
 import { Users } from "./users";
-import { WhereWord } from "./whereword";
 import { Poll } from "./poll";
 
 import { levelUp } from "./levels";
@@ -70,7 +69,6 @@ export class TalkingBot {
   public ttsManager: TTSManager;
   public credits: Credits;
   public users: Users;
-  public whereWord: WhereWord;
   public moduleManager: ModuleManager;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string | null = null;
@@ -118,7 +116,6 @@ export class TalkingBot {
     this.discord = new Discord(this);
     this.moduleManager = new ModuleManager(this);
     this.users = new Users(this.database);
-    this.whereWord = new WhereWord();
   }
 
   public async initBot() {
@@ -131,7 +128,6 @@ export class TalkingBot {
     await this.twitch.initBot();
     this.users.init();
     this.commandHandler.init();
-    await this.whereWord.init();
     this.moduleManager.init();
 
     this.latestSub = JSON.parse(

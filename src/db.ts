@@ -267,6 +267,7 @@ export class DB {
     }
     return this.getTopWatchTimeQuery.all() as WatchTime[];
   }
+  
   public addToUser(userId: string, time: number) {
     const watchTime = this.getWatchTime(userId);
     const date = new Date();

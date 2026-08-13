@@ -402,7 +402,6 @@ export class Twitch {
       this.say("Something wicked this way comes.");
       this.isStreamOnline = true;
       this.bot.credits.clear();
-      this.bot.whereWord.clearGame();
       try {
         const stream = await event.getStream();
         if (!stream) {
@@ -431,7 +430,6 @@ export class Twitch {
 
     this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
       this.isStreamOnline = false;
-      this.chatClient.say(this.channelName, this.bot.whereWord.endGame());
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {
