@@ -89,7 +89,7 @@ export class TalkingBot {
   public LevelManager: LevelManager;
   public commandHandler: MessageHandler;
   public latestSub: latestSub | null = null;
-  public modtext: string = "";
+  public modtext: string | null = null; 
   public modtextCanvas: Canvas | null = null;
   public ttsManager: TTSManager;
   public credits: Credits;
@@ -156,7 +156,7 @@ export class TalkingBot {
     this.moduleManager.init();
 
     this.latestSub = await this.database.getOrSetConfig("latestSub", null);
-    this.modtext = await this.database.getOrSetConfig("currentModtext", "");
+    this.modtext = await this.database.getOrSetConfig("currentModtext", null);
     this.modtextCanvas = await this.database.getOrSetConfig("currentModtextCanvas", null);
 
     this.updateModText();

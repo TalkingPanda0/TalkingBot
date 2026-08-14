@@ -80,12 +80,14 @@ export class DB {
   }
 
   public async getHapbooReactions(id: string): Promise<number | null> {
-    return (
-      await this.database
-        .select({ times: hapboo.times })
-        .from(hapboo)
-        .where(eq(hapboo.userId, id))
-    )[0].times;
+    const reactions = await this.database
+      .select({ times: hapboo.times })
+      .from(hapboo)
+      .where(eq(hapboo.userId, id));
+    if (reactions[0]) {
+      return reactions[0].times;
+    }
+    return null;
   }
 
   public async updateDataBase(inChat: number) {
@@ -123,34 +125,32 @@ export class DB {
     });
   }
 
-  public async getOrSetConfig<T>(
-    key: string,
-    defaultValue: T,
-  ): Promise<T> {
+  public async getOrSetConfig<T>(key: string, defaultValue: T): Promise<T> {
     const config = (
       await this.database
         .select()
         .from(customConfig)
         .where(eq(customConfig.key, key))
-    )[0];
+    ).at(0);
     if (config) return config.value as T;
-    await this.database
-      .insert(customConfig)
-      .values({ key, value: defaultValue });
+    await this.setConfig(key, defaultValue);
     return defaultValue;
   }
 
   public async setConfig<T>(key: string, value: T) {
-    await this.database.insert(customConfig).values({ key, value });
+    await this.database
+      .insert(customConfig)
+      .values({ key, value })
+      .onConflictDoUpdate({ target: customConfig.key, set: { value: value } });
   }
 
-  public async getWatchTime(id: string): Promise<WatchTime> {
+  public async getWatchTime(id: string): Promise<WatchTime | undefined> {
     return (
       await this.database
         .select()
         .from(watchtimes)
         .where(eq(watchtimes.userId, id))
-    )[0];
+    ).at(0);
   }
 
   public async getTopWatchTime(isOffline: boolean): Promise<WatchTime[]> {
@@ -272,7 +272,10 @@ export class DB {
       .orderBy(desc(hapboo.times));
   }
 
-  async getEmoteStat(userId: string, emoteId: string): Promise<EmoteStat> {
+  async getEmoteStat(
+    userId: string,
+    emoteId: string,
+  ): Promise<EmoteStat | undefined> {
     return (
       await this.database
         .select()
@@ -283,7 +286,7 @@ export class DB {
             eq(reactionstats.emoteId, emoteId),
           ),
         )
-    )[0];
+    ).at(0);
   }
 
   public async reaction(userId: string, emoteId: string, number: number) {
@@ -303,14 +306,14 @@ export class DB {
   public async emoteUsage(userId: string, emoteId: string, number: number) {
     const emoteUsage = await this.getEmoteStat(userId, emoteId);
     if (emoteUsage == null) {
-      this.database
+      await this.database
         .insert(emotestats)
-        .values({ userId: userId, emoteId: emoteId, times: 1 });
+        .values({ userId: userId, emoteId: emoteId, times: number });
       return;
     }
     emoteUsage.times += number;
 
-    this.database.insert(emotestats).values(emoteUsage);
+    await this.database.insert(emotestats).values(emoteUsage);
   }
 
   public async getUserEmoteUsage(userId: string): Promise<EmoteStat[]> {

@@ -34,7 +34,7 @@ export class ChatLogger {
   }
 
   public async recordMessage(message: MessageData) {
-    this.bot.database.database.insert(chatMessages).values({
+    await this.bot.database.database.insert(chatMessages).values({
       ...message,
       isUserMod: message.isUserMod ? 1 : 0,
       isUserVip: message.isUserVip ? 1 : 0,

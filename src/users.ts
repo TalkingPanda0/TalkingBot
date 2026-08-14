@@ -28,8 +28,8 @@ export class Users {
       await this.db.getOrSetConfig("users", []),
     );
   }
-  saveUsers() {
-    this.db.setConfig("users", JSON.stringify(hashMaptoArray(this.userMap)));
+  async saveUsers() {
+    await this.db.setConfig("users", hashMaptoArray(this.userMap));
   }
 
   setColor(id: UserIdentifier, color: string | undefined) {
