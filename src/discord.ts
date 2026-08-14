@@ -201,9 +201,7 @@ export class Discord {
       if (message.author.bot) return;
 
       const doReact = message.channelId != "1020739967061868605";
-      const hapbooReactions = this.bot.database.getHapbooReaction.get(
-        message.author.id,
-      ) as HapbooReaction;
+      const hapbooReactions = this.bot.database.getHapbooReactions(message.author.id);
       let currentHapboos = 0;
       if (hapbooReactions != null) currentHapboos = hapbooReactions.times ??= 0;
 
@@ -460,9 +458,7 @@ export class Discord {
             return;
           }
 
-          const hapbooReaction = this.bot.database.getHapbooReaction.get(
-            target.id,
-          ) as HapbooReaction;
+          const hapbooReaction = this.bot.database.getHapbooReactions(target.id);
           if (hapbooReaction == null) {
             interaction.reply({
               embeds: [
@@ -515,23 +511,16 @@ export class Discord {
           let emotes: EmoteStat[];
           switch (filter) {
             case "emotes":
-              emotes = this.bot.database.getUserEmoteStat.all(
-                user.id,
-              ) as EmoteStat[];
+              emotes = this.bot.database.getUserEmoteUsage(user.id);
               suffix = "messages";
               break;
             case "reactions":
-              emotes = this.bot.database.getUserReactionStat.all(
-                user.id,
-              ) as EmoteStat[];
-
+              emotes = this.bot.database.getUserReactionUsage(user.id);
               suffix = "reactions";
               break;
             case "both":
             default:
-              emotes = this.bot.database.getUserTotalStat.all(
-                user.id,
-              ) as EmoteStat[];
+              emotes = this.bot.database.getUserReactionAndEmoteUsage(user.id);
               suffix = "messages and reactions";
               break;
           }
@@ -590,18 +579,17 @@ export class Discord {
           let emotes: EmoteStat[];
           switch (filter) {
             case "emotes":
-              emotes = this.bot.database.getTopEmoteUsers.all() as EmoteStat[];
+              emotes = this.bot.database.getTopEmoteUsers();
               suffix = "messages";
               break;
             case "reactions":
               emotes =
-                this.bot.database.getTopReactionUsers.all() as EmoteStat[];
-
+                this.bot.database.getTopReactionUsers();
               suffix = "reactions";
               break;
             case "both":
             default:
-              emotes = this.bot.database.getTopTotalUsers.all() as EmoteStat[];
+              emotes = this.bot.database.getTopEmoteAndReactionUsers();
               suffix = "messages and reactions";
               break;
           }
@@ -658,16 +646,16 @@ export class Discord {
           let emotes: EmoteStat[];
           switch (filter) {
             case "emotes":
-              emotes = this.bot.database.getTopEmotes.all() as EmoteStat[];
+              emotes = this.bot.database.getTopEmotes();
               suffix = "messages";
               break;
             case "reactions":
-              emotes = this.bot.database.getTopReactions.all() as EmoteStat[];
+              emotes = this.bot.database.getTopReactions();
               suffix = "reactions";
               break;
             case "both":
             default:
-              emotes = this.bot.database.getTopTotal.all() as EmoteStat[];
+              emotes = this.bot.database.getTopTotal();
               suffix = "messages and reactions";
               break;
           }

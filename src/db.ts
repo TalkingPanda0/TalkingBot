@@ -21,7 +21,7 @@ export interface HapbooReaction {
 }
 
 export class DB {
-  public getHapbooReaction: Statement;
+  private getHapbooReaction: Statement;
 
   public database: Database;
   private insertWatchTime: CallableFunction;
@@ -36,21 +36,21 @@ export class DB {
   private insertReactionStat: CallableFunction;
   private setConfigQuery: CallableFunction;
 
-  public getEmoteStat: Statement;
-  public getUserEmoteStat: Statement;
-  public getTopEmotes: Statement;
-  public getTopEmoteUsers: Statement;
-  public getReactionStat: Statement;
-  public getEmoteReactionStat: Statement;
-  public getEmoteEmoteStat: Statement;
-  public getEmoteTotalStat: Statement;
-  public getUserReactionStat: Statement;
-  public getUserTotalStat: Statement;
-  public getTopReactions: Statement;
-  public getTopReactionUsers: Statement;
-  public getTopTotalUsers: Statement;
-  public getTopTotal: Statement;
-  public getConfig: Statement;
+  private getEmoteStat: Statement;
+  private getUserEmoteStat: Statement;
+  private topEmotes: Statement;
+  private topEmoteUsers: Statement;
+  private getReactionStat: Statement;
+  private getEmoteReactionStat: Statement;
+  private getEmoteEmoteStat: Statement;
+  private getEmoteTotalStat: Statement;
+  private getUserReactionStat: Statement;
+  private getUserTotalStat: Statement;
+  private topReactions: Statement;
+  private topReactionUsers: Statement;
+  private getTopTotalUsers: Statement;
+  private topTotal: Statement;
+  private getConfig: Statement;
 
   constructor() {
     this.database = new Database(__dirname + "/../config/db.sqlite", {
@@ -137,10 +137,10 @@ export class DB {
     this.getUserEmoteStat = this.database.query(
       "SELECT * FROM emotestats WHERE userId = ?1 ORDER BY times DESC;",
     );
-    this.getTopEmotes = this.database.query(
+    this.topEmotes = this.database.query(
       "SELECT emoteId, SUM(times) as totalUsage FROM emotestats GROUP BY emoteId ORDER BY totalUsage DESC",
     );
-    this.getTopEmoteUsers = this.database.query(
+    this.topEmoteUsers = this.database.query(
       "SELECT userId,SUM(times) as totalUsage FROM emotestats GROUP BY userId ORDER BY totalUsage DESC",
     );
     this.getEmoteEmoteStat = this.database.query(
@@ -165,10 +165,10 @@ export class DB {
     this.getEmoteReactionStat = this.database.query(
       "SELECT * FROM reactionstats WHERE emoteId = ?1 ORDER BY times DESC;",
     );
-    this.getTopReactions = this.database.query(
+    this.topReactions = this.database.query(
       "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC;",
     );
-    this.getTopReactionUsers = this.database.query(
+    this.topReactionUsers = this.database.query(
       "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC;",
     );
     this.getTopTotalUsers = this.database.query(
@@ -177,7 +177,7 @@ export class DB {
     this.getEmoteTotalStat = this.database.query(
       "SELECT * FROM combinedemotestats WHERE emoteId = ?1 ORDER BY totaltimes DESC;",
     );
-    this.getTopTotal = this.database.query(
+    this.topTotal = this.database.query(
       "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC;",
     );
 
@@ -218,6 +218,10 @@ export class DB {
     }
   }
 
+  public getHapbooReactions(id: string): HapbooReaction {
+    return this.getHapbooReaction.get(id) as HapbooReaction;
+  }
+
   public updateDataBase(inChat: number) {
     const toUpdate = this.inChatQuery.all(inChat) as WatchTime[];
     const date = new Date();
@@ -236,6 +240,7 @@ export class DB {
       this.insertWatchTime(watchTime);
     });
   }
+
   public cleanDataBase() {
     const toUpdate = this.notOfflineQuery.all() as WatchTime[];
     toUpdate.forEach((watchTime) => {
@@ -266,7 +271,7 @@ export class DB {
     }
     return this.getTopWatchTimeQuery.all() as WatchTime[];
   }
-  
+
   public addToUser(userId: string, time: number) {
     const watchTime = this.getWatchTime(userId);
     const date = new Date();
@@ -397,6 +402,42 @@ export class DB {
     }
     emoteUsage.times += number;
     this.insertEmoteStat(emoteUsage);
+  }
+
+  public getUserEmoteUsage(userId: string): EmoteStat[] {
+    return this.getUserEmoteStat.all(userId) as EmoteStat[];
+  }
+
+  public getUserReactionUsage(userId: string): EmoteStat[] {
+    return this.getUserReactionStat.all(userId) as EmoteStat[];
+  }
+
+  public getUserReactionAndEmoteUsage(userId: string): EmoteStat[] {
+    return this.getUserTotalStat.all(userId) as EmoteStat[];
+  }
+
+  public getTopEmoteUsers(): EmoteStat[] {
+    return this.topEmoteUsers.all() as EmoteStat[];
+  }
+
+  public getTopReactionUsers(): EmoteStat[] {
+    return this.topReactionUsers.all() as EmoteStat[];
+  }
+
+  public getTopEmoteAndReactionUsers(): EmoteStat[] {
+    return this.getTopTotalUsers.all() as EmoteStat[];
+  }
+
+  public getTopEmotes(): EmoteStat[] {
+    return this.topEmotes.all() as EmoteStat[];
+  }
+
+  public getTopReactions(): EmoteStat[] {
+    return this.topReactions.all() as EmoteStat[];
+  }
+
+  public getTopTotal(): EmoteStat[] {
+    return this.topTotal.all() as EmoteStat[];
   }
 
   public cleanUp() {
