@@ -19,13 +19,13 @@ export class Users {
     this.db = db;
   }
 
-  init() {
-    this.loadUsers();
+  async init() {
+    await this.loadUsers();
   }
 
-  loadUsers() {
+  async loadUsers() {
     this.userMap = arraytoHashMap(
-      JSON.parse(this.db.getOrSetConfig("users", JSON.stringify([]))),
+      await this.db.getOrSetConfig("users", []),
     );
   }
   saveUsers() {

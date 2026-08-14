@@ -155,14 +155,10 @@ export class TalkingBot {
     this.commandHandler.init();
     this.moduleManager.init();
 
-    this.latestSub = JSON.parse(
-      this.database.getOrSetConfig("latestSub", JSON.stringify(null)),
-    );
+    this.latestSub = await this.database.getOrSetConfig("latestSub", null);
+    this.modtext = await this.database.getOrSetConfig("currentModtext", "");
+    this.modtextCanvas = await this.database.getOrSetConfig("currentModtextCanvas", null);
 
-    this.modtext = this.database.getOrSetConfig("currentModtext", "");
-    this.modtextCanvas = JSON.parse(
-      this.database.getOrSetConfig("currentModtextCanvas", "null"),
-    );
     this.updateModText();
     this.updateModTextCanvas();
     this.updateModTextData();

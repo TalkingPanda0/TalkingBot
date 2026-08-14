@@ -58,7 +58,7 @@ export class MessageHandler {
             if (data.platform != "twitch") return;
             const isOffline = data.message === "offline";
             this.bot.database.updateDataBase(isOffline ? 1 : 2);
-            const users = this.bot.database.getTopWatchTime(isOffline);
+            const users = await this.bot.database.getTopWatchTime(isOffline);
             const helixUsers =
               await this.bot.twitch.apiClient.users.getUsersByIds(
                 users.map((watchtime) => watchtime.userId),
@@ -111,7 +111,7 @@ export class MessageHandler {
           } else {
             userName = `${data.sender}`;
           }
-          const watchTime = this.bot.database.getWatchTime(userId);
+          const watchTime = await this.bot.database.getWatchTime(userId);
 
           if (watchTime == null) {
             data.reply("Can't find watchtime.", true);
@@ -1103,13 +1103,11 @@ export class MessageHandler {
     context.isUserSub = data.isUserSub;
     context.args = data.message.split(" ");
     context.platform = data.platform;
-    context.getOrSetConfig = (key: string, defaultValue: any): any => {
-      return JSON.parse(
-        this.bot.database.getOrSetConfig(key, JSON.stringify(defaultValue)),
-      );
+    context.getOrSetConfig = async (key: string, defaultValue: unknown): Promise<unknown> => {
+        return await this.bot.database.getOrSetConfig(key, defaultValue);
     };
-    context.setConfig = (key: string, value: any) => {
-      this.bot.database.setConfig(key, JSON.stringify(value));
+    context.setConfig = async (key: string, value: unknown) => {
+      return await this.bot.database.setConfig(key, value);
     };
 
     context.banUser = (reason: string, duration?: number) => {

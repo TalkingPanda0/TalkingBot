@@ -1,4 +1,15 @@
-import { Database, Statement } from "bun:sqlite";
+import { drizzle, SQLiteBunDatabase } from "drizzle-orm/bun-sqlite";
+import { sql, inArray, desc, eq, and } from "drizzle-orm";
+import {
+  combinedemotestats,
+  customConfig,
+  emotestats,
+  hapboo,
+  reactionstats,
+  watchtimes,
+} from "./db/schema";
+
+import { relations } from "./db/relations";
 
 interface WatchTime {
   userId: string;
@@ -12,220 +23,78 @@ export interface EmoteStat {
   userId: string;
   emoteId: string;
   times: number;
-  totaltimes?: number;
-  totalUsage?: number;
 }
-export interface HapbooReaction {
+interface HapbooReaction {
   userId: string;
   times: number;
 }
 
 export class DB {
-  private getHapbooReaction: Statement;
-
-  public database: Database;
-  private insertWatchTime: CallableFunction;
-  private getWatchTimeQuery: Statement;
-  private getTopWatchTimeQuery: Statement;
-  private getTopWatchTimeQueryOffline: Statement;
-  private inChatQuery: Statement;
-  private notOfflineQuery: Statement;
-  private insertHapbooReaction: CallableFunction;
-  private getHapbooReactionSorted: Statement;
-  private insertEmoteStat: CallableFunction;
-  private insertReactionStat: CallableFunction;
-  private setConfigQuery: CallableFunction;
-
-  private getEmoteStat: Statement;
-  private getUserEmoteStat: Statement;
-  private topEmotes: Statement;
-  private topEmoteUsers: Statement;
-  private getReactionStat: Statement;
-  private getEmoteReactionStat: Statement;
-  private getEmoteEmoteStat: Statement;
-  private getEmoteTotalStat: Statement;
-  private getUserReactionStat: Statement;
-  private getUserTotalStat: Statement;
-  private topReactions: Statement;
-  private topReactionUsers: Statement;
-  private getTopTotalUsers: Statement;
-  private topTotal: Statement;
-  private getConfig: Statement;
+  public database: SQLiteBunDatabase;
 
   constructor() {
-    this.database = new Database(__dirname + "/../config/db.sqlite", {
-      create: true,
-      strict: true,
-    });
-    this.database
-      .query(
-        "CREATE TABLE IF NOT EXISTS config (key TEXT PRIMARY KEY,value BLOB);",
-      )
-      .run();
-    this.database
-      .query(
-        "CREATE TABLE IF NOT EXISTS watchtimes (userId TEXT PRIMARY KEY,lastSeenOnStream TEXT,watchTime INT,lastSeen TEXT,chatTime INT,inChat INT);",
-      )
-      .run();
-    this.database
-      .query(
-        "CREATE TABLE IF NOT EXISTS hapboo (userId TEXT PRIMARY KEY,times INT);",
-      )
-      .run();
-    this.database
-      .query(
-        "CREATE TABLE IF NOT EXISTS emotestats (userId TEXT,emoteId TEXT , times INT, PRIMARY KEY (userId,emoteId));",
-      )
-      .run();
-    this.database
-      .query(
-        "CREATE TABLE IF NOT EXISTS reactionstats (userId TEXT,emoteId TEXT , times INT, PRIMARY KEY (userId,emoteId));",
-      )
-      .run();
-    this.database
-      .query(
-        "CREATE VIEW IF NOT EXISTS combinedemotestats AS SELECT COALESCE(emotestats.userId, reactionstats.userId) AS userId, COALESCE(emotestats.emoteId, reactionstats.emoteId) AS emoteId, (IFNULL(emotestats.times, 0) + IFNULL(reactionstats.times, 0)) AS totaltimes FROM emotestats FULL OUTER JOIN reactionstats ON emotestats.userId = reactionstats.userId AND emotestats.emoteId = reactionstats.emoteId WHERE emotestats.userId IS NOT NULL OR reactionstats.userId IS NOT NULL;",
-      )
-      .run();
-
-    const insertWatchTimeQuery = this.database.prepare(
-      "INSERT OR REPLACE INTO watchtimes (userId,lastSeenOnStream ,watchTime ,lastSeen ,chatTime,inChat) VALUES($userId,$lastSeenOnStream,$watchTime,$lastSeen,$chatTime,$inChat);",
-    );
-
-    this.insertWatchTime = this.database.transaction((watchTime) => {
-      insertWatchTimeQuery.run(watchTime);
-    });
-    this.getWatchTimeQuery = this.database.query(
-      "SELECT * FROM watchtimes where userId = ?1;",
-    );
-    this.getTopWatchTimeQuery = this.database.query(
-      "SELECT * FROM watchtimes ORDER BY watchTime DESC LIMIT 3;",
-    );
-    this.getTopWatchTimeQueryOffline = this.database.query(
-      "SELECT * FROM watchtimes ORDER BY chatTime DESC LIMIT 3;",
-    );
-    this.inChatQuery = this.database.query(
-      "SELECT * FROM watchtimes where inChat == ?1;",
-    );
-    this.notOfflineQuery = this.database.query(
-      "SELECT * FROM watchtimes where inChat != 0;",
-    );
-
-    const insertHapbooReactionQuery = this.database.prepare(
-      "INSERT OR REPLACE INTO hapboo (userId,times) VALUES($userId,$times);",
-    );
-
-    this.insertHapbooReaction = this.database.transaction((hapbooReaction) => {
-      insertHapbooReactionQuery.run(hapbooReaction);
-    });
-    this.getHapbooReaction = this.database.query(
-      "SELECT * FROM hapboo WHERE userId = ?1;",
-    );
-    this.getHapbooReactionSorted = this.database.query(
-      "SELECT * FROM hapboo ORDER BY times DESC;",
-    );
-
-    const insertEmoteStatQuery = this.database.prepare(
-      "INSERT OR REPLACE INTO emotestats (userId,emoteId,times) VALUES($userId,$emoteId,$times);",
-    );
-    this.insertEmoteStat = this.database.transaction((emoteStat) => {
-      insertEmoteStatQuery.run(emoteStat);
-    });
-    this.getEmoteStat = this.database.query(
-      "SELECT * FROM emotestats WHERE userId = ?1 AND emoteId = ?2;",
-    );
-    this.getUserEmoteStat = this.database.query(
-      "SELECT * FROM emotestats WHERE userId = ?1 ORDER BY times DESC;",
-    );
-    this.topEmotes = this.database.query(
-      "SELECT emoteId, SUM(times) as totalUsage FROM emotestats GROUP BY emoteId ORDER BY totalUsage DESC",
-    );
-    this.topEmoteUsers = this.database.query(
-      "SELECT userId,SUM(times) as totalUsage FROM emotestats GROUP BY userId ORDER BY totalUsage DESC",
-    );
-    this.getEmoteEmoteStat = this.database.query(
-      "SELECT * FROM emotestats WHERE emoteId = ?1 ORDER BY times DESC;",
-    );
-    const insertreactionStatQuery = this.database.prepare(
-      "INSERT OR REPLACE INTO reactionstats (userId,emoteId,times) VALUES($userId,$emoteId,$times);",
-    );
-    this.insertReactionStat = this.database.transaction((reactionStat) => {
-      insertreactionStatQuery.run(reactionStat);
-    });
-    this.getUserReactionStat = this.database.query(
-      "SELECT * FROM reactionstats WHERE userId = ?1 ORDER BY times DESC;",
-    );
-    this.getUserTotalStat = this.database.query(
-      "SELECT * FROM combinedemotestats WHERE userId = ?1 ORDER BY totaltimes DESC;",
-    );
-
-    this.getReactionStat = this.database.query(
-      "SELECT * FROM reactionstats WHERE userId = ?1 AND emoteId = ?2;",
-    );
-    this.getEmoteReactionStat = this.database.query(
-      "SELECT * FROM reactionstats WHERE emoteId = ?1 ORDER BY times DESC;",
-    );
-    this.topReactions = this.database.query(
-      "SELECT emoteId, SUM(times) as totalUsage FROM reactionstats GROUP BY emoteId ORDER BY totalUsage DESC;",
-    );
-    this.topReactionUsers = this.database.query(
-      "SELECT userId,SUM(times) as totalUsage FROM reactionstats GROUP BY userId ORDER BY totalUsage DESC;",
-    );
-    this.getTopTotalUsers = this.database.query(
-      "SELECT userId,SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY userId ORDER BY totalUsage DESC;",
-    );
-    this.getEmoteTotalStat = this.database.query(
-      "SELECT * FROM combinedemotestats WHERE emoteId = ?1 ORDER BY totaltimes DESC;",
-    );
-    this.topTotal = this.database.query(
-      "SELECT emoteId, SUM(totaltimes) as totalUsage FROM combinedemotestats GROUP BY emoteId ORDER BY totalUsage DESC;",
-    );
-
-    this.getConfig = this.database.query(
-      "SELECT * FROM config WHERE key = ?1;",
-    );
-    const setConfigQuery = this.database.prepare(
-      "INSERT OR REPLACE INTO config (key,value) VALUES($key,$value);",
-    );
-    this.setConfigQuery = this.database.transaction((config) => {
-      setConfigQuery.run(config);
-    });
-
-    this.cleanDataBase();
+    this.database = drizzle(__dirname + "/../config/db.sqlite", { relations });
   }
 
-  public getEmoteUsage(emoteList: string[], filter: string): EmoteStat[] {
+  public async init() {
+    await this.cleanDataBase();
+  }
+
+  public async getEmoteUsage(
+    emoteList: string[],
+    filter: string,
+  ): Promise<{ userId: string; times: number }[]> {
     switch (filter) {
       case "emotes":
-        return this.database
-          .query(
-            `SELECT userId,SUM(times) as totaltimes FROM emotestats WHERE emoteId IN ('${emoteList.join("','")}') GROUP BY userId ORDER BY totaltimes DESC;`,
-          )
-          .all() as EmoteStat[];
+        return await this.database
+          .select({
+            userId: emotestats.userId,
+            times: sql<number>`sum(${emotestats.times})`,
+          })
+          .from(emotestats)
+          .where(inArray(emotestats.emoteId, emoteList))
+          .groupBy(emotestats.userId)
+          .orderBy(desc(emotestats.times));
       case "reactions":
-        return this.database
-          .query(
-            `SELECT userId,SUM(times) as totaltimes FROM reactionstats WHERE emoteId IN ('${emoteList.join("','")}') GROUP BY userId ORDER BY totaltimes DESC;`,
-          )
-          .all() as EmoteStat[];
+        return await this.database
+          .select({
+            userId: reactionstats.userId,
+            times: sql<number>`sum(${reactionstats.times})`,
+          })
+          .from(reactionstats)
+          .where(inArray(reactionstats.emoteId, emoteList))
+          .groupBy(reactionstats.userId)
+          .orderBy(desc(reactionstats.times));
       case "both":
       default:
-        return this.database
-          .query(
-            `SELECT userId,SUM(totaltimes) as totaltimes FROM combinedemotestats WHERE emoteId IN ('${emoteList.join("','")}') GROUP BY userId ORDER BY totaltimes DESC;`,
-          )
-          .all() as EmoteStat[];
+        return await this.database
+          .select({
+            userId: combinedemotestats.userId,
+            times: sql<number>`sum(${combinedemotestats.totaltimes})`,
+          })
+          .from(combinedemotestats)
+          .where(inArray(combinedemotestats.emoteId, emoteList))
+          .groupBy(combinedemotestats.userId)
+          .orderBy(desc(combinedemotestats.totaltimes));
     }
   }
 
-  public getHapbooReactions(id: string): HapbooReaction {
-    return this.getHapbooReaction.get(id) as HapbooReaction;
+  public async getHapbooReactions(id: string): Promise<number | null> {
+    return (
+      await this.database
+        .select({ times: hapboo.times })
+        .from(hapboo)
+        .where(eq(hapboo.userId, id))
+    )[0].times;
   }
 
-  public updateDataBase(inChat: number) {
-    const toUpdate = this.inChatQuery.all(inChat) as WatchTime[];
+  public async updateDataBase(inChat: number) {
+    const toUpdate = await this.database
+      .select()
+      .from(watchtimes)
+      .where(eq(watchtimes.inChat, inChat));
     const date = new Date();
-    toUpdate.forEach((watchTime) => {
+    toUpdate.forEach(async (watchTime) => {
       if (inChat == 1) {
         const lastSeen = new Date(watchTime.lastSeen);
         watchTime.chatTime += date.getTime() - lastSeen.getTime();
@@ -237,43 +106,63 @@ export class DB {
         watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
         watchTime.lastSeenOnStream = date.toJSON();
       }
-      this.insertWatchTime(watchTime);
+
+      await this.database.insert(watchtimes).values(watchTime);
     });
   }
 
-  public cleanDataBase() {
-    const toUpdate = this.notOfflineQuery.all() as WatchTime[];
-    toUpdate.forEach((watchTime) => {
+  public async cleanDataBase() {
+    const toUpdate = await this.database
+      .select()
+      .from(watchtimes)
+      .where(eq(watchtimes.inChat, 0));
+    toUpdate.forEach(async (watchTime) => {
       watchTime.inChat = 0;
 
-      this.insertWatchTime(watchTime);
+      await this.database.insert(watchtimes).values(watchTime);
     });
   }
 
-  public getOrSetConfig(key: string, defaultValue: any): any {
-    const config = this.getConfig.get(key) as { key: string; value: any };
-    if (config) return config.value;
-    this.setConfigQuery({ key: key, value: defaultValue });
+  public async getOrSetConfig<T>(
+    key: string,
+    defaultValue: T,
+  ): Promise<T> {
+    const config = (
+      await this.database
+        .select()
+        .from(customConfig)
+        .where(eq(customConfig.key, key))
+    )[0];
+    if (config) return config.value as T;
+    await this.database
+      .insert(customConfig)
+      .values({ key, value: defaultValue });
     return defaultValue;
   }
 
-  public setConfig(key: string, value: any) {
-    this.setConfigQuery({ key: key, value: value });
+  public async setConfig<T>(key: string, value: T) {
+    await this.database.insert(customConfig).values({ key, value });
   }
 
-  public getWatchTime(id: string): WatchTime {
-    return this.getWatchTimeQuery.get(id) as WatchTime;
+  public async getWatchTime(id: string): Promise<WatchTime> {
+    return (
+      await this.database
+        .select()
+        .from(watchtimes)
+        .where(eq(watchtimes.userId, id))
+    )[0];
   }
 
-  public getTopWatchTime(isOffline: boolean): WatchTime[] {
-    if (isOffline) {
-      return this.getTopWatchTimeQueryOffline.all() as WatchTime[];
-    }
-    return this.getTopWatchTimeQuery.all() as WatchTime[];
+  public async getTopWatchTime(isOffline: boolean): Promise<WatchTime[]> {
+    return await this.database
+      .select()
+      .from(watchtimes)
+      .orderBy(isOffline ? desc(watchtimes.inChat) : desc(watchtimes.watchTime))
+      .limit(3);
   }
 
-  public addToUser(userId: string, time: number) {
-    const watchTime = this.getWatchTime(userId);
+  public async addToUser(userId: string, time: number) {
+    const watchTime = await this.getWatchTime(userId);
     const date = new Date();
     if (watchTime == null) {
       const newWatchTime: WatchTime = {
@@ -284,18 +173,18 @@ export class DB {
         chatTime: 0,
         inChat: 0,
       };
-      this.insertWatchTime(newWatchTime);
+      await this.database.insert(watchtimes).values(newWatchTime);
       return;
     }
     watchTime.watchTime += time;
-    this.insertWatchTime(watchTime);
+    await this.database.insert(watchtimes).values(watchTime);
     return;
   }
 
-  public userLeave(id: string, isStreamOnline: boolean) {
+  public async userLeave(id: string, isStreamOnline: boolean) {
     if (id === "400510439") return;
     try {
-      const watchTime = this.getWatchTime(id);
+      const watchTime = await this.getWatchTime(id);
       const date = new Date();
       if (watchTime == null) {
         const newWatchTime: WatchTime = {
@@ -306,7 +195,8 @@ export class DB {
           chatTime: 0,
           inChat: 0,
         };
-        this.insertWatchTime(newWatchTime);
+
+        await this.database.insert(watchtimes).values(newWatchTime);
         return;
       }
       if (watchTime.inChat == 0) return;
@@ -323,17 +213,18 @@ export class DB {
       }
       watchTime.lastSeen = date.toJSON();
       watchTime.inChat = 0;
-      this.insertWatchTime(watchTime);
+
+      await this.database.insert(watchtimes).values(watchTime);
     } catch (e) {
       console.error(e);
     }
   }
 
-  public userJoin(id: string, isStreamOnline: boolean) {
+  public async userJoin(id: string, isStreamOnline: boolean) {
     if (id === "400510439") return;
     try {
       const newStatus = isStreamOnline ? 2 : 1;
-      const watchTime = this.getWatchTime(id);
+      const watchTime = await this.getWatchTime(id);
       const date = new Date();
       if (watchTime == null) {
         const newWatchTime: WatchTime = {
@@ -344,7 +235,8 @@ export class DB {
           chatTime: 0,
           inChat: newStatus,
         };
-        this.insertWatchTime(newWatchTime);
+
+        await this.database.insert(watchtimes).values(newWatchTime);
         return;
       }
       if (watchTime.inChat == newStatus) return;
@@ -353,37 +245,51 @@ export class DB {
       if (isStreamOnline) watchTime.lastSeenOnStream = date.toJSON();
       else watchTime.lastSeen = date.toJSON();
 
-      this.insertWatchTime(watchTime);
+      await this.database.insert(watchtimes).values(watchTime);
     } catch (e) {
       console.error(`${e} ${id} ${isStreamOnline}`);
     }
   }
 
-  public hapbooReaction(userId: string) {
-    const hapbooReaction = this.getHapbooReaction.get(userId) as HapbooReaction;
+  public async hapbooReaction(userId: string) {
+    const hapbooReaction = await this.getHapbooReactions(userId);
     if (hapbooReaction == null) {
-      const newHapbooReaction: HapbooReaction = {
-        userId: userId,
+      await this.database.insert(hapboo).values({
+        userId,
         times: 1,
-      };
-      this.insertHapbooReaction(newHapbooReaction);
+      });
       return;
     }
-    hapbooReaction.times++;
-    this.insertHapbooReaction(hapbooReaction);
+    await this.database
+      .insert(hapboo)
+      .values({ userId, times: hapbooReaction + 1 });
   }
 
-  public getTopHapbooReactions(): HapbooReaction[] {
-    return this.getHapbooReactionSorted.all() as HapbooReaction[];
+  public async getTopHapbooReactions(): Promise<HapbooReaction[]> {
+    return await this.database
+      .select()
+      .from(hapboo)
+      .orderBy(desc(hapboo.times));
   }
 
-  public reaction(userId: string, emoteId: string, number: number) {
-    const reactionUsage = this.getReactionStat.get(
-      userId,
-      emoteId,
-    ) as EmoteStat;
+  async getEmoteStat(userId: string, emoteId: string): Promise<EmoteStat> {
+    return (
+      await this.database
+        .select()
+        .from(reactionstats)
+        .where(
+          and(
+            eq(reactionstats.userId, userId),
+            eq(reactionstats.emoteId, emoteId),
+          ),
+        )
+    )[0];
+  }
+
+  public async reaction(userId: string, emoteId: string, number: number) {
+    const reactionUsage = await this.getEmoteStat(userId, emoteId);
     if (reactionUsage == null) {
-      this.insertReactionStat({
+      await this.database.insert(reactionstats).values({
         userId: userId,
         emoteId: emoteId,
         times: 1,
@@ -391,56 +297,130 @@ export class DB {
       return;
     }
     reactionUsage.times += number;
-    this.insertReactionStat(reactionUsage);
+    await this.database.insert(reactionstats).values(reactionUsage);
   }
 
-  public emoteUsage(userId: string, emoteId: string, number: number) {
-    const emoteUsage = this.getEmoteStat.get(userId, emoteId) as EmoteStat;
+  public async emoteUsage(userId: string, emoteId: string, number: number) {
+    const emoteUsage = await this.getEmoteStat(userId, emoteId);
     if (emoteUsage == null) {
-      this.insertEmoteStat({ userId: userId, emoteId: emoteId, times: 1 });
+      this.database
+        .insert(emotestats)
+        .values({ userId: userId, emoteId: emoteId, times: 1 });
       return;
     }
     emoteUsage.times += number;
-    this.insertEmoteStat(emoteUsage);
+
+    this.database.insert(emotestats).values(emoteUsage);
   }
 
-  public getUserEmoteUsage(userId: string): EmoteStat[] {
-    return this.getUserEmoteStat.all(userId) as EmoteStat[];
+  public async getUserEmoteUsage(userId: string): Promise<EmoteStat[]> {
+    return await this.database
+      .select()
+      .from(emotestats)
+      .where(eq(emotestats.userId, userId));
   }
 
-  public getUserReactionUsage(userId: string): EmoteStat[] {
-    return this.getUserReactionStat.all(userId) as EmoteStat[];
+  public async getUserReactionUsage(userId: string): Promise<EmoteStat[]> {
+    return await this.database
+      .select()
+      .from(reactionstats)
+      .where(eq(reactionstats.userId, userId));
   }
 
-  public getUserReactionAndEmoteUsage(userId: string): EmoteStat[] {
-    return this.getUserTotalStat.all(userId) as EmoteStat[];
+  public async getUserReactionAndEmoteUsage(
+    userId: string,
+  ): Promise<EmoteStat[]> {
+    return (
+      await this.database
+        .select()
+        .from(combinedemotestats)
+        .where(eq(combinedemotestats.userId, userId))
+    ).map((stat) => {
+      return {
+        userId: stat.userId,
+        emoteId: stat.emoteId,
+        times: stat.totaltimes,
+      };
+    });
   }
 
-  public getTopEmoteUsers(): EmoteStat[] {
-    return this.topEmoteUsers.all() as EmoteStat[];
+  public async getTopEmoteUsers(): Promise<
+    { userId: string; times: number }[]
+  > {
+    return await this.database
+      .select({
+        userId: emotestats.userId,
+        times: sql<number>`sum(${emotestats.times})`.mapWith(Number),
+      })
+      .from(emotestats)
+      .groupBy(emotestats.userId)
+      .orderBy(sql`sum(${emotestats.times}) desc`);
   }
 
-  public getTopReactionUsers(): EmoteStat[] {
-    return this.topReactionUsers.all() as EmoteStat[];
+  public async getTopReactionUsers(): Promise<
+    { userId: string; times: number }[]
+  > {
+    return await this.database
+      .select({
+        userId: reactionstats.userId,
+        times: sql<number>`sum(${reactionstats.times})`.mapWith(Number),
+      })
+      .from(emotestats)
+      .groupBy(emotestats.userId)
+      .orderBy(sql`sum(${reactionstats.times}) desc`);
   }
 
-  public getTopEmoteAndReactionUsers(): EmoteStat[] {
-    return this.getTopTotalUsers.all() as EmoteStat[];
+  public async getTopEmoteAndReactionUsers(): Promise<
+    { userId: string; times: number }[]
+  > {
+    return await this.database
+      .select({
+        userId: combinedemotestats.userId,
+        times: sql<number>`sum(${combinedemotestats.totaltimes})`.mapWith(
+          Number,
+        ),
+      })
+      .from(emotestats)
+      .groupBy(emotestats.userId)
+      .orderBy(sql`sum(${combinedemotestats.totaltimes}) desc`);
   }
 
-  public getTopEmotes(): EmoteStat[] {
-    return this.topEmotes.all() as EmoteStat[];
+  public async getTopEmotes(): Promise<{ emoteId: string; times: number }[]> {
+    return await this.database
+      .select({
+        emoteId: emotestats.emoteId,
+        times: sql<number>`sum(${emotestats.times})`.mapWith(Number),
+      })
+      .from(emotestats)
+      .groupBy(emotestats.emoteId)
+      .orderBy(sql`sum(${emotestats.times}) desc`);
   }
 
-  public getTopReactions(): EmoteStat[] {
-    return this.topReactions.all() as EmoteStat[];
+  public async getTopReactions(): Promise<
+    { emoteId: string; times: number }[]
+  > {
+    return await this.database
+      .select({
+        emoteId: reactionstats.emoteId,
+        times: sql<number>`sum(${reactionstats.times})`.mapWith(Number),
+      })
+      .from(emotestats)
+      .groupBy(emotestats.emoteId)
+      .orderBy(sql`sum(${reactionstats.times}) desc`);
   }
 
-  public getTopTotal(): EmoteStat[] {
-    return this.topTotal.all() as EmoteStat[];
+  public async getTopTotal(): Promise<{ emoteId: string; times: number }[]> {
+    return await this.database
+      .select({
+        emoteId: combinedemotestats.emoteId,
+        times: sql<number>`sum(${combinedemotestats.totaltimes})`.mapWith(
+          Number,
+        ),
+      })
+      .from(emotestats)
+      .groupBy(emotestats.emoteId)
+      .orderBy(sql`sum(${combinedemotestats.totaltimes}) desc`);
   }
 
-  public cleanUp() {
-    this.database.close();
-  }
+  public cleanUp() {}
 }

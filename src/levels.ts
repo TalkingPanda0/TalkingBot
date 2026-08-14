@@ -4,7 +4,7 @@ import { TalkingBot } from "./talkingbot";
 export class LevelManager {
   recentChatters: Set<string> = new Set();
   bot: TalkingBot;
-  interval: Timer | null = null; 
+  interval: Timer | null = null;
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -17,8 +17,7 @@ export class LevelManager {
   }
 
   public onStreamOffline() {
-    if(this.interval == null) 
-      return;
+    if (this.interval == null) return;
     clearInterval(this.interval);
     this.interval = null;
   }
@@ -40,12 +39,13 @@ export class LevelManager {
     this.recentChatters.add(chatter);
   }
 
-  levelUp() {
+  async levelUp() {
     if (!this.bot.twitch.isStreamOnline) return;
 
-    const levels = JSON.parse(
-      this.bot.database.getOrSetConfig("levels", JSON.stringify({})),
-    );
+    const levels = (await this.bot.database.getOrSetConfig(
+      "levels",
+      {},
+    )) as any;
 
     for (const chatter of this.recentChatters) {
       levels[chatter] = levels[chatter] ? levels[chatter] + 1 : 1;
@@ -57,9 +57,7 @@ export class LevelManager {
   }
 
   getChatPoints(chatter: string) {
-    const levels = JSON.parse(
-      this.bot.database.getOrSetConfig("levels", JSON.stringify({})),
-    );
+    const levels = this.bot.database.getOrSetConfig("levels", {}) as any;
 
     return levels[chatter];
   }
