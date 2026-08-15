@@ -5,16 +5,17 @@ import {
   getSuffix,
   getTimeDifference,
   hashMaptoArray,
+  levelToXp,
   milliSecondsToString,
   removeByIndexToUppercase,
   replaceAsync,
+  xpToLevel,
 } from "./util";
 
 import { HelixGame } from "@twurple/api";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
-import { UserIdentifier } from "./users";
 
 import { MessageData } from "botModule";
 
@@ -714,26 +715,41 @@ export class MessageHandler {
       },
     ],
     [
+      "!level",
+      {
+        showOnChat: false,
+        commandFunction: async (data) => {
+          const user = await this.bot.userManager.getUser(data);
+          const currentLevel = xpToLevel(user.xp);
+          const currentLevelPoints = levelToXp(currentLevel);
+
+          data.reply(
+            `You are at level ${currentLevel}, you have ${user.xp - currentLevelPoints}/${levelToXp(xpToLevel(user.xp) + 1) - currentLevelPoints} xp.`,
+            true,
+          );
+        },
+      },
+    ],
+    [
       "!color",
       {
         showOnChat: false,
-        commandFunction: (data) => {
-          const id: UserIdentifier = {
-            platform: data.platform,
-            username: data.username || "",
-          };
+        commandFunction: async (data) => {
           switch (data.message.trim()) {
             case "": {
-              const user = this.bot.users.getUser(id);
-              data.reply(`Your color is currently set to ${user.color}.`, true);
+              const user = await this.bot.userManager.getUser(data);
+              data.reply(
+                `Your color is currently set to ${user.customColor ?? user.color}.`,
+                true,
+              );
               break;
             }
             case "clear":
-              this.bot.users.setColor(id, undefined);
+              await this.bot.userManager.setCustomColor(data, null);
               data.reply(`Your color has been cleared.`, true);
               break;
             default:
-              this.bot.users.setColor(id, data.message);
+              await this.bot.userManager.setCustomColor(data, data.message);
               data.reply(`Updated your color to ${data.message}.`, true);
               break;
           }
@@ -744,21 +760,30 @@ export class MessageHandler {
       "!nickname",
       {
         showOnChat: false,
-        commandFunction: (data) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod) return;
 
           const args = data.message.split(" ");
 
           const username = args[0];
           const nickname = args.splice(1).join(" ");
-          const id = { platform: data.platform, username: username };
+
+          const user = await this.bot.userManager.findUser(username);
+          if(!user) {
+            data.reply(`Can't find user ${username}.`,true);
+            return;
+          }
 
           if (nickname) {
-            this.bot.users.setNickname(id, nickname);
+            await this.bot.userManager.setUserCustomName(user, nickname);
             data.reply(`${username} has been nicknamed to ${nickname}.`, true);
           } else {
-            const user = this.bot.users.getUser(id);
-            data.reply(`${username} is nicknamed to ${user.nickname}`, true);
+            if (user.customName)
+              data.reply(
+                `${username} is nicknamed to ${user.customName}`,
+                true,
+              );
+            else data.reply(`${username} is currently not nicknamed.`, true);
           }
         },
       },
@@ -767,13 +792,12 @@ export class MessageHandler {
       "!unnickname",
       {
         showOnChat: false,
-        commandFunction: (data) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod) return;
           const args = data.message.split(" ");
           const username = args[0];
 
-          const id = { platform: data.platform, username: username };
-          this.bot.users.setNickname(id, undefined);
+          await this.bot.userManager.setCustomName(data, null);
           data.reply(`${username} is now not nicknamed.`, true);
         },
       },
@@ -954,17 +978,14 @@ export class MessageHandler {
   }
 
   public async handleMessage(data: MessageData) {
-    const id: UserIdentifier = {
-      platform: data.platform,
-      username: data.sender,
-    };
-    const user = this.bot.users.getUser(id);
+    data.id = `${data.platform}-${data.id}`;
+    data.senderId = `${data.platform}-${data.senderId}`;
+    data.replyId = `${data.platform}-${data.replyId}`;
 
-    this.bot.users.setRealColor(id, data.color);
+    const user = await this.bot.userManager.handleMessage(data);
 
-    data.username = data.sender;
-    data.sender = user.nickname ?? data.sender;
-    data.color = user.color ?? data.color;
+    data.sender = user.customName ?? data.sender;
+    data.color = user.customColor ?? data.color;
 
     if (data.isUserMod)
       this.bot.credits.addToCredits(
@@ -980,16 +1001,10 @@ export class MessageHandler {
       CreditType.Chatter,
     );
 
-    if (this.bot.twitch.isStreamOnline) this.bot.LevelManager.addRecentChatter(data);
-
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     this.bot.moduleManager.onChatMessage(data);
-
-    data.id = `${data.platform}-${data.id}`;
-    data.senderId = `${data.platform}-${data.senderId}`;
-    data.replyId = `${data.platform}-${data.replyId}`;
 
     this.sendToChatList(data);
   }
@@ -1103,8 +1118,11 @@ export class MessageHandler {
     context.isUserSub = data.isUserSub;
     context.args = data.message.split(" ");
     context.platform = data.platform;
-    context.getOrSetConfig = async (key: string, defaultValue: unknown): Promise<unknown> => {
-        return await this.bot.database.getOrSetConfig(key, defaultValue);
+    context.getOrSetConfig = async (
+      key: string,
+      defaultValue: unknown,
+    ): Promise<unknown> => {
+      return await this.bot.database.getOrSetConfig(key, defaultValue);
     };
     context.setConfig = async (key: string, value: unknown) => {
       return await this.bot.database.setConfig(key, value);
@@ -1135,7 +1153,6 @@ export class MessageHandler {
       }
     };
 
-    context.users = this.bot.users;
     context.sendInDiscord = (message: string, channelId: string) =>
       this.bot.discord.say(message, channelId);
     context.getTimeDifference = getTimeDifference;

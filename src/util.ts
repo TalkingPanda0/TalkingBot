@@ -165,3 +165,13 @@ export function toPascalCase(input: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join("");
 }
+
+//level = (1.5th root of xp)/8
+export function xpToLevel(points: number): number {
+  const level = Math.pow(points, 1 / 1.5) / 8;
+  return Math.floor(level);
+}
+
+export function levelToXp(level: number): number {
+    return Math.round(Math.pow(level * 8, 1.5));
+}

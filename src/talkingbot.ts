@@ -8,10 +8,8 @@ import * as http from "http";
 import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
 import { Credits } from "./credits";
-import { Users } from "./users";
 import { Poll } from "./poll";
 
-import { LevelManager } from "./levels";
 import { ModuleManager } from "./moduleManager";
 import { ChatLogger } from "./chatLogger";
 import {
@@ -23,6 +21,7 @@ import {
   getSubAudio,
 } from "./alerts";
 import { Canvas } from "fabric/fabric-impl";
+import { UserManager } from "./users";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -86,14 +85,13 @@ export class TalkingBot {
   public connectedtoOverlay: boolean = false;
   public database: DB;
   public chatLogger: ChatLogger;
-  public LevelManager: LevelManager;
   public commandHandler: MessageHandler;
   public latestSub: latestSub | null = null;
-  public modtext: string | null = null; 
+  public modtext: string | null = null;
   public modtextCanvas: Canvas | null = null;
   public ttsManager: TTSManager;
   public credits: Credits;
-  public users: Users;
+  public userManager: UserManager;
   public moduleManager: ModuleManager;
   private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
   public jwtSecret: string | null = null;
@@ -139,8 +137,7 @@ export class TalkingBot {
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.moduleManager = new ModuleManager(this);
-    this.users = new Users(this.database);
-    this.LevelManager = new LevelManager(this);
+    this.userManager = new UserManager(this);
   }
 
   public async initBot() {
@@ -151,13 +148,15 @@ export class TalkingBot {
 
     this.discord.initBot();
     await this.twitch.initBot();
-    this.users.init();
     this.commandHandler.init();
     this.moduleManager.init();
 
     this.latestSub = await this.database.getOrSetConfig("latestSub", null);
     this.modtext = await this.database.getOrSetConfig("currentModtext", null);
-    this.modtextCanvas = await this.database.getOrSetConfig("currentModtextCanvas", null);
+    this.modtextCanvas = await this.database.getOrSetConfig(
+      "currentModtextCanvas",
+      null,
+    );
 
     this.updateModText();
     this.updateModTextCanvas();
@@ -165,11 +164,11 @@ export class TalkingBot {
   }
 
   public onStreamOnline() {
-    this.LevelManager.onStreamOnline();
+    this.userManager.onStreamOnline();
   }
 
   public onStreamOffline() {
-    this.LevelManager.onStreamOffline();
+    this.userManager.onStreamOffline();
   }
 
   public async cleanUp() {

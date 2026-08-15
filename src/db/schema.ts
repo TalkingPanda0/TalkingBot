@@ -83,6 +83,15 @@ export const chatMessages = sqliteTable("chat_messages", {
   timestamp: numeric().notNull(),
 });
 
+export const users = sqliteTable("users", {
+  id: text().primaryKey(),
+  userName: text().notNull(),
+  color: text().notNull(),
+  customName: text(),
+  customColor: text(),
+  xp: integer().notNull(),
+});
+
 export const combinedemotestats = sqliteView("combinedemotestats", {
   userId: text().notNull(),
   emoteId: text().notNull(),
