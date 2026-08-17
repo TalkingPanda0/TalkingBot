@@ -19,11 +19,13 @@ interface WatchTime {
   chatTime: number; // in ms
   inChat: number; // 0: not in chat, 1: in offline chat, 2: watching
 }
+
 export interface EmoteStat {
   userId: string;
   emoteId: string;
   times: number;
 }
+
 interface HapbooReaction {
   userId: string;
   times: number;
@@ -55,6 +57,7 @@ export class DB {
           .where(inArray(emotestats.emoteId, emoteList))
           .groupBy(emotestats.userId)
           .orderBy(desc(emotestats.times));
+
       case "reactions":
         return await this.database
           .select({
@@ -65,6 +68,7 @@ export class DB {
           .where(inArray(reactionstats.emoteId, emoteList))
           .groupBy(reactionstats.userId)
           .orderBy(desc(reactionstats.times));
+
       case "both":
       default:
         return await this.database
@@ -84,10 +88,8 @@ export class DB {
       .select({ times: hapboo.times })
       .from(hapboo)
       .where(eq(hapboo.userId, id));
-    if (reactions[0]) {
-      return reactions[0].times;
-    }
-    return null;
+
+    return reactions[0]?.times ?? null;
   }
 
   public async updateDataBase(inChat: number) {
@@ -95,34 +97,45 @@ export class DB {
       .select()
       .from(watchtimes)
       .where(eq(watchtimes.inChat, inChat));
-    const date = new Date();
-    toUpdate.forEach(async (watchTime) => {
-      if (inChat == 1) {
-        const lastSeen = new Date(watchTime.lastSeen);
-        watchTime.chatTime += date.getTime() - lastSeen.getTime();
-        watchTime.lastSeen = date.toJSON();
-      } else {
-        const lastSeenOnStream = new Date(
-          watchTime.lastSeenOnStream ?? Date.now(),
-        );
-        watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
-        watchTime.lastSeenOnStream = date.toJSON();
-      }
 
-      await this.database.insert(watchtimes).values(watchTime);
-    });
+    const date = new Date();
+
+    await Promise.all(
+      toUpdate.map(async (watchTime) => {
+        if (inChat === 1) {
+          const lastSeen = new Date(watchTime.lastSeen);
+
+          watchTime.chatTime += date.getTime() - lastSeen.getTime();
+          watchTime.lastSeen = date.toJSON();
+        } else {
+          const lastSeenOnStream = new Date(
+            watchTime.lastSeenOnStream ?? Date.now(),
+          );
+
+          watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
+
+          watchTime.lastSeenOnStream = date.toJSON();
+        }
+
+        await this.database
+          .update(watchtimes)
+          .set({
+            lastSeenOnStream: watchTime.lastSeenOnStream,
+            watchTime: watchTime.watchTime,
+            lastSeen: watchTime.lastSeen,
+            chatTime: watchTime.chatTime,
+            inChat: watchTime.inChat,
+          })
+          .where(eq(watchtimes.userId, watchTime.userId));
+      }),
+    );
   }
 
   public async cleanDataBase() {
-    const toUpdate = await this.database
-      .select()
-      .from(watchtimes)
+    await this.database
+      .update(watchtimes)
+      .set({ inChat: 0 })
       .where(eq(watchtimes.inChat, 0));
-    toUpdate.forEach(async (watchTime) => {
-      watchTime.inChat = 0;
-
-      await this.database.insert(watchtimes).values(watchTime);
-    });
   }
 
   public async getOrSetConfig<T>(key: string, defaultValue: T): Promise<T> {
@@ -132,7 +145,9 @@ export class DB {
         .from(customConfig)
         .where(eq(customConfig.key, key))
     ).at(0);
+
     if (config) return config.value as T;
+
     await this.setConfig(key, defaultValue);
     return defaultValue;
   }
@@ -141,7 +156,10 @@ export class DB {
     await this.database
       .insert(customConfig)
       .values({ key, value })
-      .onConflictDoUpdate({ target: customConfig.key, set: { value: value } });
+      .onConflictDoUpdate({
+        target: customConfig.key,
+        set: { value },
+      });
   }
 
   public async getWatchTime(id: string): Promise<WatchTime | undefined> {
@@ -163,58 +181,75 @@ export class DB {
 
   public async addToUser(userId: string, time: number) {
     const watchTime = await this.getWatchTime(userId);
-    const date = new Date();
+
     if (watchTime == null) {
-      const newWatchTime: WatchTime = {
-        userId: userId,
+      const date = new Date();
+
+      await this.database.insert(watchtimes).values({
+        userId,
         lastSeenOnStream: null,
         watchTime: time,
         lastSeen: date.toJSON(),
         chatTime: 0,
         inChat: 0,
-      };
-      await this.database.insert(watchtimes).values(newWatchTime);
+      });
+
       return;
     }
-    watchTime.watchTime += time;
-    await this.database.insert(watchtimes).values(watchTime);
-    return;
+
+    await this.database
+      .update(watchtimes)
+      .set({
+        watchTime: watchTime.watchTime + time,
+      })
+      .where(eq(watchtimes.userId, userId));
   }
 
   public async userLeave(id: string, isStreamOnline: boolean) {
     if (id === "400510439") return;
+
     try {
       const watchTime = await this.getWatchTime(id);
       const date = new Date();
+
       if (watchTime == null) {
-        const newWatchTime: WatchTime = {
+        await this.database.insert(watchtimes).values({
           userId: id,
           lastSeenOnStream: isStreamOnline ? date.toJSON() : null,
           watchTime: 0,
           lastSeen: date.toJSON(),
           chatTime: 0,
           inChat: 0,
-        };
+        });
 
-        await this.database.insert(watchtimes).values(newWatchTime);
         return;
       }
-      if (watchTime.inChat == 0) return;
 
-      if (isStreamOnline && watchTime.inChat == 2) {
-        if (watchTime.lastSeenOnStream != null) {
-          const lastSeenOnStream = new Date(watchTime.lastSeenOnStream);
-          watchTime.watchTime += date.getTime() - lastSeenOnStream.getTime();
+      if (watchTime.inChat === 0) return;
+
+      let { watchTime: totalWatchTime, chatTime, lastSeenOnStream } = watchTime;
+
+      if (isStreamOnline && watchTime.inChat === 2) {
+        if (lastSeenOnStream != null) {
+          totalWatchTime +=
+            date.getTime() - new Date(lastSeenOnStream).getTime();
         }
-        watchTime.lastSeenOnStream = date.toJSON();
-      } else {
-        const lastSeen = new Date(watchTime.lastSeen);
-        watchTime.chatTime += date.getTime() - lastSeen.getTime();
-      }
-      watchTime.lastSeen = date.toJSON();
-      watchTime.inChat = 0;
 
-      await this.database.insert(watchtimes).values(watchTime);
+        lastSeenOnStream = date.toJSON();
+      } else {
+        chatTime += date.getTime() - new Date(watchTime.lastSeen).getTime();
+      }
+
+      await this.database
+        .update(watchtimes)
+        .set({
+          lastSeenOnStream,
+          watchTime: totalWatchTime,
+          lastSeen: date.toJSON(),
+          chatTime,
+          inChat: 0,
+        })
+        .where(eq(watchtimes.userId, id));
     } catch (e) {
       console.error(e);
     }
@@ -222,47 +257,54 @@ export class DB {
 
   public async userJoin(id: string, isStreamOnline: boolean) {
     if (id === "400510439") return;
+
     try {
       const newStatus = isStreamOnline ? 2 : 1;
       const watchTime = await this.getWatchTime(id);
       const date = new Date();
+
       if (watchTime == null) {
-        const newWatchTime: WatchTime = {
+        await this.database.insert(watchtimes).values({
           userId: id,
           lastSeenOnStream: isStreamOnline ? date.toJSON() : null,
           watchTime: 0,
           lastSeen: date.toJSON(),
           chatTime: 0,
           inChat: newStatus,
-        };
+        });
 
-        await this.database.insert(watchtimes).values(newWatchTime);
         return;
       }
-      if (watchTime.inChat == newStatus) return;
-      watchTime.inChat = newStatus;
 
-      if (isStreamOnline) watchTime.lastSeenOnStream = date.toJSON();
-      else watchTime.lastSeen = date.toJSON();
+      if (watchTime.inChat === newStatus) return;
 
-      await this.database.insert(watchtimes).values(watchTime);
+      await this.database
+        .update(watchtimes)
+        .set({
+          inChat: newStatus,
+          ...(isStreamOnline
+            ? { lastSeenOnStream: date.toJSON() }
+            : { lastSeen: date.toJSON() }),
+        })
+        .where(eq(watchtimes.userId, id));
     } catch (e) {
       console.error(`${e} ${id} ${isStreamOnline}`);
     }
   }
 
   public async hapbooReaction(userId: string) {
-    const hapbooReaction = await this.getHapbooReactions(userId);
-    if (hapbooReaction == null) {
-      await this.database.insert(hapboo).values({
-        userId,
-        times: 1,
-      });
-      return;
-    }
     await this.database
       .insert(hapboo)
-      .values({ userId, times: hapbooReaction + 1 });
+      .values({
+        userId,
+        times: 1,
+      })
+      .onConflictDoUpdate({
+        target: hapboo.userId,
+        set: {
+          times: sql`${hapboo.times} + 1`,
+        },
+      });
   }
 
   public async getTopHapbooReactions(): Promise<HapbooReaction[]> {
@@ -290,30 +332,35 @@ export class DB {
   }
 
   public async reaction(userId: string, emoteId: string, number: number) {
-    const reactionUsage = await this.getEmoteStat(userId, emoteId);
-    if (reactionUsage == null) {
-      await this.database.insert(reactionstats).values({
-        userId: userId,
-        emoteId: emoteId,
-        times: 1,
+    await this.database
+      .insert(reactionstats)
+      .values({
+        userId,
+        emoteId,
+        times: number,
+      })
+      .onConflictDoUpdate({
+        target: [reactionstats.userId, reactionstats.emoteId],
+        set: {
+          times: sql`${reactionstats.times} + ${number}`,
+        },
       });
-      return;
-    }
-    reactionUsage.times += number;
-    await this.database.insert(reactionstats).values(reactionUsage);
   }
 
   public async emoteUsage(userId: string, emoteId: string, number: number) {
-    const emoteUsage = await this.getEmoteStat(userId, emoteId);
-    if (emoteUsage == null) {
-      await this.database
-        .insert(emotestats)
-        .values({ userId: userId, emoteId: emoteId, times: number });
-      return;
-    }
-    emoteUsage.times += number;
-
-    await this.database.insert(emotestats).values(emoteUsage);
+    await this.database
+      .insert(emotestats)
+      .values({
+        userId,
+        emoteId,
+        times: number,
+      })
+      .onConflictDoUpdate({
+        target: [emotestats.userId, emotestats.emoteId],
+        set: {
+          times: sql`${emotestats.times} + ${number}`,
+        },
+      });
   }
 
   public async getUserEmoteUsage(userId: string): Promise<EmoteStat[]> {
@@ -338,13 +385,11 @@ export class DB {
         .select()
         .from(combinedemotestats)
         .where(eq(combinedemotestats.userId, userId))
-    ).map((stat) => {
-      return {
-        userId: stat.userId,
-        emoteId: stat.emoteId,
-        times: stat.totaltimes,
-      };
-    });
+    ).map((stat) => ({
+      userId: stat.userId,
+      emoteId: stat.emoteId,
+      times: stat.totaltimes,
+    }));
   }
 
   public async getTopEmoteUsers(): Promise<
@@ -368,8 +413,8 @@ export class DB {
         userId: reactionstats.userId,
         times: sql<number>`sum(${reactionstats.times})`.mapWith(Number),
       })
-      .from(emotestats)
-      .groupBy(emotestats.userId)
+      .from(reactionstats)
+      .groupBy(reactionstats.userId)
       .orderBy(sql`sum(${reactionstats.times}) desc`);
   }
 
@@ -383,8 +428,8 @@ export class DB {
           Number,
         ),
       })
-      .from(emotestats)
-      .groupBy(emotestats.userId)
+      .from(combinedemotestats)
+      .groupBy(combinedemotestats.userId)
       .orderBy(sql`sum(${combinedemotestats.totaltimes}) desc`);
   }
 
@@ -407,8 +452,8 @@ export class DB {
         emoteId: reactionstats.emoteId,
         times: sql<number>`sum(${reactionstats.times})`.mapWith(Number),
       })
-      .from(emotestats)
-      .groupBy(emotestats.emoteId)
+      .from(reactionstats)
+      .groupBy(reactionstats.emoteId)
       .orderBy(sql`sum(${reactionstats.times}) desc`);
   }
 
@@ -420,8 +465,8 @@ export class DB {
           Number,
         ),
       })
-      .from(emotestats)
-      .groupBy(emotestats.emoteId)
+      .from(combinedemotestats)
+      .groupBy(combinedemotestats.emoteId)
       .orderBy(sql`sum(${combinedemotestats.totaltimes}) desc`);
   }
 

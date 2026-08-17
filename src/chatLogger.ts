@@ -44,6 +44,6 @@ export class ChatLogger {
       isOld: message.isOld ? 1 : 0,
       badges: JSON.stringify(message.badges),
       timestamp: message.timestamp.toISOString(),
-    });
+    }).onConflictDoNothing();
   }
 }
