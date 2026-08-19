@@ -35,6 +35,7 @@ import {
   getSubAudio,
 } from "./alerts";
 import { CONFIG } from "./env";
+import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -656,6 +657,7 @@ export class Twitch {
             this.redeemQueue.push(data);
             break;
           default:
+            this.bot.moduleManager.onChannelPointReward(data.rewardId, data);
             return;
         }
         if (completed == null) return;
@@ -988,6 +990,53 @@ export class Twitch {
 
     return parsed;
   }
+
+  public async channelPointReward(
+    reward: ChannelPointReward,
+  ): Promise<ChannelPointRewardStatus> {
+    const rewards = await this.apiClient.channelPoints.getCustomRewards(
+      this.channel.id,
+      true,
+    );
+    const title = reward.title.toLowerCase();
+    const found = rewards.find((e) => e.title.toLowerCase() == title);
+    if (!found) {
+      const created = await this.apiClient.channelPoints.createCustomReward(
+        this.channel.id,
+        reward,
+      );
+      return created;
+    }
+
+    if (
+      found.title != reward.title ||
+      found.cost != reward.cost ||
+      found.prompt != (reward.prompt ?? "") ||
+      found.autoFulfill != (reward.autoFulfill ?? false) ||
+      found.globalCooldown !=
+        (reward.globalCooldown == 0 ? null : reward.globalCooldown) ||
+      found.isEnabled != (reward.isEnabled ?? true) ||
+      found.userInputRequired != (reward.userInputRequired ?? false) ||
+      found.maxRedemptionsPerStream !=
+        (reward.maxRedemptionsPerStream == 0
+          ? null
+          : reward.maxRedemptionsPerStream) ||
+      found.maxRedemptionsPerUserPerStream !=
+        (reward.maxRedemptionsPerUserPerStream == 0
+          ? null
+          : reward.maxRedemptionsPerUserPerStream) ||
+      (reward.backgroundColor != null &&
+        found.backgroundColor != reward.backgroundColor)
+    )
+      return await this.apiClient.channelPoints.updateCustomReward(
+        this.channel.id,
+        found.id,
+        reward,
+      );
+
+    return found;
+  }
+
   public async sendStreamPing() {
     const stream =
       await this.apiClient.streams.getStreamByUserName("SweetbabooO_o");

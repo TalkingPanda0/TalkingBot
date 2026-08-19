@@ -4,6 +4,9 @@ import {
   ModuleContext,
   MessageData,
   DiscordMessageListener,
+  ChannelRedemptionListener,
+  ChannelRedemption,
+  ChannelPointRewardStatus,
 } from "botModule";
 
 import { Command } from "./commands";
@@ -21,16 +24,15 @@ export class ModuleManager {
   private modules: Map<
     string,
     { module: BotModule; cleanups: CleanupFunction[] } | null
-  >;
-  private messageListeners: MessageListener[];
-  private discordMessageListeners: DiscordMessageListener[];
+  > = new Map();
+  private messageListeners: MessageListener[] = [];
+  private discordMessageListeners: DiscordMessageListener[] = [];
+  private channelRedemptionListeners: Map<string, ChannelRedemptionListener> =
+    new Map();
   private bot: TalkingBot;
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-    this.modules = new Map();
-    this.messageListeners = [];
-    this.discordMessageListeners = [];
   }
 
   public onChatMessage(data: MessageData) {
@@ -38,6 +40,15 @@ export class ModuleManager {
   }
   public onDiscordMessage(data: Message) {
     this.discordMessageListeners.forEach((l) => l(data));
+  }
+  public async onChannelPointReward(
+    rewardId: string,
+    data: ChannelRedemption,
+  ): Promise<void> {
+    const listener = this.channelRedemptionListeners.get(rewardId);
+    if (!listener) return;
+
+    await listener(data);
   }
 
   private createModuleTemplate(name: string): string {
@@ -126,6 +137,13 @@ export default ${Name};`;
       );
     };
 
+    const addChannelPointListener = (
+      rewardId: string,
+      listener: ChannelRedemptionListener,
+    ) => {
+      this.channelRedemptionListeners.set(rewardId, listener);
+    };
+
     const context: ModuleContext = {
       bot: this.bot,
       onChatMessage(listener) {
@@ -147,6 +165,36 @@ export default ${Name};`;
             removeCommand(name);
           });
         }
+      },
+      async channelPointReward(reward): Promise<ChannelPointRewardStatus> {
+        return await this.bot.twitch.channelPointReward(reward);
+      },
+      onChannelPointReward(rewardId, listener) {
+        addChannelPointListener(rewardId, listener);
+      },
+      async removeChannelPoint(rewardId) {
+        await this.bot.twitch.apiClient.channelPoints.deleteCustomReward(
+          this.bot.twitch.channel.id,
+          rewardId,
+        );
+      },
+      async setChannelPointEnabled(rewardId, enabled) {
+        await this.bot.twitch.apiClient.channelPoints.updateCustomReward(
+          this.bot.twitch.channel.id,
+          rewardId,
+          {
+            isEnabled: enabled,
+          },
+        );
+      },
+      async setChannelPointPaused(rewardId, paused) {
+        await this.bot.twitch.apiClient.channelPoints.updateCustomReward(
+          this.bot.twitch.channel.id,
+          rewardId,
+          {
+            isPaused: paused,
+          },
+        );
       },
     };
     return { context, cleanups };

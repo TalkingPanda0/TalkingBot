@@ -52,9 +52,9 @@ export interface KofiEvent {
 export function isKofiEvent(obj: any): obj is KofiEvent {
   if (typeof obj !== "object" || obj === null) return false;
 
-  const isString = (val: any) => typeof val === "string";
-  const isBoolean = (val: any) => typeof val === "boolean";
-  const isNullableString = (val: any) =>
+  const isString = (val: unknown) => typeof val === "string";
+  const isBoolean = (val: unknown) => typeof val === "boolean";
+  const isNullableString = (val: unknown) =>
     val === null || typeof val === "string";
 
   const isShopItem = (item: any) =>
