@@ -1,4 +1,3 @@
-import { BunFile } from "bun";
 import {
   Client,
   Events,
@@ -29,6 +28,7 @@ import { MessageData } from "botModule";
 import { getRandomElement } from "botutil";
 import { getDiscordJoinAudio } from "./alerts";
 import { EmoteStat } from "./db";
+import { CONFIG } from "./env";
 
 const HAPBOOS = [
   ["<:commonhapboo:1302651100599554172>"],
@@ -53,59 +53,27 @@ export interface DiscordCommand {
 }
 
 export class Discord {
-  private token!: string;
-  public clientId!: string;
-  public clientSecret!: string;
-  public guildId!: string;
+  private token: string;
+  public clientId: string;
+  public clientSecret: string;
+  public guildId: string;
   private commands!: Collection<string, DiscordCommand>;
   private bot: TalkingBot;
   public client!: Client;
   private channel!: TextChannel;
   private shouldPing: boolean = true;
-  private discordFile: BunFile = Bun.file(
-    __dirname + "/../config/discord.json",
-  );
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+    this.token = CONFIG.discord.token;
+    this.clientId = CONFIG.discord.clientId;
+    this.clientSecret = CONFIG.discord.clientSecret;
+    this.guildId = CONFIG.discord.guildId;
   }
 
   public async registerDiscordCommand(command: DiscordCommand) {
     this.commands.set(command.commandBuilder.name, command);
     await this.updateCommands();
-  }
-
-  public async getAllMessages(channelId: string) {
-    const channel = this.client.channels.cache.get(channelId) as TextChannel;
-    const messages = [];
-
-    // Create message pointer
-    let message = await channel.messages
-      .fetch({ limit: 1 })
-      .then((messagePage) =>
-        messagePage.size === 1 ? messagePage.at(0) : null,
-      );
-    if (!message) {
-      console.error("Couldn't get first message.");
-      return;
-    }
-    messages.push(message.toJSON());
-
-    do {
-      await channel.messages
-        .fetch({ limit: 100, before: message.id })
-        .then((messagePage) => {
-          messagePage.forEach((msg) => messages.push(msg.toJSON()));
-
-          // Update our message pointer to be the last message on the page of messages
-          message =
-            0 < messagePage.size ? messagePage.at(messagePage.size - 1) : null;
-        });
-
-      console.log(`Got ${messages.length} messages so far...`);
-    } while (message);
-    console.log(`Got ${messages.length} messages.`);
-    await Bun.write("/dev/shm/discordLog", JSON.stringify(messages));
   }
 
   public cleanUp() {
@@ -158,17 +126,6 @@ export class Discord {
   }
 
   public async initBot() {
-    if (!(await this.discordFile.exists())) {
-      console.error("\x1b[34m%s\x1b[0m", "Discord.json doesn't exist");
-      return;
-    }
-    const fileContent = await this.discordFile.json();
-    this.token = fileContent.token;
-    this.clientId = fileContent.clientId;
-    this.clientSecret = fileContent.clientSecret;
-    this.guildId = fileContent.guildId;
-
-    if (this.token == null) return;
     this.client = new Client({
       intents: [
         GatewayIntentBits.Guilds,
@@ -728,10 +685,8 @@ export class Discord {
             return;
           }
 
-          const emotes: {userId: string, times: number}[] = await this.bot.database.getEmoteUsage(
-            emoteList,
-            filter,
-          );
+          const emotes: { userId: string; times: number }[] =
+            await this.bot.database.getEmoteUsage(emoteList, filter);
 
           if (emotes == null || emotes.length == 0) {
             await interaction.reply("Can't find emote.");
@@ -753,7 +708,7 @@ export class Discord {
                   value: emotes
                     .slice(start, start + 10)
                     .map((value, index) => {
-                        return `${index + start + 1}: <@${value.userId}> : ${value.times}`;
+                      return `${index + start + 1}: <@${value.userId}> : ${value.times}`;
                     })
                     .join("\n"),
                 },
@@ -869,7 +824,6 @@ export class Discord {
     try {
       const user = await this.channel.guild.members.fetch(userId);
       if (!user) return false;
-      if (userId == process.env.GOD_ID) return true;
       return user.roles.cache.has("886305448251261018");
     } catch (e) {
       console.error(`Failed getting isStreamMod for ${userId}: ${e}`);

@@ -34,6 +34,7 @@ import {
   getRaidAudio,
   getSubAudio,
 } from "./alerts";
+import { CONFIG } from "./env";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -55,11 +56,10 @@ export const userColors = [
 ];
 
 export class Twitch {
-  public clientId = "";
-  public clientSecret = "";
+  public clientId;
+  public clientSecret;
   public apiClient!: ApiClient;
   public channel!: HelixUser;
-  public publicClientId!: string;
   public chatClient!: ChatClient;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
@@ -70,7 +70,7 @@ export class Twitch {
   public badges = new Map<string, string>();
   public currentGame: string | null = null;
 
-  private channelName!: string;
+  private channelName: string;
   private eventListener!: EventSubListener;
   private bot: TalkingBot;
   private authProvider!: RefreshingAuthProvider;
@@ -80,7 +80,6 @@ export class Twitch {
   //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private eventSubSecret?: string;
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
-  private oauthFile = Bun.file(__dirname + "/../config/oauth.json");
   private broadcasterFile = Bun.file(
     __dirname + "/../config/token-broadcaster.json",
   );
@@ -91,6 +90,10 @@ export class Twitch {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+    this.clientId = CONFIG.twitch.clientId;
+    this.clientSecret = CONFIG.twitch.clientSecret;
+    this.channelName = CONFIG.twitch.channelName;
+    this.eventSubSecret = CONFIG.twitch.eventSubSecret;
   }
 
   // User hasn't set a color or failed to get the color, get a "random" color
@@ -157,14 +160,6 @@ export class Twitch {
     );
   }
 
-  public async readAuth() {
-    const fileContent = await this.oauthFile.json();
-    this.clientId = fileContent.clientId;
-    this.clientSecret = fileContent.clientSecret;
-    this.channelName = fileContent.channelName;
-    this.publicClientId = fileContent.publicApikey;
-    this.eventSubSecret = fileContent.eventSubSecret;
-  }
   private async handleMessage(
     channel: string,
     user: string,
@@ -325,7 +320,6 @@ export class Twitch {
   }
 
   async initBot(): Promise<void> {
-    await this.readAuth();
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
       clientSecret: this.clientSecret,

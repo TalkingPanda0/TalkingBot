@@ -18,6 +18,7 @@ import { exit } from "./app";
 import { CreditType } from "./credits";
 
 import { MessageData } from "botModule";
+import { CONFIG } from "./env";
 
 export interface Command {
   showOnChat: boolean;
@@ -29,7 +30,6 @@ export class MessageHandler {
   public counter!: Counter;
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
-  public keys: { steam: string } = { steam: "" };
   private timeout = new Set();
   private bot: TalkingBot;
   private customCommandMap = new Map<string, string>();
@@ -38,7 +38,6 @@ export class MessageHandler {
   private argsFile = Bun.file(__dirname + "/../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../config/commands.json");
   private aliasesFile = Bun.file(__dirname + "/../config/aliases.json");
-  private keysFile = Bun.file(__dirname + "/../config/keys.json");
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -636,7 +635,7 @@ export class MessageHandler {
             }
             const response = await (
               await fetch(
-                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json&include_played_free_games=true&appids_filter[0]=${game.appid}`,
+                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${CONFIG.keys.steam}&steamid=76561198800357802&format=json&include_played_free_games=true&appids_filter[0]=${game.appid}`,
               )
             ).json();
             if (response.response.game_count == 0) {
@@ -1018,7 +1017,6 @@ export class MessageHandler {
     if (!(await this.argsFile.exists())) return;
     this.argMap = arraytoHashMap(await this.argsFile.json());
 
-    this.keys = await this.keysFile.json();
   }
 
   private writeCustomCommands() {

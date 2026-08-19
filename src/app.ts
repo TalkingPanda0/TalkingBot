@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
 import compression from "compression";
-dotenv.config({ path: __dirname + "/../config/.env" });
 import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
@@ -14,6 +12,7 @@ import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
 import { MessageData } from "botModule";
 import { readdir, rename } from "node:fs/promises";
+import { CONFIG } from "./env";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -53,11 +52,7 @@ app.get("/getMessages", async (req, res) => {
 
 app.use("/control", async (req, res) => {
   try {
-    if (!bot.jwtSecret) {
-      res.send(500);
-      return;
-    }
-    const decoded = verify(req.cookies.discord_auth, bot.jwtSecret);
+    const decoded = verify(req.cookies.discord_auth, CONFIG.secrets.jwt);
     if (!isDiscordAuthData(decoded)) {
       res.sendStatus(403);
       return;
@@ -75,7 +70,7 @@ app.use("/control", async (req, res) => {
     );
   } catch {
     // No discord_auth cookie was found
-    res.redirect(bot.discordLoginUri);
+    res.redirect(CONFIG.discord.loginUrl);
     return;
   }
 
@@ -421,12 +416,18 @@ app.use("/control", async (req, res) => {
 });
 
 app.post("/kofi/webhook", (req, res) => {
+
+  if(!CONFIG.secrets.kofi) {
+    res.sendStatus(500);
+  }
+
   const data = JSON.parse(req.body.data);
   if (!isKofiEvent(data)) {
     res.sendStatus(400);
     return;
   }
-  if (data.verification_token !== process.env.KOFI_SECRET) {
+
+  if (data.verification_token !== CONFIG.secrets.kofi) {
     res.sendStatus(403);
     return;
   }
@@ -468,11 +469,7 @@ app.get("/auth", async (req, res) => {
     res.sendStatus(403);
     return;
   }
-  if (!bot.jwtSecret) {
-    res.send(500);
-    return;
-  }
-  const token = sign(accessData, bot.jwtSecret);
+  const token = sign(accessData, CONFIG.secrets.jwt);
   res.set({
     "Set-Cookie": `discord_auth=${token};path=/control;max-age=${accessData.expires_in};HttpOnly;`,
     Location: "/control",

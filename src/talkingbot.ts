@@ -22,6 +22,7 @@ import {
 } from "./alerts";
 import { Canvas } from "fabric/fabric-impl";
 import { UserManager } from "./users";
+import { CONFIG } from "./env";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -93,13 +94,11 @@ export class TalkingBot {
   public credits: Credits;
   public userManager: UserManager;
   public moduleManager: ModuleManager;
-  private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
-  public jwtSecret: string | null = null;
-  public discordRedirectUri: string = "";
-  public discordLoginUri: string = "";
 
   constructor(server: http.Server) {
+
     const io = new Server(server);
+
     this.ttsManager = new TTSManager(io.of("tts"));
 
     this.iomodtext = io.of("modtext");
@@ -141,11 +140,6 @@ export class TalkingBot {
   }
 
   public async initBot() {
-    const secrets = await this.secretsFile.json();
-    this.jwtSecret = secrets.jwtSecret;
-    this.discordRedirectUri = secrets.discordRedirectUri;
-    this.discordLoginUri = secrets.discordLoginUri;
-
     this.discord.initBot();
     await this.twitch.initBot();
     this.commandHandler.init();
@@ -247,11 +241,11 @@ export class TalkingBot {
       const response = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
         body: new URLSearchParams({
-          client_id: this.discord.clientId,
-          client_secret: this.discord.clientSecret,
+          client_id: CONFIG.discord.clientId,
+          client_secret: CONFIG.discord.clientSecret,
           code,
           grant_type: "authorization_code",
-          redirect_uri: this.discordRedirectUri,
+          redirect_uri: CONFIG.discord.redirectUrl,
           scope: "identify",
         }).toString(),
         headers: {

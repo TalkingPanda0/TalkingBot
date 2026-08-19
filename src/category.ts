@@ -1,10 +1,11 @@
+import { CONFIG } from "./env";
 import { TalkingBot } from "./talkingbot";
 
 let currentSteamGame: string | null = null;
 
-async function getGameName(bot: TalkingBot): Promise<string | null> {
+async function getGameName(): Promise<string | null> {
   const response = await fetch(
-    `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${bot.commandHandler.keys.steam}&steamids=76561198800357802`,
+    `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${CONFIG.keys.steam}&steamids=76561198800357802`,
     { method: "GET" },
   );
   if (!response.ok) return null;
@@ -15,7 +16,7 @@ async function getGameName(bot: TalkingBot): Promise<string | null> {
 }
 
 export async function updateCategory(bot: TalkingBot) {
-  const newSteamGame = await getGameName(bot);
+  const newSteamGame = await getGameName();
   if (!newSteamGame || newSteamGame == currentSteamGame) return;
   currentSteamGame = newSteamGame;
 
