@@ -21,7 +21,7 @@ export const CONFIG = {
   discord: {
     token: checkedEnv("DISCORD_TOKEN"),
     clientSecret: checkedEnv("DISCORD_CLIENT_SECRET"),
-    clientId: checkedEnv("DISCORD_CLIENT_SECRET"),
+    clientId: checkedEnv("DISCORD_CLIENT_ID"),
     guildId: checkedEnv("DISCORD_GUILD_ID"),
     redirectUrl: checkedEnv("DISCORD_REDIRECT"),
     loginUrl: checkedEnv("DISCORD_LOGIN"),
