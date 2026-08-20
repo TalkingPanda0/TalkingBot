@@ -113,11 +113,6 @@ export class UserManager {
 
     if (!user) {
       user = this.newUser(data);
-
-      await this.bot.database.database
-        .insert(users)
-        .values(user)
-        .onConflictDoNothing();
     } else if (isLiveMessage && !this.recentChatters.has(data.senderId)) {
       const level = xpToLevel(user.xp);
 
@@ -130,6 +125,14 @@ export class UserManager {
     }
 
     if (isLiveMessage) this.recentChatters.set(data.senderId, user);
+
+    await this.bot.database.database
+      .insert(users)
+      .values(user)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: { color: user.color, userName: user.userName },
+      });
 
     return user;
   }
