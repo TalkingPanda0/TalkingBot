@@ -313,13 +313,13 @@ app.use("/control", async (req, res) => {
 
         case "/modtext/set":
           bot.modtext = req.body;
-          bot.updateModText();
+          await bot.updateModText();
           res.sendStatus(200);
           break;
 
         case "/modtext/setcanvas":
           bot.modtextCanvas = JSON.parse(req.body);
-          bot.updateModTextCanvas();
+          await bot.updateModTextCanvas();
           res.sendStatus(200);
           break;
 
@@ -329,7 +329,7 @@ app.use("/control", async (req, res) => {
           break;
 
         case "/overlay":
-          bot.handleControl(JSON.parse(req.body));
+          await bot.handleControl(JSON.parse(req.body));
           res.sendStatus(200);
           break;
 

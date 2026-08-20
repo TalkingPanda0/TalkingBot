@@ -103,9 +103,9 @@ export class TalkingBot {
 
     this.iomodtext = io.of("modtext");
 
-    this.iomodtext.on("connection", () => {
-      this.updateModText();
-      this.updateModTextCanvas();
+    this.iomodtext.on("connection", async () => {
+      await this.updateModText();
+      await this.updateModTextCanvas();
       this.updateModTextData();
     });
 
@@ -152,8 +152,8 @@ export class TalkingBot {
       null,
     );
 
-    this.updateModText();
-    this.updateModTextCanvas();
+    await this.updateModText();
+    await this.updateModTextCanvas();
     this.updateModTextData();
   }
 
@@ -194,9 +194,9 @@ export class TalkingBot {
   public async broadcastMessage(message: string) {
     await Promise.all([this.twitch.say(message)]);
   }
-  public updateModText() {
+  public async updateModText() {
     if (!this.modtext) return;
-    this.database.setConfig("currentModtext", this.modtext);
+    await this.database.setConfig("currentModtext", this.modtext);
     this.iomodtext.emit(
       "message",
       this.modtext.replaceAll(/counter\((\w+)\)/g, (_modtext, counterName) => {
@@ -206,9 +206,9 @@ export class TalkingBot {
       }),
     );
   }
-  public updateModTextCanvas() {
+  public async updateModTextCanvas() {
     if (!this.modtextCanvas) return;
-    this.database.setConfig(
+    await this.database.setConfig(
       "currentModtextCanvas",
       JSON.stringify(this.modtextCanvas),
     );
@@ -258,7 +258,7 @@ export class TalkingBot {
       return null;
     }
   }
-  public handleControl(data: controlMessage) {
+  public async handleControl(data: controlMessage) {
     switch (data.overlay) {
       case "chat":
         this.iochat.emit(data.target, data.message);
@@ -271,7 +271,7 @@ export class TalkingBot {
         }
         if (typeof data.message == "string") {
           this.modtext = data.message;
-          this.updateModText();
+          await this.updateModText();
         }
         break;
 
@@ -344,8 +344,8 @@ export class TalkingBot {
       ...alert,
     });
   }
-  public setLatestSub(sub: latestSub) {
-    this.database.setConfig("latestSub", JSON.stringify(sub));
+  public async setLatestSub(sub: latestSub) {
+    await this.database.setConfig("latestSub", sub);
     this.latestSub = sub;
     this.updateModTextData();
   }

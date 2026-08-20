@@ -113,7 +113,6 @@ export class UserManager {
 
     if (!user) {
       user = this.newUser(data);
-      console.log(`new user ${user}`);
 
       await this.bot.database.database
         .insert(users)

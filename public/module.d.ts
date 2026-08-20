@@ -66,7 +66,7 @@ declare module "botModule" {
     public moduleManager: ModuleManager;
 
     public modtext: string;
-    public setLatestSub(sub: latestSub): void;
+    public setLatestSub(sub: latestSub): Promise<void>;
   }
   export interface MessageData {
     /**
@@ -143,7 +143,10 @@ declare module "botModule" {
     updateStatus: (newStatus: RedemptionStatus) => Promise<any>;
   }
 
-  export type ChannelPointRewardStatus = ChannelPointReward & {id: string, isPaused: boolean};
+  export type ChannelPointRewardStatus = ChannelPointReward & {
+    id: string;
+    isPaused: boolean;
+  };
 
   export type ChannelRedemptionListener = (
     data: ChannelRedemption,
@@ -170,7 +173,9 @@ declare module "botModule" {
     onChatMessage(listener: MessageListener): void;
     onDiscordMessage(listener: DiscordMessageListener): void;
 
-    channelPointReward(reward: ChannelPointReward): Promise<ChannelPointRewardStatus>;
+    channelPointReward(
+      reward: ChannelPointReward,
+    ): Promise<ChannelPointRewardStatus>;
     removeChannelPoint(rewardId: string): Promise<void>;
     setChannelPointPaused(rewardId: string, paused: boolean): Promise<void>;
     setChannelPointEnabled(rewardId: string, enabled: boolean): Promise<void>;
@@ -188,6 +193,18 @@ declare module "botModule" {
     onUnload(): void;
   }
 }
+
+declare module "botenv" {
+  export const CONFIG: {
+    keys: {
+      steam: string;
+    };
+    twitch: {
+      channelName: string;
+    };
+  };
+}
+
 declare module "botutil" {
   export function getTimeDifference(startDate: Date, endDate: Date): string;
   export function milliSecondsToString(timeDifference: number): string;
