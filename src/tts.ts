@@ -122,7 +122,7 @@ async function parseElements(text: string): Promise<TTSElement[]> {
   let lastIndex = 0;
   const soundEffectRegex = new RegExp(
     `(${(await getTTSSounds())
-      .map((sound) => sound.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&"))
+      .map((sound) => sound.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&"))
       .join("|")})`,
     "g",
   );

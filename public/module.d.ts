@@ -35,24 +35,13 @@ declare module "botModule" {
     public getCurrentTitle(): Promise<string | null>;
     public say(message: string): Promise<void>;
   }
-  export class YouTubeAPI {
-    public sendMessage(message: string): Promise<void>;
-
-    public setTitle(title: string): Promise<void>;
-    public banUser(userId: string, seconds?: number): Promise<void>;
-  }
-  export class YouTube {
-    public isConnected: boolean;
-    public api: YouTubeAPI;
-    public permTitle: string | null;
-  }
   export class Namespace {}
   export class DB {
     public database: any;
 
-    public getOrSetConfig(key: string, defaultValue: string): string;
+    public getOrSetConfig<T>(key: string, defaultValue: T): Promise<T>;
 
-    public setConfig(key: string, value: string): void;
+    public setConfig<T>(key: string, value: T): Promise<void>;
   }
 
   export interface latestSub {
@@ -67,7 +56,6 @@ declare module "botModule" {
     public broadcastMessage(message: string): Promise<void>;
     public discord: Discord;
     public twitch: Twitch;
-    public youtube: YouTube;
 
     public iochat: Namespace;
     public iomodtext: Namespace;
@@ -78,7 +66,7 @@ declare module "botModule" {
     public moduleManager: ModuleManager;
 
     public modtext: string;
-    public setLatestSub(sub: latestSub): void;
+    public setLatestSub(sub: latestSub): Promise<void>;
   }
   export interface MessageData {
     /**
@@ -136,6 +124,47 @@ declare module "botModule" {
   export type MessageListener = (data: MessageData) => void;
   export type DiscordMessageListener = (data: any) => void;
 
+  export type RedemptionStatus = "FULFILLED" | "CANCELED";
+  export interface ChannelRedemption {
+    id: string;
+    broadcasterId: string;
+    broadcasterName: string;
+    broadcasterDisplayName: string;
+    userId: string;
+    userName: string;
+    userDisplayName: string;
+    input: string;
+    status: string;
+    rewardId: string;
+    rewardTitle: string;
+    rewardCost: number;
+    rewardPrompt: string;
+    redemptionDate: Date;
+    updateStatus: (newStatus: RedemptionStatus) => Promise<any>;
+  }
+
+  export type ChannelPointRewardStatus = ChannelPointReward & {
+    id: string;
+    isPaused: boolean;
+  };
+
+  export type ChannelRedemptionListener = (
+    data: ChannelRedemption,
+  ) => Promise<void>;
+
+  export interface ChannelPointReward {
+    autoFulfill?: boolean;
+    backgroundColor?: string;
+    cost: number;
+    globalCooldown?: number | null;
+    isEnabled?: boolean;
+    maxRedemptionsPerStream?: number | null;
+    maxRedemptionsPerUserPerStream?: number | null;
+    prompt?: string;
+    title: string;
+    userInputRequired?: boolean;
+  }
+
   export interface ModuleContext {
     /*
      * Adds a command, name has to be one word.
@@ -143,6 +172,23 @@ declare module "botModule" {
     registerCommand(name: string, command: Command): void;
     onChatMessage(listener: MessageListener): void;
     onDiscordMessage(listener: DiscordMessageListener): void;
+
+    channelPointReward(
+      reward: ChannelPointReward,
+    ): Promise<ChannelPointRewardStatus>;
+    removeChannelPoint(rewardId: string): Promise<void>;
+    setChannelPointPaused(rewardId: string, paused: boolean): Promise<void>;
+    setRedemptionStatus(
+      rewardId: string,
+      redemptionId: string,
+      status: RedemptionStatus,
+    ): Promise<void>;
+    setChannelPointEnabled(rewardId: string, enabled: boolean): Promise<void>;
+    onChannelPointReward(
+      rewardId: string,
+      listener: ChannelRedemptionListener,
+    ): void;
+
     bot: TalkingBot;
   }
   export abstract class BotModule {
@@ -152,6 +198,18 @@ declare module "botModule" {
     onUnload(): void;
   }
 }
+
+declare module "botenv" {
+  export const CONFIG: {
+    keys: {
+      steam: string;
+    };
+    twitch: {
+      channelName: string;
+    };
+  };
+}
+
 declare module "botutil" {
   export function getTimeDifference(startDate: Date, endDate: Date): string;
   export function milliSecondsToString(timeDifference: number): string;
@@ -189,4 +247,8 @@ declare module "botutil" {
   ): string;
 
   export function toPascalCase(input: string): string;
+
+  export function xpToLevel(points: number): number;
+
+  export function levelToXp(level: number): number;
 }

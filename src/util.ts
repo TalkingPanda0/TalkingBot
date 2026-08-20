@@ -1,3 +1,4 @@
+import { JwtPayload } from "jsonwebtoken";
 import { DiscordAuthData } from "./talkingbot";
 
 export function getTimeDifference(startDate: Date, endDate: Date): string {
@@ -40,9 +41,9 @@ export function milliSecondsToString(timeDifference: number): string {
 export async function replaceAsync(
   str: string,
   regex: RegExp,
-  asyncFn: Function,
+  asyncFn: (substring: string, ...args: string[]) => Promise<string | null>,
 ) {
-  const promises: string[] = [];
+  const promises: Promise<string | null>[] = [];
   str.replace(regex, (full, ...args) => {
     promises.push(asyncFn(full, ...args));
     return full;
@@ -52,7 +53,7 @@ export async function replaceAsync(
 }
 
 export function getSuffix(i: number) {
-  var j = i % 10,
+  const j = i % 10,
     k = i % 100;
   if (j == 1 && k != 11) {
     return i + "st";
@@ -81,7 +82,7 @@ export function removeByIndexToUppercase(
 ): string {
   let deletedChars = 0;
   indexes.forEach((index) => {
-    let i = index - deletedChars;
+    const i = index - deletedChars;
     while (
       !isNaN(parseInt(str.charAt(i), 10)) ||
       str.charAt(i) !== str.charAt(i).toUpperCase()
@@ -123,7 +124,7 @@ export async function getDiscordUserId(data: DiscordAuthData): Promise<string> {
   const userData = await result.json();
   return userData.id;
 }
-export function isDiscordAuthData(obj: any): obj is DiscordAuthData {
+export function isDiscordAuthData(obj: string | JwtPayload): obj is DiscordAuthData {
   return (
     typeof obj === "object" &&
     obj !== null &&
@@ -163,4 +164,14 @@ export function toPascalCase(input: string): string {
     .split(/\s+/) // split by spaces
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join("");
+}
+
+//level = (1.5th root of xp)/8
+export function xpToLevel(points: number): number {
+  const level = Math.pow(points, 1 / 1.5) / 8;
+  return Math.floor(level);
+}
+
+export function levelToXp(level: number): number {
+    return Math.round(Math.pow(level * 8, 1.5));
 }

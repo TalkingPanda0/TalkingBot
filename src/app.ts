@@ -1,6 +1,4 @@
-import dotenv from "dotenv";
 import compression from "compression";
-dotenv.config({ path: __dirname + "/../config/.env" });
 import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
@@ -14,13 +12,14 @@ import { getDiscordUserId, isDiscordAuthData } from "./util";
 import { handleKofiEvent, isKofiEvent } from "./kofi";
 import { MessageData } from "botModule";
 import { readdir, rename } from "node:fs/promises";
+import { CONFIG } from "./env";
 
 const app: Express = express();
 const server = http.createServer(app);
 
 const bot: TalkingBot = new TalkingBot(server);
 
-app.use(compression());
+app.use(compression() as any);
 app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(express.static("config/images"));
@@ -32,7 +31,7 @@ app.use(
   fileUpload({
     useTempFiles: true,
     tempFileDir: "/tmp/",
-  }),
+  }) as any,
 );
 app.get("/soundEffects", async (_req, res) => {
   res.send(JSON.stringify(await getTTSSounds()));
@@ -53,31 +52,27 @@ app.get("/getMessages", async (req, res) => {
 
 app.use("/control", async (req, res) => {
   try {
-    if (!bot.jwtSecret) {
-      res.send(500);
-      return;
-    }
-    const decoded = verify(req.cookies.discord_auth, bot.jwtSecret);
+    const decoded = verify(req.cookies.discord_auth, CONFIG.secrets.jwt);
     if (!isDiscordAuthData(decoded)) {
       res.sendStatus(403);
       return;
     }
 
     const discordAuth: DiscordAuthData = decoded;
-    var discordId = await getDiscordUserId(discordAuth);
+    const discordId = await getDiscordUserId(discordAuth);
     const isMod = await bot.discord.isStreamMod(discordId);
     if (!isMod) {
       res.sendStatus(403);
       return;
     }
-  } catch (e) {
+    console.log(
+      `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
+    );
+  } catch {
     // No discord_auth cookie was found
-    res.redirect(bot.discordLoginUri);
+    res.redirect(CONFIG.discord.loginUrl);
     return;
   }
-  console.log(
-    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
-  );
 
   switch (req.method) {
     case "GET":
@@ -106,7 +101,7 @@ app.use("/control", async (req, res) => {
         case "/commandbuilder":
           res.sendFile(__dirname + "/html/commandbuilder.html");
           break;
-        case "/command/get":
+        case "/command/get": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -117,6 +112,7 @@ app.use("/control", async (req, res) => {
           if (command == null) res.send(404);
           res.send(command);
           break;
+        }
         case "/command/list":
           res.send(bot.commandHandler.getCustomCommandList());
           break;
@@ -160,20 +156,17 @@ app.use("/control", async (req, res) => {
       break;
     case "POST":
       switch (req.path) {
-        case "/command/add":
+        case "/command/add": {
           if (req.query.name == null) {
             res.send(400);
             break;
           }
-          const commandToAdd = req.query.name.toString();
-          if (!req.body || !commandToAdd) {
+          const command = req.query.name.toString();
+          if (!req.body || !command) {
             res.sendStatus(400);
             return;
           }
-          const result = bot.commandHandler.addCustomCommand(
-            commandToAdd,
-            req.body,
-          );
+          const result = bot.commandHandler.addCustomCommand(command, req.body);
           if (result == "") {
             res.sendStatus(200);
             return;
@@ -181,8 +174,9 @@ app.use("/control", async (req, res) => {
           res.status(400);
           res.send(result);
           break;
+        }
 
-        case "/command/set":
+        case "/command/set": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -195,7 +189,8 @@ app.use("/control", async (req, res) => {
           bot.commandHandler.setCustomCommand(name, req.body);
           res.sendStatus(200);
           break;
-        case "/command/run":
+        }
+        case "/command/run": {
           if (!req.body) {
             res.sendStatus(400);
             return;
@@ -210,6 +205,7 @@ app.use("/control", async (req, res) => {
           );
           res.send(commandOutput);
           break;
+        }
         case "/command/delete":
           if (req.query.name == null) {
             res.send(400);
@@ -219,18 +215,18 @@ app.use("/control", async (req, res) => {
           res.sendStatus(200);
           break;
 
-        case "/command/alias/add":
+        case "/command/alias/add": {
           if (req.query.name == null) {
             res.send(400);
             break;
           }
-          const aliasToAdd = req.query.name.toString();
-          if (!req.body || !aliasToAdd) {
+          const alias = req.query.name.toString();
+          if (!req.body || !alias) {
             res.sendStatus(400);
             return;
           }
           const aliasAddResult = bot.commandHandler.addCommandAlias(
-            aliasToAdd,
+            alias,
             req.body,
           );
           if (aliasAddResult == "") {
@@ -239,7 +235,9 @@ app.use("/control", async (req, res) => {
           }
           res.status(400);
           res.send(aliasAddResult);
-        case "/command/alias/set":
+          break;
+        }
+        case "/command/alias/set": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -252,6 +250,7 @@ app.use("/control", async (req, res) => {
           bot.commandHandler.setCommandAlias(alias, req.body);
           res.sendStatus(200);
           break;
+        }
         case "/command/alias/delete":
           if (req.query.name == null) {
             res.send(400);
@@ -314,13 +313,13 @@ app.use("/control", async (req, res) => {
 
         case "/modtext/set":
           bot.modtext = req.body;
-          bot.updateModText();
+          await bot.updateModText();
           res.sendStatus(200);
           break;
 
         case "/modtext/setcanvas":
           bot.modtextCanvas = JSON.parse(req.body);
-          bot.updateModTextCanvas();
+          await bot.updateModTextCanvas();
           res.sendStatus(200);
           break;
 
@@ -330,11 +329,11 @@ app.use("/control", async (req, res) => {
           break;
 
         case "/overlay":
-          bot.handleControl(JSON.parse(req.body));
+          await bot.handleControl(JSON.parse(req.body));
           res.sendStatus(200);
           break;
 
-        case "/soundEffects/delete":
+        case "/soundEffects/delete": {
           if (req.query.name == null) {
             res.send(400);
             break;
@@ -353,7 +352,8 @@ app.use("/control", async (req, res) => {
               res.status(400).send(e);
             });
           break;
-        case "/soundEffects/rename":
+        }
+        case "/soundEffects/rename": {
           if (req.query.name == null || req.query.newName == null) {
             res.send(400);
             break;
@@ -371,7 +371,8 @@ app.use("/control", async (req, res) => {
               res.status(400).send(e);
             });
           break;
-        case "/soundEffects/add":
+        }
+        case "/soundEffects/add": {
           if (!req.files || !req.files.sound || !req.body.name) {
             return res.status(422).send("No files were uploaded");
           }
@@ -385,7 +386,8 @@ app.use("/control", async (req, res) => {
             res.sendStatus(200);
           });
           break;
-        case "/modtext/addimage":
+        }
+        case "/modtext/addimage": {
           if (!req.files || !req.files.image) {
             return res.status(422).send("No files were uploaded");
           }
@@ -404,6 +406,7 @@ app.use("/control", async (req, res) => {
             res.send(imagePath);
           });
           break;
+        }
         default:
           res.sendStatus(404);
           break;
@@ -413,21 +416,23 @@ app.use("/control", async (req, res) => {
 });
 
 app.post("/kofi/webhook", (req, res) => {
+
+  if(!CONFIG.secrets.kofi) {
+    res.sendStatus(500);
+  }
+
   const data = JSON.parse(req.body.data);
   if (!isKofiEvent(data)) {
     res.sendStatus(400);
     return;
   }
-  if (data.verification_token !== process.env.KOFI_SECRET) {
+
+  if (data.verification_token !== CONFIG.secrets.kofi) {
     res.sendStatus(403);
     return;
   }
   handleKofiEvent(bot, data);
   res.sendStatus(200);
-});
-
-app.get("/wheelSegments", (_req, res) => {
-  res.send(JSON.stringify(bot.wheel.wheelSegments));
 });
 
 app.get("/creditsList", (_req, res) => {
@@ -464,11 +469,7 @@ app.get("/auth", async (req, res) => {
     res.sendStatus(403);
     return;
   }
-  if (!bot.jwtSecret) {
-    res.send(500);
-    return;
-  }
-  const token = sign(accessData, bot.jwtSecret);
+  const token = sign(accessData, CONFIG.secrets.jwt);
   res.set({
     "Set-Cookie": `discord_auth=${token};path=/control;max-age=${accessData.expires_in};HttpOnly;`,
     Location: "/control",

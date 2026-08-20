@@ -11,19 +11,17 @@ export class Counter {
     this.loadCounters();
   }
 
-  private saveCounters() {
+  private async saveCounters() {
     const counterArray: { name: string; count: number }[] = [];
     this.counters.forEach((value, key) => {
       counterArray.push({ name: key, count: value });
     });
-    this.db.setConfig("Counters", JSON.stringify(counterArray));
+    await this.db.setConfig("Counters", counterArray);
   }
 
-  private loadCounters() {
-    const counterArray: { name: string; count: number }[] = JSON.parse(
-      this.db.getOrSetConfig("Counters", JSON.stringify([])),
-    );
-    counterArray.forEach((value) => {
+  private async loadCounters() {
+    const counterArray = (await this.db.getOrSetConfig("Counters", [])) as { name: string; count: number }[];
+      counterArray.forEach((value) => {
       this.counters.set(value.name, value.count);
     });
   }

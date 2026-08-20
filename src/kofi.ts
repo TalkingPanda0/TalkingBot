@@ -48,12 +48,13 @@ export interface KofiEvent {
   shop_items: ShopItem[] | null;
   shipping: ShippingInfo | null;
 }
+
 export function isKofiEvent(obj: any): obj is KofiEvent {
   if (typeof obj !== "object" || obj === null) return false;
 
-  const isString = (val: any) => typeof val === "string";
-  const isBoolean = (val: any) => typeof val === "boolean";
-  const isNullableString = (val: any) =>
+  const isString = (val: unknown) => typeof val === "string";
+  const isBoolean = (val: unknown) => typeof val === "boolean";
+  const isNullableString = (val: unknown) =>
     val === null || typeof val === "string";
 
   const isShopItem = (item: any) =>
@@ -95,10 +96,11 @@ export function isKofiEvent(obj: any): obj is KofiEvent {
     (obj.shipping === null || isShippingInfo(obj.shipping))
   );
 }
+
 export async function handleKofiEvent(bot: TalkingBot, event: KofiEvent) {
   switch (event.type) {
     case "Donation":
-    case "Subscription":
+    case "Subscription": {
       const alert: KofiAlertData = {
         audioList: await getKofiAudio(
           event.from_name,
@@ -116,6 +118,7 @@ export async function handleKofiEvent(bot: TalkingBot, event: KofiEvent) {
       };
       bot.ioalert.emit("alert", alert);
       break;
+    }
     case "Commission":
     case "Shop Order":
     default:

@@ -1,74 +1,49 @@
 import { MessageData } from "botModule";
 import { TalkingBot } from "./talkingbot";
-import { Database, Statement } from "bun:sqlite";
-interface SavedMessageData {
-  badges: string;
-  isUserMod: boolean;
-  isUserVip?: boolean;
-  isUserSub?: boolean;
-  message: string;
-  parsedMessage: string;
-  username: string;
-  sender: string;
-  senderId: string;
-  color: string;
-  id: string;
-  platform: string;
-  channelId: string;
-  isFirst: boolean;
-  replyTo?: string;
-  replyId?: string;
-  replyText?: string;
-  isCommand: boolean;
-  rewardName?: string;
-  isOld: boolean;
-  timestamp: Date;
-}
-
-function parseSaved(data: SavedMessageData): MessageData {
-  return {
-    ...data,
-    badges: JSON.parse(data.badges),
-    timestamp: new Date(data.timestamp),
-  } as MessageData;
-}
+import { chatMessages } from "./db/schema";
+import { sql } from "drizzle-orm";
 
 export class ChatLogger {
   private bot: TalkingBot;
-  private database: Database;
-  private insertMessage: CallableFunction;
-  private getMessagesQuery: Statement;
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-    this.database = this.bot.database.database;
-    this.database
-      .query(
-        "CREATE TABLE IF NOT EXISTS chat_messages (id TEXT PRIMARY KEY, username TEXT NOT NULL, sender TEXT, senderId TEXT, platform TEXT, channelId TEXT, message TEXT, parsedMessage TEXT, badges TEXT, isUserMod INTEGER, isUserVip INTEGER, isUserSub INTEGER, isFirst INTEGER, isCommand INTEGER, rewardName TEXT, replyTo TEXT, replyId TEXT, replyText TEXT,isOld INTEGER,color TEXT,timestamp DATETIME NOT NULL);",
-      )
-      .run();
-    const insertMessageQuery = this.database.prepare(
-      "INSERT OR REPLACE INTO chat_messages (id, username, sender, senderId, platform, channelId, message, parsedMessage, badges, isUserMod, isUserVip, isUserSub, isFirst, isCommand, rewardName, replyTo, replyId, replyText, isOld, color, timestamp) VALUES ( $id, $username, $sender, $senderId, $platform, $channelId, $message, $parsedMessage, $badges, $isUserMod, $isUserVip, $isUserSub, $isFirst, $isCommand, $rewardName, $replyTo, $replyId, $replyText, $isOld, $color, $timestamp);",
-    );
-    this.getMessagesQuery = this.database.prepare(
-      " SELECT * FROM chat_messages WHERE date(timestamp) = date(?1) ORDER BY timestamp ASC; `); ",
-    );
-    this.insertMessage = this.database.transaction((message) => {
-      insertMessageQuery.run(message);
-    });
   }
 
   // date like "2025-10-26"
-  public getMessages(date: string): MessageData[] {
-    const messages = this.getMessagesQuery.all(date) as SavedMessageData[];
-    return messages.map(parseSaved);
+  public async getMessages(date: string): Promise<MessageData[]> {
+    const messages = await this.bot.database.database
+      .select()
+      .from(chatMessages)
+      .where(sql`date(${chatMessages.timestamp}) = date(${date})`);
+    return messages.map((message) => {
+      return {
+        ...message,
+        badges: JSON.parse(message.badges),
+        timestamp: new Date(message.timestamp),
+        isUserMod: message.isUserMod != 0,
+        isUserVip: (message.isUserVip ?? 0) != 0,
+        isUserSub: (message.isUserSub ?? 0) != 0,
+        isFirst: (message.isFirst ?? 0) != 0,
+        isCommand: message.isCommand != 0,
+        isOld: message.isOld != 0,
+        reply: () => {},
+        banUser: () => {},
+      } as MessageData;
+    });
   }
 
-  public recordMessage(message: MessageData) {
-    this.insertMessage({
+  public async recordMessage(message: MessageData) {
+    await this.bot.database.database.insert(chatMessages).values({
       ...message,
+      isUserMod: message.isUserMod ? 1 : 0,
+      isUserVip: message.isUserVip ? 1 : 0,
+      isUserSub: message.isUserSub ? 1 : 0,
+      isFirst: message.isFirst ? 1 : 0,
+      isCommand: message.isCommand ? 1 : 0,
+      isOld: message.isOld ? 1 : 0,
       badges: JSON.stringify(message.badges),
       timestamp: message.timestamp.toISOString(),
-    });
+    }).onConflictDoNothing();
   }
 }

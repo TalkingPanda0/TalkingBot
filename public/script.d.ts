@@ -1,31 +1,31 @@
 /**
  * Command Name or Matches of Regex
  */
-declare var command: string | RegExpExecArray[];
+declare let command: string | RegExpExecArray[];
 /**
  * Array of the arguments the user gave
  */
-declare var args: string[];
+declare let args: string[];
 /**
  * The username of the person who used the command
  */
-declare var user: string;
+declare let user: string;
 /**
  * The userId of the person who used the command
  */
-declare var userId: string;
+declare let userId: string;
 
-declare var isUserMod: boolean;
-declare var isUserSub: boolean;
-declare var isUserVip: boolean;
+declare let isUserMod: boolean;
+declare let isUserSub: boolean;
+declare let isUserVip: boolean;
 /**
  * The platform the user used the command on
  */
-declare var platform: "bot" | "discord" | "twitch" | "youtube";
+declare let platform: "bot" | "discord" | "twitch" | "youtube";
 /**
  * Result of the command will be said in chat after the function is over
  */
-declare var result: string;
+declare let result: string;
 
 /**
  * Gets config key if it doesn't exist, creates it and sets it to default value
@@ -58,7 +58,7 @@ declare class Users {
   ): void;
 }
 
-declare var users: Users;
+declare let users: Users;
 
 /**
  * Will say message in chat, replies to the user if reply is true.

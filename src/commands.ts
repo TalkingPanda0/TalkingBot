@@ -5,21 +5,20 @@ import {
   getSuffix,
   getTimeDifference,
   hashMaptoArray,
+  levelToXp,
   milliSecondsToString,
   removeByIndexToUppercase,
   replaceAsync,
+  xpToLevel,
 } from "./util";
 
 import { HelixGame } from "@twurple/api";
-import { HttpStatusCodeError } from "@twurple/api-call";
 import { Counter } from "./counter";
 import { exit } from "./app";
 import { CreditType } from "./credits";
-import { calculatePoints } from "./whereword";
-import { UserIdentifier } from "./users";
 
-import { addRecentChatter } from "./levels";
 import { MessageData } from "botModule";
+import { CONFIG } from "./env";
 
 export interface Command {
   showOnChat: boolean;
@@ -31,7 +30,6 @@ export class MessageHandler {
   public counter!: Counter;
   public counterFile = Bun.file(__dirname + "/../config/counter.json");
 
-  public keys: any;
   private timeout = new Set();
   private bot: TalkingBot;
   private customCommandMap = new Map<string, string>();
@@ -40,7 +38,6 @@ export class MessageHandler {
   private argsFile = Bun.file(__dirname + "/../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../config/commands.json");
   private aliasesFile = Bun.file(__dirname + "/../config/aliases.json");
-  private keysFile = Bun.file(__dirname + "/../config/keys.json");
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
@@ -61,7 +58,7 @@ export class MessageHandler {
             if (data.platform != "twitch") return;
             const isOffline = data.message === "offline";
             this.bot.database.updateDataBase(isOffline ? 1 : 2);
-            const users = this.bot.database.getTopWatchTime(isOffline);
+            const users = await this.bot.database.getTopWatchTime(isOffline);
             const helixUsers =
               await this.bot.twitch.apiClient.users.getUsersByIds(
                 users.map((watchtime) => watchtime.userId),
@@ -114,7 +111,7 @@ export class MessageHandler {
           } else {
             userName = `${data.sender}`;
           }
-          const watchTime = this.bot.database.getWatchTime(userId);
+          const watchTime = await this.bot.database.getWatchTime(userId.slice("twitch-".length));
 
           if (watchTime == null) {
             data.reply("Can't find watchtime.", true);
@@ -234,7 +231,7 @@ export class MessageHandler {
             return;
           }
           data.reply(
-            `\"${stream.title}\" - ${stream.gameName}: ${stream.tags}`,
+            `"${stream.title}" - ${stream.gameName}: ${stream.tags}`,
             true,
           );
         },
@@ -279,13 +276,13 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = splitMessage[0];
+          const commandName = splitMessage[0];
           const response = data.message.substring(
             data.message.indexOf(" ") + 1,
             data.message.length,
           );
 
-          let command = this.customCommandMap.get(commandName);
+          const command = this.customCommandMap.get(commandName);
           if (!command) {
             data.reply(`Command ${commandName} does not exist!`, true);
             return;
@@ -309,7 +306,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = `${splitMessage[0]} ${splitMessage[1]}`;
+          const commandName = `${splitMessage[0]} ${splitMessage[1]}`;
 
           if (!this.customCommandMap.has(splitMessage[0])) {
             data.reply(`Command ${commandName} does not exist!`, true);
@@ -340,7 +337,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = splitMessage[0];
+          const commandName = splitMessage[0];
           const response = data.message.substring(
             data.message.indexOf(" ") + 1,
             data.message.length,
@@ -372,7 +369,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           if (!data.isUserMod) return;
           const splitMessage = data.message.split(" ");
-          let commandName = splitMessage[0];
+          const commandName = splitMessage[0];
           const response = data.message.substring(
             data.message.indexOf(" ") + 1,
             data.message.length,
@@ -400,7 +397,7 @@ export class MessageHandler {
         showOnChat: false,
         commandFunction: (data) => {
           if (!data.isUserMod) return;
-          let commandName = data.message.split(" ")[0];
+          const commandName = data.message.split(" ")[0];
           const command = this.customCommandMap.get(commandName);
           if (command) {
             data.reply(`${commandName}: ${command}`, true);
@@ -537,7 +534,11 @@ export class MessageHandler {
             { gameId: game.id },
           );
           this.bot.twitch.currentGame = game.id;
-          if(this.bot.twitch.isStreamOnline) await this.bot.discord.onGameChange(game.name,game.boxArtUrl.replace("52x72","520x720"));
+          if (this.bot.twitch.isStreamOnline)
+            await this.bot.discord.onGameChange(
+              game.name,
+              game.boxArtUrl.replace("52x72", "520x720"),
+            );
           data.reply(`Game has been changed to "${game.name}"`, true);
         },
       },
@@ -559,36 +560,38 @@ export class MessageHandler {
           const args = data.message.toLowerCase().split(" ");
 
           switch (args[0]) {
-            case "add":
-              const newTags = stream.tags.concat(args.slice(1));
-              if (newTags.length >= 10) {
+            case "add": {
+              const tags = stream.tags.concat(args.slice(1));
+              if (tags.length >= 10) {
                 data.reply("Reached maxiumum amount of tags", true);
                 break;
               }
               try {
                 await this.bot.twitch.apiClient.channels.updateChannelInfo(
                   this.bot.twitch.channel.id,
-                  { tags: newTags },
+                  { tags },
                 );
               } catch (e) {
                 data.reply(e as string, true);
                 return;
               }
-              data.reply(`Tags ${newTags} has been added`, true);
+              data.reply(`Tags ${tags} has been added`, true);
               break;
-            case "remove":
-              const tagsToRemove = args.slice(1);
+            }
+            case "remove": {
+              const tags = args.slice(1);
               await this.bot.twitch.apiClient.channels.updateChannelInfo(
                 this.bot.twitch.channel.id,
                 {
                   tags: stream.tags.filter((value) => {
-                    return !tagsToRemove.includes(value.toLowerCase());
+                    return !tags.includes(value.toLowerCase());
                   }),
                 },
               );
 
-              data.reply(`Tags ${tagsToRemove} has been removed`, true);
+              data.reply(`Tags ${tags} has been removed`, true);
               break;
+            }
             default:
               data.reply(`Current tags: ${stream.tags}`, true);
               return;
@@ -632,7 +635,7 @@ export class MessageHandler {
             }
             const response = await (
               await fetch(
-                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${this.keys.steam}&steamid=76561198800357802&format=json&include_played_free_games=true&appids_filter[0]=${game.appid}`,
+                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${CONFIG.keys.steam}&steamid=76561198800357802&format=json&include_played_free_games=true&appids_filter[0]=${game.appid}`,
               )
             ).json();
             if (response.response.game_count == 0) {
@@ -711,62 +714,18 @@ export class MessageHandler {
       },
     ],
     [
-      "!wheel",
+      "!level",
       {
         showOnChat: false,
         commandFunction: async (data) => {
-          if (!data.isUserMod) {
-            data.reply(this.bot.wheel.toString(false), true);
-            return;
-          }
-          const args = data.message.split(" ");
-          switch (args[0]) {
-            case "chat":
-              if (args[1] == null) break;
-              data.reply("WHEEEEEEEEEEEL SPINING!!!!", false);
-              setTimeout(() => {
-                const result = this.bot.wheel.spinInChat();
-                data.reply(`${args[1]} won ${result}!!!`, false);
-              }, 5000);
-              break;
-            case "add":
-              if (args.length < 3) {
-                return;
-              }
-              let weight = parseInt(args[args.length - 1]);
-              let color: string = "";
-              let text: string;
+          const user = await this.bot.userManager.getUser(data);
+          const currentLevel = xpToLevel(user.xp);
+          const currentLevelPoints = levelToXp(currentLevel);
 
-              if (isNaN(weight)) {
-                weight = parseInt(args[args.length - 2]);
-                color = args[-1];
-                text = args.slice(1, -2).join(" ");
-              } else {
-                text = args.slice(1, -1).join(" ");
-              }
-              if (text == null || isNaN(weight)) {
-                return;
-              }
-              this.bot.wheel.addSegment(text, weight, color);
-              data.reply(`Added segment ${text}`, true);
-              break;
-            case "remove":
-              const segment = args.splice(1).join(" ");
-              if (segment == null) return;
-              if (this.bot.wheel.removeSegment(segment)) {
-                data.reply(`Removed segment ${segment}`, true);
-              }
-              break;
-            case "read":
-              this.bot.wheel.readWheel();
-              break;
-            case "weights":
-              data.reply(this.bot.wheel.toString(true), true);
-              break;
-            default:
-              data.reply(this.bot.wheel.toString(false), true);
-              break;
-          }
+          data.reply(
+            `You are at level ${currentLevel}, you have ${user.xp - currentLevelPoints}/${levelToXp(xpToLevel(user.xp) + 1) - currentLevelPoints} xp.`,
+            true,
+          );
         },
       },
     ],
@@ -774,22 +733,22 @@ export class MessageHandler {
       "!color",
       {
         showOnChat: false,
-        commandFunction: (data) => {
-          const id: UserIdentifier = {
-            platform: data.platform,
-            username: data.username || "",
-          };
+        commandFunction: async (data) => {
           switch (data.message.trim()) {
-            case "":
-              const user = this.bot.users.getUser(id);
-              data.reply(`Your color is currently set to ${user.color}.`, true);
+            case "": {
+              const user = await this.bot.userManager.getUser(data);
+              data.reply(
+                `Your color is currently set to ${user.customColor ?? user.color}.`,
+                true,
+              );
               break;
+            }
             case "clear":
-              this.bot.users.setColor(id, undefined);
+              await this.bot.userManager.setCustomColor(data, null);
               data.reply(`Your color has been cleared.`, true);
               break;
             default:
-              this.bot.users.setColor(id, data.message);
+              await this.bot.userManager.setCustomColor(data, data.message);
               data.reply(`Updated your color to ${data.message}.`, true);
               break;
           }
@@ -800,21 +759,30 @@ export class MessageHandler {
       "!nickname",
       {
         showOnChat: false,
-        commandFunction: (data) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod) return;
 
           const args = data.message.split(" ");
 
           const username = args[0];
           const nickname = args.splice(1).join(" ");
-          const id = { platform: data.platform, username: username };
+
+          const user = await this.bot.userManager.findUser(username);
+          if(!user) {
+            data.reply(`Can't find user ${username}.`,true);
+            return;
+          }
 
           if (nickname) {
-            this.bot.users.setNickname(id, nickname);
+            await this.bot.userManager.setUserCustomName(user, nickname);
             data.reply(`${username} has been nicknamed to ${nickname}.`, true);
           } else {
-            const user = this.bot.users.getUser(id);
-            data.reply(`${username} is nicknamed to ${user.nickname}`, true);
+            if (user.customName)
+              data.reply(
+                `${username} is nicknamed to ${user.customName}`,
+                true,
+              );
+            else data.reply(`${username} is currently not nicknamed.`, true);
           }
         },
       },
@@ -823,134 +791,13 @@ export class MessageHandler {
       "!unnickname",
       {
         showOnChat: false,
-        commandFunction: (data) => {
+        commandFunction: async (data) => {
           if (!data.isUserMod) return;
           const args = data.message.split(" ");
           const username = args[0];
 
-          const id = { platform: data.platform, username: username };
-          this.bot.users.setNickname(id, undefined);
+          await this.bot.userManager.setCustomName(data, null);
           data.reply(`${username} is now not nicknamed.`, true);
-        },
-      },
-    ],
-    [
-      "!whereword",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (data.platform != "twitch") return;
-          const args = data.message.toLowerCase().split(" ");
-          switch (args[0]) {
-            case "join":
-              try {
-                const word = this.bot.whereWord.playerJoin(
-                  data.username.toLowerCase(),
-                  args[1],
-                );
-                await this.bot.twitch.apiClient.whispers.sendWhisper(
-                  "736013381",
-                  data.senderId,
-                  `Your secret word is "${word}", good luck!`,
-                );
-                data.reply("Your word has been sent.", true);
-              } catch (e) {
-                if (e instanceof HttpStatusCodeError) {
-                  data.reply(
-                    "Couldn't whisper to you, try whipsering to @TalkingBotO_o.",
-                    true,
-                  );
-                  this.bot.whereWord.resetPlayer(data.username.toLowerCase());
-                  return;
-                }
-                const errorMessage = e instanceof Error ? e.message : String(e);
-                data.reply(errorMessage, true);
-              }
-              break;
-            case "guess":
-              if (args.length != 3) {
-                data.reply("Usage !whereword guess [name] [word]", true);
-                return;
-              }
-              data.reply(
-                this.bot.whereWord.guess(
-                  data.username.toLowerCase(),
-                  args[1].replace("@", "").toLowerCase(),
-                  args[2],
-                ),
-                true,
-              );
-              break;
-            case "status":
-              const name = args[1]?.replace("@", "").toLowerCase();
-              if (name) {
-                const status = this.bot.whereWord.getPlayer(name);
-                if (status == null) {
-                  data.reply(`@${name} is not playing the game`, true);
-                  return;
-                }
-                const correctGuess = status.guesses.find(
-                  (guess) => guess.correct,
-                );
-
-                if (status.guessed) {
-                  data.reply(
-                    `@${name}'s word has been guessed by @${correctGuess != null ? correctGuess.guesser : "[Can't find guesser]"}. It was "${status.word}". They have used it ${status.times} times. They had ${calculatePoints(status)} points.`,
-                    true,
-                  );
-                  return;
-                }
-                let statusmsg = `@${name} is playing the game.`;
-                if (status.guesses.length != 0) {
-                  statusmsg += ` Guesses: ${status.guesses.map((guess) => guess.word).join(", ")}`;
-                }
-                data.reply(statusmsg, true);
-
-                if (data.isUserMod && args[2] == "mod") {
-                  await this.bot.twitch.apiClient.whispers.sendWhisper(
-                    "736013381",
-                    data.senderId,
-                    `Their word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. They have used it ${status.times} times. They have ${calculatePoints(status)} points.`,
-                  );
-                }
-                break;
-              }
-
-              const status = this.bot.whereWord.getPlayer(
-                data.username.toLowerCase(),
-              );
-              if (status == null) {
-                data.reply("You are not playing the game", true);
-                return;
-              }
-              if (status.guessed) {
-                const correctGuess = status.guesses.find(
-                  (guess) => guess.correct,
-                );
-                data.reply(
-                  `Your word has been guessed by @${correctGuess != null ? correctGuess.guesser : "[Can't find guesser]"}. It was "${status.word}". You have used it ${status.times} times. You had ${calculatePoints(status)} points.`,
-                  true,
-                );
-                return;
-              }
-              await this.bot.twitch.apiClient.whispers.sendWhisper(
-                "736013381",
-                data.senderId,
-                `Your secret word is "${status.word}" in diffuculty ${["easy", "medium", "hard", "insane"][status.difficulty]}. You have used it ${status.times} times. You have ${calculatePoints(status)} points.`,
-              );
-              break;
-            case "reset":
-              if (data.isUserMod) {
-                this.bot.whereWord.resetPlayer(
-                  args[1].replaceAll("@", "").toLowerCase(),
-                );
-                data.reply(`Reset ${args[1]}.`, true);
-                break;
-              }
-            default:
-              data.reply("Usage !whereword join|guess|status.", true);
-              break;
-          }
         },
       },
     ],
@@ -1017,7 +864,7 @@ export class MessageHandler {
         commandFunction: (data) => {
           const commands =
             Array.from(this.commandMap.keys()).join(", ") +
-            Array.from(this.customCommandMap.keys()).join(", ") + 
+            Array.from(this.customCommandMap.keys()).join(", ") +
             Array.from(this.commandAliasMap.keys()).join(", ");
           data.reply(`Commands: ${commands}`, true);
         },
@@ -1052,7 +899,7 @@ export class MessageHandler {
       response,
       /script\((.+)\)/g,
       async (_message: string, script: string) => {
-        if (!canUserRunCommand) return;
+        if (!canUserRunCommand) return null;
         return await this.runScript(script, data, commandName);
       },
     );
@@ -1101,7 +948,7 @@ export class MessageHandler {
         data.message = data.message.replace(commandName, commandAlias);
         commandName = data.message.split(" ")[0];
       }
-      let customCommand = this.customCommandMap.get(commandName);
+      const customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
         data.message = data.message.replace(commandName, "").trim();
         return await this.runCommand(data, commandName, customCommand);
@@ -1110,7 +957,7 @@ export class MessageHandler {
       if (builtinCommand == null) return commandName.startsWith("!");
 
       data.message = data.message.replace(commandName, "").trim();
-      builtinCommand.commandFunction(data);
+      await builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
         setTimeout(() => {
@@ -1130,37 +977,33 @@ export class MessageHandler {
   }
 
   public async handleMessage(data: MessageData) {
-    const id: UserIdentifier = {
-      platform: data.platform,
-      username: data.sender,
-    };
-    const user = this.bot.users.getUser(id);
+    data.id = `${data.platform}-${data.id}`;
+    data.senderId = `${data.platform}-${data.senderId}`;
+    data.replyId = `${data.platform}-${data.replyId}`;
 
-    this.bot.users.setRealColor(id, data.color);
+    const user = await this.bot.userManager.handleMessage(data);
 
-    data.username = data.sender;
-    data.sender = user.nickname ?? data.sender;
-    data.color = user.color ?? data.color;
+    data.sender = user.customName ?? data.sender;
+    data.color = user.customColor ?? data.color;
 
     if (data.isUserMod)
-      this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Moderator);
-    this.bot.credits.addToCredits(data.senderId,data.sender,data.color, CreditType.Chatter);
-
-    if (this.bot.twitch.isStreamOnline) addRecentChatter(this.bot, data);
-
-    this.bot.whereWord.proccesMessage(
-      data.username.toLowerCase(),
-      data.message.toLowerCase(),
+      this.bot.credits.addToCredits(
+        data.senderId,
+        data.sender,
+        data.color,
+        CreditType.Moderator,
+      );
+    this.bot.credits.addToCredits(
+      data.senderId,
+      data.sender,
+      data.color,
+      CreditType.Chatter,
     );
 
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     this.bot.moduleManager.onChatMessage(data);
-
-    data.id = `${data.platform}-${data.id}`;
-    data.senderId = `${data.platform}-${data.senderId}`;
-    data.replyId = `${data.platform}-${data.replyId}`;
 
     this.sendToChatList(data);
   }
@@ -1174,7 +1017,6 @@ export class MessageHandler {
     if (!(await this.argsFile.exists())) return;
     this.argMap = arraytoHashMap(await this.argsFile.json());
 
-    this.keys = await this.keysFile.json();
   }
 
   private writeCustomCommands() {
@@ -1274,13 +1116,14 @@ export class MessageHandler {
     context.isUserSub = data.isUserSub;
     context.args = data.message.split(" ");
     context.platform = data.platform;
-    context.getOrSetConfig = (key: string, defaultValue: any): any => {
-      return JSON.parse(
-        this.bot.database.getOrSetConfig(key, JSON.stringify(defaultValue)),
-      );
+    context.getOrSetConfig = async (
+      key: string,
+      defaultValue: unknown,
+    ): Promise<unknown> => {
+      return await this.bot.database.getOrSetConfig(key, defaultValue);
     };
-    context.setConfig = (key: string, value: any) => {
-      this.bot.database.setConfig(key, JSON.stringify(value));
+    context.setConfig = async (key: string, value: unknown) => {
+      return await this.bot.database.setConfig(key, value);
     };
 
     context.banUser = (reason: string, duration?: number) => {
@@ -1308,7 +1151,6 @@ export class MessageHandler {
       }
     };
 
-    context.users = this.bot.users;
     context.sendInDiscord = (message: string, channelId: string) =>
       this.bot.discord.say(message, channelId);
     context.getTimeDifference = getTimeDifference;

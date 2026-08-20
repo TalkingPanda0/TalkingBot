@@ -8,7 +8,8 @@
       "strict": true,
       "paths": {
         "botModule": ["./src/botModule.ts"],
-        "botutil": ["./src/util.ts"]
+        "botutil": ["./src/util.ts"],
+        "botenv": ["./src/env.ts"]
       },
 
       "skipLibCheck": true

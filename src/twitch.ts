@@ -3,8 +3,6 @@ import {
   ChatClient,
   ChatMessage,
   ChatRaidInfo,
-  ClearChat,
-  ClearMsg,
   UserNotice,
   parseChatMessage,
   ParsedMessagePart,
@@ -36,6 +34,8 @@ import {
   getRaidAudio,
   getSubAudio,
 } from "./alerts";
+import { CONFIG } from "./env";
+import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -57,11 +57,10 @@ export const userColors = [
 ];
 
 export class Twitch {
-  public clientId = "";
-  public clientSecret = "";
+  public clientId;
+  public clientSecret;
   public apiClient!: ApiClient;
   public channel!: HelixUser;
-  public publicClientId!: string;
   public chatClient!: ChatClient;
   public redeemQueue: EventSubChannelRedemptionAddEvent[] = [];
   public clipRegex = /(?:https:\/\/)?clips\.twitch\.tv\/(\S+)/;
@@ -72,7 +71,7 @@ export class Twitch {
   public badges = new Map<string, string>();
   public currentGame: string | null = null;
 
-  private channelName!: string;
+  private channelName: string;
   private eventListener!: EventSubListener;
   private bot: TalkingBot;
   private authProvider!: RefreshingAuthProvider;
@@ -82,7 +81,6 @@ export class Twitch {
   //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private eventSubSecret?: string;
   private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
-  private oauthFile = Bun.file(__dirname + "/../config/oauth.json");
   private broadcasterFile = Bun.file(
     __dirname + "/../config/token-broadcaster.json",
   );
@@ -93,6 +91,10 @@ export class Twitch {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+    this.clientId = CONFIG.twitch.clientId;
+    this.clientSecret = CONFIG.twitch.clientSecret;
+    this.channelName = CONFIG.twitch.channelName;
+    this.eventSubSecret = CONFIG.twitch.eventSubSecret;
   }
 
   // User hasn't set a color or failed to get the color, get a "random" color
@@ -113,7 +115,7 @@ export class Twitch {
   }
 
   public async addUser(code: string, scope: string) {
-    const isBroadcaster: Boolean = scope.startsWith("bits:read");
+    const isBroadcaster: boolean = scope.startsWith("bits:read");
     const tokenData = await exchangeCode(
       this.clientId,
       this.clientSecret,
@@ -142,6 +144,7 @@ export class Twitch {
       },
       30 * 60 * 1000,
     );
+    this.bot.onStreamOnline();
   }
 
   getDisplayName(display: string, login: string) {
@@ -158,14 +161,6 @@ export class Twitch {
     );
   }
 
-  public async readAuth() {
-    const fileContent = await this.oauthFile.json();
-    this.clientId = fileContent.clientId;
-    this.clientSecret = fileContent.clientSecret;
-    this.channelName = fileContent.channelName;
-    this.publicClientId = fileContent.publicApikey;
-    this.eventSubSecret = fileContent.eventSubSecret;
-  }
   private async handleMessage(
     channel: string,
     user: string,
@@ -185,7 +180,7 @@ export class Twitch {
         this.parseTwitchEmotes(msg.text, msg.emoteOffsets, msg.bits),
       );
 
-      let badges = [];
+      const badges = [];
 
       if (msg.userInfo.isMod) {
         badges.push(this.badges.get("moderator"));
@@ -326,7 +321,6 @@ export class Twitch {
   }
 
   async initBot(): Promise<void> {
-    await this.readAuth();
     this.authProvider = new RefreshingAuthProvider({
       clientId: this.clientId,
       clientSecret: this.clientSecret,
@@ -334,7 +328,7 @@ export class Twitch {
     });
 
     this.authProvider.onRefresh(async (_userId, newTokenData) => {
-      let isBroadcaster: Boolean =
+      const isBroadcaster: boolean =
         newTokenData.scope[0].startsWith("bits:read");
       Bun.write(
         isBroadcaster ? this.broadcasterFile : this.botFile,
@@ -402,7 +396,6 @@ export class Twitch {
       this.say("Something wicked this way comes.");
       this.isStreamOnline = true;
       this.bot.credits.clear();
-      this.bot.whereWord.clearGame();
       try {
         const stream = await event.getStream();
         if (!stream) {
@@ -429,9 +422,8 @@ export class Twitch {
       await this.onStreamOnline();
     });
 
-    this.eventListener.onStreamOffline(this.channel.id, async (_event) => {
+    this.eventListener.onStreamOffline(this.channel.id, async () => {
       this.isStreamOnline = false;
-      this.chatClient.say(this.channelName, this.bot.whereWord.endGame());
 
       const chatters = await this.apiClient.chat.getChatters(this.channel.id);
       chatters.data.forEach((chatter) => {
@@ -445,6 +437,7 @@ export class Twitch {
         clearTimeout(this.updateCategoryInterval);
       if (this.sendTipReminderInterval)
         clearTimeout(this.sendTipReminderInterval);
+      this.bot.onStreamOffline();
     });
 
     this.eventListener.onChannelFollow(
@@ -486,8 +479,8 @@ export class Twitch {
       this.channel.id,
       "736013381",
       async (data) => {
-        let months: number | null = 0;
-        let tier = "";
+        let months: number | null;
+        let tier: string;
         let gift = false;
         let gifted = 0;
 
@@ -542,7 +535,7 @@ export class Twitch {
           CreditType.Subscription,
         );
 
-        let user = await data.getChatter();
+        const user = await data.getChatter();
         this.bot.setLatestSub({
           name: user.displayName,
           pfpUrl: user.profilePictureUrl,
@@ -588,7 +581,7 @@ export class Twitch {
       this.bot.iopoll.emit("updatePoll", pollOptions);
     });
 
-    this.eventListener.onChannelPollEnd(this.channel.id, (_data) => {
+    this.eventListener.onChannelPollEnd(this.channel.id, () => {
       this.bot.iopoll.emit("pollEnd");
     });
 
@@ -606,7 +599,7 @@ export class Twitch {
           });
         }
         switch (data.rewardId) {
-          case this.selftimeoutid:
+          case this.selftimeoutid: {
             const modlist = await this.apiClient.moderation.getModerators(
               this.channel.id,
               { userId: data.userId },
@@ -622,7 +615,8 @@ export class Twitch {
             });
             completed = true;
             break;
-          case this.timeoutid:
+          }
+          case this.timeoutid: {
             const username = data.input.split(" ")[0].replace("@", "");
             const user: HelixUser | null =
               await this.apiClient.users.getUserByName(username);
@@ -654,6 +648,7 @@ export class Twitch {
             });
             completed = true;
             break;
+          }
           case this.pollid:
             // message like Which is better?: hapboo, realboo, habpoo, hapflat
             this.redeemQueue.push(data);
@@ -662,6 +657,7 @@ export class Twitch {
             this.redeemQueue.push(data);
             break;
           default:
+            this.bot.moduleManager.onChannelPointReward(data.rewardId, data);
             return;
         }
         if (completed == null) return;
@@ -702,12 +698,7 @@ export class Twitch {
     });
 
     this.chatClient.onRaid(
-      async (
-        _channel: string,
-        _user: string,
-        raidInfo: ChatRaidInfo,
-        _msg: UserNotice,
-      ) => {
+      async (_channel: string, _user: string, raidInfo: ChatRaidInfo) => {
         this.bot.ioalert.emit("alert", {
           audioList: await getRaidAudio(
             raidInfo.displayName,
@@ -761,13 +752,11 @@ export class Twitch {
       );
     });
 
-    this.chatClient.onMessageRemove(
-      (_channel: string, messageId: string, _msg: ClearMsg) => {
-        this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
-      },
-    );
+    this.chatClient.onMessageRemove((_channel: string, messageId: string) => {
+      this.bot.iochat.emit("deleteMessage", "twitch-" + messageId);
+    });
 
-    this.chatClient.onChatClear((_channel: string, _msg: ClearChat) => {
+    this.chatClient.onChatClear(() => {
       this.bot.iochat.emit("clearChat", "twitch");
     });
 
@@ -876,13 +865,13 @@ export class Twitch {
     });
   }
 
-  public async handleRedeemQueue(accept?: Boolean) {
+  public async handleRedeemQueue(accept?: boolean) {
     try {
       const redeem = this.redeemQueue.shift();
       if (!redeem) return;
       if (accept) {
         switch (redeem.rewardId) {
-          case this.pollid:
+          case this.pollid: {
             const matches = redeem.input.match(pollRegex);
             if (matches) {
               const question = matches[1];
@@ -906,7 +895,8 @@ export class Twitch {
               accept = false;
             }
             break;
-          case this.titleid:
+          }
+          case this.titleid: {
             const currentInfo =
               await this.apiClient.channels.getChannelInfoById(this.channel.id);
             await this.apiClient.channels.updateChannelInfo(this.channel.id, {
@@ -936,6 +926,7 @@ export class Twitch {
               15 * 60 * 1000,
             );
             break;
+          }
         }
       } else if (accept === null) {
         // scam
@@ -978,7 +969,7 @@ export class Twitch {
           if (bits) cheerName = parsedPart.name;
           else parsed += `${parsedPart.name}${parsedPart.amount}`;
           break;
-        case "emote":
+        case "emote": {
           const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
             size: "3.0",
             backgroundType: "dark",
@@ -986,6 +977,7 @@ export class Twitch {
           });
           parsed += ` <img onload="emoteLoaded(event)" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
           break;
+        }
       }
     });
     if (!bits || this.cheerEmotes == null) return parsed;
@@ -998,6 +990,53 @@ export class Twitch {
 
     return parsed;
   }
+
+  public async channelPointReward(
+    reward: ChannelPointReward,
+  ): Promise<ChannelPointRewardStatus> {
+    const rewards = await this.apiClient.channelPoints.getCustomRewards(
+      this.channel.id,
+      true,
+    );
+    const title = reward.title.toLowerCase();
+    const found = rewards.find((e) => e.title.toLowerCase() == title);
+    if (!found) {
+      const created = await this.apiClient.channelPoints.createCustomReward(
+        this.channel.id,
+        reward,
+      );
+      return created;
+    }
+
+    if (
+      found.title != reward.title ||
+      found.cost != reward.cost ||
+      found.prompt != (reward.prompt ?? "") ||
+      found.autoFulfill != (reward.autoFulfill ?? false) ||
+      found.globalCooldown !=
+        (reward.globalCooldown == 0 ? null : reward.globalCooldown) ||
+      found.isEnabled != (reward.isEnabled ?? true) ||
+      found.userInputRequired != (reward.userInputRequired ?? false) ||
+      found.maxRedemptionsPerStream !=
+        (reward.maxRedemptionsPerStream == 0
+          ? null
+          : reward.maxRedemptionsPerStream) ||
+      found.maxRedemptionsPerUserPerStream !=
+        (reward.maxRedemptionsPerUserPerStream == 0
+          ? null
+          : reward.maxRedemptionsPerUserPerStream) ||
+      (reward.backgroundColor != null &&
+        found.backgroundColor != reward.backgroundColor)
+    )
+      return await this.apiClient.channelPoints.updateCustomReward(
+        this.channel.id,
+        found.id,
+        reward,
+      );
+
+    return found;
+  }
+
   public async sendStreamPing() {
     const stream =
       await this.apiClient.streams.getStreamByUserName("SweetbabooO_o");

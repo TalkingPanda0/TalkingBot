@@ -5,15 +5,11 @@ import { DB } from "./db";
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
 
-import { Wheel } from "./wheel";
 import { MessageHandler } from "./commands";
 import { TTSManager } from "./tts";
 import { Credits } from "./credits";
-import { Users } from "./users";
-import { WhereWord } from "./whereword";
 import { Poll } from "./poll";
 
-import { levelUp } from "./levels";
 import { ModuleManager } from "./moduleManager";
 import { ChatLogger } from "./chatLogger";
 import {
@@ -25,6 +21,8 @@ import {
   getSubAudio,
 } from "./alerts";
 import { Canvas } from "fabric/fabric-impl";
+import { UserManager } from "./users";
+import { CONFIG } from "./env";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -43,13 +41,39 @@ export interface DiscordAuthData {
 interface controlMessage {
   overlay: string;
   target: string;
-  message: string;
+  message: Alert;
 }
 export interface latestSub {
   name: string;
   pfpUrl: string;
   time: Date;
 }
+
+type RaidAlert = { raider: string; viewers: number };
+type FollowAlert = { follower: string };
+type BitsAlert = {
+  user: string;
+  bits: number;
+  message: string;
+};
+type DiscordJoinAlert = { member: string };
+type KofiAlert = {
+  is_subscription: boolean;
+  message: string | null;
+  sender: string;
+  tier_name: string | null;
+  amount: string;
+  currency: string;
+};
+type SubAlert = { name: string; message: string };
+type Alert =
+  | RaidAlert
+  | FollowAlert
+  | BitsAlert
+  | SubAlert
+  | DiscordJoinAlert
+  | KofiAlert
+  | string;
 
 export class TalkingBot {
   public discord: Discord;
@@ -59,33 +83,29 @@ export class TalkingBot {
   public iomodtext: Namespace;
   public iopoll: Namespace;
   public ioalert: Namespace;
-  public connectedtoOverlay: Boolean = false;
+  public connectedtoOverlay: boolean = false;
   public database: DB;
   public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
-  public wheel: Wheel;
   public latestSub: latestSub | null = null;
-  public modtext: string = "";
+  public modtext: string | null = null;
   public modtextCanvas: Canvas | null = null;
   public ttsManager: TTSManager;
   public credits: Credits;
-  public users: Users;
-  public whereWord: WhereWord;
+  public userManager: UserManager;
   public moduleManager: ModuleManager;
-  private secretsFile = Bun.file(__dirname + "/../config/secrets.json");
-  public jwtSecret: string | null = null;
-  public discordRedirectUri: string = "";
-  public discordLoginUri: string = "";
 
   constructor(server: http.Server) {
+
     const io = new Server(server);
+
     this.ttsManager = new TTSManager(io.of("tts"));
 
     this.iomodtext = io.of("modtext");
 
-    this.iomodtext.on("connection", () => {
-      this.updateModText();
-      this.updateModTextCanvas();
+    this.iomodtext.on("connection", async () => {
+      await this.updateModText();
+      await this.updateModTextCanvas();
       this.updateModTextData();
     });
 
@@ -110,45 +130,39 @@ export class TalkingBot {
     this.commandHandler.readCustomCommands();
 
     this.credits = new Credits(this);
-    this.wheel = new Wheel();
     this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
     this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.moduleManager = new ModuleManager(this);
-    this.users = new Users(this.database);
-    this.whereWord = new WhereWord();
+    this.userManager = new UserManager(this);
   }
 
   public async initBot() {
-    const secrets = await this.secretsFile.json();
-    this.jwtSecret = secrets.jwtSecret;
-    this.discordRedirectUri = secrets.discordRedirectUri;
-    this.discordLoginUri = secrets.discordLoginUri;
-
     this.discord.initBot();
     await this.twitch.initBot();
-    this.users.init();
     this.commandHandler.init();
-    await this.whereWord.init();
     this.moduleManager.init();
 
-    this.latestSub = JSON.parse(
-      this.database.getOrSetConfig("latestSub", JSON.stringify(null)),
+    this.latestSub = await this.database.getOrSetConfig("latestSub", null);
+    this.modtext = await this.database.getOrSetConfig("currentModtext", null);
+    this.modtextCanvas = await this.database.getOrSetConfig(
+      "currentModtextCanvas",
+      null,
     );
 
-    this.modtext = this.database.getOrSetConfig("currentModtext", "");
-    this.modtextCanvas = JSON.parse(
-      this.database.getOrSetConfig("currentModtextCanvas", "null"),
-    );
-    this.updateModText();
-    this.updateModTextCanvas();
+    await this.updateModText();
+    await this.updateModTextCanvas();
     this.updateModTextData();
+  }
 
-    setInterval(() => {
-      levelUp(this);
-    }, 60 * 1000);
+  public onStreamOnline() {
+    this.userManager.onStreamOnline();
+  }
+
+  public onStreamOffline() {
+    this.userManager.onStreamOffline();
   }
 
   public async cleanUp() {
@@ -180,9 +194,9 @@ export class TalkingBot {
   public async broadcastMessage(message: string) {
     await Promise.all([this.twitch.say(message)]);
   }
-  public updateModText() {
+  public async updateModText() {
     if (!this.modtext) return;
-    this.database.setConfig("currentModtext", this.modtext);
+    await this.database.setConfig("currentModtext", this.modtext);
     this.iomodtext.emit(
       "message",
       this.modtext.replaceAll(/counter\((\w+)\)/g, (_modtext, counterName) => {
@@ -192,9 +206,9 @@ export class TalkingBot {
       }),
     );
   }
-  public updateModTextCanvas() {
+  public async updateModTextCanvas() {
     if (!this.modtextCanvas) return;
-    this.database.setConfig(
+    await this.database.setConfig(
       "currentModtextCanvas",
       JSON.stringify(this.modtextCanvas),
     );
@@ -227,11 +241,11 @@ export class TalkingBot {
       const response = await fetch("https://discord.com/api/oauth2/token", {
         method: "POST",
         body: new URLSearchParams({
-          client_id: this.discord.clientId,
-          client_secret: this.discord.clientSecret,
+          client_id: CONFIG.discord.clientId,
+          client_secret: CONFIG.discord.clientSecret,
           code,
           grant_type: "authorization_code",
-          redirect_uri: this.discordRedirectUri,
+          redirect_uri: CONFIG.discord.redirectUrl,
           scope: "identify",
         }).toString(),
         headers: {
@@ -244,7 +258,7 @@ export class TalkingBot {
       return null;
     }
   }
-  public handleControl(data: controlMessage) {
+  public async handleControl(data: controlMessage) {
     switch (data.overlay) {
       case "chat":
         this.iochat.emit(data.target, data.message);
@@ -255,61 +269,63 @@ export class TalkingBot {
           this.iomodtext.emit("refresh");
           return;
         }
-        this.modtext = data.message;
-        this.updateModText();
+        if (typeof data.message == "string") {
+          this.modtext = data.message;
+          await this.updateModText();
+        }
         break;
 
       case "tts":
         this.ttsManager.io.emit(data.target, data.message);
         break;
 
-      case "alerts":
-        const alert: any = data.message;
-        if (alert.viewers !== undefined) this.raidAlert(alert);
-        else if (alert.follower !== undefined) this.followAlert(alert);
-        else if (alert.bits !== undefined) this.bitsAlert(alert);
-        else if (alert.member !== undefined) this.discordJoinAlert(alert);
-        else if (alert.is_subscription !== undefined) this.kofiAlert(alert);
-        else this.subAlert(alert);
+      case "alerts": {
+        const alert: Alert = data.message;
+        if (typeof alert == "string") break;
+
+        if ("viewers" in alert) {
+          this.raidAlert(alert);
+        } else if ("follower" in alert) {
+          this.followAlert(alert);
+        } else if ("bits" in alert) {
+          this.bitsAlert(alert);
+        } else if ("member" in alert) {
+          this.discordJoinAlert(alert);
+        } else if ("is_subscription" in alert) {
+          this.kofiAlert(alert);
+        } else if ("name " in alert) {
+          this.subAlert(alert);
+        }
+
         break;
+      }
     }
   }
-  private async raidAlert(alert: { raider: string; viewers: number }) {
+  private async raidAlert(alert: RaidAlert) {
     this.ioalert.emit("alert", {
       audioList: await getRaidAudio(alert.raider, alert.viewers),
       ...alert,
     });
   }
-  private async followAlert(alert: { follower: string }) {
+  private async followAlert(alert: FollowAlert) {
     this.ioalert.emit("alert", {
       audioList: await getFollowAudio(alert.follower),
       ...alert,
     });
   }
-  private async bitsAlert(alert: {
-    user: string;
-    bits: number;
-    message: string;
-  }) {
+  private async bitsAlert(alert: BitsAlert) {
     this.ioalert.emit("alert", {
       audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
       ...alert,
     });
   }
-  private async discordJoinAlert(alert: { member: string }) {
+  private async discordJoinAlert(alert: DiscordJoinAlert) {
     this.ioalert.emit("alert", {
       audioList: await getDiscordJoinAudio(alert.member),
       ...alert,
     });
   }
-  private async kofiAlert(alert: {
-    is_subscription: boolean;
-    message: string | null;
-    sender: string;
-    tier_name: string | null;
-    amount: string;
-    currency: string;
-  }) {
+  private async kofiAlert(alert: KofiAlert) {
     this.ioalert.emit("alert", {
       audioList: await getKofiAudio(
         alert.sender,
@@ -321,15 +337,15 @@ export class TalkingBot {
       ...alert,
     });
   }
-  private async subAlert(alert: { name: string; message: string }) {
+  private async subAlert(alert: SubAlert) {
     this.ioalert.emit("alert", {
       audioList: await getSubAudio(alert.name),
       messageAudioList: alert.message ? await getSubAudio(alert.message) : [],
       ...alert,
     });
   }
-  public setLatestSub(sub: latestSub) {
-    this.database.setConfig("latestSub", JSON.stringify(sub));
+  public async setLatestSub(sub: latestSub) {
+    await this.database.setConfig("latestSub", sub);
     this.latestSub = sub;
     this.updateModTextData();
   }

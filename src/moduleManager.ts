@@ -4,6 +4,9 @@ import {
   ModuleContext,
   MessageData,
   DiscordMessageListener,
+  ChannelRedemptionListener,
+  ChannelRedemption,
+  ChannelPointRewardStatus,
 } from "botModule";
 
 import { Command } from "./commands";
@@ -15,20 +18,21 @@ import { Message } from "discord.js";
 
 const modulesDir = path.resolve(__dirname, "../config/modules");
 
+type CleanupFunction = () => void;
+
 export class ModuleManager {
   private modules: Map<
     string,
-    { module: BotModule; cleanups: Function[] } | null
-  >;
-  private messageListeners: MessageListener[];
-  private discordMessageListeners: DiscordMessageListener[];
+    { module: BotModule; cleanups: CleanupFunction[] } | null
+  > = new Map();
+  private messageListeners: MessageListener[] = [];
+  private discordMessageListeners: DiscordMessageListener[] = [];
+  private channelRedemptionListeners: Map<string, ChannelRedemptionListener> =
+    new Map();
   private bot: TalkingBot;
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
-    this.modules = new Map();
-    this.messageListeners = [];
-    this.discordMessageListeners = [];
   }
 
   public onChatMessage(data: MessageData) {
@@ -36,6 +40,19 @@ export class ModuleManager {
   }
   public onDiscordMessage(data: Message) {
     this.discordMessageListeners.forEach((l) => l(data));
+  }
+  public async onChannelPointReward(
+    rewardId: string,
+    data: ChannelRedemption,
+  ): Promise<void> {
+    const listener = this.channelRedemptionListeners.get(rewardId);
+    if (!listener) return;
+
+    try {
+      await listener(data);
+    } catch (e) {
+      console.error(`Error running redemption listener: ${e}`);
+    }
   }
 
   private createModuleTemplate(name: string): string {
@@ -95,9 +112,9 @@ export default ${Name};`;
 
   private getContext(): {
     context: ModuleContext;
-    cleanups: Function[];
+    cleanups: CleanupFunction[];
   } {
-    const cleanups: Function[] = [];
+    const cleanups: CleanupFunction[] = [];
 
     const addCommand = (name: string, command: Command): boolean => {
       return this.bot.commandHandler.addCommand(name, command);
@@ -124,6 +141,13 @@ export default ${Name};`;
       );
     };
 
+    const addChannelPointListener = (
+      rewardId: string,
+      listener: ChannelRedemptionListener,
+    ) => {
+      this.channelRedemptionListeners.set(rewardId, listener);
+    };
+
     const context: ModuleContext = {
       bot: this.bot,
       onChatMessage(listener) {
@@ -145,6 +169,44 @@ export default ${Name};`;
             removeCommand(name);
           });
         }
+      },
+      async channelPointReward(reward): Promise<ChannelPointRewardStatus> {
+        return await this.bot.twitch.channelPointReward(reward);
+      },
+      onChannelPointReward(rewardId, listener) {
+        addChannelPointListener(rewardId, listener);
+      },
+      async removeChannelPoint(rewardId) {
+        await this.bot.twitch.apiClient.channelPoints.deleteCustomReward(
+          this.bot.twitch.channel.id,
+          rewardId,
+        );
+      },
+      async setChannelPointEnabled(rewardId, enabled) {
+        await this.bot.twitch.apiClient.channelPoints.updateCustomReward(
+          this.bot.twitch.channel.id,
+          rewardId,
+          {
+            isEnabled: enabled,
+          },
+        );
+      },
+      async setRedemptionStatus(rewardId, redemptionId, status) {
+        await this.bot.twitch.apiClient.channelPoints.updateRedemptionStatusByIds(
+          this.bot.twitch.channel.id,
+          rewardId,
+          [redemptionId],
+          status,
+        );
+      },
+      async setChannelPointPaused(rewardId, paused) {
+        await this.bot.twitch.apiClient.channelPoints.updateCustomReward(
+          this.bot.twitch.channel.id,
+          rewardId,
+          {
+            isPaused: paused,
+          },
+        );
       },
     };
     return { context, cleanups };
