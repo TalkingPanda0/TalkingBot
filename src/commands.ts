@@ -111,7 +111,7 @@ export class MessageHandler {
           } else {
             userName = `${data.sender}`;
           }
-          const watchTime = await this.bot.database.getWatchTime(userId);
+          const watchTime = await this.bot.database.getWatchTime(userId.slice("twitch-".length));
 
           if (watchTime == null) {
             data.reply("Can't find watchtime.", true);
