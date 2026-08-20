@@ -210,7 +210,7 @@ export class TalkingBot {
     if (!this.modtextCanvas) return;
     await this.database.setConfig(
       "currentModtextCanvas",
-      JSON.stringify(this.modtextCanvas),
+      this.modtextCanvas,
     );
     this.iomodtext.emit("canvas", this.modtextCanvas);
   }
