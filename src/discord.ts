@@ -671,7 +671,7 @@ export class Discord {
           ),
         execute: async (interaction) => {
           const arg = interaction.options.getString("emote");
-          const filter = interaction.options.getString("filter");
+          const filter = interaction.options.getString("filter") ?? "both";
           if (arg == null) return;
           const emoteList = this.findEmotes(arg);
           if (emoteList == null || emoteList.length == 0) return;
@@ -679,11 +679,6 @@ export class Discord {
           let suffix = filter;
           if (suffix == null || suffix == "both")
             suffix = "messages and reactions";
-
-          if (!filter) {
-            await interaction.reply("Can't find emote.");
-            return;
-          }
 
           const emotes: { userId: string; times: number }[] =
             await this.bot.database.getEmoteUsage(emoteList, filter);

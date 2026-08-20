@@ -367,14 +367,14 @@ export class DB {
     return await this.database
       .select()
       .from(emotestats)
-      .where(eq(emotestats.userId, userId));
+      .where(eq(emotestats.userId, userId)).orderBy(desc(emotestats.times));
   }
 
   public async getUserReactionUsage(userId: string): Promise<EmoteStat[]> {
     return await this.database
       .select()
       .from(reactionstats)
-      .where(eq(reactionstats.userId, userId));
+      .where(eq(reactionstats.userId, userId)).orderBy(desc(reactionstats.times));
   }
 
   public async getUserReactionAndEmoteUsage(
@@ -384,7 +384,7 @@ export class DB {
       await this.database
         .select()
         .from(combinedemotestats)
-        .where(eq(combinedemotestats.userId, userId))
+        .where(eq(combinedemotestats.userId, userId)).orderBy(desc(combinedemotestats.totaltimes))
     ).map((stat) => ({
       userId: stat.userId,
       emoteId: stat.emoteId,
