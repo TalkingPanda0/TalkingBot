@@ -86,6 +86,11 @@ export interface ModuleContext {
   removeChannelPoint(rewardId: string): Promise<void>;
   setChannelPointPaused(rewardId: string, paused: boolean): Promise<void>;
   setChannelPointEnabled(rewardId: string, enabled: boolean): Promise<void>;
+  setRedemptionStatus(
+    rewardId: string,
+    redemptionId: string,
+    status: RedemptionStatus,
+  ): Promise<void>;
   onChannelPointReward(
     rewardId: string,
     listener: ChannelRedemptionListener,

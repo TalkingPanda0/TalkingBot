@@ -48,7 +48,11 @@ export class ModuleManager {
     const listener = this.channelRedemptionListeners.get(rewardId);
     if (!listener) return;
 
-    await listener(data);
+    try {
+      await listener(data);
+    } catch (e) {
+      console.error(`Error running redemption listener: ${e}`);
+    }
   }
 
   private createModuleTemplate(name: string): string {
@@ -185,6 +189,14 @@ export default ${Name};`;
           {
             isEnabled: enabled,
           },
+        );
+      },
+      async setRedemptionStatus(rewardId, redemptionId, status) {
+        await this.bot.twitch.apiClient.channelPoints.updateRedemptionStatusByIds(
+          this.bot.twitch.channel.id,
+          rewardId,
+          [redemptionId],
+          status,
         );
       },
       async setChannelPointPaused(rewardId, paused) {

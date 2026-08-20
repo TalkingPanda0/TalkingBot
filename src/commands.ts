@@ -957,7 +957,7 @@ export class MessageHandler {
       if (builtinCommand == null) return commandName.startsWith("!");
 
       data.message = data.message.replace(commandName, "").trim();
-      builtinCommand.commandFunction(data);
+      await builtinCommand.commandFunction(data);
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
         setTimeout(() => {
