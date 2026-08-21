@@ -219,7 +219,7 @@ function enableMousePanAndZoom(canvas) {
   el.addEventListener(
     "wheel",
     (e) => {
-      if (!isCtrlDown) return;
+      if (!isCtrlDown && !e.ctrlKey) return;
 
       e.preventDefault();
 
