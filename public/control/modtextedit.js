@@ -41,6 +41,7 @@ let selectedObject = null;
 let live = false;
 let canvas;
 let mode = false;
+let isCtrlDown = false;
 
 function toggleLive() {
   live = !live;
@@ -216,7 +217,7 @@ function enableMousePanAndZoom(canvas) {
   el.addEventListener(
     "wheel",
     (e) => {
-      if (!e.ctrlKey) return;
+      if (!isCtrlDown) return;
 
       e.preventDefault();
 
@@ -758,3 +759,12 @@ bind("prop-bgcolor", () =>
 bind("prop-color", () => selectedObject.set("fill", prop("prop-color")));
 
 document.getElementById("cancelBtn").onclick = () => dialog.close();
+
+
+window.addEventListener("keydown", e => {
+  if (e.key === "Control") isCtrlDown = true;
+});
+
+window.addEventListener("keyup", e => {
+  if (e.key === "Control") isCtrlDown = false;
+});
