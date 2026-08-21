@@ -407,6 +407,22 @@ app.use("/control", async (req, res) => {
           });
           break;
         }
+        case "/modtext/removeImage": {
+          if (!req.query.image) {
+            res.sendStatus(400);
+            break;
+          }
+          const file = Bun.file(
+            __dirname + "/../config/images/" + req.query.image,
+          );
+          if (!(await file.exists())) {
+            res.sendStatus(404);
+            break;
+          }
+          await file.delete();
+          res.sendStatus(200);
+          break;
+        }
         default:
           res.sendStatus(404);
           break;
@@ -416,8 +432,7 @@ app.use("/control", async (req, res) => {
 });
 
 app.post("/kofi/webhook", (req, res) => {
-
-  if(!CONFIG.secrets.kofi) {
+  if (!CONFIG.secrets.kofi) {
     res.sendStatus(500);
   }
 

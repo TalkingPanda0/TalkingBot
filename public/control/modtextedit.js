@@ -16,6 +16,7 @@ const deleteControl = new fabric.Control({
 const button = document.getElementById("button");
 const textArea = document.getElementById("textarea");
 const events = ["object:added", "object:modified", "object:removed"];
+const file = document.getElementById("file");
 const dialog = document.getElementById("imageDialog");
 const grid = document.getElementById("imageGrid");
 const form = document.getElementById("imageUploadForm");
@@ -42,6 +43,7 @@ let live = false;
 let canvas;
 let mode = false;
 let isCtrlDown = false;
+let selectedImg;
 
 function toggleLive() {
   live = !live;
@@ -548,42 +550,53 @@ async function pickImage() {
   dialog.showModal();
 }
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
-
-  const formData = new FormData(form);
-
-  const res = await fetch(form.action, {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    alert("Upload failed");
-    return;
-  }
-
-  await loadImages();
-
-  form.reset();
-});
-
 async function loadImages() {
   const res = await fetch("/control/modtext/getimages");
-  const images = (await res.json()).map((i) => `/${i}`);
+  const images = await res.json();
 
   grid.innerHTML = "";
 
   for (const url of images) {
     const img = document.createElement("img");
-    img.src = url;
-    img.onclick = async () => {
-      const img = await getImage(url);
-      canvas.add(img);
-      dialog.close();
+    img.src = `/${url}`;
+    img.dataset.image = url;
+    img.onclick = () => {
+      if (selectedImg) {
+        selectedImg.classList.remove("selected");
+      }
+      img.classList.add("selected");
+      selectedImg = img;
     };
     grid.appendChild(img);
   }
+  const button = document.createElement("button");
+  button.className = "material-icons";
+  button.id = "button";
+  button.textContent = "add";
+  button.onclick = chooseImage;
+
+  grid.appendChild(button);
+}
+
+function chooseImage() {
+  file.click();
+}
+
+async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch("/control/modtext/addimage", {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    alert("Image upload failed");
+    return false;
+  }
+
+  return true;
 }
 
 function saveState() {
@@ -687,17 +700,13 @@ function updateTextAlignButtons(align) {
   });
 }
 
+function closeDialog() {
+  dialog.close();
+  selectedImg = null;
+}
+
 async function uploadAndAddImage(file) {
-  const formData = new FormData();
-  formData.append("image", file);
-
-  const res = await fetch("/control/modtext/addimage", {
-    method: "POST",
-    body: formData,
-  });
-
-  if (!res.ok) {
-    alert("Image upload failed");
+  if (!(await uploadImage(file))) {
     return;
   }
 
@@ -758,13 +767,50 @@ bind("prop-bgcolor", () =>
 );
 bind("prop-color", () => selectedObject.set("fill", prop("prop-color")));
 
-document.getElementById("cancelBtn").onclick = () => dialog.close();
-
-
-window.addEventListener("keydown", e => {
+window.addEventListener("keydown", (e) => {
   if (e.key === "Control") isCtrlDown = true;
 });
 
-window.addEventListener("keyup", e => {
+window.addEventListener("keyup", (e) => {
   if (e.key === "Control") isCtrlDown = false;
 });
+
+file.onchange = async (event) => {
+  if (!event.target.files[0]) return;
+  await uploadImage(event.target.files[0]);
+  await loadImages();
+};
+
+document.getElementById("addBtn").onclick = async () => {
+  if (!selectedImg) return;
+  const img = await getImage(selectedImg.src);
+  canvas.add(img);
+  closeDialog();
+};
+
+document.getElementById("deleteBtn").onclick = async () => {
+  if (!selectedImg) return;
+  const result = await Swal.fire({
+    target: imageDialog,
+    title: `Are you sure you want to delete this image?`,
+    text: "You won't be able to revert this!",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#3085d6",
+    cancelButtonColor: "#d33",
+    confirmButtonText: "Yes, delete it!",
+  });
+  if (!result.isConfirmed) return;
+  const res = await fetch(
+    `/control/modtext/removeImage?image=${selectedImg.dataset.image}`,
+    { method: "POST" },
+  );
+  if (!res.ok) {
+    alert("Failed deleting image");
+    console.log(await res.text());
+    return;
+  }
+  await loadImages();
+};
+
+document.getElementById("cancelBtn").onclick = () => closeDialog();

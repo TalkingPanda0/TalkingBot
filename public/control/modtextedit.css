@@ -13,6 +13,21 @@ button {
   border-radius: 5px;
   cursor: pointer;
 }
+
+#imageGrid button {
+  height: 100px;
+  width: 100px;
+}
+
+#imageGrid input {
+  background-color: #15171c;
+  color: white;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
 body {
   font-family: Arial, sans-serif;
   color-scheme: dark;
@@ -88,6 +103,11 @@ dialog {
 
 #imageGrid img:hover {
   border-color: #888;
+}
+
+#imageGrid .selected {
+  border-color: #048ac7 !important;
+  border-width: 4.5px;
 }
 
 .actions {

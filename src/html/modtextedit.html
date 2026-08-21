@@ -102,33 +102,23 @@
       </button>
 
       <dialog id="imageDialog">
-        <form
-          id="imageUploadForm"
-          action="/control/modtext/addimage"
-          method="POST"
-          enctype="multipart/form-data"
-          method="dialog"
-          class="dialog-body"
-        >
-          <h3>Select an image</h3>
+        <input style="display: none;" id="file" type="file" name="image" accept="image/*" />
+        <h3>Select an image</h3>
 
-          <div id="imageGrid"></div>
+        <div id="imageGrid"></div>
 
-          <hr />
+        <hr />
 
-          <label>
-            Upload new image:
-            <input type="file" name="image" accept="image/*" />
-          </label>
-
-          <div class="actions">
-            <button type="submit">Upload Image</button>
-            <button type="button" id="cancelBtn">Cancel</button>
-          </div>
-        </form>
+        <div class="actions">
+          <span>
+            <button type="button" id="addBtn">Add</button>
+            <button type="button" id="deleteBtn">Delete</button>
+          </span>
+          <button type="button" id="cancelBtn">Cancel</button>
+        </div>
       </dialog>
     </div>
-    <div style="display: flex; align-items: flex-start">
+    <div style="display: flex; align-items: flex-start; padding-left: 1%">
       <div id="canvasContainer" style="display: inline-block">
         <div id="scaler">
           <div id="player"></div>
@@ -234,7 +224,13 @@
             <input type="range" id="prop-opacity" min="0" max="1" step="0.01" />
           </label>
 
-          <button onclick="deleteSelected()" class="material-symbols-outlined" style="color: red" >delete</button>
+          <button
+            onclick="deleteSelected()"
+            class="material-symbols-outlined"
+            style="color: red"
+          >
+            delete
+          </button>
         </div>
       </div>
     </div>
