@@ -86,7 +86,6 @@ export class Twitch {
   );
   private botFile = Bun.file(__dirname + "/../config/token-bot.json");
   private updateCategoryInterval: Timer | null = null;
-  private sendTipReminderInterval: Timer | null = null;
   private allreadyFollowed: Set<string> = new Set();
 
   constructor(bot: TalkingBot) {
@@ -136,14 +135,6 @@ export class Twitch {
       5 * 60 * 1000,
     );
 
-    this.sendTipReminderInterval = setInterval(
-      () => {
-        this.bot.broadcastMessage(
-          `Buy me a food! https://ko-fi.com/sweetbaboo`,
-        );
-      },
-      30 * 60 * 1000,
-    );
     this.bot.onStreamOnline();
   }
 
@@ -435,8 +426,6 @@ export class Twitch {
 
       if (this.updateCategoryInterval)
         clearTimeout(this.updateCategoryInterval);
-      if (this.sendTipReminderInterval)
-        clearTimeout(this.sendTipReminderInterval);
       this.bot.onStreamOffline();
     });
 
