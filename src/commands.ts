@@ -247,7 +247,7 @@ export class MessageHandler {
           const followed =
             await this.bot.twitch.apiClient.channels.getChannelFollowers(
               this.bot.twitch.channel.id,
-              data.senderId,
+              data.senderId.replace("twitch-",""),
             );
 
           // User is not following

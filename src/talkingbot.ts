@@ -96,7 +96,6 @@ export class TalkingBot {
   public moduleManager: ModuleManager;
 
   constructor(server: http.Server) {
-
     const io = new Server(server);
 
     this.ttsManager = new TTSManager(io.of("tts"));
@@ -208,10 +207,7 @@ export class TalkingBot {
   }
   public async updateModTextCanvas() {
     if (!this.modtextCanvas) return;
-    await this.database.setConfig(
-      "currentModtextCanvas",
-      this.modtextCanvas,
-    );
+    await this.database.setConfig("currentModtextCanvas", this.modtextCanvas);
     this.iomodtext.emit("canvas", this.modtextCanvas);
   }
 
