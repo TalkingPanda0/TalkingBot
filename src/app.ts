@@ -46,7 +46,7 @@ app.get("/getMessages", async (req, res) => {
     res.sendStatus(400);
     return;
   }
-  const messages = bot.chatLogger.getMessages(req.query.date.toString());
+  const messages = await bot.chatLogger.getMessages(req.query.date.toString());
   res.send(messages);
 });
 
