@@ -312,6 +312,7 @@ export class TalkingBot {
   private async bitsAlert(alert: BitsAlert) {
     this.ioalert.emit("alert", {
       audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
+      type: "BitsAlert",
       ...alert,
     });
   }
@@ -330,6 +331,7 @@ export class TalkingBot {
         alert.amount,
         alert.currency,
       ),
+      type: "kofiAlert",
       ...alert,
     });
   }
@@ -337,6 +339,7 @@ export class TalkingBot {
     this.ioalert.emit("alert", {
       audioList: await getSubAudio(alert.name),
       messageAudioList: alert.message ? await getSubAudio(alert.message) : [],
+      type: "SubAlert",
       ...alert,
     });
   }
