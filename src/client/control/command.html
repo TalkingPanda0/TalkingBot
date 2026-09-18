@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 5px;
+        background-color: #15171c;
+        color: white;
+      }
+
+      * {
+        font-family: Roboto, Arial, sans-serif;
+        color: white;
+      }
+
+      ul {
+        list-style-type: none;
+        padding: 0;
+      }
+
+      li {
+        margin: 10px 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .button {
+        cursor: pointer;
+        user-select: none;
+      }
+
+      table {
+        border-collapse: collapse;
+        border: 2px solid rgb(140 140 140);
+      }
+
+      th,
+      td {
+        border: 1px solid rgb(160 160 160);
+        padding: 8px 10px;
+      }
+
+      td:last-of-type {
+        text-align: center;
+      }
+
+      tfoot th {
+        text-align: right;
+      }
+      #search {
+        width: 100%;
+        background-color: #15171c;
+        margin: 0 auto; /* this centers it */
+        border-radius: 10px;
+      }
+    </style>
+
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <input
+      type="text"
+      name="search"
+      id="search"
+      onKeyup="updateSearch(event)"
+      autocomplete="off"
+      placeholder="Search Commands"
+    />
+
+    <h1>Commands</h1>
+    <table>
+      <thead>
+        <th scope="col">Command</th>
+        <th scope="col">Response</th>
+        <th scope="col">Actions</th>
+      </thead>
+      <tbody id="commandTable"></tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="2">Add a command</th>
+          <td>
+            <div onclick="addCommand()" class="material-icons button">
+              add_circle
+            </div>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+    <h1>Aliases</h1>
+    <br />
+    <table>
+      <thead>
+        <th scope="col">Alias</th>
+        <th scope="col" style="width: 100%">Command</th>
+        <th scope="col">Actions</th>
+      </thead>
+      <tbody id="aliasTable"></tbody>
+      <tfoot>
+        <tr>
+          <th scope="row" colspan="2">Add an alias</th>
+          <td>
+            <div onclick="addAlias()" class="material-icons button">
+              add_circle
+            </div>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <script type="module" src="/control/script/command.ts"></script>
+  </body>
+</html>

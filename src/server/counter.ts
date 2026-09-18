@@ -1,0 +1,43 @@
+import { DB } from "./db.ts";
+
+export class Counter {
+  counters: Map<string, number> = new Map<string, number>();
+  db: DB;
+
+  constructor(db: DB) {
+    this.db = db;
+  }
+  public init() {
+    this.loadCounters();
+  }
+
+  private async saveCounters() {
+    const counterArray: { name: string; count: number }[] = [];
+    this.counters.forEach((value, key) => {
+      counterArray.push({ name: key, count: value });
+    });
+    await this.db.setConfig("Counters", counterArray);
+  }
+
+  private async loadCounters() {
+    const counterArray = (await this.db.getOrSetConfig("Counters", [])) as { name: string; count: number }[];
+      counterArray.forEach((value) => {
+      this.counters.set(value.name, value.count);
+    });
+  }
+
+  public getCounter(name: string): number | undefined {
+    if (!this.counters.has(name)) return 0;
+    return this.counters.get(name);
+  }
+
+  public addToCounter(name: string, number: number) {
+    this.counters.set(name, (this.getCounter(name) || 0) + number);
+    this.saveCounters();
+  }
+
+  public setCounter(name: string, number: number) {
+    this.counters.set(name, number);
+    this.saveCounters();
+  }
+}

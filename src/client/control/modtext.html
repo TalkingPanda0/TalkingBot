@@ -1,0 +1,239 @@
+<!doctype html>
+<html>
+  <head>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+  </head>
+
+  <body>
+    <div class="controls">
+      <button
+        class="normalMode material-icons"
+        title="Add Text"
+        onclick="addText()"
+      >
+        text_format
+      </button>
+      <button
+        class="normalMode material-icons"
+        title="Add Image From URL"
+        onclick="addImagePrompt()"
+      >
+        image_search
+      </button>
+      <button
+        class="normalMode material-icons"
+        title="Choose Image"
+        onclick="pickImage()"
+      >
+        image
+      </button>
+      <button
+        class="normalMode material-symbols-outlined"
+        title="Add Subscriber Name"
+        onclick="addSubName()"
+      >
+        chess_knightbadge
+      </button>
+      <button
+        class="normalMode material-symbols-outlined"
+        title="Add Subscriber PFP"
+        onclick="addSubPfp()"
+      >
+        chess_knightperson
+      </button>
+      <button
+        class="normalMode material-icons"
+        title="Add Counter"
+        onclick="addCounter()"
+      >
+        exposure_plus_1
+      </button>
+      <button
+        class="normalMode material-icons"
+        id="playPauseButton"
+        title="Play/Pause"
+        onclick="playPause()"
+      >
+        pause
+      </button>
+
+      <button
+        class="material-icons"
+        onclick="getModText()"
+        title="Update Mod Text"
+      >
+        update
+      </button>
+      <button
+        class="material-icons"
+        class="button"
+        id="button"
+        onclick="toggleMode()"
+      >
+        settings
+      </button>
+
+      <button
+        class="material-icons"
+        onclick="sendToOverlay()"
+        style="background: #9146ff; color: white"
+      >
+        send
+      </button>
+
+      <dialog id="imageDialog">
+        <input
+          style="display: none"
+          id="file"
+          type="file"
+          name="image"
+          accept="image/*"
+        />
+        <h3>Select an image</h3>
+
+        <div id="imageGrid"></div>
+
+        <hr />
+
+        <div class="actions">
+          <span>
+            <button type="button" id="addBtn">Add</button>
+            <button type="button" id="deleteBtn">Delete</button>
+          </span>
+          <button type="button" id="cancelBtn">Cancel</button>
+        </div>
+      </dialog>
+    </div>
+    <div style="display: flex; align-items: flex-start; padding-left: 1%">
+      <div id="canvasContainer" style="display: inline-block">
+        <div id="scaler">
+          <div id="player"></div>
+          <canvas id="editorCanvas" style="display: none"></canvas>
+        </div>
+      </div>
+
+      <div id="sidePanel">
+        <h3>Properties</h3>
+
+        <div id="noSelection">No object selected</div>
+
+        <div id="props" style="display: none">
+          <label>
+            X
+            <input type="number" id="prop-left" step="1" />
+          </label>
+
+          <label>
+            Y
+            <input type="number" id="prop-top" step="1" />
+          </label>
+
+          <label>
+            Scale X
+            <input type="number" id="prop-scalex" step="0.01" />
+          </label>
+          <label>
+            Scale Y
+            <input type="number" id="prop-scaley" step="0.01" />
+          </label>
+
+          <label>
+            Rotation
+            <input type="number" id="prop-angle" step="1" />
+          </label>
+
+          <div id="textControls" style="display: none">
+            <label>
+              Text
+              <textarea type="text" id="prop-text"></textarea>
+            </label>
+            <div style="display: flex; gap: 6px">
+              <button
+                class="material-symbols-outlined"
+                title="Align Left"
+                onclick="setTextAlign('left')"
+              >
+                format_align_left
+              </button>
+
+              <button
+                class="material-symbols-outlined"
+                title="Align Center"
+                onclick="setTextAlign('center')"
+              >
+                format_align_center
+              </button>
+
+              <button
+                class="material-symbols-outlined"
+                title="Align Right"
+                onclick="setTextAlign('right')"
+              >
+                format_align_right
+              </button>
+            </div>
+            <label>
+              Font
+              <select
+                id="prop-font"
+                class="btn-object-action"
+                bind-value-to="fontFamily"
+              >
+                <option value="sans-serif" selected="">Arial</option>
+                <option value="helvetica">Helvetica</option>
+                <option value="myriad pro">Myriad Pro</option>
+                <option value="delicious">Delicious</option>
+                <option value="verdana">Verdana</option>
+                <option value="georgia">Georgia</option>
+                <option value="courier">Courier</option>
+                <option value="comic sans ms">Comic Sans MS</option>
+                <option value="engagement">Engagement</option>
+                <option value="impact">Impact</option>
+                <option value="monaco">Monaco</option>
+                <option value="optima">Optima</option>
+                <option value="hoefler text">Hoefler Text</option>
+                <option value="plaster">Plaster</option>
+              </select>
+            </label>
+            <label>
+              Background Color
+              <input type="color" alpha id="prop-bgcolor" />
+            </label>
+            <label>
+              Text Color
+              <input alpha type="color" id="prop-color" />
+            </label>
+          </div>
+
+          <label>
+            Opacity
+            <input type="range" id="prop-opacity" min="0" max="1" step="0.01" />
+          </label>
+
+          <button
+            onclick="deleteSelected()"
+            class="material-symbols-outlined"
+            style="color: red"
+          >
+            delete
+          </button>
+        </div>
+      </div>
+    </div>
+    <textarea style="display: none" id="textarea" rows="10"></textarea>
+    <script type="module" src="/control/script/modtextEdit.ts"></script>
+  </body>
+</html>

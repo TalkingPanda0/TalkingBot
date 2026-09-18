@@ -1,0 +1,236 @@
+<!doctype html>
+<html>
+  <head>
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+  </head>
+  <body id="body">
+    <div
+      id="disconnect-list"
+      style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        filter: grayscale(1);
+        display: flex;
+      "
+    ></div>
+    <div id="container">
+      <div id="message-list"></div>
+      <div id="send-message">
+        <div id="message-apperance">
+          <input class="input" id="color-input" placeholder="Color" />
+          <input class="input" id="name-input" placeholder="Name" />
+          <input
+            type="checkbox"
+            id="command-input"
+            name="iscommand"
+            value="false"
+          />Is command
+          <div class="dropdown">
+            <div class="dropdown-toggle">Badges</div>
+            <div class="dropdown-menu"></div>
+          </div>
+          <select class="button" name="platform" id="platform-input">
+            <option value="bot">Bot</option>
+            <option value="twitch">Twitch</option>
+            <option value="youtube">YouTube</option>
+          </select>
+        </div>
+        <div id="send-container">
+          <input class="input" id="message-input" placeholder="Message" />
+          <button class="button" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <script type="module" src="/control/script/chat.ts">
+     </script>
+  <style>
+    #command-input {
+      flex: 0 !important;
+    }
+    #message-apperance {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #message-apperance * {
+      flex: 1;
+    }
+
+    #message-input {
+      flex: 1;
+    }
+
+    #send-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    #send-message {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+    }
+    #message-list {
+      flex: 1;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: table;
+      bottom: 0;
+      left: 0;
+      table-layout: fixed;
+      overflow-y: scroll;
+      width: 100%;
+    }
+
+    body::-webkit-scrollbar {
+      width: 0;
+      /* WebKit (Safari, Chrome) */
+    }
+    .message {
+      padding-left: 4px;
+      border-radius: 2px;
+      padding-bottom: 7px;
+      padding-top: 7px;
+      overflow-wrap: break-word;
+    }
+
+    .text {
+      color: white;
+    }
+    .sender {
+      vertical-align: middle;
+    }
+    .badge {
+      display: inline-table;
+      vertical-align: middle;
+      height: 25px;
+      width: 25px;
+
+      margin: 2px;
+      filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+        drop-shadow(0 0 0 #000);
+    }
+    .badges {
+      display: inline-table;
+      padding: 2px;
+      margin-right: 4px;
+    }
+    * {
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1em;
+      background-color: #15171c;
+    }
+    .emote {
+      height: 28px;
+      min-width: 28px;
+      vertical-align: middle;
+      padding-left: 5px;
+      padding-right: 5px;
+    }
+    .reply {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+      white-space: nowrap;
+    }
+    .replyText {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+      height: 15px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .redeem {
+      color: #a5a5a5;
+      font-size: 20px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+    }
+    body {
+      margin: 0px;
+      background-color: #2b2e38;
+    }
+    .action {
+      cursor: pointer;
+    }
+    .dropdown {
+      position: relative;
+      display: inline-block;
+      width: 200px;
+    }
+    .dropdown-toggle {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #15171c;
+      cursor: pointer;
+    }
+    .dropdown-toggle:hover {
+      background-color: #2b2e38;
+    }
+    .dropdown-menu {
+      position: absolute;
+      bottom: 100%;
+      left: 0;
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #2b2e38;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+      display: none;
+      z-index: 10;
+    }
+    .dropdown-menu.show {
+      display: block;
+    }
+    .dropdown-menu label {
+      text-overflow: ellipsis;
+      overflow: hidden;
+      display: block;
+      padding: 8px;
+      cursor: pointer;
+      font-size: medium;
+    }
+    .dropdown-menu label:hover {
+      background-color: #048ac7;
+    }
+    .dropdown-menu input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    .button {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .input {
+      padding: 6px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+  </style>
+</html>

@@ -1,21 +1,27 @@
 {
     "compilerOptions": {
-      "target": "es2024",
-      "module": "commonjs",
+      "target": "ESNext",
+      "module": "NodeNext",
+      "allowImportingTsExtensions": true,
       "outDir": "./dist",
       "rootDir": "./src",
+      "types": ["bun"],
+      "lib": ["ESNext", "DOM"],
+      "moduleResolution": "NodeNext",
       "esModuleInterop": true,
+      "emitDeclarationOnly": true,
+      "declaration": true,
       "strict": true,
       "paths": {
-        "botModule": ["./src/botModule.ts"],
-        "botutil": ["./src/util.ts"],
-        "botenv": ["./src/env.ts"]
+        "botModule": ["./src/server/botModule.ts"],
+        "botutil": ["./src/shared/util.ts"],
+        "botenv": ["./src/server/env.ts"]
       },
 
       "skipLibCheck": true
 
     },
-    "include": ["src/*"]
+    "include": ["src/server/*","src/shared/*"]
 }
 
   

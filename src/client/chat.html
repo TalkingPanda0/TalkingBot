@@ -1,0 +1,161 @@
+<!doctype html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Color+Emoji&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body id="body">
+    <canvas id="emote-wall" class="invis" height="100%" width="100%"></canvas>
+    <div id="message-list"></div>
+    <div
+      id="disconnect-list"
+      style="
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        filter: grayscale(1);
+        display: flex;
+      "
+    ></div>
+  </body>
+
+  <script type="module">
+    import { ChatHandler } from "/script/chat.ts";
+
+    const messageList = document.getElementById("message-list");
+    const disconnectList = document.getElementById("disconnect-list");
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const showCommands = searchParams.has("showcmd");
+    const showEmoteWall = searchParams.has("emotewall");
+    const transparent = searchParams.has("transparent");
+
+    const emoteWall = showEmoteWall ? document.getElementById("emote-wall") : null;
+
+    if (transparent) document.body.style.backgroundColor = "rgba(0,0,0,0)";
+
+    if (showEmoteWall) {
+      emoteWall.classList.remove("invis");
+    }
+
+    const chat = new ChatHandler(showCommands,emoteWall,messageList,disconnectList);
+    chat.listen();
+  </script>
+  <style>
+    #emote-wall {
+      position: fixed;
+      z-index: 1;
+    }
+
+    #message-list {
+      background-color: rgba(0, 0, 0, 0.5);
+      display: table;
+      bottom: 0;
+      left: 0;
+      table-layout: fixed;
+      overflow-y: scroll;
+      width: 100%;
+    }
+
+    body::-webkit-scrollbar {
+      width: 0;
+      /* WebKit (Safari, Chrome) */
+    }
+    .message {
+      padding-left: 4px;
+      border-radius: 2px;
+      margin: 2px;
+      padding-bottom: 7px;
+      padding-top: 7px;
+      overflow-wrap: break-word;
+    }
+
+    .text {
+      color: white;
+    }
+    .sender {
+      vertical-align: middle;
+    }
+    .badge {
+      display: inline-table;
+      vertical-align: middle;
+      height: 25px;
+      width: 25px;
+
+      margin: 2px;
+      filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 0 #000)
+        drop-shadow(0 0 0 #000);
+    }
+    .badges {
+      display: inline-table;
+      padding: 2px;
+      margin-right: 4px;
+      z-index: 1;
+    }
+    * {
+      color: #fff;
+      font-family: Arial, Helvetica, sans-serif, "Noto Color Emoji";
+      font-size: 25px;
+      font-weight: 700;
+      line-height: 1em;
+    }
+    .emote {
+      width: 28px;
+      vertical-align: middle;
+      padding-left: 5px;
+      padding-right: 5px;
+      top: 0px;
+      left: 0px;
+    }
+    .reply {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+      white-space: nowrap;
+    }
+
+    .replyText {
+      color: #a5a5a5;
+      font-size: 15px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+      height: 15px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .redeem {
+      color: #a5a5a5;
+      font-size: 20px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+    }
+    body {
+      margin: 0px;
+      background-color: #2b2e38;
+    }
+    .redeem {
+      color: #a5a5a5;
+      font-size: 20px;
+      margin-left: 4px;
+      margin-bottom: 5px;
+      display: inline-table;
+    }
+    .hapboo {
+      height: 128px;
+      width: 128px;
+    }
+
+    .invis {
+      display: none;
+    }
+  </style>
+</html>

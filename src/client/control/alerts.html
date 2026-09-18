@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title></title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 5px;
+        background-color: #15171c;
+        color: white;
+      }
+      .button {
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      .input {
+        padding: 6px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      * {
+        margin: 10px;
+      }
+      textarea {
+        height: 100px;
+        margin-bottom: -6px;
+      }
+    </style>
+  </head>
+  <body>
+    <select class="button" name="alert" id="alert-input">
+      <option value="sub">Subscriber</option>
+      <option value="subgift">Subscriber Gifted</option>
+      <option value="raid">Raid</option>
+      <option value="bits">Bits</option>
+      <option value="follower">Follower</option>
+      <option value="discord">Discord Join</option>
+      <option value="kofi">Kofi</option>
+    </select>
+    <button onclick="send()" id="button">Send</button>
+    <div id="bits" style="display: none">
+      <input
+        class="input"
+        id="bitsCount"
+        type="number"
+        min="1"
+        placeholder="Bits"
+      />
+      <input class="input" id="bitSender" type="text" placeholder="Sender" />
+      <textarea class="input" id="bitMessage" placeholder="Message"></textarea>
+    </div>
+    <div id="raid" style="display: none">
+      <input
+        class="input"
+        id="raiders"
+        type="number"
+        min="1"
+        placeholder="Raiders"
+      />
+      <input class="input" id="raider" type="text" placeholder="Raider" />
+    </div>
+    <div id="follower" style="display: none">
+      <input
+        class="input"
+        id="followerName"
+        type="text"
+        placeholder="Follower"
+      />
+    </div>
+    <div id="discord" style="display: none">
+      <input
+        class="input"
+        id="discordName"
+        type="text"
+        placeholder="Joiner"
+      />
+    </div>
+   <div id="kofi" style="display: none">
+      <input
+        class="input"
+        id="kofiSender"
+        type="text"
+        placeholder="Sender"
+      />
+      <input
+        class="input"
+        id="kofiSub"
+        type="checkbox"
+      />
+      Is a subscription
+      <input
+        class="input"
+        id="kofiTier"
+        type="text"
+        placeholder="Tier Name" 
+      />
+      <input
+        class="input"
+        id="kofiAmount"
+        type="text"
+        placeholder="Amount" 
+      />
+ <input
+        class="input"
+        id="kofiCurrency"
+        type="text"
+        placeholder="Currency" 
+      />
+ <input
+        class="input"
+        id="kofiMessage"
+        type="text"
+        placeholder="Message" 
+      />
+    </div>
+    <div id="sub">
+      <input
+        class="input"
+        id="subscriber"
+        type="text"
+        placeholder="Subscriber"
+      />
+      <textarea class="input" id="submessage" placeholder="Message"></textarea>
+      <input
+        class="input"
+        id="submonths"
+        type="number"
+        min="1"
+        placeholder="Months"
+      ></input>
+      <select class="button" name="tier" id="subtier-input">
+        <option value="Prime">Amazon Prime</option>
+        <option value="1000">Tier 1</option>
+        <option value="2000">Tier 2</option>
+        <option value="3000">Tier 3</option>
+      </select>
+    </div>
+    <div id="subgift" style="display: none">
+      <input class="input" id="gifted" type="number" placeholder="Gifted" />
+      <input class="input" id="gifter" type="text" placeholder="Gifter" />
+      <input
+        class="input"
+        id="giftmonths"
+        type="number"
+        min="1"
+        placeholder="Months"
+      ></input>
+      <select class="button" name="tier" id="gifttier-input">
+        <option value="Prime">Amazon Prime</option>
+        <option value="1000">Tier 1</option>
+        <option value="2000">Tier 2</option>
+        <option value="3000">Tier 3</option>
+      </select>
+    </div>
+    <script type="module" src="/control/script/alerts.ts">
+   
+    </script>
+  </body>
+</html>
