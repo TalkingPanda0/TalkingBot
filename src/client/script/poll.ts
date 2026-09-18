@@ -1,4 +1,3 @@
-import '../bootstrap.scss';
 import * as bootstrap from "bootstrap";
 
 import { PollEvent, PollOption } from "../shared/types.ts";

@@ -4,7 +4,7 @@ USER bun
 RUN mkdir /home/bun/talkingbot
 WORKDIR /home/bun/talkingbot
 
-COPY package.json tsconfig.json ./
+COPY bun.lock package.json tsconfig.json vite.config.ts ./
 
 RUN bun install --frozen-lockfile --verbose --production
 
@@ -14,5 +14,7 @@ COPY --chown=bun  public ./public
 RUN mkdir src/
 COPY src ./src
 
+RUN bun run build
+
 EXPOSE 3000/tcp
-ENTRYPOINT [ "bun", "run", "src/app.ts" ]
+ENTRYPOINT [ "bun", "run", "start" ]
