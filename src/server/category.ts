@@ -25,10 +25,11 @@ export async function updateCategory(bot: TalkingBot) {
       limit: 1,
     })
   ).data[0];
-  if (!helixGame || bot.twitch.currentGame == helixGame.id) {
+  if (!helixGame ) {
     await bot.broadcastMessage(`Failed to find twitch game: ${currentSteamGame}`);
     return;
   }
+  if(bot.twitch.currentGame == helixGame.id) return;
 
   await bot.twitch.apiClient.channels.updateChannelInfo(bot.twitch.channel.id, {
     gameId: helixGame.id,
