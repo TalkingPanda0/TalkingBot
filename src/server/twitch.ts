@@ -39,6 +39,7 @@ import {
 import { CONFIG } from "./env.ts";
 import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
 import { PollEvent, PollOption } from "../shared/types.ts";
+import { type } from "node:os";
 
 const pollRegex = /^(.*?):\s*(.*)$/;
 
@@ -258,12 +259,13 @@ export class Twitch {
   }
   private async onCheer(event: { msg: ChatMessage; message: string }) {
     const name = formatDisplayName(event.msg);
-    this.bot.credits.addToCredits(
-      `twitch-${event.msg.userInfo.userId}`,
-      name,
-      getUserColor(event.msg.userInfo),
-      CreditType.Cheer,
-    );
+    this.bot.credits.addToCredits({
+      userId:       `twitch-${event.msg.userInfo.userId}`,
+      userDisplayName: name,
+      color: getUserColor(event.msg.userInfo),
+      type: CreditType.Cheer, 
+    })
+
     const message = event.message.replaceAll(/cheer\d+/gi, "");
 
     this.bot.bitsAlert({
@@ -398,12 +400,12 @@ export class Twitch {
       this.channel.id,
       async (event) => {
         if (this.allreadyFollowed.has(event.userId)) return;
-        this.bot.credits.addToCredits(
-          `twitch-${event.userId}`,
-          getDisplayName(event.userDisplayName, event.userName),
-          colorFromId(event.userId),
-          CreditType.Follow,
-        );
+        this.bot.credits.addToCredits({
+          userId: `twitch-${event.userId}`,
+          userDisplayName: getDisplayName(event.userDisplayName,event.userName),
+          color: colorFromId(event.userId),
+          type: CreditType.Follow
+        });
         this.bot.followAlert({
           type: "followAlert",
           follower: event.userDisplayName,
@@ -481,12 +483,12 @@ export class Twitch {
           gifted,
         });
 
-        this.bot.credits.addToCredits(
-          `twitch-${data.chatterId}`,
-          colorFromId(data.chatterId),
-          displayName,
-          CreditType.Subscription,
-        );
+        this.bot.credits.addToCredits({
+          userId: `twitch-${data.chatterId}`,
+          color: colorFromId(data.chatterId),
+          userDisplayName: displayName,
+          type: CreditType.Subscription
+        });
 
         const user = await data.getChatter();
         this.bot.setLatestSub({

@@ -100,7 +100,7 @@ export class TalkingBot {
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
-    this.credits = new Credits(this);
+    this.credits = new Credits();
     this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);

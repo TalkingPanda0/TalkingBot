@@ -111,7 +111,9 @@ export class MessageHandler {
           } else {
             userName = `${data.sender}`;
           }
-          const watchTime = await this.bot.database.getWatchTime(userId.slice("twitch-".length));
+          const watchTime = await this.bot.database.getWatchTime(
+            userId.slice("twitch-".length),
+          );
 
           if (watchTime == null) {
             data.reply("Can't find watchtime.", true);
@@ -247,7 +249,7 @@ export class MessageHandler {
           const followed =
             await this.bot.twitch.apiClient.channels.getChannelFollowers(
               this.bot.twitch.channel.id,
-              data.senderId.replace("twitch-",""),
+              data.senderId.replace("twitch-", ""),
             );
 
           // User is not following
@@ -768,8 +770,8 @@ export class MessageHandler {
           const nickname = args.splice(1).join(" ");
 
           const user = await this.bot.userManager.findUser(username);
-          if(!user) {
-            data.reply(`Can't find user ${username}.`,true);
+          if (!user) {
+            data.reply(`Can't find user ${username}.`, true);
             return;
           }
 
@@ -987,18 +989,18 @@ export class MessageHandler {
     data.color = user.customColor ?? data.color;
 
     if (data.isUserMod)
-      this.bot.credits.addToCredits(
-        data.senderId,
-        data.sender,
-        data.color,
-        CreditType.Moderator,
-      );
-    this.bot.credits.addToCredits(
-      data.senderId,
-      data.sender,
-      data.color,
-      CreditType.Chatter,
-    );
+      this.bot.credits.addToCredits({
+        userId: data.senderId,
+        userDisplayName: data.sender,
+        color: data.color,
+        type: CreditType.Moderator,
+      });
+    this.bot.credits.addToCredits({
+      userId: data.senderId,
+      userDisplayName: data.sender,
+      color: data.color,
+      type: CreditType.Chatter,
+    });
 
     if (!data.isOld)
       data.isCommand = data.isCommand || (await this.handleCommand(data));
@@ -1016,7 +1018,6 @@ export class MessageHandler {
     this.commandAliasMap = arraytoHashMap(await this.aliasesFile.json());
     if (!(await this.argsFile.exists())) return;
     this.argMap = arraytoHashMap(await this.argsFile.json());
-
   }
 
   private writeCustomCommands() {
