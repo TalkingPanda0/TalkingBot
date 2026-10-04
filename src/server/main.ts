@@ -187,22 +187,6 @@ app.use("/api", async (req, res) => {
           res.sendStatus(200);
           break;
         }
-        case "/command/run": {
-          if (!req.body) {
-            res.sendStatus(400);
-            return;
-          }
-          const data: { script: string; data: MessageData } = JSON.parse(
-            req.body,
-          );
-          const commandOutput = await bot.commandHandler.runScript(
-            data.script,
-            data.data,
-            "",
-          );
-          res.send(commandOutput);
-          break;
-        }
         case "/command/delete":
           if (req.query.name == null) {
             res.send(400);

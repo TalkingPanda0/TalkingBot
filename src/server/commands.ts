@@ -889,43 +889,15 @@ export class MessageHandler {
       (!subonly || data.isUserSub);
     const doReply = customCommand.includes("(reply)");
 
-    let response = customCommand
+    const response = customCommand
       .replace(/\(modonly\)/g, "")
       .replace(/\(viponly\)/g, "")
       .replace(/\(subonly\)/g, "")
-      .replace(/\(reply\)/g, "");
-
-    response = await replaceAsync(
-      response,
-      /script\((.+)\)/g,
-      async (_message: string, script: string) => {
-        if (!canUserRunCommand) return null;
-        return await this.runScript(script, data, commandName);
-      },
-    );
-    response = (
-      await replaceAsync(
-        response,
-        /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
-
-        async (message: string, _command: string, url: string, key: string) => {
-          url = url.replace(/\$user/g, data.sender).replace(/\$args/g, message);
-          const req = await fetch(url);
-          if (key === undefined) {
-            return await req.text();
-          } else {
-            const json = await req.json();
-            return json[key];
-          }
-        },
-      )
-    )
-      .replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
-        return getSuffix(parseInt(number));
-      })
+      .replace(/\(reply\)/g, "")
       .replace(/\$user/g, data.sender)
       .replace(/\$args/g, message);
 
+     
     if (customCommand.includes("fetch")) {
       this.timeout.add(commandName);
       setTimeout(() => {
@@ -1098,84 +1070,5 @@ export class MessageHandler {
 
   public removeCommand(name: string): boolean {
     return this.commandMap.delete(name);
-  }
-
-  public async runScript(
-    script: string,
-    data: MessageData,
-    commandName: string | RegExpExecArray[],
-  ): Promise<string> {
-    const context = Object.create(null);
-
-    context.result = "";
-    context.command = commandName;
-    context.user = data.sender;
-    context.userId = data.senderId;
-    context.isUserMod = data.isUserMod;
-    context.isUserVip = data.isUserVip;
-    context.isUserSub = data.isUserSub;
-    context.args = data.message.split(" ");
-    context.platform = data.platform;
-    context.getOrSetConfig = async (
-      key: string,
-      defaultValue: unknown,
-    ): Promise<unknown> => {
-      return await this.bot.database.getOrSetConfig(key, defaultValue);
-    };
-    context.setConfig = async (key: string, value: unknown) => {
-      return await this.bot.database.setConfig(key, value);
-    };
-
-    context.banUser = (reason: string, duration?: number) => {
-      if (data.isTestRun)
-        context.result += `Banned user for ${duration} seconds: ${reason}\n`;
-      else data.banUser(reason, duration);
-    };
-    context.say = (message: string, reply: boolean) => {
-      if (data.isTestRun)
-        context.result += `${reply ? "Reply: " : ""}${message}\n`;
-      else data.reply(message, reply);
-    };
-    context.fetch = fetch;
-    context.broadcast = (message: string) => {
-      if (data.isTestRun) context.result += `Broadcasted message: ${message}\n`;
-      else this.bot.broadcastMessage(message);
-    };
-    context.runCommand = (command: string) => {
-      if (data.isTestRun) context.result += `Ran ${command}`;
-      else {
-        data.message = command;
-        data.parsedMessage = command;
-        data.isCommand = true;
-        this.handleCommand(data);
-      }
-    };
-
-    context.sendInDiscord = (message: string, channelId: string) =>
-      this.bot.discord.say(message, channelId);
-    context.getTimeDifference = getTimeDifference;
-    context.milliSecondsToString = milliSecondsToString;
-    context.replaceAsync = replaceAsync;
-    context.getSuffix = getSuffix;
-    context.getRandomElement = getRandomElement;
-    context.removeByIndexToUppercase = removeByIndexToUppercase;
-
-    try {
-      const func = new Function(
-        "context",
-        `
-    return (async () => {
-      with(context) {
-        ${script}
-      }
-    })();
-  `,
-      );
-      await func(context);
-      return context.result;
-    } catch (error) {
-      console.error("Error executing custom code:", error);
-      return error as string;
-    }
   }
 }
