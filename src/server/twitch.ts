@@ -28,7 +28,6 @@ import {
 } from "@twurple/eventsub-http";
 import { CreditType } from "./credits.ts";
 
-import { updateCategory } from "./category.ts";
 import { CONFIG } from "./env.ts";
 import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
 import { PollEvent, PollOption } from "../shared/types.ts";
@@ -64,7 +63,6 @@ export class Twitch {
     __dirname + "/../../config/token-broadcaster.json",
   );
   private botFile = Bun.file(__dirname + "/../../config/token-bot.json");
-  private updateCategoryInterval: Timer | null = null;
   private allreadyFollowed: Set<string> = new Set();
 
   constructor(bot: TalkingBot) {
@@ -98,13 +96,6 @@ export class Twitch {
   }
   // only things that should also run when the bot starts during a stream and on the start of stream.
   private async onStreamOnline() {
-    this.updateCategoryInterval = setInterval(
-      () => {
-        updateCategory(this.bot);
-      },
-      5 * 60 * 1000,
-    );
-
     this.bot.onStreamOnline();
   }
 
@@ -331,8 +322,6 @@ export class Twitch {
         this.bot.database.userJoin(chatter.userId, false);
       });
 
-      if (this.updateCategoryInterval)
-        clearTimeout(this.updateCategoryInterval);
       this.bot.onStreamOffline();
     });
 
