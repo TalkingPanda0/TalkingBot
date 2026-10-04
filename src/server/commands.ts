@@ -103,14 +103,14 @@ export class MessageHandler {
           const args = data.message.toLowerCase().split(" ");
           let userName = args[0];
           const isOffline = userName === "offline" || args[1] == "offline";
-          let userId = data.senderId;
+          let userId = data.userId;
           if (userName != null && userName.startsWith("@")) {
             const user = await this.bot.twitch.apiClient.users.getUserByName(
               userName.trim().replace("@", ""),
             );
             if (user != null) userId = user.id;
           } else {
-            userName = `${data.sender}`;
+            userName = data.displayName;
           }
           const watchTime = await this.bot.database.getWatchTime(userId.slice("twitch-".length));
 
@@ -248,7 +248,7 @@ export class MessageHandler {
           const followed =
             await this.bot.twitch.apiClient.channels.getChannelFollowers(
               this.bot.twitch.channel.id,
-              data.senderId.replace("twitch-",""),
+              data.userId,
             );
 
           // User is not following
@@ -263,7 +263,7 @@ export class MessageHandler {
               new Date(),
             );
             data.reply(
-              `@${data.sender} has been following ${this.bot.twitch.channel.displayName} for ${timeString}`,
+              `@${data.displayName} has been following ${this.bot.twitch.channel.displayName} for ${timeString}`,
               false,
             );
           }
@@ -608,9 +608,9 @@ export class MessageHandler {
           if (data.message.trim() == "") return;
           this.bot.ttsManager.send({
             text: data.message,
-            sender: data.sender,
+            sender: data.displayName,
             color: data.color,
-            parsedText: data.parsedMessage.split(" ").slice(1).join(" "),
+            parsedText: data.message,
             isImportant: false,
           });
         },
@@ -687,9 +687,9 @@ export class MessageHandler {
             case "say":
               this.bot.ttsManager.send({
                 text: data.message.split(" ").slice(1).join(" "),
-                sender: data.sender,
+                sender: data.displayName,
                 color: data.color,
-                parsedText: data.parsedMessage.split(" ").slice(2).join(" "),
+                parsedText: data.message,
                 isImportant: true,
               });
               return;
@@ -847,7 +847,7 @@ export class MessageHandler {
           try {
             data.reply(
               this.bot.poll.addVote(
-                `${data.platform}-${data.sender}`,
+                `${data.platform}-${data.displayName}`,
                 data.message,
               ),
               true,
