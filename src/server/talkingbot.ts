@@ -8,7 +8,6 @@ import * as http from "http";
 import { MessageHandler } from "./commands.ts";
 import { TTSManager } from "./tts.ts";
 import { Credits } from "./credits.ts";
-import { Poll } from "./poll.ts";
 
 import { ModuleManager } from "./moduleManager.ts";
 import { ChatLogger } from "./chatLogger.ts";
@@ -50,7 +49,6 @@ export interface latestSub {
 export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
-  public poll: Poll;
   public iochat: Namespace;
   public iomodtext: Namespace;
   public iopoll: Namespace;
@@ -104,7 +102,6 @@ export class TalkingBot {
     this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
-    this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
     this.moduleManager = new ModuleManager(this);
     this.userManager = new UserManager(this);

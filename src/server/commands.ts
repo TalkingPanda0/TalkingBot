@@ -1,14 +1,10 @@
 import { TalkingBot } from "./talkingbot.ts";
 import {
   arraytoHashMap,
-  getRandomElement,
-  getSuffix,
   getTimeDifference,
   hashMaptoArray,
   levelToXp,
   milliSecondsToString,
-  removeByIndexToUppercase,
-  replaceAsync,
   xpToLevel,
 } from "../shared/util.ts";
 
@@ -799,62 +795,6 @@ export class MessageHandler {
 
           await this.bot.userManager.setCustomName(data, null);
           data.reply(`${username} is now not nicknamed.`, true);
-        },
-      },
-    ],
-    [
-      "!createpoll",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          try {
-            await this.bot.broadcastMessage(
-              this.bot.poll.startPoll(data.message, (results) => {
-                const winner = results.toSorted((a, b) => a.score - b.score)[
-                  results.length - 1
-                ];
-                this.bot.broadcastMessage(
-                  `${winner.label} won with a score of ${winner.score}`,
-                );
-              }),
-            );
-          } catch (error) {
-            data.reply(error as string, true);
-          }
-        },
-      },
-    ],
-    [
-      "!endpoll",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          try {
-            this.bot.poll.endPoll();
-          } catch (error) {
-            data.reply(error as string, true);
-          }
-        },
-      },
-    ],
-    [
-      "!vote",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          try {
-            data.reply(
-              this.bot.poll.addVote(
-                `${data.platform}-${data.displayName}`,
-                data.message,
-              ),
-              true,
-            );
-          } catch (error) {
-            console.error(error);
-          }
         },
       },
     ],
