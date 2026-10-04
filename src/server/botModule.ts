@@ -20,6 +20,7 @@ export interface MessageData {
   isCommand: boolean;
   highlightMessage: string | null;
   highlightColor: string | null;
+  channelId?: string;
   timestamp: Date;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   banUser: (reason: string, duration?: number) => void | Promise<void>;
