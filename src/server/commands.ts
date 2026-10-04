@@ -19,6 +19,7 @@ import { CreditType } from "./credits.ts";
 
 import { MessageData } from "botModule";
 import { CONFIG } from "./env.ts";
+import { OverlayMessageData } from "../shared/types.ts";
 
 export interface Command {
   showOnChat: boolean;
@@ -894,7 +895,7 @@ export class MessageHandler {
       .replace(/\(viponly\)/g, "")
       .replace(/\(subonly\)/g, "")
       .replace(/\(reply\)/g, "")
-      .replace(/\$user/g, data.sender)
+      .replace(/\$user/g, data.displayName)
       .replace(/\$args/g, message);
 
      
@@ -943,41 +944,52 @@ export class MessageHandler {
     }
   }
 
-  private sendToChatList(data: MessageData) {
+  public async sendToChatList(data: OverlayMessageData) {
     this.bot.iochat.emit("message", data);
     this.bot.chatLogger.recordMessage(data);
   }
 
   public async handleMessage(data: MessageData) {
-    data.id = `${data.platform}-${data.id}`;
-    data.senderId = `${data.platform}-${data.senderId}`;
-    data.replyId = `${data.platform}-${data.replyId}`;
-
     const user = await this.bot.userManager.handleMessage(data);
 
-    data.sender = user.customName ?? data.sender;
+    data.displayName = user.customName ?? data.displayName;
     data.color = user.customColor ?? data.color;
 
     if (data.isUserMod)
       this.bot.credits.addToCredits(
-        data.senderId,
-        data.sender,
+        data.userId,
+        data.displayName,
         data.color,
         CreditType.Moderator,
       );
     this.bot.credits.addToCredits(
-      data.senderId,
-      data.sender,
+      data.userId,
+      data.displayName,
       data.color,
       CreditType.Chatter,
     );
 
-    if (!data.isOld)
-      data.isCommand = data.isCommand || (await this.handleCommand(data));
+    data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     this.bot.moduleManager.onChatMessage(data);
 
-    this.sendToChatList(data);
+    this.sendToChatList({
+      displayName: data.displayName,
+      userId: data.userId,
+      message: data.message,
+      isCommand: data.isCommand,
+      badges: data.badges,
+      color: data.color,
+      emoteOffsets: data.emoteOffsets,
+      highlightColor: data.highlightColor,
+      highlightMessage: data.highlightMessage,
+      isAction: data.isAction ?? false,
+      isFake: false,
+      messageId: data.id,
+      platform: data.platform,
+      replyId: data.replyId,
+      timestamp: data.timestamp.getTime(),
+    });
   }
 
   public async readCustomCommands() {

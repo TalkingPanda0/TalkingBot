@@ -1,23 +1,22 @@
+import "../chat.css";
 import { io } from "socket.io-client";
 import {
   formatDisplayName,
   getRandomArbitrary,
   getUserColor,
 } from "../../shared/util.ts";
-import { MessageData } from "../../shared/types.ts";
+import { OverlayMessageData } from "../../shared/types.ts";
 import {
   buildEmoteImageUrl,
   ChatMessage,
-  ChatViewerMilestoneInfo,
   parseChatMessage,
+  parseEmoteOffsets,
   parseTwitchMessage,
 } from "@twurple/chat";
 
-declare global {
-  interface Window {
-    emoteLoaded: Function;
-  }
-}
+type MessagePart =
+  | { type: "text"; element: HTMLSpanElement }
+  | { type: "img"; element: HTMLImageElement };
 
 class EmoteWall {
   windowHeight = window.innerHeight;
@@ -141,18 +140,18 @@ class EmoteWall {
 }
 
 export type MessageCallback = (
-  message: MessageData,
+  message: OverlayMessageData,
   messageElement: HTMLDivElement,
 ) => void;
 
 export class ChatHandler {
   recentMessagesInterval: NodeJS.Timeout | null = null;
   mentionRegex = /@(\w+)/g;
-  platformIcons = {
-    bot: "https://talkingpanda.dev/bot.png",
-    twitch: "https://twitch.tv/favicon.ico",
-    youtube: "https://www.youtube.com/favicon.ico",
-  };
+  platformIcons = new Map([
+    ["bot", "https://talkingpanda.dev/bot.png"],
+    ["twitch", "https://twitch.tv/favicon.ico"],
+    ["youtube", "https://www.youtube.com/favicon.ico"],
+  ]);
 
   messageList: HTMLDivElement;
   disconnectList: HTMLDivElement | null = null;
@@ -176,14 +175,6 @@ export class ChatHandler {
     if (emoteWall) {
       this.emoteWall = new EmoteWall(emoteWall);
     }
-    window.emoteLoaded = (event: { target: HTMLImageElement }) => {
-      if (event != null && this.emoteWall) this.emoteWall.add(event.target);
-      messageList.scrollIntoView({
-        behavior: "smooth",
-        block: "end",
-        inline: "nearest",
-      });
-    };
   }
 
   listen() {
@@ -208,17 +199,6 @@ export class ChatHandler {
     socket.on("message", (message) => {
       console.log("GOT MESSAGE:", message);
       this.addToMessageList(message);
-    });
-
-    socket.on("milestone", (milestone) => {
-      console.log("GOT MILESTONE: ", milestone);
-      this.handleMilestone(
-        milestone.color,
-        milestone.displayName,
-        milestone.info,
-        milestone.badges,
-        milestone.parsedMessage,
-      );
     });
 
     socket.on("deleteMessage", (messageId) => {
@@ -261,7 +241,7 @@ export class ChatHandler {
       rewardElement.id = redeem.id;
       rewardElement.classList.add("redeem");
       rewardElement.classList.add("message");
-      rewardElement.innerHTML = `@${redeem.user} Redeemed ${redeem.title}`;
+      rewardElement.innerText = `@${redeem.user} Redeemed ${redeem.title}`;
       this.messageList.appendChild(rewardElement);
       this.messageList.scrollIntoView({
         behavior: "smooth",
@@ -273,55 +253,54 @@ export class ChatHandler {
     this.getRecentMessages();
   }
 
-  addToMessageList(message: MessageData) {
+  addToMessageList(message: OverlayMessageData & { isOld: true | undefined }) {
     if (message.isCommand && !this.showCommands) return;
 
-    // Don't add if a message with the same id already exits or if it's from the bot
-    if (message.id !== undefined && document.getElementById(message.id)) return;
+    // Don't add if it's from the bot or if a message with the same id already exits
+    if (message.messageId != null && document.getElementById(message.messageId))
+      return;
 
     if (message.isFake && this.showCommands)
-      message.badges.unshift(this.platformIcons["bot"]);
-    else message.badges.unshift(this.platformIcons[message.platform]);
+      message.badges.unshift(this.platformIcons.get("bot") ?? "");
+    //else message.badges.unshift(this.platformIcons[message.platform]);
 
     const messageElement = document.createElement("div");
-    if(this.messageCallback) this.messageCallback(message,messageElement);
+    if (this.messageCallback) this.messageCallback(message, messageElement);
 
     const spanElement = document.createElement("span");
-    if (message.isFirst)
-      messageElement.style.background = "rgba(176, 11, 105, 0.5)";
-    messageElement.id = message.id;
+    messageElement.id = message.messageId;
     messageElement.classList.add("message");
     messageElement.classList.add(message.platform);
-    messageElement.classList.add(message.senderId);
+    messageElement.classList.add(message.userId);
+
     // message is a reply
-    if (message.replyTo != null && message.replyTo != "") {
-      let replyColor = "#a5a5a5";
-      const messagesOfParentSender = document.querySelectorAll(
-        `.${message.replyId} .sender`,
-      );
+    if (message.replyId) {
 
-      if (messagesOfParentSender.length != 0)
-        replyColor = (
-          messagesOfParentSender[
-            messagesOfParentSender.length - 1
-          ] as HTMLDivElement
-        ).style.color;
+      const repliedMessageContainer = document.getElementById(message.replyId);
+      const repliedMessage = repliedMessageContainer?.querySelector(".sender")
 
-      const replyElement = document.createElement("span");
-      replyElement.classList.add("reply");
-      replyElement.innerHTML = `Replying to <span class="reply" style="color:${replyColor}">@${message.replyTo}:</span> ${message.replyText}`;
-      messageElement.appendChild(replyElement);
-      messageElement.appendChild(document.createElement("br"));
+
+      if (repliedMessage) {
+        const replyElement = document.createElement("span");
+        replyElement.classList.add("reply");
+        replyElement.innerHTML = `Replying to ${repliedMessage.innerHTML}`;
+        messageElement.appendChild(replyElement);
+        messageElement.appendChild(document.createElement("br"));
+      }
+
     }
-    if (message.rewardName) {
+
+    if (message.highlightColor)
+      messageElement.style.background = message.highlightColor;
+
+    if (message.highlightMessage) {
       const rewardElement = document.createElement("span");
       rewardElement.classList.add("reply");
-      rewardElement.innerHTML = `Redeemed ${message.rewardName}`;
+      rewardElement.innerText = message.highlightMessage;
       messageElement.appendChild(rewardElement);
       messageElement.appendChild(document.createElement("br"));
-      if (message.rewardName.toLowerCase() === "highlight my message")
-        messageElement.style.background = "#755ebc";
     }
+
     if (message.isOld) {
       messageElement.style.opacity = "75%";
     }
@@ -340,14 +319,13 @@ export class ChatHandler {
     const textElement = document.createElement("span");
     textElement.classList.add("sender");
     textElement.dataset.name =
-      `${message.platform}-${message.username}`.toLowerCase();
+      `${message.platform}-${message.displayName}`.toLowerCase();
     textElement.style.color = `${message.color}`;
-    let text = message.parsedMessage.trim();
 
-    text = text.replaceAll(
-      this.mentionRegex,
-      (mention: string, user: string) => {
-        const nameTag = `${message.platform}-${user}`.toLowerCase();
+    /*let text = message.message
+      .trim()
+      .replaceAll(this.mentionRegex, (mention: string, user: string) => {
+        const nameTag = `${user}`.toLowerCase();
         const elements = document.querySelectorAll(`[data-name="${nameTag}"]`);
         if (elements.length == 0) {
           return mention;
@@ -356,38 +334,50 @@ export class ChatHandler {
         const targetElement = elements[elements.length - 1] as HTMLDivElement;
         const color = targetElement.style.color;
         return `<span style="color:${color}">${mention}</span>`;
-      },
-    );
-    const faceChars = [
-      ")",
-      "(",
-      "3",
-      "}",
-      "{",
-      "@",
-      "[",
-      "]",
-      "D",
-      "O",
-      "/",
-      "\\",
-      "$",
-      "X",
-      "&",
-      "E",
-      "P",
-      "p",
-      "b",
-    ];
-    const firstChar = text.charAt(0);
-    if (firstChar != null && faceChars.includes(firstChar))
-      textElement.innerHTML = `${message.sender.trim()}<span class="text">: ${text}</span>`;
-    else if (message.isAction) {
-      text = text.replace(/ACTION/, "").replaceAll("\u0001", "");
-      textElement.innerHTML = `${message.sender.trim()}<span class="text" style='color: ${message.color}'> ${text}</span>`;
-    } else
-      textElement.innerHTML = `${message.sender.trim()}:<span class="text"> ${text}</span>`;
+      });*/
 
+    textElement.innerText = message.displayName.trim();
+
+    const textSpanElement = document.createElement("span");
+    textSpanElement.classList.add("text");
+    const messageParts = this.parseEmotes(
+      message.message,
+      message.emoteOffsets,
+    );
+    const firstPart = messageParts[0].type == "text" ? messageParts[0] : null;
+
+    // If it's a reply remove the first mention
+    if (firstPart && message.replyId) {
+       firstPart.element.innerText =  firstPart.element.innerText.replace(/^@(\w+)/g, "").trim();
+    }
+
+    const firstChar = firstPart?.element.innerText.charAt(0);
+    if (firstChar != null && faceChars.includes(firstChar)) {
+      if (firstPart) {
+        firstPart.element.innerText = `: ${firstPart.element.innerText}`;
+      }
+    } else if (message.isAction) {
+      if (firstPart) {
+        firstPart.element.innerText = firstPart.element.innerText.replace(/ACTION/, "");
+      }
+      messageParts
+        .filter((part) => part.type == "text")
+        .forEach((part) => {
+          part.element.innerText = part.element.innerText.replaceAll(
+            "\u0001",
+            "",
+          );
+        });
+      textSpanElement.style.color = message.color;
+    } else {
+      textElement.innerText += ": ";
+    }
+
+    for (const part of messageParts) {
+      textSpanElement.appendChild(part.element);
+    }
+
+    textElement.appendChild(textSpanElement);
     spanElement.appendChild(badgesElement);
     spanElement.appendChild(textElement);
     messageElement.appendChild(spanElement);
@@ -399,59 +389,6 @@ export class ChatHandler {
     });
   }
 
-  handleMilestone(
-    color: string,
-    userName: string,
-    info: ChatViewerMilestoneInfo,
-    badges: string[],
-    parsedMessage: string,
-  ) {
-    if (info.categoryName != "watch-streak") return;
-
-    const messageElement = document.createElement("div");
-    const spanElement = document.createElement("span");
-    messageElement.style.background = "rgba(11, 176, 129,0.5)";
-    messageElement.classList.add("message");
-
-    const badgesElement = document.createElement("span");
-    badgesElement.classList.add("badges");
-    badges.forEach((badge) => {
-      const badgeElement = document.createElement("img");
-      badgeElement.src = badge;
-      badgeElement.height = 25;
-      badgeElement.classList.add("badge");
-      badgesElement.appendChild(badgeElement);
-    });
-
-    const milestoneElement = document.createElement("span");
-    milestoneElement.innerHTML = `Reached ${info.value} stream watch streak!`;
-    const textElement = document.createElement("span");
-    textElement.classList.add("sender");
-    textElement.style.color = `${color}`;
-
-    spanElement.appendChild(badgesElement);
-    if (parsedMessage) {
-      milestoneElement.classList.add("reply");
-      textElement.innerHTML = `${userName}:<span class="text"> ${parsedMessage}</span>`;
-      spanElement.appendChild(textElement);
-      messageElement.appendChild(milestoneElement);
-      messageElement.appendChild(document.createElement("br"));
-      messageElement.appendChild(spanElement);
-    } else {
-      textElement.innerHTML = `${userName} `;
-      spanElement.appendChild(textElement);
-      messageElement.appendChild(spanElement);
-      milestoneElement.style.verticalAlign = "middle";
-      messageElement.appendChild(milestoneElement);
-    }
-
-    this.messageList.appendChild(messageElement);
-    this.messageList.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
-      inline: "nearest",
-    });
-  }
   addToDisconnectList(id: string) {
     if (id == "twitch" || id == "bot") {
       this.recentMessagesInterval = setInterval(
@@ -463,7 +400,7 @@ export class ChatHandler {
     if (!this.disconnectList || document.getElementById(id) != null) return;
 
     const disconnectElement = document.createElement("img");
-    disconnectElement.src = this.platformIcons[id];
+    disconnectElement.src = this.platformIcons.get(id)!;
     disconnectElement.classList.add("badge");
     disconnectElement.id = id;
     this.disconnectList.appendChild(disconnectElement);
@@ -500,100 +437,112 @@ export class ChatHandler {
         message.userInfo.userId === "736013381" ||
         message.userInfo.userName == "botrixoficial";
       const isAction = message.text.startsWith("\u0001ACTION");
-      this.handleMessage(
-        message.userInfo.userName,
-        message,
-        isAction,
-        true,
-        isCommand,
-      );
+      this.handleMessage(message, isAction, isCommand);
     });
   }
-  private parseEmotes(text: string, emoteOffsets: Map<string, string[]>) {
-    let parsed = "";
-    const parsedParts = parseChatMessage(text, emoteOffsets, []);
+
+  private createText(text: string): HTMLSpanElement {
+    const result = document.createElement("span");
+    result.innerText = text;
+    return result;
+  }
+
+  private createEmote(emoteId: string): HTMLImageElement {
+    const result = document.createElement("img");
+    result.classList.add("emote");
+    result.onload = (event) => {
+      if (event != null && this.emoteWall)
+        this.emoteWall.add(event.target as HTMLImageElement);
+      this.messageList.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+        inline: "nearest",
+      });
+    };
+    result.src = buildEmoteImageUrl(emoteId, {
+      size: "3.0",
+      backgroundType: "dark",
+      animationSettings: "default",
+    });
+    return result;
+  }
+
+  private parseEmotes(
+    text: string,
+    emoteOffsets: string | null,
+  ): MessagePart[] {
+    const parsedOffsets = parseEmoteOffsets(emoteOffsets ?? undefined);
+
+    if (parsedOffsets.size == 0) {
+      return [{ type: "text", element: this.createText(text) }];
+    }
+    const result: MessagePart[] = [];
+    const parsedParts = parseChatMessage(text, parsedOffsets, []);
 
     parsedParts.forEach((parsedPart) => {
       switch (parsedPart.type) {
         case "text":
-          parsed += parsedPart.text;
+          result.push({
+            type: "text",
+            element: this.createText(parsedPart.text),
+          });
           break;
 
         case "emote":
-          const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
-            size: "3.0",
-            backgroundType: "dark",
-            animationSettings: "default",
+          result.push({
+            type: "img",
+            element: this.createEmote(parsedPart.id),
           });
-          parsed += ` <img onload="emoteLoaded()" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
+
           break;
       }
     });
-    return parsed;
+    return result;
   }
+
   private async handleMessage(
-    user: string,
     msg: ChatMessage,
     isAction: boolean,
-    isOld: boolean,
     isCommand: boolean,
   ) {
-    let parsedMessage = this.parseEmotes(msg.text, msg.emoteOffsets);
-
-    let badges = [];
-
-    let replyTo: string | null = null;
-    let replyId: string | null = null;
-    let replyText: string | null = null;
-    let rewardName: string | null = null;
-    if (msg.isReply) {
-      parsedMessage = parsedMessage.replace(
-        new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
-        "",
-      );
-      replyTo = msg.parentMessageUserDisplayName;
-      replyId = `twitch-${msg.parentMessageUserId}`;
-      replyText = msg.parentMessageText;
-    }
-
-    if (msg.isHighlight) {
-      rewardName = "Highlight My message";
-    }
-
-    const indexes: number[] = [];
-    msg.emoteOffsets.forEach((emote) => {
-      emote.forEach((index: string) => {
-        indexes.push(parseInt(index));
-      });
-    });
-
-    const isUserMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
-    const isUserVip = isUserMod || msg.userInfo.isVip;
-    const isUserSub = isUserVip || msg.userInfo.isSubscriber;
-
-    let message = {
-      badges: badges.filter((s) => !!s),
-      username: msg.userInfo.userName,
-      sender: formatDisplayName(msg),
-      senderId: msg.userInfo.userId,
-      color: getUserColor(msg.userInfo),
-      isUserMod: isUserMod,
-      isUserSub: isUserSub,
-      isUserVip: isUserVip,
+    this.addToMessageList({
       platform: "twitch",
-      channelId: msg.channelId || "",
-      parsedMessage: parsedMessage,
-      isFirst: msg.isFirst,
-      replyText: replyText ?? undefined,
-      replyId: replyId ?? undefined,
-      replyTo: replyTo ?? undefined,
-      rewardName: rewardName ?? undefined,
-      isOld: isOld,
-      isAction: isAction,
-      isCommand:
-        isCommand || user == "botrixoficial" || user == "talkingboto_o",
-      id: `twitch-${msg.id}`,
-    };
-    this.addToMessageList(message);
+      displayName: formatDisplayName(msg),
+      userId: msg.userInfo.userId,
+      replyId: msg.parentMessageId,
+      messageId: msg.id,
+      color: getUserColor(msg.userInfo),
+      message: msg.text,
+      emoteOffsets: msg.tags.get("emotes") ?? null,
+      highlightMessage: null,
+      highlightColor: msg.isHighlight ? "#755ebc" : null,
+      isAction,
+      isCommand,
+      isFake: false,
+      isOld: true,
+      timestamp: 0,
+      badges: [],
+    });
   }
 }
+const faceChars = [
+  ")",
+  "(",
+  "3",
+  "}",
+  "{",
+  "@",
+  "[",
+  "]",
+  "D",
+  "O",
+  "/",
+  "\\",
+  "$",
+  "X",
+  "&",
+  "E",
+  "P",
+  "p",
+  "b",
+];

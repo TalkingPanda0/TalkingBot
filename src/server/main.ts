@@ -11,7 +11,6 @@ import { createServer as createViteServer } from "vite";
 import cors from "cors";
 import { getDiscordUserId, isDiscordAuthData } from "../shared/util.ts";
 import { handleKofiEvent, isKofiEvent } from "./kofi.ts";
-import { MessageData } from "botModule";
 import { readdir, rename } from "node:fs/promises";
 import { CONFIG } from "./env.ts";
 import { DiscordAuthData } from "../shared/types.ts";

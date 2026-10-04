@@ -40,7 +40,15 @@ export type KofiAlert = {
   amount: string;
   currency: string;
 };
-export type SubAlert = { type: "subAlert"; name: string; message: string, plan: string, months: number | null, gift: boolean, gifted: number };
+export type SubAlert = {
+  type: "subAlert";
+  name: string;
+  message: string;
+  plan: string;
+  months: number | null;
+  gift: boolean;
+  gifted: number;
+};
 
 export type Alert =
   | RaidAlert
@@ -49,7 +57,10 @@ export type Alert =
   | SubAlert
   | DiscordJoinAlert
   | KofiAlert;
-export type AlertEvent = Alert & {audioList: string[], messageAudioList: string[] | null};
+export type AlertEvent = Alert & {
+  audioList: string[];
+  messageAudioList: string[] | null;
+};
 
 export type ChatControl = (
   | { target: "banUser" | "deleteMessage"; message: string }
@@ -72,4 +83,25 @@ export interface TTSData {
   color: string;
   isImportant: boolean;
 }
-export type TTSEvent = TTSData & {audioList: string[]};
+export type TTSEvent = TTSData & { audioList: string[] };
+
+export type StoredMessageData = {
+  messageId: string;
+  platform: string;
+  badges: string[];
+  displayName: string;
+  color: string;
+  userId: string;
+  message: string;
+  emoteOffsets: string | null;
+  replyId: string | null;
+  timestamp: number;
+  isAction: boolean;
+  highlightMessage: string | null;
+  highlightColor: string | null;
+};
+
+export type OverlayMessageData = StoredMessageData & {
+  isFake: boolean;
+  isCommand: boolean;
+};
