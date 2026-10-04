@@ -155,6 +155,7 @@ export class ChatHandler {
 
   messageList: HTMLDivElement;
   disconnectList: HTMLDivElement | null = null;
+  cheerEmotes = [];
 
   emoteWall: EmoteWall | null = null;
   showCommands: boolean;
@@ -175,6 +176,10 @@ export class ChatHandler {
     if (emoteWall) {
       this.emoteWall = new EmoteWall(emoteWall);
     }
+  }
+
+  async getCheerEmotes() {
+    this.cheerEmotes =  await (await fetch("/get/cheerEmotes")).json();
   }
 
   listen() {
@@ -477,7 +482,7 @@ export class ChatHandler {
       return [{ type: "text", element: this.createText(text) }];
     }
     const result: MessagePart[] = [];
-    const parsedParts = parseChatMessage(text, parsedOffsets, []);
+    const parsedParts = parseChatMessage(text, parsedOffsets, this.cheerEmotes);
 
     parsedParts.forEach((parsedPart) => {
       switch (parsedPart.type) {

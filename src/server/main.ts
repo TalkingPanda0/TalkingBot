@@ -64,6 +64,10 @@ app.use("/get", async (req, res) => {
       res.send(bot.credits.getCreditsList());
       break;
     }
+    case "/cheerEmotes": {
+      res.send(JSON.stringify(bot.twitch.cheerEmotes.getPossibleNames()));
+      break;
+    }
   }
 });
 

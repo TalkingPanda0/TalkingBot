@@ -14,11 +14,10 @@ import { exit } from "./main.ts";
 import { CreditType } from "./credits.ts";
 
 import { MessageData } from "botModule";
-import { CONFIG } from "./env.ts";
 import { OverlayMessageData } from "../shared/types.ts";
 
 export interface Command {
-  showOnChat: boolean;
+  showOnChat?: boolean;
   timeout?: number; // in ms
   commandFunction: (data: MessageData) => void | Promise<void>;
 }
@@ -32,6 +31,7 @@ export class MessageHandler {
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
   private argMap = new Map<string, string>();
+
   private argsFile = Bun.file(__dirname + "/../../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../../config/commands.json");
   private aliasesFile = Bun.file(__dirname + "/../../config/aliases.json");
