@@ -129,33 +129,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!redeem",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          if (this.bot.twitch.redeemQueue.length == 0) {
-            data.reply("No redeem found", true);
-            return;
-          }
-          switch (data.message) {
-            case "accept":
-              this.bot.twitch.handleRedeemQueue(true);
-              break;
-            case "deny":
-              this.bot.twitch.handleRedeemQueue(false);
-              break;
-            case "scam":
-              this.bot.twitch.handleRedeemQueue(undefined);
-              break;
-            default:
-              data.reply("Usage: !redeem accept/deny", true);
-              break;
-          }
-        },
-      },
-    ],
-    [
       "!counter",
       {
         showOnChat: false,

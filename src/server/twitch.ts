@@ -53,12 +53,7 @@ export class Twitch {
   private eventListener!: EventSubListener;
   private bot: TalkingBot;
   private authProvider!: RefreshingAuthProvider;
-  private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
-  private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
-  private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
-  //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private eventSubSecret?: string;
-  private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private broadcasterFile = Bun.file(
     __dirname + "/../../config/token-broadcaster.json",
   );
@@ -473,90 +468,17 @@ export class Twitch {
     });
 
     this.eventListener.onChannelRedemptionAdd(this.channel.id, async (data) => {
-      try {
-        console.log(
-          `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
-        );
-        let completed: boolean | null = null;
-        if (data.input === "") {
-          this.bot.iochat.emit("redeem", {
-            id: data.id,
-            user: data.userDisplayName,
-            title: data.rewardTitle,
-          });
-        }
-        switch (data.rewardId) {
-          case this.selftimeoutid: {
-            const modlist = await this.apiClient.moderation.getModerators(
-              this.channel.id,
-              { userId: data.userId },
-            );
-            if (modlist.data.length == 1) {
-              completed = false;
-              break;
-            }
-            this.apiClient.moderation.banUser(this.channel.id, {
-              duration: 300,
-              reason: "Self Timeout Request",
-              user: data.userId,
-            });
-            completed = true;
-            break;
-          }
-          case this.timeoutid: {
-            const username = data.input.split(" ")[0].replace("@", "");
-            const user: HelixUser | null =
-              await this.apiClient.users.getUserByName(username);
-
-            if (user == null || user.id == data.broadcasterId) {
-              completed = false;
-              this.chatClient.say(
-                this.channelName,
-                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
-              );
-              break;
-            }
-            const mods = await this.apiClient.moderation.getModerators(
-              this.channel.id,
-              { userId: user.id },
-            );
-            if (mods.data.length == 1) {
-              completed = false;
-              this.chatClient.say(
-                this.channelName,
-                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
-              );
-              break;
-            }
-            this.apiClient.moderation.banUser(this.channel.id, {
-              duration: 60,
-              reason: `Timeout request by ${data.userDisplayName}`,
-              user: user.id,
-            });
-            completed = true;
-            break;
-          }
-          case this.pollid:
-            // message like Which is better?: hapboo, realboo, habpoo, hapflat
-            this.redeemQueue.push(data);
-            break;
-          case this.titleid:
-            this.redeemQueue.push(data);
-            break;
-          default:
-            this.bot.moduleManager.onChannelPointReward(data.rewardId, data);
-            return;
-        }
-        if (completed == null) return;
-        this.apiClient.channelPoints.updateRedemptionStatusByIds(
-          this.channel.id,
-          data.rewardId,
-          [data.id],
-          completed ? "FULFILLED" : "CANCELED",
-        );
-      } catch (e) {
-        console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
+      console.log(
+        `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
+      );
+      if (data.input === "") {
+        this.bot.iochat.emit("redeem", {
+          id: data.id,
+          user: data.userDisplayName,
+          title: data.rewardTitle,
+        });
       }
+      this.bot.moduleManager.onChannelPointReward(data.rewardId, data);
     });
 
     this.chatClient = new ChatClient({
@@ -723,84 +645,6 @@ export class Twitch {
       isFirst: false,
       isCommand: true,
     });
-  }
-
-  public async handleRedeemQueue(accept?: boolean) {
-    try {
-      const redeem = this.redeemQueue.shift();
-      if (!redeem) return;
-      if (accept) {
-        switch (redeem.rewardId) {
-          case this.pollid: {
-            const matches = redeem.input.match(pollRegex);
-            if (matches) {
-              const question = matches[1];
-              const options = matches[2]
-                .split(",")
-                .map((word: string) => word.trim());
-              await this.apiClient.polls.createPoll(this.channel.id, {
-                title: question,
-                duration: 60,
-                choices: options.filter((value) => value != ""),
-              });
-              this.chatClient.say(
-                this.channelName,
-                `Created poll: ${redeem.input} requested by @${redeem.userName}`,
-              );
-            } else {
-              this.chatClient.say(
-                this.channelName,
-                `@${redeem.userDisplayName} Couldn't parse poll: ${redeem.input}`,
-              );
-              accept = false;
-            }
-            break;
-          }
-          case this.titleid: {
-            const currentInfo =
-              await this.apiClient.channels.getChannelInfoById(this.channel.id);
-            await this.apiClient.channels.updateChannelInfo(this.channel.id, {
-              title: redeem.input,
-            });
-            if (!currentInfo) {
-              this.chatClient.say(
-                this.channelName,
-                `Failed getting current stream title.`,
-              );
-              return;
-            }
-            this.chatClient.say(
-              this.channelName,
-              `Changed title to: ${redeem.input} requested by @${redeem.userName}`,
-            );
-            setTimeout(
-              () => {
-                this.apiClient.channels.updateChannelInfo(this.channel.id, {
-                  title: currentInfo.title,
-                });
-                this.chatClient.say(
-                  this.channelName,
-                  `Changed title back to: ${currentInfo.title}`,
-                );
-              },
-              15 * 60 * 1000,
-            );
-            break;
-          }
-        }
-      } else if (accept === null) {
-        // scam
-        accept = true;
-      }
-      await this.apiClient.channelPoints.updateRedemptionStatusByIds(
-        this.channel.id,
-        redeem.rewardId,
-        [redeem.id],
-        accept ? "FULFILLED" : "CANCELED",
-      );
-    } catch (e) {
-      console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem queue: ${e}`);
-    }
   }
 
   public async channelPointReward(
