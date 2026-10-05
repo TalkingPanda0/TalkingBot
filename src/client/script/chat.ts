@@ -151,9 +151,15 @@ interface BTTVEmote {
   id: string;
   code: string;
 }
+
 interface BTTVUserInfo {
   channelEmotes: BTTVEmote[];
   sharedEmotes: BTTVEmote[];
+}
+
+interface SevenTVEmote {
+  id: string;
+  name: string;
 }
 
 export class ChatHandler {
@@ -171,7 +177,7 @@ export class ChatHandler {
   channelId?: string;
   extraEmotes: Map<string, string> = new Map();
 
-  parsers: Parser[] = [this.parseMentions,this.parseExtraEmotes];
+  parsers: Parser[] = [this.parseMentions, this.parseExtraEmotes];
   emoteWall: EmoteWall | null = null;
   showCommands: boolean;
   chatInfoPromise: Promise<void>;
@@ -199,7 +205,7 @@ export class ChatHandler {
     const info: ChatMetaData = await (await fetch("/get/chatInfo")).json();
     this.cheerEmotes = info.cheerEmotes;
     this.channelId = info.channelId;
-    await this.getBttvEmotes();
+    await Promise.all([this.getBttvEmotes(), this.get7TvEmotes()]);
   }
 
   async getBttvEmotes() {
@@ -226,6 +232,35 @@ export class ChatHandler {
 
     globalEmotes.forEach((value) => {
       this.extraEmotes.set(value.code, getBttvEmote(value.id));
+    });
+  }
+
+  async get7TvEmotes() {
+    const globalEmotes: { emotes: SevenTVEmote[] } = await (
+      await fetch("https://api.7tv.app/v3/emote-sets/global")
+    ).json();
+
+    function get7TvEmote(id: string) {
+      return `https://cdn.7tv.app/emote/${id}/1x.webp`;
+    }
+
+    globalEmotes.emotes.forEach((value) => {
+      this.extraEmotes.set(value.name, get7TvEmote(value.id));
+    });
+
+    const result = await fetch(
+      `https://api.7tv.app/v3/users/twitch/${this.channelId}`,
+    );
+
+    if(!result.ok) {
+      return;
+    }
+
+    const channelEmotes: { emote_set: { emotes: SevenTVEmote[] } } =
+      await result.json();
+
+    channelEmotes.emote_set.emotes.forEach((value) => {
+      this.extraEmotes.set(value.name, get7TvEmote(value.id));
     });
   }
 
@@ -460,9 +495,7 @@ export class ChatHandler {
   }
 
   async getRecentMessages() {
-    console.log(this.chatInfoPromise);
     await this.chatInfoPromise;
-    console.log(this.chatInfoPromise);
     console.log("getting new messages.");
     const messages = await (
       await fetch(
@@ -623,7 +656,7 @@ export class ChatHandler {
     });
   }
   parseWord(input: string): ParserResult {
-    console.log("parsing " + input);
+
     for (const parser of this.parsers) {
       const result = parser.bind(this)(input);
       if (result) {
@@ -666,7 +699,7 @@ export class ChatHandler {
     input: string,
   ): { element: HTMLElement; leftOver: string } | null {
     const emote = this.extraEmotes.get(input);
-    if(!emote) return null;
-    return {element: this.createEmoteUrl(emote),leftOver: ""};
+    if (!emote) return null;
+    return { element: this.createEmoteUrl(emote), leftOver: "" };
   }
 }
