@@ -30,9 +30,7 @@ import { CreditType } from "./credits.ts";
 
 import { CONFIG } from "./env.ts";
 import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
-import { PollEvent, PollOption } from "../shared/types.ts";
-
-const pollRegex = /^(.*?):\s*(.*)$/;
+import { Clip, PollEvent, PollOption } from "../shared/types.ts";
 
 export class Twitch {
   public clientId;
@@ -724,5 +722,33 @@ export class Twitch {
       badges.push(this.badges.get(badge));
     }
     return badges.filter((s): s is string => !!s);
+  }
+
+  public async parseClips(text: string): Promise<Clip | undefined> {
+    let www = false;
+    let clipId = this.clipRegex.exec(text);
+    if (clipId == null) {
+      www = true;
+      clipId = this.wwwclipRegex.exec(text);
+    } 
+    if (clipId !== null) {
+      const clip = await this.apiClient.clips.getClipById(clipId[1]);
+      if (clip !== null) {
+        const regex = www ? this.wwwclipRegex : this.clipRegex;
+        return {
+          title: clip.title,
+          url: clip.url,
+          thumbnailUrl: clip.thumbnailUrl,
+          creator: clip.creatorDisplayName,
+          end: regex.lastIndex -1,
+          start: regex.lastIndex - clipId[0].length,
+        }
+      } else {
+        console.error(
+          "\x1b[35m%s\x1b[0m",
+          `Failed getting clip info: ${clipId[1]}`,
+        );
+      }
+    }
   }
 }

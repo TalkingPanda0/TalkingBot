@@ -101,7 +101,17 @@ export type StoredMessageData = {
   highlightColor: string | null;
 };
 
+ export type Clip = {
+    title: string;
+    url: string;
+    thumbnailUrl: string,
+    creator: string;
+    start: number;
+    end: number;
+  };
+
 export type OverlayMessageData = StoredMessageData & {
+  clip?: Clip;
   isFake: boolean;
   isCommand: boolean;
 };

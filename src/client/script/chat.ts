@@ -5,7 +5,7 @@ import {
   getRandomArbitrary,
   getUserColor,
 } from "../../shared/util.ts";
-import { OverlayMessageData } from "../../shared/types.ts";
+import { Clip, OverlayMessageData } from "../../shared/types.ts";
 import {
   buildEmoteImageUrl,
   ChatMessage,
@@ -201,9 +201,9 @@ export class ChatHandler {
       this.addToDisconnectList("bot");
     });
 
-    socket.on("message", (message) => {
+    socket.on("message", async (message) => {
       console.log("GOT MESSAGE:", message);
-      this.addToMessageList(message);
+      await this.addToMessageList(message);
     });
 
     socket.on("deleteMessage", (messageId) => {
@@ -258,7 +258,9 @@ export class ChatHandler {
     this.getRecentMessages();
   }
 
-  addToMessageList(message: OverlayMessageData & { isOld: true | undefined }) {
+  async addToMessageList(
+    message: OverlayMessageData & { isOld: true | undefined },
+  ) {
     if (message.isCommand && !this.showCommands) return;
 
     // Don't add if it's from the bot or if a message with the same id already exits
@@ -327,9 +329,10 @@ export class ChatHandler {
 
     const textSpanElement = document.createElement("span");
     textSpanElement.classList.add("text");
-    const messageParts = this.parseEmotes(
+    const messageParts = this.parseMessages(
       message.message,
       message.emoteOffsets,
+      message.clip,
     );
     const firstPart = messageParts[0].type == "text" ? messageParts[0] : null;
 
@@ -415,7 +418,7 @@ export class ChatHandler {
       )
     ).json();
 
-    messages.messages.forEach((msg: string) => {
+    for (const msg of messages.messages) {
       if (!msg.includes("PRIVMSG")) return;
       const message = parseTwitchMessage(msg) as ChatMessage;
 
@@ -424,8 +427,8 @@ export class ChatHandler {
         message.userInfo.userId === "736013381" ||
         message.userInfo.userName == "botrixoficial";
       const isAction = message.text.startsWith("\u0001ACTION");
-      this.handleMessage(message, isAction, isCommand);
-    });
+      await this.handleMessage(message, isAction, isCommand);
+    }
   }
 
   private createRawText(text: string): HTMLSpanElement {
@@ -434,22 +437,40 @@ export class ChatHandler {
     return span;
   }
 
-  private createText(text: string): HTMLSpanElement {
+  private createText(
+    text: string,
+    index: number,
+    clip: Clip | undefined,
+  ):HTMLSpanElement {
     const span = document.createElement("span");
-    let first = true;
+    let firstElement = true;
+    let firstWord = true;
+    let foundClip = clip == undefined;
     let currentText = [];
 
     for (const word of text.split(" ")) {
+      // Space
+      index += word.length + (firstWord ? 0 : 1);
+      firstWord = false;
+
+      if(!foundClip && index >= clip?.start!) {
+        span.appendChild(this.createRawText(word));
+        span.appendChild(this.createClip(clip!));
+        foundClip = true;
+        break;
+      }
+
       const wordResult = parseWord(word);
       if (wordResult) {
-        if (first) {
-          span.innerText = currentText.join(" ");
-          first = false;
-        } else if (currentText.length != 0)
+        if (firstElement) span.innerText = currentText.join(" ");
+        else if (currentText.length != 0)
           span.appendChild(this.createRawText(currentText.join(" ")));
+
+        firstElement = false;
         currentText.length = 0;
         span.appendChild(wordResult.element);
-        if(wordResult.leftOver) currentText.push(wordResult.leftOver);
+
+        if (wordResult.leftOver) currentText.push(wordResult.leftOver);
         continue;
       }
 
@@ -459,6 +480,24 @@ export class ChatHandler {
       span.appendChild(this.createRawText(currentText.join(" ")));
 
     return span;
+  }
+
+  private createClip(clip: Clip): HTMLElement {
+    const clipElement = document.createElement("a");
+    clipElement.target = "_blank";
+    clipElement.href = clip.url;
+    clipElement.classList.add("clip");
+
+    const clipThumbnail = document.createElement("img");
+    clipThumbnail.width = 80;
+    clipThumbnail.height = 45;
+    clipThumbnail.src = clip.thumbnailUrl;
+
+    clipElement.appendChild(clipThumbnail);
+
+    clipElement.innerHTML += `${clip.title} <br /> Clipped by ${clip.creator}`;
+
+    return clipElement;
   }
 
   private createEmote(emoteId: string): HTMLImageElement {
@@ -485,25 +524,29 @@ export class ChatHandler {
     return image;
   }
 
-  private parseEmotes(
+  private parseMessages(
     text: string,
     emoteOffsets: string | null,
+    clip: Clip | undefined,
   ): MessagePart[] {
     const parsedOffsets = parseEmoteOffsets(emoteOffsets ?? undefined);
 
     if (parsedOffsets.size == 0) {
-      return [{ type: "text", element: this.createText(text) }];
+      return [{ type: "text", element: this.createText(text, 0, clip) }];
     }
+
+    let index = 0;
     const result: MessagePart[] = [];
     const parsedParts = parseChatMessage(text, parsedOffsets, this.cheerEmotes);
 
-    parsedParts.forEach((parsedPart) => {
+    for (const parsedPart of parsedParts) {
       switch (parsedPart.type) {
         case "text":
           result.push({
             type: "text",
-            element: this.createText(parsedPart.text),
+            element: this.createText(parsedPart.text, index, clip),
           });
+          index += parsedPart.text.length;
           break;
 
         case "emote":
@@ -511,10 +554,12 @@ export class ChatHandler {
             type: "img",
             element: this.createEmote(parsedPart.id),
           });
+          index += parsedPart.name.length;
 
           break;
       }
-    });
+    }
+
     return result;
   }
 
@@ -523,7 +568,7 @@ export class ChatHandler {
     isAction: boolean,
     isCommand: boolean,
   ) {
-    this.addToMessageList({
+    await this.addToMessageList({
       platform: "twitch",
       displayName: formatDisplayName(msg),
       userId: msg.userInfo.userId,
@@ -545,14 +590,11 @@ export class ChatHandler {
 }
 
 // Recives one word
-type Parser = (
-  input: string,
-) => { element: HTMLElement; leftOver: string } | null;
+type ParserResult = { element: HTMLElement; leftOver: string } | null;
+type Parser = (input: string) => ParserResult;
 const parsers: Parser[] = [parseMentions];
 
-function parseWord(
-  input: string,
-): { element: HTMLElement; leftOver: string } | null {
+function parseWord(input: string): ParserResult {
   console.log("parsing " + input);
   for (const parser of parsers) {
     const result = parser(input);

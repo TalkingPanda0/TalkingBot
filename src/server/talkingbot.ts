@@ -139,25 +139,6 @@ export class TalkingBot {
     this.database.cleanUp();
   }
 
-  public async parseClips(text: string): Promise<string> {
-    let clipId = this.twitch.clipRegex.exec(text);
-    if (clipId == null) clipId = this.twitch.wwwclipRegex.exec(text);
-    if (clipId !== null) {
-      const clip = await this.twitch.apiClient.clips.getClipById(clipId[1]);
-      if (clip !== null) {
-        return (
-          text +
-          `<a target="_blank" href="${clip.url}" style="border: none;padding: 4px;display: flex;align-content: center;margin-top: 5px;text-decoration: none;font-size: 15px;line-height: 25px;"> <img width="80" height="45" src="${clip.thumbnailUrl}" style="padding-right: 10px;"> ${clip.title}  <br> Clipped by ${clip.creatorDisplayName}</div></a>`
-        );
-      } else {
-        console.error(
-          "\x1b[35m%s\x1b[0m",
-          `Failed getting clip info: ${clipId[1]}`,
-        );
-      }
-    }
-    return text;
-  }
 
   public async broadcastMessage(message: string) {
     await Promise.all([this.twitch.say(message)]);

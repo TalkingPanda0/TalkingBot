@@ -122,3 +122,18 @@ body {
   margin: 2px;
   vertical-align: middle;
 }
+
+.clip {
+  border: none;
+  padding: 4px;
+  display: flex;
+  align-content: center;
+  margin-top: 5px;
+  text-decoration: none;
+  font-size: 15px;
+  line-height: 25px;
+}
+
+.clip img {
+  padding-right: 10px;
+}
