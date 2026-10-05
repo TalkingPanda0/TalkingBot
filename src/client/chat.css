@@ -113,3 +113,12 @@ body {
 .reply .emote {
   width: 17px;
 }
+
+.badges:empty::after {
+  content: "";
+  display: inline-table;
+  height: 25px;
+  width: 0;
+  margin: 2px;
+  vertical-align: middle;
+}

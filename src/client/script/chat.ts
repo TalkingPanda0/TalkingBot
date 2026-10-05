@@ -179,7 +179,7 @@ export class ChatHandler {
   }
 
   async getCheerEmotes() {
-    this.cheerEmotes =  await (await fetch("/get/cheerEmotes")).json();
+    this.cheerEmotes = await (await fetch("/get/cheerEmotes")).json();
   }
 
   listen() {
@@ -280,10 +280,8 @@ export class ChatHandler {
 
     // message is a reply
     if (message.replyId) {
-
       const repliedMessageContainer = document.getElementById(message.replyId);
-      const repliedMessage = repliedMessageContainer?.querySelector(".sender")
-
+      const repliedMessage = repliedMessageContainer?.querySelector(".sender");
 
       if (repliedMessage) {
         const replyElement = document.createElement("span");
@@ -292,7 +290,6 @@ export class ChatHandler {
         messageElement.appendChild(replyElement);
         messageElement.appendChild(document.createElement("br"));
       }
-
     }
 
     if (message.highlightColor)
@@ -323,23 +320,8 @@ export class ChatHandler {
 
     const textElement = document.createElement("span");
     textElement.classList.add("sender");
-    textElement.dataset.name =
-      `${message.platform}-${message.displayName}`.toLowerCase();
+    textElement.dataset.name = `${message.displayName}`.toLowerCase();
     textElement.style.color = `${message.color}`;
-
-    /*let text = message.message
-      .trim()
-      .replaceAll(this.mentionRegex, (mention: string, user: string) => {
-        const nameTag = `${user}`.toLowerCase();
-        const elements = document.querySelectorAll(`[data-name="${nameTag}"]`);
-        if (elements.length == 0) {
-          return mention;
-        }
-
-        const targetElement = elements[elements.length - 1] as HTMLDivElement;
-        const color = targetElement.style.color;
-        return `<span style="color:${color}">${mention}</span>`;
-      });*/
 
     textElement.innerText = message.displayName.trim();
 
@@ -353,17 +335,17 @@ export class ChatHandler {
 
     // If it's a reply remove the first mention
     if (firstPart && message.replyId) {
-       firstPart.element.innerText =  firstPart.element.innerText.replace(/^@(\w+)/g, "").trim();
+      firstPart.element.innerText = firstPart.element.innerText
+        .replace(/^@(\w+)/g, "")
+        .trim();
     }
 
-    const firstChar = firstPart?.element.innerText.charAt(0);
-    if (firstChar != null && faceChars.includes(firstChar)) {
+    if (message.isAction) {
       if (firstPart) {
-        firstPart.element.innerText = `: ${firstPart.element.innerText}`;
-      }
-    } else if (message.isAction) {
-      if (firstPart) {
-        firstPart.element.innerText = firstPart.element.innerText.replace(/ACTION/, "");
+        firstPart.element.innerText = firstPart.element.innerText.replace(
+          /ACTION/,
+          "",
+        );
       }
       messageParts
         .filter((part) => part.type == "text")
@@ -446,16 +428,45 @@ export class ChatHandler {
     });
   }
 
+  private createRawText(text: string): HTMLSpanElement {
+    const span = document.createElement("span");
+    span.innerText = text;
+    return span;
+  }
+
   private createText(text: string): HTMLSpanElement {
-    const result = document.createElement("span");
-    result.innerText = text;
-    return result;
+    const span = document.createElement("span");
+    let first = true;
+    let currentText = [];
+
+    for (const word of text.split(" ")) {
+      const wordResult = parseWord(word);
+      if (wordResult) {
+        if (first) {
+          span.innerText = currentText.join(" ");
+          first = false;
+        } else if (currentText.length != 0)
+          span.appendChild(this.createRawText(currentText.join(" ")));
+        currentText.length = 0;
+        span.appendChild(wordResult.element);
+        if(wordResult.leftOver) currentText.push(wordResult.leftOver);
+        continue;
+      }
+
+      currentText.push(word);
+    }
+    if (currentText.length != 0)
+      span.appendChild(this.createRawText(currentText.join(" ")));
+
+    return span;
   }
 
   private createEmote(emoteId: string): HTMLImageElement {
-    const result = document.createElement("img");
-    result.classList.add("emote");
-    result.onload = (event) => {
+    const image = document.createElement("img");
+
+    image.classList.add("emote");
+
+    image.onload = (event) => {
       if (event != null && this.emoteWall)
         this.emoteWall.add(event.target as HTMLImageElement);
       this.messageList.scrollIntoView({
@@ -464,12 +475,14 @@ export class ChatHandler {
         inline: "nearest",
       });
     };
-    result.src = buildEmoteImageUrl(emoteId, {
+
+    image.src = buildEmoteImageUrl(emoteId, {
       size: "3.0",
       backgroundType: "dark",
       animationSettings: "default",
     });
-    return result;
+
+    return image;
   }
 
   private parseEmotes(
@@ -530,24 +543,52 @@ export class ChatHandler {
     });
   }
 }
-const faceChars = [
-  ")",
-  "(",
-  "3",
-  "}",
-  "{",
-  "@",
-  "[",
-  "]",
-  "D",
-  "O",
-  "/",
-  "\\",
-  "$",
-  "X",
-  "&",
-  "E",
-  "P",
-  "p",
-  "b",
-];
+
+// Recives one word
+type Parser = (
+  input: string,
+) => { element: HTMLElement; leftOver: string } | null;
+const parsers: Parser[] = [parseMentions];
+
+function parseWord(
+  input: string,
+): { element: HTMLElement; leftOver: string } | null {
+  console.log("parsing " + input);
+  for (const parser of parsers) {
+    const result = parser(input);
+    if (result) {
+      return result;
+    }
+  }
+  return null;
+}
+
+function parseMentions(
+  input: string,
+): { element: HTMLElement; leftOver: string } | null {
+  if (!input.startsWith("@")) return null;
+
+  let username = input.substring(1);
+
+  const end = username.search(/\W/);
+  let leftOver = "";
+  if (end != -1) {
+    leftOver = username.substring(end);
+    username = username.substring(0, end);
+  }
+  const elements = document.querySelectorAll(
+    `[data-name="${username.toLowerCase()}"]`,
+  );
+  if (elements.length == 0) {
+    return null;
+  }
+
+  const element = document.createElement("span");
+  element.innerText = ` @${username}` + (leftOver ? "" : " ");
+
+  const targetElement = elements[elements.length - 1] as HTMLDivElement;
+
+  element.style.color = targetElement.style.color;
+
+  return { element, leftOver };
+}
