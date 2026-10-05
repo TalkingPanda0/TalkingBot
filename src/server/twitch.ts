@@ -15,7 +15,6 @@ import {
   EventSubListener,
 } from "@twurple/eventsub-base";
 import { TalkingBot } from "./talkingbot.ts";
-import { getBTTVEmotes } from "./bttv.ts";
 import {
   colorFromId,
   formatDisplayName,
@@ -43,7 +42,6 @@ export class Twitch {
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
   public isStreamOnline = false;
   public cheerEmotes!: HelixCheermoteList;
-  public BTTVEmotes = new Map<string, string>();
   public badges = new Map<string, string>();
   public currentGame: string | null = null;
 
@@ -256,7 +254,6 @@ export class Twitch {
     });
     this.cheerEmotes = await this.apiClient.bits.getCheermotes(this.channel.id);
 
-    this.BTTVEmotes = await getBTTVEmotes(this.channel.id);
 
     if (this.eventSubSecret) {
       this.eventListener = new EventSubHttpListener({

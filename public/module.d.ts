@@ -30,7 +30,6 @@ declare module "botModule" {
     public chatClient: any;
     public isStreamOnline: boolean;
     public cheerEmotes: any;
-    public BTTVEmotes: Map<string, string>;
     public badges: Map<string, string>;
     public getCurrentTitle(): Promise<string | null>;
     public say(message: string): Promise<void>;
