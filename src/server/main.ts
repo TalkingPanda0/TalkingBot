@@ -13,7 +13,7 @@ import { getDiscordUserId, isDiscordAuthData } from "../shared/util.ts";
 import { handleKofiEvent, isKofiEvent } from "./kofi.ts";
 import { readdir, rename } from "node:fs/promises";
 import { CONFIG } from "./env.ts";
-import { DiscordAuthData } from "../shared/types.ts";
+import { ChatMetaData, DiscordAuthData } from "../shared/types.ts";
 import path from "node:path";
 
 const app: Express = express();
@@ -64,8 +64,12 @@ app.use("/get", async (req, res) => {
       res.send(bot.credits.getCreditsList());
       break;
     }
-    case "/cheerEmotes": {
-      res.send(JSON.stringify(bot.twitch.cheerEmotes.getPossibleNames()));
+    case "/chatInfo": {
+      const info: ChatMetaData = {
+        cheerEmotes: bot.twitch.cheerEmotes.getPossibleNames(),
+        channelId: bot.twitch.channel.id,
+      };
+      res.send(JSON.stringify(info));
       break;
     }
   }

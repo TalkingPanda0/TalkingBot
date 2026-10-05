@@ -5,7 +5,7 @@ import {
   getRandomArbitrary,
   getUserColor,
 } from "../../shared/util.ts";
-import { Clip, OverlayMessageData } from "../../shared/types.ts";
+import { ChatMetaData, Clip, OverlayMessageData } from "../../shared/types.ts";
 import {
   buildEmoteImageUrl,
   ChatMessage,
@@ -139,10 +139,22 @@ class EmoteWall {
   }
 }
 
+// Recives one word
+type ParserResult = { element: HTMLElement; leftOver: string } | null;
+type Parser = (input: string) => ParserResult;
 export type MessageCallback = (
   message: OverlayMessageData,
   messageElement: HTMLDivElement,
 ) => void;
+
+interface BTTVEmote {
+  id: string;
+  code: string;
+}
+interface BTTVUserInfo {
+  channelEmotes: BTTVEmote[];
+  sharedEmotes: BTTVEmote[];
+}
 
 export class ChatHandler {
   recentMessagesInterval: NodeJS.Timeout | null = null;
@@ -155,10 +167,14 @@ export class ChatHandler {
 
   messageList: HTMLDivElement;
   disconnectList: HTMLDivElement | null = null;
-  cheerEmotes = [];
+  cheerEmotes: string[] = [];
+  channelId?: string;
+  extraEmotes: Map<string, string> = new Map();
 
+  parsers: Parser[] = [this.parseMentions,this.parseExtraEmotes];
   emoteWall: EmoteWall | null = null;
   showCommands: boolean;
+  chatInfoPromise: Promise<void>;
   messageCallback: MessageCallback | null;
 
   constructor(
@@ -176,10 +192,41 @@ export class ChatHandler {
     if (emoteWall) {
       this.emoteWall = new EmoteWall(emoteWall);
     }
+    this.chatInfoPromise = this.getChatInfo();
   }
 
-  async getCheerEmotes() {
-    this.cheerEmotes = await (await fetch("/get/cheerEmotes")).json();
+  async getChatInfo() {
+    const info: ChatMetaData = await (await fetch("/get/chatInfo")).json();
+    this.cheerEmotes = info.cheerEmotes;
+    this.channelId = info.channelId;
+    await this.getBttvEmotes();
+  }
+
+  async getBttvEmotes() {
+    const channelInfo: BTTVUserInfo = await (
+      await fetch(
+        `https://api.betterttv.net/3/cached/users/twitch/${this.channelId}`,
+      )
+    ).json();
+    const globalEmotes: BTTVEmote[] = await (
+      await fetch("https://api.betterttv.net/3/cached/emotes/global")
+    ).json();
+
+    function getBttvEmote(id: string) {
+      return `https://cdn.betterttv.net/emote/${id}/1x`;
+    }
+
+    channelInfo.channelEmotes.forEach((value) => {
+      this.extraEmotes.set(value.code, getBttvEmote(value.id));
+    });
+
+    channelInfo.sharedEmotes.forEach((value) => {
+      this.extraEmotes.set(value.code, getBttvEmote(value.id));
+    });
+
+    globalEmotes.forEach((value) => {
+      this.extraEmotes.set(value.code, getBttvEmote(value.id));
+    });
   }
 
   listen() {
@@ -371,8 +418,7 @@ export class ChatHandler {
     spanElement.appendChild(textElement);
     messageElement.appendChild(spanElement);
 
-    if(message.clip)
-      messageElement.appendChild(this.createClip(message.clip));
+    if (message.clip) messageElement.appendChild(this.createClip(message.clip));
 
     this.messageList.appendChild(messageElement);
     this.messageList.scrollIntoView({
@@ -414,6 +460,9 @@ export class ChatHandler {
   }
 
   async getRecentMessages() {
+    console.log(this.chatInfoPromise);
+    await this.chatInfoPromise;
+    console.log(this.chatInfoPromise);
     console.log("getting new messages.");
     const messages = await (
       await fetch(
@@ -440,15 +489,13 @@ export class ChatHandler {
     return span;
   }
 
-  private createText(
-    text: string,
-  ):HTMLSpanElement {
+  private createText(text: string): HTMLSpanElement {
     const span = document.createElement("span");
     let firstElement = true;
     let currentText = [];
 
     for (const word of text.split(" ")) {
-      const wordResult = parseWord(word);
+      const wordResult = this.parseWord(word);
       if (wordResult) {
         if (firstElement) span.innerText = currentText.join(" ");
         else if (currentText.length != 0)
@@ -488,6 +535,16 @@ export class ChatHandler {
   }
 
   private createEmote(emoteId: string): HTMLImageElement {
+    return this.createEmoteUrl(
+      buildEmoteImageUrl(emoteId, {
+        size: "3.0",
+        backgroundType: "dark",
+        animationSettings: "default",
+      }),
+    );
+  }
+
+  private createEmoteUrl(url: string): HTMLImageElement {
     const image = document.createElement("img");
 
     image.classList.add("emote");
@@ -502,11 +559,7 @@ export class ChatHandler {
       });
     };
 
-    image.src = buildEmoteImageUrl(emoteId, {
-      size: "3.0",
-      backgroundType: "dark",
-      animationSettings: "default",
-    });
+    image.src = url;
 
     return image;
   }
@@ -542,7 +595,6 @@ export class ChatHandler {
       }
     }
 
-
     return result;
   }
 
@@ -570,50 +622,51 @@ export class ChatHandler {
       badges: [],
     });
   }
-}
-
-// Recives one word
-type ParserResult = { element: HTMLElement; leftOver: string } | null;
-type Parser = (input: string) => ParserResult;
-const parsers: Parser[] = [parseMentions];
-
-function parseWord(input: string): ParserResult {
-  console.log("parsing " + input);
-  for (const parser of parsers) {
-    const result = parser(input);
-    if (result) {
-      return result;
+  parseWord(input: string): ParserResult {
+    console.log("parsing " + input);
+    for (const parser of this.parsers) {
+      const result = parser.bind(this)(input);
+      if (result) {
+        return result;
+      }
     }
-  }
-  return null;
-}
-
-function parseMentions(
-  input: string,
-): { element: HTMLElement; leftOver: string } | null {
-  if (!input.startsWith("@")) return null;
-
-  let username = input.substring(1);
-
-  const end = username.search(/\W/);
-  let leftOver = "";
-  if (end != -1) {
-    leftOver = username.substring(end);
-    username = username.substring(0, end);
-  }
-  const elements = document.querySelectorAll(
-    `[data-name="${username.toLowerCase()}"]`,
-  );
-  if (elements.length == 0) {
     return null;
   }
 
-  const element = document.createElement("span");
-  element.innerText = ` @${username}` + (leftOver ? "" : " ");
+  parseMentions(
+    input: string,
+  ): { element: HTMLElement; leftOver: string } | null {
+    if (!input.startsWith("@")) return null;
 
-  const targetElement = elements[elements.length - 1] as HTMLDivElement;
+    let username = input.substring(1);
 
-  element.style.color = targetElement.style.color;
+    const end = username.search(/\W/);
+    let leftOver = "";
+    if (end != -1) {
+      leftOver = username.substring(end);
+      username = username.substring(0, end);
+    }
+    const elements = document.querySelectorAll(
+      `[data-name="${username.toLowerCase()}"]`,
+    );
+    if (elements.length == 0) {
+      return null;
+    }
 
-  return { element, leftOver };
+    const element = document.createElement("span");
+    element.innerText = ` @${username}` + (leftOver ? "" : " ");
+
+    const targetElement = elements[elements.length - 1] as HTMLDivElement;
+
+    element.style.color = targetElement.style.color;
+
+    return { element, leftOver };
+  }
+  parseExtraEmotes(
+    input: string,
+  ): { element: HTMLElement; leftOver: string } | null {
+    const emote = this.extraEmotes.get(input);
+    if(!emote) return null;
+    return {element: this.createEmoteUrl(emote),leftOver: ""};
+  }
 }

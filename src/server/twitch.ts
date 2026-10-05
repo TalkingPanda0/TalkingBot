@@ -254,7 +254,6 @@ export class Twitch {
     });
     this.cheerEmotes = await this.apiClient.bits.getCheermotes(this.channel.id);
 
-
     if (this.eventSubSecret) {
       this.eventListener = new EventSubHttpListener({
         apiClient: this.apiClient,
@@ -722,30 +721,28 @@ export class Twitch {
   }
 
   public async parseClips(text: string): Promise<Clip | undefined> {
-    let www = false;
-    let clipId = this.clipRegex.exec(text);
-    if (clipId == null) {
-      www = true;
-      clipId = this.wwwclipRegex.exec(text);
-    } 
-    if (clipId !== null) {
-      const clip = await this.apiClient.clips.getClipById(clipId[1]);
-      if (clip !== null) {
-        const regex = www ? this.wwwclipRegex : this.clipRegex;
-        return {
-          title: clip.title,
-          url: clip.url,
-          thumbnailUrl: clip.thumbnailUrl,
-          creator: clip.creatorDisplayName,
-          end: regex.lastIndex -1,
-          start: regex.lastIndex - clipId[0].length,
-        }
-      } else {
-        console.error(
-          "\x1b[35m%s\x1b[0m",
-          `Failed getting clip info: ${clipId[1]}`,
-        );
-      }
+    const match = this.clipRegex.exec(text) ?? this.wwwclipRegex.exec(text);
+    if (match === null) return undefined;
+
+    const start = match.index;
+    const end = match.index + match[0].length - 1;
+
+    const clip = await this.apiClient.clips.getClipById(match[1]);
+    if (clip === null) {
+      console.error(
+        "\x1b[35m%s\x1b[0m",
+        `Failed getting clip info: ${match[1]}`,
+      );
+      return undefined;
     }
+
+    return {
+      title: clip.title,
+      url: clip.url,
+      thumbnailUrl: clip.thumbnailUrl,
+      creator: clip.creatorDisplayName,
+      start,
+      end,
+    };
   }
 }
