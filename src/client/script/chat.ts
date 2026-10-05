@@ -332,7 +332,6 @@ export class ChatHandler {
     const messageParts = this.parseMessages(
       message.message,
       message.emoteOffsets,
-      message.clip,
     );
     const firstPart = messageParts[0].type == "text" ? messageParts[0] : null;
 
@@ -371,6 +370,10 @@ export class ChatHandler {
     spanElement.appendChild(badgesElement);
     spanElement.appendChild(textElement);
     messageElement.appendChild(spanElement);
+
+    if(message.clip)
+      messageElement.appendChild(this.createClip(message.clip));
+
     this.messageList.appendChild(messageElement);
     this.messageList.scrollIntoView({
       behavior: "smooth",
@@ -439,27 +442,12 @@ export class ChatHandler {
 
   private createText(
     text: string,
-    index: number,
-    clip: Clip | undefined,
   ):HTMLSpanElement {
     const span = document.createElement("span");
     let firstElement = true;
-    let firstWord = true;
-    let foundClip = clip == undefined;
     let currentText = [];
 
     for (const word of text.split(" ")) {
-      // Space
-      index += word.length + (firstWord ? 0 : 1);
-      firstWord = false;
-
-      if(!foundClip && index >= clip?.start!) {
-        span.appendChild(this.createRawText(word));
-        span.appendChild(this.createClip(clip!));
-        foundClip = true;
-        break;
-      }
-
       const wordResult = parseWord(word);
       if (wordResult) {
         if (firstElement) span.innerText = currentText.join(" ");
@@ -478,7 +466,6 @@ export class ChatHandler {
     }
     if (currentText.length != 0)
       span.appendChild(this.createRawText(currentText.join(" ")));
-
     return span;
   }
 
@@ -527,15 +514,13 @@ export class ChatHandler {
   private parseMessages(
     text: string,
     emoteOffsets: string | null,
-    clip: Clip | undefined,
   ): MessagePart[] {
     const parsedOffsets = parseEmoteOffsets(emoteOffsets ?? undefined);
 
     if (parsedOffsets.size == 0) {
-      return [{ type: "text", element: this.createText(text, 0, clip) }];
+      return [{ type: "text", element: this.createText(text) }];
     }
 
-    let index = 0;
     const result: MessagePart[] = [];
     const parsedParts = parseChatMessage(text, parsedOffsets, this.cheerEmotes);
 
@@ -544,9 +529,8 @@ export class ChatHandler {
         case "text":
           result.push({
             type: "text",
-            element: this.createText(parsedPart.text, index, clip),
+            element: this.createText(parsedPart.text),
           });
-          index += parsedPart.text.length;
           break;
 
         case "emote":
@@ -554,11 +538,10 @@ export class ChatHandler {
             type: "img",
             element: this.createEmote(parsedPart.id),
           });
-          index += parsedPart.name.length;
-
           break;
       }
     }
+
 
     return result;
   }
