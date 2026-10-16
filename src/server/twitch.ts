@@ -105,9 +105,7 @@ export class Twitch {
 
       if (msg.isHighlight) {
         highlightColor = "#755ebc";
-      }
-
-      if (msg.isRedemption && msg.rewardId) {
+      } else if (msg.isRedemption && msg.rewardId) {
         const reward = await this.apiClient.channelPoints.getCustomRewardById(
           this.channel.id,
           msg.rewardId,
@@ -521,7 +519,11 @@ export class Twitch {
         console.error(`Failed getting user ${user}.`);
         return;
       }
-      this.bot.userManager.userJoin(userInfo.id,userInfo.displayName, this.isStreamOnline);
+      this.bot.userManager.userJoin(
+        userInfo.id,
+        userInfo.displayName,
+        this.isStreamOnline,
+      );
     });
 
     this.chatClient.onPart(async (_channel: string, user: string) => {
@@ -538,7 +540,11 @@ export class Twitch {
         console.error(`Failed getting user ${user}.`);
         return;
       }
-      this.bot.userManager.userLeave(userInfo.id,userInfo.displayName, this.isStreamOnline);
+      this.bot.userManager.userLeave(
+        userInfo.id,
+        userInfo.displayName,
+        this.isStreamOnline,
+      );
     });
 
     this.eventListener.onChannelBan(this.channel.id, (event) => {
