@@ -28,7 +28,7 @@ import { MessageData } from "botModule";
 import { getRandomElement } from "botutil";
 import { CONFIG } from "./env.ts";
 import { emotes, emoteUsage, hapboos } from "./db/schema.ts";
-import { desc, eq, inArray, or, sql } from "drizzle-orm";
+import { desc, eq, inArray, isNotNull, or, sql } from "drizzle-orm";
 
 const HAPBOOS = [
   ["<:commonhapboo:1302651100599554172>"],
@@ -227,7 +227,7 @@ export class Discord {
       this.bot.commandHandler.handleCommand(data);
       this.bot.moduleManager.onDiscordMessage(message);
 
-      this.addEmotes(message);
+      await this.addEmotes(message);
     });
 
     this.client.on(Events.MessageDelete, async (message) => {
@@ -240,7 +240,7 @@ export class Discord {
         `${message.author.id} deleted ${message.content}`,
       );
 
-      this.removeEmotes(message.author.id, message.content);
+      await this.removeEmotes(message.author.id, message.content);
     });
 
     this.client.on(Events.MessageUpdate, async (oldMessage, newMessage) => {
@@ -253,8 +253,8 @@ export class Discord {
       );
 
       if (oldMessage.content)
-        this.removeEmotes(oldMessage.author.id, oldMessage.content);
-      this.addEmotes(newMessage);
+        await this.removeEmotes(oldMessage.author.id, oldMessage.content);
+      await this.addEmotes(newMessage);
     });
 
     this.client.on(Events.MessageReactionAdd, async (reaction, user) => {
@@ -265,14 +265,14 @@ export class Discord {
       if (emote == "<:baboo_TheDeep:1263655967938318346>")
         reaction.message.react("<:baboo_TheDeep:1263655967938318346>");
 
-      this.emoteUsed(user.id, emote, true, false);
+      await this.emoteUsed(user.id, emote, true, false);
     });
 
     this.client.on(Events.MessageReactionRemove, async (reaction, user) => {
       if (user.bot) return;
       const emote = reaction.emoji.toString();
       console.log("\x1b[34m%s\x1b[0m", `${user.id} took back a ${emote}`);
-      this.emoteUsed(user.id, emote, true, true);
+      await this.emoteUsed(user.id, emote, true, true);
     });
 
     this.client.on(
@@ -426,7 +426,8 @@ export class Discord {
           if (hapbooReaction.length == 0) {
             description = `<@${target.id}> has not been hapbooed yet.`;
           } else {
-            description = `<@${target.id}> has been hapbooed ${(hapbooReaction.map((h) => h.times).reduce((a, b) => a ?? 0 + (b ?? 0)), 0)} times.`;
+            console.log(hapbooReaction);
+            description = `<@${target.id}> has been hapbooed ${hapbooReaction.map((h) => h.times ?? 0).reduce((a, b) => a + b, 0)} times.`;
           }
 
           interaction.reply({
@@ -539,7 +540,7 @@ export class Discord {
                   emote: emote.emoteInfo
                     ? this.getEmoteString(emote.emoteInfo)
                     : (emote.emoji ?? ""),
-                  times: emote.reactionTimes ?? 0,
+                  times: emote.total ?? 0,
                 };
               });
               suffix = "messages and reactions";
@@ -737,37 +738,32 @@ export class Discord {
     remove: boolean,
   ) {
     const change = remove ? -1 : 1;
-
     const emote = await this.getEmote(emoteString);
 
-    if (reaction) {
-      await this.bot.database.db
-        .insert(emoteUsage)
-        .values({
-          userId,
-          reactionTimes: change,
-          ...emote,
-        })
-        .onConflictDoUpdate({
-          target: [emoteUsage.userId, emoteUsage.emoteId],
-          set: {
-            reactionTimes: sql`${emoteUsage.reactionTimes} + ${change}`,
-          },
-        });
+    const values = {
+      userId,
+      times: reaction ? 0 : change,
+      reactionTimes: reaction ? change : 0,
+      ...emote,
+    };
+    const set = reaction
+      ? { reactionTimes: sql`${emoteUsage.reactionTimes} + ${change}` }
+      : { times: sql`${emoteUsage.times} + ${change}` };
+
+    const insert = this.bot.database.db.insert(emoteUsage).values(values);
+
+    if ("emoteId" in emote && emote.emoteId) {
+      await insert.onConflictDoUpdate({
+        target: [emoteUsage.userId, emoteUsage.emoteId],
+        targetWhere: isNotNull(emoteUsage.emoteId),
+        set,
+      });
     } else {
-      await this.bot.database.db
-        .insert(emoteUsage)
-        .values({
-          userId,
-          times: change,
-          ...emote,
-        })
-        .onConflictDoUpdate({
-          target: [emoteUsage.userId, emoteUsage.emoteId],
-          set: {
-            times: sql`${emoteUsage.times} + ${change}`,
-          },
-        });
+      await insert.onConflictDoUpdate({
+        target: [emoteUsage.userId, emoteUsage.emoji],
+        targetWhere: isNotNull(emoteUsage.emoji),
+        set,
+      });
     }
   }
 
@@ -869,23 +865,27 @@ export class Discord {
     });
   }
 
-  private removeEmotes(authorId: string, message: string) {
+  private async removeEmotes(authorId: string, message: string) {
     const emotes = this.findEmotes(message);
     if (emotes == null) return;
-    emotes.forEach((emote) => {
-      this.emoteUsed(authorId, emote, false, true);
-    });
+    await Promise.all(
+      emotes.map(async (emote) => {
+        this.emoteUsed(authorId, emote, false, true);
+      }),
+    );
   }
 
-  private addEmotes(message: Message) {
+  private async addEmotes(message: Message) {
     const emotes = this.findEmotes(message.content);
     if (emotes == null) return;
-    emotes.forEach((emote) => {
-      if (emote == "<:baboo_TheDeep:1263655967938318346>")
-        message.react("<:baboo_TheDeep:1263655967938318346>");
+    await Promise.all(
+      emotes.map((emote) => {
+        if (emote == "<:baboo_TheDeep:1263655967938318346>")
+          message.react("<:baboo_TheDeep:1263655967938318346>");
 
-      this.emoteUsed(message.author.id, emote, false, false);
-    });
+        this.emoteUsed(message.author.id, emote, false, false);
+      }),
+    );
   }
 
   public async isStreamMod(userId: string): Promise<boolean> {
@@ -985,71 +985,36 @@ export class Discord {
   public async getTopEmotes(
     filter: string,
   ): Promise<{ emoteString: string; times: number }[]> {
-    switch (filter) {
-      case "emotes":
-        return (
-          await this.bot.database.db.query.emoteUsage.findMany({
-            with: {
-              emoteInfo: true,
-            },
-            orderBy: {
-              times: "desc",
-            },
-          })
-        ).map((emote) => {
-          return {
-            emoteString: emote.emoteInfo
-              ? this.getEmoteString(emote.emoteInfo)
-              : (emote.emoji ?? ""),
-            times: emote.times ?? 0,
-          };
-        });
-      case "reactions":
-        return (
-          await this.bot.database.db.query.emoteUsage.findMany({
-            with: {
-              emoteInfo: true,
-            },
-            orderBy: {
-              reactionTimes: "desc",
-            },
-          })
-        ).map((emote) => {
-          return {
-            emoteString: emote.emoteInfo
-              ? this.getEmoteString(emote.emoteInfo)
-              : (emote.emoji ?? ""),
-            times: emote.reactionTimes ?? 0,
-          };
-        });
-      case "both":
-      default:
-        return (
-          await this.bot.database.db
-            .select({
-              userId: emoteUsage.userId,
-              emoteId: emoteUsage.emoteId,
-              emoji: emoteUsage.emoji,
-              emoteInfo: {
-                name: emotes.name,
-                isAnimated: emotes.isAnimated,
-                emoteId: emotes.emoteId,
-              },
-              times: emoteUsage.times,
-              reactionTimes: emoteUsage.reactionTimes,
-              total: rowTotal,
-            })
-            .from(emoteUsage)
-            .leftJoin(emotes, eq(emoteUsage.emoteId, emotes.emoteId))
-            .orderBy(desc(rowTotal))
-        ).map((emote) => {
-          return {
-            emoteString: emote.emoteInfo
-              ? this.getEmoteString(emote.emoteInfo)
-              : (emote.emoji ?? ""),
-            times: emote.reactionTimes ?? 0,
-          };
-        });
-    }
+    const usage =
+      filter === "emotes"
+        ? sql`coalesce(${emoteUsage.times}, 0)`
+        : filter === "reactions"
+          ? sql`coalesce(${emoteUsage.reactionTimes}, 0)`
+          : sql`coalesce(${emoteUsage.times}, 0) + coalesce(${emoteUsage.reactionTimes}, 0)`;
+
+    const total = sql<number>`sum(${usage})`.mapWith(Number);
+
+    const rows = await this.bot.database.db
+      .select({
+        emoteId: emoteUsage.emoteId,
+        emoji: emoteUsage.emoji,
+        emoteInfo: {
+          name: emotes.name,
+          isAnimated: emotes.isAnimated,
+          emoteId: emotes.emoteId,
+        },
+        total,
+      })
+      .from(emoteUsage)
+      .leftJoin(emotes, eq(emoteUsage.emoteId, emotes.emoteId))
+      .groupBy(emoteUsage.emoteId, emoteUsage.emoji)
+      .orderBy(desc(total));
+
+    return rows.map((emote) => ({
+      emoteString: emote.emoteInfo
+        ? this.getEmoteString(emote.emoteInfo)
+        : (emote.emoji ?? ""),
+      times: emote.total,
+    }));
   }
 }
