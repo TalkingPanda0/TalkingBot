@@ -1,4 +1,4 @@
-import { ChatControl } from "../../../shared/types.ts";
+import { ChatControl, MessageData } from "../../../shared/types.ts";
 import { ChatHandler } from "../../script/chat.ts";
 
 declare global {
@@ -99,24 +99,28 @@ function sendMessage() {
     dropdownMenu.querySelectorAll('input[type="checkbox"]:checked'),
     (value: { value: string }) => badges.get(value.value),
   );
-  const message = {
-    badges: badgeList,
-    sender: user,
-    senderId: user,
+  const message: MessageData = {
+    badges: badgeList as string[],
+    displayName: user,
+    userId: user,
     color: color,
     isUserMod: false,
     platform: platform,
     message: text,
-    parsedMessage: text,
     isFirst: false,
-    replyText: "",
     replyId: "twitch-",
-    replyTo: "",
-    rewardName: "",
-    isOld: false,
     isCommand: command,
-    id: `bot-${Math.random().toString(36).substring(2)}`,
-    isFake: true,
+    id: `${Math.random().toString(36).substring(2)}`,
+    reply(message, replyToUser) {
+        
+    },
+    banUser(reason, duration) {
+        
+    },
+    emoteOffsets: "",
+    highlightColor: null,
+    highlightMessage: null,
+    timestamp: new Date(),
   };
   sendToControl({
     overlay: "chat",

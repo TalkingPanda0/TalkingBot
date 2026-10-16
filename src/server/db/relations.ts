@@ -8,10 +8,6 @@ export const relations = defineRelations(schema, (r) => ({
     messageBadges: r.many.messageBadges(),
   },
 
-  badges: {
-    messages: r.many.chatMessages(),
-  },
-
   chatMessages: {
     sender: r.one.users({
       from: [r.chatMessages.platform, r.chatMessages.userId],
@@ -81,4 +77,3 @@ export const relations = defineRelations(schema, (r) => ({
     messages: r.many.chatMessages(),
   },
 }));
-

@@ -1,7 +1,6 @@
 import { Twitch } from "./twitch.ts";
 import { Discord } from "./discord.ts";
-import { DB } from "./db.ts";
-
+import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
 
@@ -33,6 +32,7 @@ import {
   RaidAlert,
   SubAlert,
 } from "../shared/types.ts";
+import { Database } from "./database.ts";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -54,7 +54,7 @@ export class TalkingBot {
   public iopoll: Namespace;
   public ioalert: Namespace;
   public connectedtoOverlay: boolean = false;
-  public database: DB;
+  public database = new Database();
   public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
   public latestSub: latestSub | null = null;
@@ -98,14 +98,15 @@ export class TalkingBot {
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
-    this.credits = new Credits(this);
-    this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
     this.discord = new Discord(this);
+    this.credits = new Credits(this);
     this.moduleManager = new ModuleManager(this);
     this.userManager = new UserManager(this);
   }
+
+
 
   public async initBot() {
     await this.discord.initBot();
@@ -113,12 +114,9 @@ export class TalkingBot {
     this.commandHandler.init();
     this.moduleManager.init();
 
-    this.latestSub = await this.database.getOrSetConfig("latestSub", null);
-    this.modtext = await this.database.getOrSetConfig("currentModtext", null);
-    this.modtextCanvas = await this.database.getOrSetConfig(
-      "currentModtextCanvas",
-      null,
-    );
+    this.latestSub = await this.database.getConfig("latestSub");
+    this.modtext = await this.database.getConfig("currentModtext");
+    this.modtextCanvas = await this.database.getConfig("currentModtextCanvas");
 
     await this.updateModText();
     await this.updateModTextCanvas();
@@ -136,9 +134,8 @@ export class TalkingBot {
   public async cleanUp() {
     await this.twitch.cleanUp();
     this.discord.cleanUp();
-    this.database.cleanUp();
+    await this.userManager.cleanUp();
   }
-
 
   public async broadcastMessage(message: string) {
     await Promise.all([this.twitch.say(message)]);
@@ -254,21 +251,21 @@ export class TalkingBot {
     this.emitAlert({
       audioList: await getRaidAudio(alert.raider, alert.viewers),
       ...alert,
-      messageAudioList: null
+      messageAudioList: null,
     });
   }
   public async followAlert(alert: FollowAlert) {
     this.emitAlert({
       audioList: await getFollowAudio(alert.follower),
       ...alert,
-      messageAudioList: null
+      messageAudioList: null,
     });
   }
   public async bitsAlert(alert: BitsAlert) {
     this.emitAlert({
       audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
       ...alert,
-      messageAudioList: null
+      messageAudioList: null,
     });
   }
   public async discordJoinAlert(alert: DiscordJoinAlert) {

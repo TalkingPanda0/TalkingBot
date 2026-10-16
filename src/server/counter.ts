@@ -1,11 +1,11 @@
-import { DB } from "./db.ts";
+import { Database } from "./database.ts";
 
 export class Counter {
   counters: Map<string, number> = new Map<string, number>();
-  db: DB;
+  db: Database;
 
-  constructor(db: DB) {
-    this.db = db;
+  constructor(db: Database) {
+    this.db= db;
   }
   public init() {
     this.loadCounters();

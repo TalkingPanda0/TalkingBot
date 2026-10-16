@@ -48,7 +48,7 @@ export const messageBadges = sqliteTable(
 export const chatMessages = sqliteTable(
   "chatMessages",
   {
-    messageId: text(),
+    messageId: text().notNull(),
     platform: integer()
       .notNull()
       .references(() => platforms.id),
@@ -79,11 +79,11 @@ export const chatMessages = sqliteTable(
 export const users = sqliteTable(
   "users",
   {
-    userId: text(),
+    userId: text().notNull(),
     platform: integer()
       .notNull()
       .references(() => platforms.id),
-    userName: text().notNull(),
+    displayName: text().notNull(),
     color: text().notNull(),
     customName: text(),
     customColor: text(),

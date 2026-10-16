@@ -15,6 +15,7 @@ import { CreditType } from "./credits.ts";
 
 import { MessageData } from "botModule";
 import { OverlayMessageData } from "../shared/types.ts";
+import { WatchTimeStatus } from "./users.ts";
 
 export interface Command {
   showOnChat?: boolean;
@@ -38,9 +39,9 @@ export class MessageHandler {
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+    this.counter = new Counter(this.bot.database);
   }
   public init() {
-    this.counter = new Counter(this.bot.database);
     this.counter.init();
   }
 
@@ -54,35 +55,43 @@ export class MessageHandler {
           try {
             if (data.platform != "twitch") return;
             const isOffline = data.message === "offline";
-            this.bot.database.updateDataBase(isOffline ? 1 : 2);
-            const users = await this.bot.database.getTopWatchTime(isOffline);
-            const helixUsers =
-              await this.bot.twitch.apiClient.users.getUsersByIds(
-                users.map((watchtime) => watchtime.userId),
-              );
-            data.reply(
-              (
-                await Promise.all(
-                  users.map(async (watchTime) => {
-                    const helixUser = helixUsers.find(
-                      (user) => user.id == watchTime.userId,
-                    );
-                    if (helixUser == undefined) return "";
+            this.bot.userManager.updateWatchTimes(!isOffline);
 
-                    const user = helixUser.displayName;
-                    try {
-                      if (isOffline)
-                        return `@${user} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
-                      else
-                        return `@${user} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`;
-                    } catch (e) {
-                      return e;
-                    }
-                  }),
-                )
-              ).join(" "),
-              false,
-            );
+            if (isOffline) {
+              const times = await this.bot.database.db.query.users.findMany({
+                columns: { chatTime: true, displayName: true },
+                orderBy: {
+                  chatTime: "desc",
+                },
+                limit: 3,
+              });
+              data.reply(
+                times
+                  .map(
+                    (user) =>
+                      `@${user.displayName} has spent ${milliSecondsToString(user.chatTime ?? 0)} in offline chat.`,
+                  )
+                  .join(" "),
+                true,
+              );
+            } else {
+              const times = await this.bot.database.db.query.users.findMany({
+                columns: { watchTime: true, displayName: true },
+                orderBy: {
+                  chatTime: "desc",
+                },
+                limit: 3,
+              });
+              data.reply(
+                times
+                  .map(
+                    (user) =>
+                      `@${user.displayName} has spent ${milliSecondsToString(user.watchTime ?? 0)} watching the stream.`,
+                  )
+                  .join(" "),
+                true,
+              );
+            }
           } catch (e) {
             console.error(e);
           }
@@ -108,20 +117,37 @@ export class MessageHandler {
           } else {
             userName = data.displayName;
           }
-          const watchTime = await this.bot.database.getWatchTime(userId.slice("twitch-".length));
 
-          if (watchTime == null) {
+          const platformId = this.bot.database.getPlatfromId("twitch");
+
+          const watchTime = await this.bot.database.db.query.users.findFirst({
+            columns: {
+              lastSeen: true,
+              lastSeenOnStream: true,
+              watchTime: true,
+              chatTime: true,
+            },
+            where: {
+              userId,
+              platform: platformId,
+            }
+          });
+
+          if (!watchTime) {
             data.reply("Can't find watchtime.", true);
             return;
           }
+
+          const status = this.bot.userManager.getWatchTimeStatus(userId);
+
           if (isOffline) {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.chatTime ?? 0 + ((status == WatchTimeStatus.Chat && watchTime.lastSeen ) ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
               false,
             );
           } else {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream ?? Date.now()).getTime() : 0))} watching the stream.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.watchTime ?? 0 + ((status == WatchTimeStatus.Stream && watchTime.lastSeenOnStream) ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
               false,
             );
           }
@@ -694,9 +720,9 @@ export class MessageHandler {
           const username = args[0];
           const nickname = args.splice(1).join(" ");
 
-          const user = await this.bot.userManager.findUser(username);
-          if(!user) {
-            data.reply(`Can't find user ${username}.`,true);
+          const user = await this.bot.userManager.findUser(username, data.platform);
+          if (!user) {
+            data.reply(`Can't find user ${username}.`, true);
             return;
           }
 
@@ -768,7 +794,6 @@ export class MessageHandler {
       .replace(/\$user/g, data.displayName)
       .replace(/\$args/g, message);
 
-     
     if (customCommand.includes("fetch")) {
       this.timeout.add(commandName);
       setTimeout(() => {
@@ -859,7 +884,10 @@ export class MessageHandler {
       platform: data.platform,
       replyId: data.replyId,
       timestamp: data.timestamp.getTime(),
-      clip: data.platform == "twitch" ? await this.bot.twitch.parseClips(data.message) : undefined,
+      clip:
+        data.platform == "twitch"
+          ? await this.bot.twitch.parseClips(data.message)
+          : undefined,
     });
   }
 
@@ -871,7 +899,6 @@ export class MessageHandler {
     this.commandAliasMap = arraytoHashMap(await this.aliasesFile.json());
     if (!(await this.argsFile.exists())) return;
     this.argMap = arraytoHashMap(await this.argsFile.json());
-
   }
 
   private writeCustomCommands() {

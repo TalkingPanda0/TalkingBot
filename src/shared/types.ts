@@ -115,3 +115,8 @@ export type OverlayMessageData = StoredMessageData & {
   isFake: boolean;
   isCommand: boolean;
 };
+
+export type ChatMetaData = {
+  cheerEmotes: string[],
+  channelId: string,
+}

@@ -68,8 +68,7 @@ export class Twitch {
     this.chatClient.quit();
     await this.apiClient.eventSub.deleteAllSubscriptions();
     this.eventListener.stop();
-    this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
-    this.bot.database.cleanDataBase();
+    this.bot.userManager.updateWatchTimes(this.isStreamOnline);
   }
 
   public async addUser(code: string, scope: string) {
@@ -290,8 +289,16 @@ export class Twitch {
         chatters.data.forEach((chatter) => {
           if (chatter.userId == "736013381" || chatter.userId == "646848961")
             return;
-          this.bot.database.userLeave(chatter.userId, false);
-          this.bot.database.userJoin(chatter.userId, true);
+          this.bot.userManager.userLeave(
+            chatter.userId,
+            chatter.userDisplayName,
+            false,
+          );
+          this.bot.userManager.userJoin(
+            chatter.userId,
+            chatter.userDisplayName,
+            true,
+          );
         });
       } catch (e) {
         console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
@@ -307,8 +314,16 @@ export class Twitch {
       chatters.data.forEach((chatter) => {
         if (chatter.userId == "736013381" || chatter.userId == "646848961")
           return;
-        this.bot.database.userLeave(chatter.userId, true);
-        this.bot.database.userJoin(chatter.userId, false);
+        this.bot.userManager.userLeave(
+          chatter.userId,
+          chatter.userDisplayName,
+          true,
+        );
+        this.bot.userManager.userJoin(
+          chatter.userId,
+          chatter.userDisplayName,
+          false,
+        );
       });
 
       this.bot.onStreamOffline();
@@ -506,7 +521,7 @@ export class Twitch {
         console.error(`Failed getting user ${user}.`);
         return;
       }
-      this.bot.database.userJoin(userInfo.id, this.isStreamOnline);
+      this.bot.userManager.userJoin(userInfo.id,userInfo.displayName, this.isStreamOnline);
     });
 
     this.chatClient.onPart(async (_channel: string, user: string) => {
@@ -523,13 +538,13 @@ export class Twitch {
         console.error(`Failed getting user ${user}.`);
         return;
       }
-      this.bot.database.userLeave(userInfo.id, this.isStreamOnline);
+      this.bot.userManager.userLeave(userInfo.id,userInfo.displayName, this.isStreamOnline);
     });
 
     this.eventListener.onChannelBan(this.channel.id, (event) => {
       if (event.isPermanent)
         this.bot.credits.deleteFromCredits(event.userDisplayName);
-      this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
+      this.bot.iochat.emit("banUser", event.userId);
       this.say(
         `@${event.userName} has been defenestrated${event.isPermanent ? " Forever" : ""}.`,
       );
