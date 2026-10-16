@@ -22,8 +22,6 @@ export class ChatLogger {
     const [y, m, d] = date.split("-").map(Number);
     const before = new Date(y,m -1,d + 1);
     const after = new Date(y,m -1,d);
-    console.log(before.getTime());
-    console.log(after.getTime());
     const msgs = await this.bot.database.db.query.chatMessages.findMany({
       where: {
         timestamp: { gte: after, lt: before }
@@ -31,10 +29,21 @@ export class ChatLogger {
       with: {
         platformInfo: true,
         badges: { with: { badge: true } },
-        sender: true,
       },
+      columns: {
+        messageId: true,
+        displayName: true,
+        color: true,
+        userId: true,
+        message: true,
+        emoteOffsets: true,
+        replyId: true,
+        timestamp: true,
+        isAction: true,
+        highlightMessage: true,
+        highlightColor: true,
+      }
     });
-    console.log(msgs);
     return msgs.map((msg) => {
       return {
         messageId: msg.messageId,

@@ -42,6 +42,11 @@ export const messageBadges = sqliteTable(
       columns: [table.platform, table.messageId],
       foreignColumns: [chatMessages.platform, chatMessages.messageId],
     }),
+    uniqueIndex("messageBadges_message_badge_idx").on(
+      table.platform,
+      table.messageId,
+      table.badgeId,
+    ),
   ],
 );
 
@@ -58,7 +63,7 @@ export const chatMessages = sqliteTable(
     message: text().notNull(),
     emoteOffsets: text(),
     replyId: text(),
-    isAction: integer({mode: "boolean"}).default(false),
+    isAction: integer({ mode: "boolean" }).default(false),
     highlightMessage: text(),
     highlightColor: text(),
     timestamp: integer({ mode: "timestamp_ms" }).notNull(),
