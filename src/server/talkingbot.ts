@@ -80,7 +80,7 @@ export class TalkingBot {
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
     this.discord = new Discord(this);
-    this.credits = new Credits(this);
+    this.credits = new Credits();
     this.moduleManager = new ModuleManager(this);
     this.userManager = new UserManager(this);
   }

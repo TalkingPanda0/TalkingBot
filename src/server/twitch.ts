@@ -182,12 +182,14 @@ export class Twitch {
   }
   private async onCheer(msg: ChatMessage) {
     const name = formatDisplayName(msg);
-    this.bot.credits.addToCredits(
-      `twitch-${msg.userInfo.userId}`,
-      name,
-      getUserColor(msg.userInfo),
-      CreditType.Cheer,
-    );
+
+    this.bot.credits.addToCredits({
+      userId: `twitch-${msg.userInfo.userId}`,
+      userDisplayName: name,
+      color: getUserColor(msg.userInfo),
+      type: CreditType.Cheer,
+    });
+
     const indexes: number[] = [];
     msg.emoteOffsets.forEach((emote) => {
       emote.forEach((index) => {
@@ -345,12 +347,15 @@ export class Twitch {
       this.channel.id,
       async (event) => {
         if (this.allreadyFollowed.has(event.userId)) return;
-        this.bot.credits.addToCredits(
-          `twitch-${event.userId}`,
-          getDisplayName(event.userDisplayName, event.userName),
-          colorFromId(event.userId),
-          CreditType.Follow,
-        );
+        this.bot.credits.addToCredits({
+          userId: `twitch-${event.userId}`,
+          userDisplayName: getDisplayName(
+            event.userDisplayName,
+            event.userName,
+          ),
+          color: colorFromId(event.userId),
+          type: CreditType.Follow,
+        });
         this.bot.alertsManager.followAlert({
           type: "followAlert",
           follower: event.userDisplayName,
@@ -418,21 +423,24 @@ export class Twitch {
           data.chatterName,
         );
 
-        this.bot.alertsManager.subAlert({
-          type: "subAlert",
-          name: displayName,
-          message: data.messageText,
-          plan: tier,
-          months,
-          gift,
-          gifted,
-        },data.messageText);
+        this.bot.alertsManager.subAlert(
+          {
+            type: "subAlert",
+            name: displayName,
+            message: data.messageText,
+            plan: tier,
+            months,
+            gift,
+            gifted,
+          },
+          data.messageText,
+        );
 
         this.bot.credits.addToCredits({
           userId: `twitch-${data.chatterId}`,
           color: colorFromId(data.chatterId),
           userDisplayName: displayName,
-          type: CreditType.Subscription
+          type: CreditType.Subscription,
         });
 
         const user = await data.getChatter();
