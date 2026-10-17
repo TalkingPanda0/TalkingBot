@@ -325,7 +325,7 @@ export class Discord {
     this.client.on(Events.GuildMemberAdd, async (event) => {
       if (event.guild.id !== this.guildId) return;
       console.log(`${event.user.displayName} joined the fish tank.`);
-      this.bot.discordJoinAlert({
+      this.bot.alertsManager.discordJoinAlert({
         type: "discordJoinAlert",
         member: event.user.displayName,
       });

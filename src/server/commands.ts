@@ -130,7 +130,7 @@ export class MessageHandler {
             where: {
               userId,
               platform: platformId,
-            }
+            },
           });
 
           if (!watchTime) {
@@ -142,12 +142,12 @@ export class MessageHandler {
 
           if (isOffline) {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.chatTime ?? 0 + ((status == WatchTimeStatus.Chat && watchTime.lastSeen ) ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.chatTime ?? 0 + (status == WatchTimeStatus.Chat && watchTime.lastSeen ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
               false,
             );
           } else {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.watchTime ?? 0 + ((status == WatchTimeStatus.Stream && watchTime.lastSeenOnStream) ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.watchTime ?? 0 + (status == WatchTimeStatus.Stream && watchTime.lastSeenOnStream ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
               false,
             );
           }
@@ -601,11 +601,11 @@ export class MessageHandler {
         showOnChat: true,
         commandFunction: (data): void | Promise<void> => {
           if (data.message.trim() == "") return;
-          this.bot.ttsManager.send({
+          this.bot.alertsManager.sendTTS({
+            type: "tts",
             text: data.message,
             sender: data.displayName,
             color: data.color,
-            parsedText: data.message,
             isImportant: false,
           });
         },
@@ -620,34 +620,28 @@ export class MessageHandler {
           const args = data.message.split(" ");
           switch (args[0]) {
             case "enable":
-              this.bot.ttsManager.enabled = true;
+              this.bot.alertsManager.ttsEnabled = true;
               data.reply("TTS command has been enabled", true);
               return;
             case "disable":
-              this.bot.ttsManager.enabled = false;
+              this.bot.alertsManager.ttsEnabled = false;
               data.reply("TTS command has been disabled", true);
               return;
             case "skip":
-              this.bot.ttsManager.skip(args[1]);
+              this.bot.alertsManager.skip();
               return;
-            case "pause":
-              this.bot.ttsManager.setPause(true);
-              break;
-            case "unpause":
-              this.bot.ttsManager.setPause(false);
-              break;
             case "say":
-              this.bot.ttsManager.send({
+              this.bot.alertsManager.sendTTS({
+                type: "tts",
                 text: data.message.split(" ").slice(1).join(" "),
                 sender: data.displayName,
                 color: data.color,
-                parsedText: data.message,
                 isImportant: true,
               });
               return;
             default:
               data.reply(
-                `TTS is currently ${this.bot.ttsManager.enabled ? "Enabled" : "Disabled"}`,
+                `TTS is currently ${this.bot.alertsManager.ttsEnabled ? "Enabled" : "Disabled"}`,
                 true,
               );
               return;
@@ -720,7 +714,10 @@ export class MessageHandler {
           const username = args[0];
           const nickname = args.splice(1).join(" ");
 
-          const user = await this.bot.userManager.findUser(username, data.platform);
+          const user = await this.bot.userManager.findUser(
+            username,
+            data.platform,
+          );
           if (!user) {
             data.reply(`Can't find user ${username}.`, true);
             return;

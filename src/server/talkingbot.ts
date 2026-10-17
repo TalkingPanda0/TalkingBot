@@ -1,37 +1,18 @@
 import { Twitch } from "./twitch.ts";
 import { Discord } from "./discord.ts";
-import { drizzle } from "drizzle-orm/bun-sqlite";
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
 
 import { MessageHandler } from "./commands.ts";
-import { TTSManager } from "./tts.ts";
+import { AlertsManager } from "./alerts.ts";
 import { Credits } from "./credits.ts";
 
 import { ModuleManager } from "./moduleManager.ts";
 import { ChatLogger } from "./chatLogger.ts";
-import {
-  getCheerAudio,
-  getDiscordJoinAudio,
-  getFollowAudio,
-  getKofiAudio,
-  getRaidAudio,
-  getSubAudio,
-} from "./alerts.ts";
 import { Canvas } from "fabric";
 import { UserManager } from "./users.ts";
 import { CONFIG } from "./env.ts";
-import {
-  AlertEvent,
-  BitsAlert,
-  ControlMessage,
-  DiscordAuthData,
-  DiscordJoinAlert,
-  FollowAlert,
-  KofiAlert,
-  RaidAlert,
-  SubAlert,
-} from "../shared/types.ts";
+import { ControlMessage, DiscordAuthData } from "../shared/types.ts";
 import { Database } from "./database.ts";
 
 export interface AuthSetup {
@@ -52,7 +33,6 @@ export class TalkingBot {
   public iochat: Namespace;
   public iomodtext: Namespace;
   public iopoll: Namespace;
-  public ioalert: Namespace;
   public connectedtoOverlay: boolean = false;
   public database = new Database();
   public chatLogger: ChatLogger;
@@ -60,7 +40,7 @@ export class TalkingBot {
   public latestSub: latestSub | null = null;
   public modtext: string | null = null;
   public modtextCanvas: Canvas | null = null;
-  public ttsManager: TTSManager;
+  public alertsManager: AlertsManager;
   public credits: Credits;
   public userManager: UserManager;
   public moduleManager: ModuleManager;
@@ -68,7 +48,7 @@ export class TalkingBot {
   constructor(server: http.Server) {
     const io = new Server(server);
 
-    this.ttsManager = new TTSManager(io.of("tts"));
+    this.alertsManager = new AlertsManager(io.of("alerts"));
 
     this.iomodtext = io.of("modtext");
 
@@ -94,7 +74,6 @@ export class TalkingBot {
       }
     });
     this.iopoll = io.of("poll");
-    this.ioalert = io.of("alerts");
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
@@ -105,8 +84,6 @@ export class TalkingBot {
     this.moduleManager = new ModuleManager(this);
     this.userManager = new UserManager(this);
   }
-
-
 
   public async initBot() {
     await this.discord.initBot();
@@ -140,6 +117,7 @@ export class TalkingBot {
   public async broadcastMessage(message: string) {
     await Promise.all([this.twitch.say(message)]);
   }
+
   public async updateModText() {
     if (!this.modtext) return;
     await this.database.setConfig("currentModtext", this.modtext);
@@ -152,6 +130,7 @@ export class TalkingBot {
       }),
     );
   }
+
   public async updateModTextCanvas() {
     if (!this.modtextCanvas) return;
     await this.database.setConfig("currentModtextCanvas", this.modtextCanvas);
@@ -225,79 +204,27 @@ export class TalkingBot {
       case "alerts": {
         switch (data.message.type) {
           case "raidAlert":
-            this.raidAlert(data.message);
+            this.alertsManager.raidAlert(data.message);
             break;
           case "followAlert":
-            this.followAlert(data.message);
+            this.alertsManager.followAlert(data.message);
             break;
           case "bitsAlert":
-            this.bitsAlert(data.message);
+            this.alertsManager.bitsAlert(data.message, data.message.message);
             break;
           case "subAlert":
-            this.subAlert(data.message);
+            this.alertsManager.subAlert(data.message, data.message.message);
             break;
           case "discordJoinAlert":
-            this.discordJoinAlert(data.message);
+            this.alertsManager.discordJoinAlert(data.message);
             break;
           case "kofiAlert":
-            this.kofiAlert(data.message);
+            this.alertsManager.kofiAlert(data.message);
             break;
         }
         break;
       }
     }
-  }
-  public async raidAlert(alert: RaidAlert) {
-    this.emitAlert({
-      audioList: await getRaidAudio(alert.raider, alert.viewers),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async followAlert(alert: FollowAlert) {
-    this.emitAlert({
-      audioList: await getFollowAudio(alert.follower),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async bitsAlert(alert: BitsAlert) {
-    this.emitAlert({
-      audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async discordJoinAlert(alert: DiscordJoinAlert) {
-    this.emitAlert({
-      audioList: await getDiscordJoinAudio(alert.member),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async kofiAlert(alert: KofiAlert) {
-    this.emitAlert({
-      audioList: await getKofiAudio(
-        alert.sender,
-        alert.is_subscription,
-        alert.tier_name ?? "",
-        alert.amount,
-        alert.currency,
-      ),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async subAlert(alert: SubAlert) {
-    this.emitAlert({
-      audioList: await getSubAudio(alert.name),
-      ...alert,
-      messageAudioList: alert.message ? await getSubAudio(alert.message) : [],
-    });
-  }
-
-  public async emitAlert(alert: AlertEvent) {
-    this.ioalert.emit("alert", alert);
   }
 
   public async setLatestSub(sub: latestSub) {

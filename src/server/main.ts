@@ -5,7 +5,6 @@ import cookieParser from "cookie-parser";
 import * as http from "http";
 import { TalkingBot } from "./talkingbot.ts";
 import { sign, verify } from "jsonwebtoken";
-import { getTTSSounds } from "./tts.ts";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import { createServer as createViteServer } from "vite";
 import cors from "cors";
@@ -15,6 +14,7 @@ import { readdir, rename } from "node:fs/promises";
 import { CONFIG } from "./env.ts";
 import { ChatMetaData, DiscordAuthData } from "../shared/types.ts";
 import path from "node:path";
+import { getTTSSounds } from "./alerts.ts";
 
 const app: Express = express();
 const server = http.createServer(app);

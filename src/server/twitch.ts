@@ -20,6 +20,7 @@ import {
   formatDisplayName,
   getDisplayName,
   getUserColor,
+  removeByIndexToUppercase,
 } from "../shared/util.ts";
 import {
   EventSubHttpListener,
@@ -187,14 +188,26 @@ export class Twitch {
       getUserColor(msg.userInfo),
       CreditType.Cheer,
     );
-    const message = msg.text.replaceAll(/cheer\d+/gi, "");
-
-    this.bot.bitsAlert({
-      type: "bitsAlert",
-      bits: msg.bits,
-      user: name,
-      message: message,
+    const indexes: number[] = [];
+    msg.emoteOffsets.forEach((emote) => {
+      emote.forEach((index) => {
+        indexes.push(parseInt(index));
+      });
     });
+    const messageWithoutPrefix = removeByIndexToUppercase(
+      msg.text,
+      indexes,
+    ).replaceAll(/cheer\d+/gi, "");
+
+    this.bot.alertsManager.bitsAlert(
+      {
+        type: "bitsAlert",
+        bits: msg.bits,
+        user: name,
+        message: msg.text,
+      },
+      messageWithoutPrefix,
+    );
   }
 
   async initBot(): Promise<void> {
@@ -338,7 +351,7 @@ export class Twitch {
           colorFromId(event.userId),
           CreditType.Follow,
         );
-        this.bot.followAlert({
+        this.bot.alertsManager.followAlert({
           type: "followAlert",
           follower: event.userDisplayName,
         });
@@ -405,7 +418,7 @@ export class Twitch {
           data.chatterName,
         );
 
-        this.bot.subAlert({
+        this.bot.alertsManager.subAlert({
           type: "subAlert",
           name: displayName,
           message: data.messageText,
@@ -413,7 +426,7 @@ export class Twitch {
           months,
           gift,
           gifted,
-        });
+        },data.messageText);
 
         this.bot.credits.addToCredits(
           `twitch-${data.chatterId}`,
@@ -498,7 +511,7 @@ export class Twitch {
 
     this.chatClient.onRaid(
       async (_channel: string, _user: string, raidInfo: ChatRaidInfo) => {
-        this.bot.raidAlert({
+        this.bot.alertsManager.raidAlert({
           type: "raidAlert",
           raider: raidInfo.displayName,
           viewers: raidInfo.viewerCount,

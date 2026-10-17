@@ -101,7 +101,8 @@ export async function handleKofiEvent(bot: TalkingBot, event: KofiEvent) {
   switch (event.type) {
     case "Donation":
     case "Subscription": {
-      const alert: KofiAlertData = {
+      bot.alertsManager.emitAlert({
+        type: "kofiAlert",
         audioList: await getKofiAudio(
           event.from_name,
           event.is_subscription_payment,
@@ -115,8 +116,8 @@ export async function handleKofiEvent(bot: TalkingBot, event: KofiEvent) {
         sender: event.from_name,
         amount: event.amount,
         currency: event.currency,
-      };
-      bot.ioalert.emit("alert", alert);
+        messageAudioList: null,
+      });
       break;
     }
     case "Commission":

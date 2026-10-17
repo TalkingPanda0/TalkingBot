@@ -50,13 +50,22 @@ export type SubAlert = {
   gifted: number;
 };
 
+export interface TTSAlert {
+  type: "tts";
+  text: string;
+  sender: string;
+  color: string;
+  isImportant: boolean;
+}
+
 export type Alert =
   | RaidAlert
   | FollowAlert
   | BitsAlert
   | SubAlert
   | DiscordJoinAlert
-  | KofiAlert;
+  | KofiAlert
+  | TTSAlert;
 export type AlertEvent = Alert & {
   audioList: string[];
   messageAudioList: string[] | null;
@@ -76,14 +85,6 @@ export type ModtextControl = (
 export type AlertControl = { message: Alert; overlay: "alerts" };
 
 export type ControlMessage = ChatControl | ModtextControl | AlertControl;
-export interface TTSData {
-  text: string;
-  parsedText: string;
-  sender: string;
-  color: string;
-  isImportant: boolean;
-}
-export type TTSEvent = TTSData & { audioList: string[] };
 
 export type StoredMessageData = {
   messageId: string;
@@ -101,14 +102,14 @@ export type StoredMessageData = {
   highlightColor: string | null;
 };
 
- export type Clip = {
-    title: string;
-    url: string;
-    thumbnailUrl: string,
-    creator: string;
-    start: number;
-    end: number;
-  };
+export type Clip = {
+  title: string;
+  url: string;
+  thumbnailUrl: string;
+  creator: string;
+  start: number;
+  end: number;
+};
 
 export type OverlayMessageData = StoredMessageData & {
   clip?: Clip;
@@ -117,6 +118,6 @@ export type OverlayMessageData = StoredMessageData & {
 };
 
 export type ChatMetaData = {
-  cheerEmotes: string[],
-  channelId: string,
-}
+  cheerEmotes: string[];
+  channelId: string;
+};
