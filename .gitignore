@@ -3,3 +3,4 @@ config/*
 dist
 bun.lockb
 .env
+public/types.json

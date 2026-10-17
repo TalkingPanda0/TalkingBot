@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development bun run .",
-    "build": "vite build",
+    "build": "bun run src/generateTypes.ts && vite build",
     "start": "NODE_ENV=production bun run ."
   },
   "author": "",
@@ -15,7 +15,6 @@
     "@twurple/api": "^8.2.0",
     "@twurple/auth": "^8.2.0",
     "@twurple/chat": "^8.2.0",
-    "@twurple/eventsub-http": "^8.2.0",
     "@twurple/eventsub-ws": "^8.2.0",
     "body-parser": "^2.3.0",
     "bootstrap": "^5.3.8",
@@ -32,7 +31,6 @@
     "html2canvas": "^1.4.1",
     "jsonwebtoken": "^9.0.3",
     "monaco-editor": "^0.56.0",
-    "monaco-editor-auto-typings": "^0.4.6",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.25",
