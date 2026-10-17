@@ -812,7 +812,7 @@ export class MessageHandler {
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) {
         commandMessage = commandMessage.replace(commandName, commandAlias);
-        commandName = data.message.split(" ")[0];
+        commandName = commandMessage.split(" ")[0];
       }
       const customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
