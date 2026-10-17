@@ -1,3 +1,7 @@
+import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api/lib";
+import { ChatClient } from "@twurple/chat/lib";
+import { Client, Message } from "discord.js";
+
 declare module "botModule" {
   export class ModuleManager {
     public getModuleStatus(module: string): boolean;
@@ -17,30 +21,31 @@ declare module "botModule" {
   }
 
   export class Discord {
-    public client: any;
+    public client: Client;
     public guildId: string;
 
     public registerDiscordCommand(command: DiscordCommand): Promise<void>;
     public say(message: string, channelId: string): void;
+
+    public onGameChange(name: string, art: string): Promise<void>;
   }
 
   export class Twitch {
-    public apiClient: any;
-    public channel: any;
-    public chatClient: any;
+    public apiClient: ApiClient;
+    public channel: HelixUser;
+    public chatClient: ChatClient;
     public isStreamOnline: boolean;
-    public cheerEmotes: any;
+    public cheerEmotes: HelixCheermoteList;
     public badges: Map<string, string>;
+    public currentGame: string | null;
     public getCurrentTitle(): Promise<string | null>;
     public say(message: string): Promise<void>;
   }
   export class Namespace {}
   export class DB {
-    public database: any;
-
     public getOrSetConfig<T>(key: string, defaultValue: T): Promise<T>;
-
     public setConfig<T>(key: string, value: T): Promise<void>;
+    public getConfig<T>(key: string): Promise<T | null>;
   }
 
   export interface latestSub {
@@ -121,7 +126,7 @@ declare module "botModule" {
   }
 
   export type MessageListener = (data: MessageData) => void;
-  export type DiscordMessageListener = (data: any) => void;
+  export type DiscordMessageListener = (data: Message) => void;
 
   export type RedemptionStatus = "FULFILLED" | "CANCELED";
   export interface ChannelRedemption {
