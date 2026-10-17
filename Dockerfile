@@ -6,7 +6,7 @@ WORKDIR /home/bun/talkingbot
 
 COPY bun.lock package.json tsconfig.json vite.config.ts ./
 
-RUN bun install --verbose --production
+RUN bun install --frozen-lockfile --verbose --production
 
 RUN mkdir public/
 COPY --chown=bun  public ./public
