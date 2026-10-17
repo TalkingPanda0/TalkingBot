@@ -428,12 +428,12 @@ export class Twitch {
           gifted,
         },data.messageText);
 
-        this.bot.credits.addToCredits(
-          `twitch-${data.chatterId}`,
-          colorFromId(data.chatterId),
-          displayName,
-          CreditType.Subscription,
-        );
+        this.bot.credits.addToCredits({
+          userId: `twitch-${data.chatterId}`,
+          color: colorFromId(data.chatterId),
+          userDisplayName: displayName,
+          type: CreditType.Subscription
+        });
 
         const user = await data.getChatter();
         this.bot.setLatestSub({

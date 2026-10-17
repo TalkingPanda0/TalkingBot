@@ -1,8 +1,8 @@
 import { TalkingBot } from "./talkingbot.ts";
 
 export interface Chatter {
-  name: string,
-  color: string,
+  name: string;
+  color: string;
 }
 
 interface CreditsList {
@@ -22,17 +22,12 @@ export enum CreditType {
 }
 
 export class Credits {
-  private followers: Map<string,Chatter> = new Map();
-  private subscribers:  Map<string,Chatter> = new Map();
+  private followers: Map<string, Chatter> = new Map();
+  private subscribers: Map<string, Chatter> = new Map();
 
-  private moderators: Map<string,Chatter> = new Map();
-  private cheers: Map<string,Chatter> = new Map();
-  private chatters:Map<string,Chatter> = new Map();
-  private bot: TalkingBot;
-
-  constructor(bot: TalkingBot) {
-    this.bot = bot;
-  }
+  private moderators: Map<string, Chatter> = new Map();
+  private cheers: Map<string, Chatter> = new Map();
+  private chatters: Map<string, Chatter> = new Map();
 
   public clear() {
     this.followers.clear();
@@ -42,22 +37,42 @@ export class Credits {
     this.chatters.clear();
   }
 
-  public addToCredits(id: string,name: string,color: string, type: CreditType) {
-    switch (type) {
+  public addToCredits(credit: {
+    userId: string;
+    userDisplayName: string;
+    color: string;
+    type: CreditType;
+  }) {
+    switch (credit.type) {
       case CreditType.Follow:
-        this.followers.set(id,{name,color});
+        this.followers.set(credit.userId, {
+          name: credit.userDisplayName,
+          color: credit.color,
+        });
         break;
       case CreditType.Moderator:
-        this.moderators.set(id,{name,color})
+        this.moderators.set(credit.userId, {
+          name: credit.userDisplayName,
+          color: credit.color,
+        });
         break;
       case CreditType.Subscription:
-        this.subscribers.set(id,{name,color})
+        this.subscribers.set(credit.userId, {
+          name: credit.userDisplayName,
+          color: credit.color,
+        });
         break;
       case CreditType.Cheer:
-        this.cheers.set(id,{name,color})
+        this.cheers.set(credit.userId, {
+          name: credit.userDisplayName,
+          color: credit.color,
+        });
         break;
       case CreditType.Chatter:
-        this.chatters.set(id,{name,color});
+        this.chatters.set(credit.userId, {
+          name: credit.userDisplayName,
+          color: credit.color,
+        });
         break;
     }
   }

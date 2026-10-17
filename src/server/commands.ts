@@ -132,6 +132,11 @@ export class MessageHandler {
               platform: platformId,
             },
           });
+            userName = `${data.sender}`;
+          }
+          const watchTime = await this.bot.database.getWatchTime(
+            userId.slice("twitch-".length),
+          );
 
           if (!watchTime) {
             data.reply("Can't find watchtime.", true);
@@ -244,6 +249,7 @@ export class MessageHandler {
             await this.bot.twitch.apiClient.channels.getChannelFollowers(
               this.bot.twitch.channel.id,
               data.userId,
+              data.senderId.replace("twitch-", ""),
             );
 
           // User is not following
@@ -718,6 +724,7 @@ export class MessageHandler {
             username,
             data.platform,
           );
+          const user = await this.bot.userManager.findUser(username);
           if (!user) {
             data.reply(`Can't find user ${username}.`, true);
             return;
@@ -860,6 +867,18 @@ export class MessageHandler {
       data.color,
       CreditType.Chatter,
     );
+      this.bot.credits.addToCredits({
+        userId: data.senderId,
+        userDisplayName: data.sender,
+        color: data.color,
+        type: CreditType.Moderator,
+      });
+    this.bot.credits.addToCredits({
+      userId: data.senderId,
+      userDisplayName: data.sender,
+      color: data.color,
+      type: CreditType.Chatter,
+    });
 
     data.isCommand = data.isCommand || (await this.handleCommand(data));
 
