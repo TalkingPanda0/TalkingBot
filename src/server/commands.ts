@@ -807,22 +807,23 @@ export class MessageHandler {
   public async handleCommand(data: MessageData): Promise<boolean> {
     try {
       let commandName = data.message.split(" ")[0];
+      let commandMessage = data.message;
       if (this.timeout.has(commandName) && !data.isUserMod) return true;
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) {
-        data.message = data.message.replace(commandName, commandAlias);
+        commandMessage = commandMessage.replace(commandName, commandAlias);
         commandName = data.message.split(" ")[0];
       }
       const customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
-        data.message = data.message.replace(commandName, "").trim();
+        commandMessage = commandMessage.replace(commandName, "").trim();
         return await this.runCommand(data, commandName, customCommand);
       }
       const builtinCommand = this.commandMap.get(commandName);
       if (builtinCommand == null) return commandName.startsWith("!");
 
-      data.message = data.message.replace(commandName, "").trim();
-      await builtinCommand.commandFunction(data);
+      commandMessage = commandMessage.replace(commandName, "").trim();
+      await builtinCommand.commandFunction({...data,message: commandMessage});
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
         setTimeout(() => {

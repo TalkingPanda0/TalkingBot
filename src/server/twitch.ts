@@ -145,9 +145,9 @@ export class Twitch {
         highlightMessage,
         highlightColor,
         reply: async (message: string, replyToUser: boolean) => {
-          if (!message || message == "" || !msg.channelId) return;
+          if (!message || message == "") return;
           const replyId = replyToUser ? msg.id : undefined;
-          await this.chatClient.say(msg.channelId, message, {
+          await this.chatClient.say(this.channel.name, message, {
             replyTo: replyId,
           });
           this.bot.iochat.emit("message", {
