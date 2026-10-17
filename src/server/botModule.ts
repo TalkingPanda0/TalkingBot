@@ -32,6 +32,7 @@ export interface MessageData {
 
 export type MessageListener = (data: MessageData) => void | Promise<void>;
 export type DiscordMessageListener = (data: Message) => void | Promise<void>;
+export type Listener = () => void | Promise<void>;
 
 export type RedemptionStatus = "FULFILLED" | "CANCELED";
 export interface ChannelRedemption {
@@ -95,6 +96,9 @@ export interface ModuleContext {
     rewardId: string,
     listener: ChannelRedemptionListener,
   ): void;
+
+  onStreamOnline(Listener: Listener): void;
+  onStreamOffline(Listener: Listener): void;
 
   bot: TalkingBot;
 }

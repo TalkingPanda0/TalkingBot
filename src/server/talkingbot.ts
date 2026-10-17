@@ -130,10 +130,12 @@ export class TalkingBot {
 
   public onStreamOnline() {
     this.userManager.onStreamOnline();
+    this.moduleManager.onOnline();
   }
 
   public onStreamOffline() {
     this.userManager.onStreamOffline();
+    this.moduleManager.onOffline();
   }
 
   public async cleanUp() {

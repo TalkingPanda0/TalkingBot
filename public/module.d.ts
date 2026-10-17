@@ -148,6 +148,8 @@ declare module "botModule" {
     isPaused: boolean;
   };
 
+  export type Listener = () => void | Promise<void>;
+
   export type ChannelRedemptionListener = (
     data: ChannelRedemption,
   ) => Promise<void>;
@@ -188,6 +190,8 @@ declare module "botModule" {
       rewardId: string,
       listener: ChannelRedemptionListener,
     ): void;
+    onStreamOnline(listener: Listener): void;
+    onStreamOffline(listener: Listener): void;
 
     bot: TalkingBot;
   }

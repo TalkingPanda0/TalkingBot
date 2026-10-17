@@ -7,6 +7,7 @@ import {
   ChannelRedemptionListener,
   ChannelRedemption,
   ChannelPointRewardStatus,
+  Listener,
 } from "botModule";
 
 import { Command } from "./commands.ts";
@@ -29,6 +30,8 @@ export class ModuleManager {
   private discordMessageListeners: DiscordMessageListener[] = [];
   private channelRedemptionListeners: Map<string, ChannelRedemptionListener> =
     new Map();
+  private onlineListeners: Listener[] = [];
+  private offlineListeners: Listener[] = [];
   private bot: TalkingBot;
 
   constructor(bot: TalkingBot) {
@@ -41,6 +44,15 @@ export class ModuleManager {
   public onDiscordMessage(data: Message) {
     this.discordMessageListeners.forEach((l) => l(data));
   }
+
+  public onOnline() {
+    this.onlineListeners.forEach((l) => l());
+  }
+
+  public onOffline() {
+    this.offlineListeners.forEach((l) => l());
+  }
+
   public async onChannelPointReward(
     rewardId: string,
     data: ChannelRedemption,
@@ -123,10 +135,10 @@ export default ${Name};`;
       return this.bot.commandHandler.removeCommand(name);
     };
 
-    const addListener = (listener: MessageListener) => {
+    const addMessageListener = (listener: MessageListener) => {
       this.messageListeners.push(listener);
     };
-    const removeListener = (listener: MessageListener) => {
+    const removeMessageListener = (listener: MessageListener) => {
       this.messageListeners = this.messageListeners.filter(
         (l) => l !== listener,
       );
@@ -135,10 +147,31 @@ export default ${Name};`;
     const addDiscordListener = (listener: DiscordMessageListener) => {
       this.discordMessageListeners.push(listener);
     };
+
     const removeDisordListener = (listener: DiscordMessageListener) => {
       this.discordMessageListeners = this.discordMessageListeners.filter(
         (l) => l !== listener,
       );
+    };
+
+    const addListener = (listener: Listener, online: boolean) => {
+      if (online) {
+        this.onlineListeners.push(listener);
+      } else {
+        this.offlineListeners.push(listener);
+      }
+    };
+
+    const removeListener = (listener: Listener, online: boolean) => {
+      if (online) {
+        this.onlineListeners = this.onlineListeners.filter(
+          (l) => l !== listener,
+        );
+      } else {
+        this.offlineListeners = this.offlineListeners.filter(
+          (l) => l !== listener,
+        );
+      }
     };
 
     const addChannelPointListener = (
@@ -151,9 +184,9 @@ export default ${Name};`;
     const context: ModuleContext = {
       bot: this.bot,
       onChatMessage(listener) {
-        addListener(listener);
+        addMessageListener(listener);
         cleanups.push(() => {
-          removeListener(listener);
+          removeMessageListener(listener);
         });
       },
       onDiscordMessage(listener) {
@@ -176,6 +209,21 @@ export default ${Name};`;
       onChannelPointReward(rewardId, listener) {
         addChannelPointListener(rewardId, listener);
       },
+
+      onStreamOnline(listener) {
+        addListener(listener, true);
+        cleanups.push(() => {
+          removeListener(listener, true);
+        });
+      },
+
+      onStreamOffline(listener) {
+        addListener(listener, false);
+        cleanups.push(() => {
+          removeListener(listener, false);
+        });
+      },
+
       async removeChannelPoint(rewardId) {
         await this.bot.twitch.apiClient.channelPoints.deleteCustomReward(
           this.bot.twitch.channel.id,
