@@ -12,10 +12,8 @@ function removeNewLines(text: string): string {
 }
 
 declare global {
-  // Note the capital "W"
   interface Window {
     addCommand: Function;
-    updateSearch: Function;
     addAlias: Function;
   }
 }
@@ -146,7 +144,7 @@ async function getCommands() {
       } catch (e) {
         Swal.fire({
           title: "Failed!",
-          text: e,
+          text: `${e}`,
           theme: "dark",
           icon: "error",
         });
@@ -287,7 +285,7 @@ async function getAliases() {
       } catch (e) {
         Swal.fire({
           title: "Failed!",
-          text: e,
+          text: `${e}`,
           theme: "dark",
           icon: "error",
         });
@@ -304,25 +302,29 @@ async function getAliases() {
 getCommands();
 getAliases();
 
-function updateSearch(event) {
-  const filter = event.target.value.toLocaleLowerCase();
-  const commands = document.getElementsByClassName(
-    "command",
-  ) as HTMLCollectionOf<HTMLTableRowElement>;
-  for (const command of commands) {
+const search = document.getElementById("search") as HTMLInputElement;
+
+search.onkeyup = (event) => {
+  const filter = (event.target as HTMLInputElement).value.toLocaleLowerCase();
+  const commands = document.querySelectorAll(
+    ".command",
+  );
+  commands.forEach((command) => 
+   {
+     const cmd = command as HTMLDivElement;
     if (
       filter.length == 0 ||
-      (command.firstChild as HTMLDivElement).innerText
+      (cmd.firstChild as HTMLDivElement).innerText
         .toLocaleLowerCase()
         .includes(filter)
     ) {
-      command.style.display = "";
+      cmd.style.display = "";
     } else {
-      command.style.display = "none";
+      cmd.style.display = "none";
     }
-  }
+  });
+
 }
 
 window.addCommand = addCommand;
-window.updateSearch = updateSearch;
 window.addAlias = addAlias;

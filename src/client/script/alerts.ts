@@ -1,4 +1,12 @@
-import { AlertEvent, BitsAlert, DiscordJoinAlert, FollowAlert, KofiAlert, SubAlert } from "../../shared/types.ts";
+import {
+  AlertEvent,
+  BitsAlert,
+  DiscordJoinAlert,
+  FollowAlert,
+  KofiAlert,
+  SubAlert,
+  TTSAlert,
+} from "../../shared/types.ts";
 import { TTSHandler } from "./tts.ts";
 import { io } from "socket.io-client";
 
@@ -14,9 +22,9 @@ let alertPlaying = false;
 function handleQueue() {
   if (tts.isPlaying || alertPlaying || alertQueue.length == 0) return;
   const alert = alertQueue.shift();
-  if(!alert) return;
+  if (!alert) return;
 
-  switch(alert.type) {
+  switch (alert.type) {
     case "followAlert":
       followAlert(alert);
       break;
@@ -32,12 +40,31 @@ function handleQueue() {
     case "kofiAlert":
       kofiAlert(alert);
       break;
+    case "tts":
+      ttsAlert(alert);
+      break;
     default:
       return;
   }
 }
 
-function discordJoinAlert(event: DiscordJoinAlert & {audioList: string[]}) {
+function ttsAlert(event: TTSAlert & { audioList: string[] }) {
+  alertPlaying = true;
+  alertElement.innerHTML = `<span class="sender"><span style="color: ${event.color}">${event.sender}</span> says:</span><br/><span class="text">${event.text}</span class="text"></span><div></div>`;
+  alertElement.style.opacity = "100%";
+
+  tts.playAudioList(event.audioList, () => {
+    setTimeout(() => {
+      alertElement.style.opacity = "0%";
+      setTimeout(() => {
+        alertElement.innerHTML = "";
+        alertPlaying = false;
+      }, 1000);
+    }, 1000);
+  });
+}
+
+function discordJoinAlert(event: DiscordJoinAlert & { audioList: string[] }) {
   alertPlaying = true;
   alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${event.member} </span>just joined the fish tank.</span> `;
   alertElement.style.opacity = "100%";
@@ -62,7 +89,8 @@ function discordJoinAlert(event: DiscordJoinAlert & {audioList: string[]}) {
     });
   }
 }
-function followAlert(followInfo: FollowAlert & {audioList: string[]}) {
+
+function followAlert(followInfo: FollowAlert & { audioList: string[] }) {
   alertPlaying = true;
   alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${followInfo.follower} </span>just followed</span> `;
   alertElement.style.opacity = "100";
@@ -87,8 +115,8 @@ function followAlert(followInfo: FollowAlert & {audioList: string[]}) {
     });
   }
 }
-function bitsAlert(cheerInfo: BitsAlert & {audioList: string[]}) {
-  alertPlaying = true; 
+function bitsAlert(cheerInfo: BitsAlert & { audioList: string[] }) {
+  alertPlaying = true;
   alertElement.innerHTML = ` <img class="follow" height="1000" src="/follow.gif" /><br/><span class="text" ><span class="sender">${cheerInfo.user} </span>cheered ${cheerInfo.bits} ${cheerInfo.bits > 1 ? "bits" : "bit"}</span> `;
   alertElement.style.opacity = "100%";
   if (silent) {
@@ -110,7 +138,8 @@ function bitsAlert(cheerInfo: BitsAlert & {audioList: string[]}) {
     });
   }
 }
-function kofiAlert(paymentInfo: KofiAlert & {audioList: string[]}) {
+
+function kofiAlert(paymentInfo: KofiAlert & { audioList: string[] }) {
   alertPlaying = true;
   const message = paymentInfo.is_subscription
     ? `became a ${paymentInfo.tier_name != null ? paymentInfo.tier_name : paymentInfo.amount + " " + paymentInfo.currency} member!`
@@ -137,7 +166,12 @@ function kofiAlert(paymentInfo: KofiAlert & {audioList: string[]}) {
   }
 }
 
-function subAlert(subInfo: SubAlert & {audioList: string[] , messageAudioList: string[] | null}) {
+function subAlert(
+  subInfo: SubAlert & {
+    audioList: string[];
+    messageAudioList: string[] | null;
+  },
+) {
   alertPlaying = true;
   let tier = "";
 
@@ -246,4 +280,15 @@ socket.on("alert", (alertInfo) => {
   console.log(alertInfo);
   alertQueue.push(alertInfo);
 });
+
+socket.on("skip", () => {
+  tts.stopPlaylist();
+  alertElement.style.opacity = "0";
+  setTimeout(() => {
+    alertElement.innerHTML = "";
+    alertElement.style.display = "inline-block";
+    alertPlaying = false;
+  }, 1000);
+});
+
 setInterval(handleQueue, 500);

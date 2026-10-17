@@ -4,10 +4,8 @@ import {
   ChatMessage,
   ChatRaidInfo,
   UserNotice,
-  parseChatMessage,
-  ParsedMessagePart,
-  buildEmoteImageUrl,
   ChatViewerMilestoneInfo,
+  ChatUser,
 } from "@twurple/chat";
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api";
 
@@ -17,14 +15,12 @@ import {
   EventSubListener,
 } from "@twurple/eventsub-base";
 import { TalkingBot } from "./talkingbot.ts";
-import { getBTTVEmotes } from "./bttv.ts";
 import {
   colorFromId,
   formatDisplayName,
   getDisplayName,
   getUserColor,
   removeByIndexToUppercase,
-  replaceMap,
 } from "../shared/util.ts";
 import {
   EventSubHttpListener,
@@ -32,16 +28,9 @@ import {
 } from "@twurple/eventsub-http";
 import { CreditType } from "./credits.ts";
 
-import { updateCategory } from "./category.ts";
-import {
-  getRaidAudio,
-} from "./alerts.ts";
 import { CONFIG } from "./env.ts";
 import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
-import { PollEvent, PollOption } from "../shared/types.ts";
-import { type } from "node:os";
-
-const pollRegex = /^(.*?):\s*(.*)$/;
+import { Clip, PollEvent, PollOption } from "../shared/types.ts";
 
 export class Twitch {
   public clientId;
@@ -54,7 +43,6 @@ export class Twitch {
   public wwwclipRegex = /(?:https:\/\/)?www\.twitch\.tv\/\S+\/clip\/([^\s?]+)/;
   public isStreamOnline = false;
   public cheerEmotes!: HelixCheermoteList;
-  public BTTVEmotes = new Map<string, string>();
   public badges = new Map<string, string>();
   public currentGame: string | null = null;
 
@@ -62,17 +50,11 @@ export class Twitch {
   private eventListener!: EventSubListener;
   private bot: TalkingBot;
   private authProvider!: RefreshingAuthProvider;
-  private pollid = "10309d95-f819-4f8e-8605-3db808eff351";
-  private titleid = "cddfc228-5c5d-4d4f-bd54-313743b5fd0a";
-  private timeoutid = "a86f1b48-9779-49c1-b4a1-42534f95ec3c";
-  //private wheelid = "ec1b5ebb-54cd-4ab1-b0fd-3cd642e53d64";
   private eventSubSecret?: string;
-  private selftimeoutid = "8071db78-306e-46e8-a77b-47c9cc9b34b3";
   private broadcasterFile = Bun.file(
     __dirname + "/../../config/token-broadcaster.json",
   );
   private botFile = Bun.file(__dirname + "/../../config/token-bot.json");
-  private updateCategoryInterval: Timer | null = null;
   private allreadyFollowed: Set<string> = new Set();
 
   constructor(bot: TalkingBot) {
@@ -87,8 +69,7 @@ export class Twitch {
     this.chatClient.quit();
     await this.apiClient.eventSub.deleteAllSubscriptions();
     this.eventListener.stop();
-    this.bot.database.updateDataBase(this.isStreamOnline ? 2 : 1);
-    this.bot.database.cleanDataBase();
+    this.bot.userManager.updateWatchTimes(this.isStreamOnline);
   }
 
   public async addUser(code: string, scope: string) {
@@ -106,141 +87,83 @@ export class Twitch {
   }
   // only things that should also run when the bot starts during a stream and on the start of stream.
   private async onStreamOnline() {
-    this.updateCategoryInterval = setInterval(
-      () => {
-        updateCategory(this.bot);
-      },
-      5 * 60 * 1000,
-    );
-
     this.bot.onStreamOnline();
   }
 
   private async handleMessage(
-    channel: string,
-    user: string,
-    text: string,
     msg: ChatMessage,
     isAction: boolean,
-    isOld: boolean,
     isCommand: boolean = false,
   ) {
     try {
       console.log(
         "\x1b[35m%s\x1b[0m",
-        `Twitch - ${formatDisplayName(msg)}: ${text}`,
+        `Twitch - ${formatDisplayName(msg)}: ${msg.text}`,
       );
 
-      let parsedMessage = await this.bot.parseClips(
-        this.parseTwitchEmotes(msg.text, msg.emoteOffsets, msg.bits),
-      );
-
-      const badges = [];
-
-      if (msg.userInfo.isMod) {
-        badges.push(this.badges.get("moderator"));
-      } else if (msg.userInfo.isBroadcaster) {
-        badges.push(this.badges.get("broadcaster"));
-      }
-
-      if (msg.userInfo.isVip) badges.push(this.badges.get("vip"));
-
-      const badge = msg.userInfo.badges.get("subscriber");
-      if (badge != undefined) {
-        badges.push(this.badges.get(badge));
-      }
-      let replyTo = null;
-      let replyId = null;
-      let replyText = null;
-      let rewardName = null;
-      if (msg.isReply) {
-        replyTo = msg.parentMessageUserDisplayName;
-        replyId = msg.parentMessageUserId;
-        replyText = msg.parentMessageText;
-        parsedMessage = parsedMessage.replace(
-          new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"),
-          "",
-        );
-        text = text
-          .replace(new RegExp(`^@${msg.parentMessageUserDisplayName}`, "i"), "")
-          .trim();
-      }
+      let highlightMessage: string | null = null;
+      let highlightColor: string | null = null;
 
       if (msg.isHighlight) {
-        rewardName = "Highlight My message";
-      }
-
-      if (msg.isRedemption && msg.rewardId) {
+        highlightColor = "#755ebc";
+      } else if (msg.isRedemption && msg.rewardId) {
         const reward = await this.apiClient.channelPoints.getCustomRewardById(
           this.channel.id,
           msg.rewardId,
         );
-        if (reward) rewardName = reward.title;
-      }
-      const indexes: number[] = [];
-      msg.emoteOffsets.forEach((emote) => {
-        emote.forEach((index) => {
-          indexes.push(parseInt(index));
-        });
-      });
-      const messageWithoutPrefix = removeByIndexToUppercase(text, indexes);
-      if (msg.isCheer) {
-        this.onCheer({
-          msg: msg,
-          message: messageWithoutPrefix,
-        });
+        if (reward) {
+          highlightMessage = `Redeemed ${reward.title} for ${reward.cost} Channel Points`;
+          // Set alpha to 0.5
+          highlightColor = reward.backgroundColor + "7f";
+        }
       }
 
-      const isUserMod = msg.userInfo.isMod || msg.userInfo.isBroadcaster;
-      const isUserVip = isUserMod || msg.userInfo.isVip;
-      const isUserSub = isUserVip || msg.userInfo.isSubscriber;
+      if (msg.isCheer) {
+        this.onCheer(msg);
+      }
 
       this.bot.commandHandler.handleMessage({
-        badges: badges.filter((s): s is string => !!s),
-        username: msg.userInfo.userName,
-        sender: formatDisplayName(msg),
-        senderId: msg.userInfo.userId,
+        badges: this.getBadges(msg.userInfo),
+        displayName: formatDisplayName(msg),
+        userId: msg.userInfo.userId,
         color: getUserColor(msg.userInfo),
-        isUserMod: isUserMod,
-        isUserSub: isUserSub,
-        isUserVip: isUserVip,
+        isUserMod: msg.userInfo.isMod,
+        isUserSub: msg.userInfo.isSubscriber,
+        isUserVip: msg.userInfo.isVip,
         platform: "twitch",
-        channelId: msg.channelId || "",
-        message: messageWithoutPrefix,
-        parsedMessage: parsedMessage,
+        message: msg.text,
+        emoteOffsets: msg.tags.get("emotes") ?? "",
         isFirst: msg.isFirst,
-        replyText: replyText ?? undefined,
-        replyId: replyId ?? undefined,
-        replyTo: replyTo ?? undefined,
-        rewardName: rewardName ?? undefined,
-        isOld: isOld,
+        replyId: msg.parentMessageId,
         isAction: isAction,
         isCommand:
-          isCommand || user == "botrixoficial" || user == "talkingboto_o",
+          isCommand ||
+          msg.userInfo.userName == "botrixoficial" ||
+          msg.userInfo.userName == "talkingboto_o",
         id: msg.id,
         timestamp: msg.date,
-        reply: isOld
-          ? () => {}
-          : async (message: string, replyToUser: boolean) => {
-              if (!message || message == "") return;
-              const replyId = replyToUser ? msg.id : undefined;
-              await this.chatClient.say(channel, message, {
-                replyTo: replyId,
-              });
-              this.bot.iochat.emit("message", {
-                badges: [],
-                text: message,
-                parsedMessage: message,
-                sender: "TalkingBot",
-                senderId: "bot",
-                color: "green",
-                id: undefined,
-                platform: "bot",
-                isFirst: false,
-                isCommand: true,
-              });
-              console.log(`TalkingBot - ${message}`);
-            },
+        highlightMessage,
+        highlightColor,
+        reply: async (message: string, replyToUser: boolean) => {
+          if (!message || message == "" || !msg.channelId) return;
+          const replyId = replyToUser ? msg.id : undefined;
+          await this.chatClient.say(msg.channelId, message, {
+            replyTo: replyId,
+          });
+          this.bot.iochat.emit("message", {
+            badges: [],
+            text: message,
+            parsedMessage: message,
+            sender: "TalkingBot",
+            senderId: "bot",
+            color: "green",
+            id: undefined,
+            platform: "bot",
+            isFirst: false,
+            isCommand: true,
+          });
+          console.log(`TalkingBot - ${message}`);
+        },
         banUser: async (message: string, duration?: number) => {
           try {
             await this.apiClient.moderation.banUser(this.channel.id, {
@@ -257,24 +180,34 @@ export class Twitch {
       console.error("\x1b[35m%s\x1b[0m", `Failed handling message: ${e}`);
     }
   }
-  private async onCheer(event: { msg: ChatMessage; message: string }) {
-    const name = formatDisplayName(event.msg);
-    this.bot.credits.addToCredits({
-      userId:       `twitch-${event.msg.userInfo.userId}`,
-      userDisplayName: name,
-      color: getUserColor(event.msg.userInfo),
-      type: CreditType.Cheer, 
-    })
-
-    const message = event.message.replaceAll(/cheer\d+/gi, "");
-
-    this.bot.bitsAlert({
-      type: "bitsAlert",
-      bits: event.msg.bits,
-      user: name,
-      message: message,
+  private async onCheer(msg: ChatMessage) {
+    const name = formatDisplayName(msg);
+    this.bot.credits.addToCredits(
+      `twitch-${msg.userInfo.userId}`,
+      name,
+      getUserColor(msg.userInfo),
+      CreditType.Cheer,
+    );
+    const indexes: number[] = [];
+    msg.emoteOffsets.forEach((emote) => {
+      emote.forEach((index) => {
+        indexes.push(parseInt(index));
+      });
     });
+    const messageWithoutPrefix = removeByIndexToUppercase(
+      msg.text,
+      indexes,
+    ).replaceAll(/cheer\d+/gi, "");
 
+    this.bot.alertsManager.bitsAlert(
+      {
+        type: "bitsAlert",
+        bits: msg.bits,
+        user: name,
+        message: msg.text,
+      },
+      messageWithoutPrefix,
+    );
   }
 
   async initBot(): Promise<void> {
@@ -331,8 +264,6 @@ export class Twitch {
     });
     this.cheerEmotes = await this.apiClient.bits.getCheermotes(this.channel.id);
 
-    this.BTTVEmotes = await getBTTVEmotes(this.channel.id);
-
     if (this.eventSubSecret) {
       this.eventListener = new EventSubHttpListener({
         apiClient: this.apiClient,
@@ -369,8 +300,16 @@ export class Twitch {
         chatters.data.forEach((chatter) => {
           if (chatter.userId == "736013381" || chatter.userId == "646848961")
             return;
-          this.bot.database.userLeave(chatter.userId, false);
-          this.bot.database.userJoin(chatter.userId, true);
+          this.bot.userManager.userLeave(
+            chatter.userId,
+            chatter.userDisplayName,
+            false,
+          );
+          this.bot.userManager.userJoin(
+            chatter.userId,
+            chatter.userDisplayName,
+            true,
+          );
         });
       } catch (e) {
         console.error("\x1b[35m%s\x1b[0m", `Failed getting stream info: ${e}`);
@@ -386,12 +325,18 @@ export class Twitch {
       chatters.data.forEach((chatter) => {
         if (chatter.userId == "736013381" || chatter.userId == "646848961")
           return;
-        this.bot.database.userLeave(chatter.userId, true);
-        this.bot.database.userJoin(chatter.userId, false);
+        this.bot.userManager.userLeave(
+          chatter.userId,
+          chatter.userDisplayName,
+          true,
+        );
+        this.bot.userManager.userJoin(
+          chatter.userId,
+          chatter.userDisplayName,
+          false,
+        );
       });
 
-      if (this.updateCategoryInterval)
-        clearTimeout(this.updateCategoryInterval);
       this.bot.onStreamOffline();
     });
 
@@ -400,13 +345,13 @@ export class Twitch {
       this.channel.id,
       async (event) => {
         if (this.allreadyFollowed.has(event.userId)) return;
-        this.bot.credits.addToCredits({
-          userId: `twitch-${event.userId}`,
-          userDisplayName: getDisplayName(event.userDisplayName,event.userName),
-          color: colorFromId(event.userId),
-          type: CreditType.Follow
-        });
-        this.bot.followAlert({
+        this.bot.credits.addToCredits(
+          `twitch-${event.userId}`,
+          getDisplayName(event.userDisplayName, event.userName),
+          colorFromId(event.userId),
+          CreditType.Follow,
+        );
+        this.bot.alertsManager.followAlert({
           type: "followAlert",
           follower: event.userDisplayName,
         });
@@ -473,7 +418,7 @@ export class Twitch {
           data.chatterName,
         );
 
-        this.bot.subAlert({
+        this.bot.alertsManager.subAlert({
           type: "subAlert",
           name: displayName,
           message: data.messageText,
@@ -481,7 +426,7 @@ export class Twitch {
           months,
           gift,
           gifted,
-        });
+        },data.messageText);
 
         this.bot.credits.addToCredits({
           userId: `twitch-${data.chatterId}`,
@@ -543,107 +488,17 @@ export class Twitch {
     });
 
     this.eventListener.onChannelRedemptionAdd(this.channel.id, async (data) => {
-      try {
-        console.log(
-          `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
-        );
-        let completed: boolean | null = null;
-        if (data.input === "") {
-          this.bot.iochat.emit("redeem", {
-            id: data.id,
-            user: data.userDisplayName,
-            title: data.rewardTitle,
-          });
-        }
-        switch (data.rewardId) {
-          case this.selftimeoutid: {
-            const modlist = await this.apiClient.moderation.getModerators(
-              this.channel.id,
-              { userId: data.userId },
-            );
-            if (modlist.data.length == 1) {
-              completed = false;
-              break;
-            }
-            this.apiClient.moderation.banUser(this.channel.id, {
-              duration: 300,
-              reason: "Self Timeout Request",
-              user: data.userId,
-            });
-            completed = true;
-            break;
-          }
-          case this.timeoutid: {
-            const username = data.input.split(" ")[0].replace("@", "");
-            const user: HelixUser | null =
-              await this.apiClient.users.getUserByName(username);
-
-            if (user == null || user.id == data.broadcasterId) {
-              completed = false;
-              this.chatClient.say(
-                this.channelName,
-                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
-              );
-              break;
-            }
-            const mods = await this.apiClient.moderation.getModerators(
-              this.channel.id,
-              { userId: user.id },
-            );
-            if (mods.data.length == 1) {
-              completed = false;
-              this.chatClient.say(
-                this.channelName,
-                `@${data.userDisplayName} Couldn't timeout user: ${data.input}`,
-              );
-              break;
-            }
-            this.apiClient.moderation.banUser(this.channel.id, {
-              duration: 60,
-              reason: `Timeout request by ${data.userDisplayName}`,
-              user: user.id,
-            });
-            completed = true;
-            break;
-          }
-          case this.pollid:
-            // message like Which is better?: hapboo, realboo, habpoo, hapflat
-            this.redeemQueue.push(data);
-            break;
-          case this.titleid:
-            this.redeemQueue.push(data);
-            break;
-          default:
-            this.bot.moduleManager.onChannelPointReward(data.rewardId, data);
-            return;
-        }
-        if (completed == null) return;
-        this.apiClient.channelPoints.updateRedemptionStatusByIds(
-          this.channel.id,
-          data.rewardId,
-          [data.id],
-          completed ? "FULFILLED" : "CANCELED",
-        );
-      } catch (e) {
-        console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem: ${e}`);
+      console.log(
+        `Got redemption ${data.userDisplayName} - ${data.rewardTitle}: ${data.input} ${data.rewardId}`,
+      );
+      if (data.input === "") {
+        this.bot.iochat.emit("redeem", {
+          id: data.id,
+          user: data.userDisplayName,
+          title: data.rewardTitle,
+        });
       }
-    });
-
-    this.eventListener.onUserWhisperMessage("736013381", (data) => {
-      if (data.messageText.startsWith("!vote")) {
-        try {
-          this.apiClient.whispers.sendWhisper(
-            "736013381",
-            data.senderUserId,
-            this.bot.poll.addVote(
-              `twitch-${data.senderUserDisplayName}`,
-              data.messageText.replace("!vote ", ""),
-            ),
-          );
-        } catch (error) {
-          console.error(error);
-        }
-      }
+      this.bot.moduleManager.onChannelPointReward(data.rewardId, data);
     });
 
     this.chatClient = new ChatClient({
@@ -656,7 +511,7 @@ export class Twitch {
 
     this.chatClient.onRaid(
       async (_channel: string, _user: string, raidInfo: ChatRaidInfo) => {
-        this.bot.raidAlert({
+        this.bot.alertsManager.raidAlert({
           type: "raidAlert",
           raider: raidInfo.displayName,
           viewers: raidInfo.viewerCount,
@@ -677,7 +532,11 @@ export class Twitch {
         console.error(`Failed getting user ${user}.`);
         return;
       }
-      this.bot.database.userJoin(userInfo.id, this.isStreamOnline);
+      this.bot.userManager.userJoin(
+        userInfo.id,
+        userInfo.displayName,
+        this.isStreamOnline,
+      );
     });
 
     this.chatClient.onPart(async (_channel: string, user: string) => {
@@ -694,13 +553,17 @@ export class Twitch {
         console.error(`Failed getting user ${user}.`);
         return;
       }
-      this.bot.database.userLeave(userInfo.id, this.isStreamOnline);
+      this.bot.userManager.userLeave(
+        userInfo.id,
+        userInfo.displayName,
+        this.isStreamOnline,
+      );
     });
 
     this.eventListener.onChannelBan(this.channel.id, (event) => {
       if (event.isPermanent)
         this.bot.credits.deleteFromCredits(event.userDisplayName);
-      this.bot.iochat.emit("banUser", `twitch-${event.userId}`);
+      this.bot.iochat.emit("banUser", event.userId);
       this.say(
         `@${event.userName} has been defenestrated${event.isPermanent ? " Forever" : ""}.`,
       );
@@ -715,8 +578,13 @@ export class Twitch {
     });
 
     this.chatClient.onMessage(
-      async (channel: string, user: string, text: string, msg: ChatMessage) => {
-        this.handleMessage(channel, user, text, msg, false, false);
+      async (
+        _channel: string,
+        _user: string,
+        _text: string,
+        msg: ChatMessage,
+      ) => {
+        this.handleMessage(msg, false, false);
       },
     );
 
@@ -727,43 +595,31 @@ export class Twitch {
         info: ChatViewerMilestoneInfo,
         msg: UserNotice,
       ) => {
-        let parsedMessage = null;
-        if (info.message) {
-          parsedMessage = await this.bot.parseClips(
-            this.parseTwitchEmotes(info.message, msg.emoteOffsets, 0),
-          );
-        }
-
-        const badges = [];
-
-        if (msg.userInfo.isMod) {
-          badges.push(this.badges.get("moderator"));
-        } else if (msg.userInfo.isBroadcaster) {
-          badges.push(this.badges.get("broadcaster"));
-        }
-
-        if (msg.userInfo.isVip) badges.push(this.badges.get("vip"));
-
-        const badge = msg.userInfo.badges.get("subscriber");
-        if (badge != undefined) {
-          badges.push(this.badges.get(badge));
-        }
-        this.bot.iochat.emit("milestone", {
-          id: msg.id,
+        await this.bot.commandHandler.sendToChatList({
+          messageId: msg.id,
+          badges: this.getBadges(msg.userInfo),
           color: getUserColor(msg.userInfo),
           displayName: getDisplayName(
             msg.userInfo.displayName,
             msg.userInfo.userName,
           ),
-          info,
-          badges: badges.filter((s): s is string => !!s),
-          parsedMessage,
+          emoteOffsets: msg.tags.get("emotes") ?? "",
+          highlightColor: "rgba(11, 176, 129,0.5)",
+          highlightMessage: `Reached ${info.value} stream watch streak!`,
+          isAction: false,
+          isCommand: false,
+          isFake: false,
+          message: msg.text ?? "",
+          platform: "twitch",
+          replyId: null,
+          userId: msg.userInfo.userId,
+          timestamp: Date.now(),
         });
       },
     );
 
-    this.chatClient.onAction((channel, user, text, msg) => {
-      this.handleMessage(channel, user, text, msg, true, false);
+    this.chatClient.onAction((_channel, _user, _text, msg) => {
+      this.handleMessage(msg, true, false);
     });
 
     this.chatClient.onConnect(() => {
@@ -817,132 +673,6 @@ export class Twitch {
       isFirst: false,
       isCommand: true,
     });
-  }
-
-  public async handleRedeemQueue(accept?: boolean) {
-    try {
-      const redeem = this.redeemQueue.shift();
-      if (!redeem) return;
-      if (accept) {
-        switch (redeem.rewardId) {
-          case this.pollid: {
-            const matches = redeem.input.match(pollRegex);
-            if (matches) {
-              const question = matches[1];
-              const options = matches[2]
-                .split(",")
-                .map((word: string) => word.trim());
-              await this.apiClient.polls.createPoll(this.channel.id, {
-                title: question,
-                duration: 60,
-                choices: options.filter((value) => value != ""),
-              });
-              this.chatClient.say(
-                this.channelName,
-                `Created poll: ${redeem.input} requested by @${redeem.userName}`,
-              );
-            } else {
-              this.chatClient.say(
-                this.channelName,
-                `@${redeem.userDisplayName} Couldn't parse poll: ${redeem.input}`,
-              );
-              accept = false;
-            }
-            break;
-          }
-          case this.titleid: {
-            const currentInfo =
-              await this.apiClient.channels.getChannelInfoById(this.channel.id);
-            await this.apiClient.channels.updateChannelInfo(this.channel.id, {
-              title: redeem.input,
-            });
-            if (!currentInfo) {
-              this.chatClient.say(
-                this.channelName,
-                `Failed getting current stream title.`,
-              );
-              return;
-            }
-            this.chatClient.say(
-              this.channelName,
-              `Changed title to: ${redeem.input} requested by @${redeem.userName}`,
-            );
-            setTimeout(
-              () => {
-                this.apiClient.channels.updateChannelInfo(this.channel.id, {
-                  title: currentInfo.title,
-                });
-                this.chatClient.say(
-                  this.channelName,
-                  `Changed title back to: ${currentInfo.title}`,
-                );
-              },
-              15 * 60 * 1000,
-            );
-            break;
-          }
-        }
-      } else if (accept === null) {
-        // scam
-        accept = true;
-      }
-      await this.apiClient.channelPoints.updateRedemptionStatusByIds(
-        this.channel.id,
-        redeem.rewardId,
-        [redeem.id],
-        accept ? "FULFILLED" : "CANCELED",
-      );
-    } catch (e) {
-      console.error("\x1b[35m%s\x1b[0m", `Failed handling redeem queue: ${e}`);
-    }
-  }
-  public parseTwitchEmotes(
-    text: string,
-    emoteOffsets: Map<string, string[]>,
-    bits: number,
-  ): string {
-    let parsed = "";
-    const parsedParts = parseChatMessage(
-      text,
-      emoteOffsets,
-      this.cheerEmotes?.getPossibleNames(),
-    );
-
-    let cheerName = "";
-    parsedParts.forEach((parsedPart: ParsedMessagePart) => {
-      switch (parsedPart.type) {
-        case "text":
-          parsed += replaceMap(
-            this.BTTVEmotes,
-            parsedPart.text.replaceAll("<", "&lt").replaceAll(">", "&gt"),
-            (match: string) =>
-              `<img onload="emoteLoaded(event)" src="https://cdn.betterttv.net/emote/${match}/1x" class="emote">`,
-          );
-          break;
-        case "cheer":
-          if (bits) cheerName = parsedPart.name;
-          else parsed += `${parsedPart.name}${parsedPart.amount}`;
-          break;
-        case "emote": {
-          const emoteUrl = buildEmoteImageUrl(parsedPart.id, {
-            size: "3.0",
-            backgroundType: "dark",
-            animationSettings: "default",
-          });
-          parsed += ` <img onload="emoteLoaded(event)" src="${emoteUrl}" class="emote" id="${parsedPart.id}"> `;
-          break;
-        }
-      }
-    });
-    if (!bits || this.cheerEmotes == null) return parsed;
-    const cheermote = this.cheerEmotes.getCheermoteDisplayInfo(
-      cheerName,
-      bits,
-      { background: "dark", state: "animated", scale: "4" },
-    );
-    parsed += `<img onload="emoteLoaded(event)" src="${cheermote.url}" class="emote"> <span style="color:${cheermote.color}">${bits} </span>`;
-
-    return parsed;
   }
 
   public async channelPointReward(
@@ -1004,5 +734,49 @@ export class Twitch {
       game: stream.gameName,
       thumbnailUrl: thumbnail,
     });
+  }
+
+  private getBadges(user: ChatUser): string[] {
+    const badges = [];
+
+    if (user.isMod) {
+      badges.push(this.badges.get("moderator"));
+    } else if (user.isBroadcaster) {
+      badges.push(this.badges.get("broadcaster"));
+    }
+
+    if (user.isVip) badges.push(this.badges.get("vip"));
+
+    const badge = user.badges.get("subscriber");
+    if (badge != undefined) {
+      badges.push(this.badges.get(badge));
+    }
+    return badges.filter((s): s is string => !!s);
+  }
+
+  public async parseClips(text: string): Promise<Clip | undefined> {
+    const match = this.clipRegex.exec(text) ?? this.wwwclipRegex.exec(text);
+    if (match === null) return undefined;
+
+    const start = match.index;
+    const end = match.index + match[0].length - 1;
+
+    const clip = await this.apiClient.clips.getClipById(match[1]);
+    if (clip === null) {
+      console.error(
+        "\x1b[35m%s\x1b[0m",
+        `Failed getting clip info: ${match[1]}`,
+      );
+      return undefined;
+    }
+
+    return {
+      title: clip.title,
+      url: clip.url,
+      thumbnailUrl: clip.thumbnailUrl,
+      creator: clip.creatorDisplayName,
+      start,
+      end,
+    };
   }
 }

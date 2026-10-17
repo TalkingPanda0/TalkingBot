@@ -5,17 +5,16 @@ import cookieParser from "cookie-parser";
 import * as http from "http";
 import { TalkingBot } from "./talkingbot.ts";
 import { sign, verify } from "jsonwebtoken";
-import { getTTSSounds } from "./tts.ts";
 import fileUpload, { UploadedFile } from "express-fileupload";
 import { createServer as createViteServer } from "vite";
 import cors from "cors";
 import { getDiscordUserId, isDiscordAuthData } from "../shared/util.ts";
 import { handleKofiEvent, isKofiEvent } from "./kofi.ts";
-import { MessageData } from "botModule";
 import { readdir, rename } from "node:fs/promises";
 import { CONFIG } from "./env.ts";
-import { DiscordAuthData } from "../shared/types.ts";
+import { ChatMetaData, DiscordAuthData } from "../shared/types.ts";
 import path from "node:path";
+import { getTTSSounds } from "./alerts.ts";
 
 const app: Express = express();
 const server = http.createServer(app);
@@ -63,6 +62,14 @@ app.use("/get", async (req, res) => {
 
     case "/credits": {
       res.send(bot.credits.getCreditsList());
+      break;
+    }
+    case "/chatInfo": {
+      const info: ChatMetaData = {
+        cheerEmotes: bot.twitch.cheerEmotes.getPossibleNames(),
+        channelId: bot.twitch.channel.id,
+      };
+      res.send(JSON.stringify(info));
       break;
     }
   }
@@ -185,22 +192,6 @@ app.use("/api", async (req, res) => {
           }
           bot.commandHandler.setCustomCommand(name, req.body);
           res.sendStatus(200);
-          break;
-        }
-        case "/command/run": {
-          if (!req.body) {
-            res.sendStatus(400);
-            return;
-          }
-          const data: { script: string; data: MessageData } = JSON.parse(
-            req.body,
-          );
-          const commandOutput = await bot.commandHandler.runScript(
-            data.script,
-            data.data,
-            "",
-          );
-          res.send(commandOutput);
           break;
         }
         case "/command/delete":

@@ -1,7 +1,7 @@
 import Swal from "sweetalert2";
 import { ChatHandler } from "./chat";
 import html2canvas from "html2canvas";
-import { MessageData } from "../../shared/types";
+import { MessageData, StoredMessageData } from "../../shared/types";
 
 const messageList = document.getElementById("message-list") as HTMLDivElement;
 const chatHandler = new ChatHandler(
@@ -25,7 +25,7 @@ const chatHandler = new ChatHandler(
       archiveElement.style.display = "none";
       await downloadHTML(
         element,
-        `${formatDate(new Date(message.timestamp))} ${message.sender}`,
+        `${formatDate(new Date(message.timestamp))} ${message.displayName}`,
       );
       element.style.display = "";
     });
@@ -56,8 +56,13 @@ async function getMessages() {
       Swal.fire("No messages for that day was found.");
       return;
     }
-    messages.forEach((msg: MessageData) => {
-      chatHandler.addToMessageList(msg);
+    messages.forEach((msg: StoredMessageData) => {
+      chatHandler.addToMessageList({
+        ...msg,
+        isFake: false,
+        isCommand: false,
+        isOld: undefined,
+      });
     });
   }
 }

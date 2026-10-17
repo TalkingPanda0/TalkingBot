@@ -32,7 +32,7 @@ socket.on("data", (newData) => {
   canvas.getObjects().forEach((obj) => applyData(null, obj));
 });
 
-function applyData(_, obj) {
+function applyData(_: Record<string, any> | null, obj: any) {
   if(!data) return;
   switch (obj.dataId) {
     case "latest_sub":

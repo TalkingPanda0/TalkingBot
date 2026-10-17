@@ -1,39 +1,19 @@
 import { Twitch } from "./twitch.ts";
 import { Discord } from "./discord.ts";
-import { DB } from "./db.ts";
-
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
 
 import { MessageHandler } from "./commands.ts";
-import { TTSManager } from "./tts.ts";
+import { AlertsManager } from "./alerts.ts";
 import { Credits } from "./credits.ts";
-import { Poll } from "./poll.ts";
 
 import { ModuleManager } from "./moduleManager.ts";
 import { ChatLogger } from "./chatLogger.ts";
-import {
-  getCheerAudio,
-  getDiscordJoinAudio,
-  getFollowAudio,
-  getKofiAudio,
-  getRaidAudio,
-  getSubAudio,
-} from "./alerts.ts";
 import { Canvas } from "fabric";
 import { UserManager } from "./users.ts";
 import { CONFIG } from "./env.ts";
-import {
-  AlertEvent,
-  BitsAlert,
-  ControlMessage,
-  DiscordAuthData,
-  DiscordJoinAlert,
-  FollowAlert,
-  KofiAlert,
-  RaidAlert,
-  SubAlert,
-} from "../shared/types.ts";
+import { ControlMessage, DiscordAuthData } from "../shared/types.ts";
+import { Database } from "./database.ts";
 
 export interface AuthSetup {
   twitchClientId: string;
@@ -50,19 +30,17 @@ export interface latestSub {
 export class TalkingBot {
   public discord: Discord;
   public twitch: Twitch;
-  public poll: Poll;
   public iochat: Namespace;
   public iomodtext: Namespace;
   public iopoll: Namespace;
-  public ioalert: Namespace;
   public connectedtoOverlay: boolean = false;
-  public database: DB;
+  public database = new Database();
   public chatLogger: ChatLogger;
   public commandHandler: MessageHandler;
   public latestSub: latestSub | null = null;
   public modtext: string | null = null;
   public modtextCanvas: Canvas | null = null;
-  public ttsManager: TTSManager;
+  public alertsManager: AlertsManager;
   public credits: Credits;
   public userManager: UserManager;
   public moduleManager: ModuleManager;
@@ -70,7 +48,7 @@ export class TalkingBot {
   constructor(server: http.Server) {
     const io = new Server(server);
 
-    this.ttsManager = new TTSManager(io.of("tts"));
+    this.alertsManager = new AlertsManager(io.of("alerts"));
 
     this.iomodtext = io.of("modtext");
 
@@ -96,16 +74,13 @@ export class TalkingBot {
       }
     });
     this.iopoll = io.of("poll");
-    this.ioalert = io.of("alerts");
     this.commandHandler = new MessageHandler(this);
     this.commandHandler.readCustomCommands();
 
-    this.credits = new Credits();
-    this.database = new DB();
     this.chatLogger = new ChatLogger(this);
     this.twitch = new Twitch(this);
-    this.poll = new Poll(this.iopoll);
     this.discord = new Discord(this);
+    this.credits = new Credits(this);
     this.moduleManager = new ModuleManager(this);
     this.userManager = new UserManager(this);
   }
@@ -116,12 +91,9 @@ export class TalkingBot {
     this.commandHandler.init();
     this.moduleManager.init();
 
-    this.latestSub = await this.database.getOrSetConfig("latestSub", null);
-    this.modtext = await this.database.getOrSetConfig("currentModtext", null);
-    this.modtextCanvas = await this.database.getOrSetConfig(
-      "currentModtextCanvas",
-      null,
-    );
+    this.latestSub = await this.database.getConfig("latestSub");
+    this.modtext = await this.database.getConfig("currentModtext");
+    this.modtextCanvas = await this.database.getConfig("currentModtextCanvas");
 
     await this.updateModText();
     await this.updateModTextCanvas();
@@ -141,32 +113,13 @@ export class TalkingBot {
   public async cleanUp() {
     await this.twitch.cleanUp();
     this.discord.cleanUp();
-    this.database.cleanUp();
-  }
-
-  public async parseClips(text: string): Promise<string> {
-    let clipId = this.twitch.clipRegex.exec(text);
-    if (clipId == null) clipId = this.twitch.wwwclipRegex.exec(text);
-    if (clipId !== null) {
-      const clip = await this.twitch.apiClient.clips.getClipById(clipId[1]);
-      if (clip !== null) {
-        return (
-          text +
-          `<a target="_blank" href="${clip.url}" style="border: none;padding: 4px;display: flex;align-content: center;margin-top: 5px;text-decoration: none;font-size: 15px;line-height: 25px;"> <img width="80" height="45" src="${clip.thumbnailUrl}" style="padding-right: 10px;"> ${clip.title}  <br> Clipped by ${clip.creatorDisplayName}</div></a>`
-        );
-      } else {
-        console.error(
-          "\x1b[35m%s\x1b[0m",
-          `Failed getting clip info: ${clipId[1]}`,
-        );
-      }
-    }
-    return text;
+    await this.userManager.cleanUp();
   }
 
   public async broadcastMessage(message: string) {
     await Promise.all([this.twitch.say(message)]);
   }
+
   public async updateModText() {
     if (!this.modtext) return;
     await this.database.setConfig("currentModtext", this.modtext);
@@ -179,6 +132,7 @@ export class TalkingBot {
       }),
     );
   }
+
   public async updateModTextCanvas() {
     if (!this.modtextCanvas) return;
     await this.database.setConfig("currentModtextCanvas", this.modtextCanvas);
@@ -252,79 +206,27 @@ export class TalkingBot {
       case "alerts": {
         switch (data.message.type) {
           case "raidAlert":
-            this.raidAlert(data.message);
+            this.alertsManager.raidAlert(data.message);
             break;
           case "followAlert":
-            this.followAlert(data.message);
+            this.alertsManager.followAlert(data.message);
             break;
           case "bitsAlert":
-            this.bitsAlert(data.message);
+            this.alertsManager.bitsAlert(data.message, data.message.message);
             break;
           case "subAlert":
-            this.subAlert(data.message);
+            this.alertsManager.subAlert(data.message, data.message.message);
             break;
           case "discordJoinAlert":
-            this.discordJoinAlert(data.message);
+            this.alertsManager.discordJoinAlert(data.message);
             break;
           case "kofiAlert":
-            this.kofiAlert(data.message);
+            this.alertsManager.kofiAlert(data.message);
             break;
         }
         break;
       }
     }
-  }
-  public async raidAlert(alert: RaidAlert) {
-    this.emitAlert({
-      audioList: await getRaidAudio(alert.raider, alert.viewers),
-      ...alert,
-      messageAudioList: null
-    });
-  }
-  public async followAlert(alert: FollowAlert) {
-    this.emitAlert({
-      audioList: await getFollowAudio(alert.follower),
-      ...alert,
-      messageAudioList: null
-    });
-  }
-  public async bitsAlert(alert: BitsAlert) {
-    this.emitAlert({
-      audioList: await getCheerAudio(alert.user, alert.bits, alert.message),
-      ...alert,
-      messageAudioList: null
-    });
-  }
-  public async discordJoinAlert(alert: DiscordJoinAlert) {
-    this.emitAlert({
-      audioList: await getDiscordJoinAudio(alert.member),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async kofiAlert(alert: KofiAlert) {
-    this.emitAlert({
-      audioList: await getKofiAudio(
-        alert.sender,
-        alert.is_subscription,
-        alert.tier_name ?? "",
-        alert.amount,
-        alert.currency,
-      ),
-      ...alert,
-      messageAudioList: null,
-    });
-  }
-  public async subAlert(alert: SubAlert) {
-    this.emitAlert({
-      audioList: await getSubAudio(alert.name),
-      ...alert,
-      messageAudioList: alert.message ? await getSubAudio(alert.message) : [],
-    });
-  }
-
-  public async emitAlert(alert: AlertEvent) {
-    this.ioalert.emit("alert", alert);
   }
 
   public async setLatestSub(sub: latestSub) {

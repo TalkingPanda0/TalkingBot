@@ -1,14 +1,10 @@
 import { TalkingBot } from "./talkingbot.ts";
 import {
   arraytoHashMap,
-  getRandomElement,
-  getSuffix,
   getTimeDifference,
   hashMaptoArray,
   levelToXp,
   milliSecondsToString,
-  removeByIndexToUppercase,
-  replaceAsync,
   xpToLevel,
 } from "../shared/util.ts";
 
@@ -18,10 +14,11 @@ import { exit } from "./main.ts";
 import { CreditType } from "./credits.ts";
 
 import { MessageData } from "botModule";
-import { CONFIG } from "./env.ts";
+import { OverlayMessageData } from "../shared/types.ts";
+import { WatchTimeStatus } from "./users.ts";
 
 export interface Command {
-  showOnChat: boolean;
+  showOnChat?: boolean;
   timeout?: number; // in ms
   commandFunction: (data: MessageData) => void | Promise<void>;
 }
@@ -35,15 +32,16 @@ export class MessageHandler {
   private customCommandMap = new Map<string, string>();
   private commandAliasMap = new Map<string, string>();
   private argMap = new Map<string, string>();
+
   private argsFile = Bun.file(__dirname + "/../../config/args.json");
   private commandsFile = Bun.file(__dirname + "/../../config/commands.json");
   private aliasesFile = Bun.file(__dirname + "/../../config/aliases.json");
 
   constructor(bot: TalkingBot) {
     this.bot = bot;
+    this.counter = new Counter(this.bot.database);
   }
   public init() {
-    this.counter = new Counter(this.bot.database);
     this.counter.init();
   }
 
@@ -57,35 +55,43 @@ export class MessageHandler {
           try {
             if (data.platform != "twitch") return;
             const isOffline = data.message === "offline";
-            this.bot.database.updateDataBase(isOffline ? 1 : 2);
-            const users = await this.bot.database.getTopWatchTime(isOffline);
-            const helixUsers =
-              await this.bot.twitch.apiClient.users.getUsersByIds(
-                users.map((watchtime) => watchtime.userId),
-              );
-            data.reply(
-              (
-                await Promise.all(
-                  users.map(async (watchTime) => {
-                    const helixUser = helixUsers.find(
-                      (user) => user.id == watchTime.userId,
-                    );
-                    if (helixUser == undefined) return "";
+            this.bot.userManager.updateWatchTimes(!isOffline);
 
-                    const user = helixUser.displayName;
-                    try {
-                      if (isOffline)
-                        return `@${user} has spent ${milliSecondsToString(watchTime.chatTime)} in offline chat.`;
-                      else
-                        return `@${user} has spent ${milliSecondsToString(watchTime.watchTime)} watching the stream.`;
-                    } catch (e) {
-                      return e;
-                    }
-                  }),
-                )
-              ).join(" "),
-              false,
-            );
+            if (isOffline) {
+              const times = await this.bot.database.db.query.users.findMany({
+                columns: { chatTime: true, displayName: true },
+                orderBy: {
+                  chatTime: "desc",
+                },
+                limit: 3,
+              });
+              data.reply(
+                times
+                  .map(
+                    (user) =>
+                      `@${user.displayName} has spent ${milliSecondsToString(user.chatTime ?? 0)} in offline chat.`,
+                  )
+                  .join(" "),
+                true,
+              );
+            } else {
+              const times = await this.bot.database.db.query.users.findMany({
+                columns: { watchTime: true, displayName: true },
+                orderBy: {
+                  chatTime: "desc",
+                },
+                limit: 3,
+              });
+              data.reply(
+                times
+                  .map(
+                    (user) =>
+                      `@${user.displayName} has spent ${milliSecondsToString(user.watchTime ?? 0)} watching the stream.`,
+                  )
+                  .join(" "),
+                true,
+              );
+            }
           } catch (e) {
             console.error(e);
           }
@@ -102,60 +108,53 @@ export class MessageHandler {
           const args = data.message.toLowerCase().split(" ");
           let userName = args[0];
           const isOffline = userName === "offline" || args[1] == "offline";
-          let userId = data.senderId;
+          let userId = data.userId;
           if (userName != null && userName.startsWith("@")) {
             const user = await this.bot.twitch.apiClient.users.getUserByName(
               userName.trim().replace("@", ""),
             );
             if (user != null) userId = user.id;
           } else {
+            userName = data.displayName;
+          }
+
+          const platformId = this.bot.database.getPlatfromId("twitch");
+
+          const watchTime = await this.bot.database.db.query.users.findFirst({
+            columns: {
+              lastSeen: true,
+              lastSeenOnStream: true,
+              watchTime: true,
+              chatTime: true,
+            },
+            where: {
+              userId,
+              platform: platformId,
+            },
+          });
             userName = `${data.sender}`;
           }
           const watchTime = await this.bot.database.getWatchTime(
             userId.slice("twitch-".length),
           );
 
-          if (watchTime == null) {
+          if (!watchTime) {
             data.reply("Can't find watchtime.", true);
             return;
           }
+
+          const status = this.bot.userManager.getWatchTimeStatus(userId);
+
           if (isOffline) {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.chatTime + (watchTime.inChat == 1 ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.chatTime ?? 0 + (status == WatchTimeStatus.Chat && watchTime.lastSeen ? new Date().getTime() - new Date(watchTime.lastSeen).getTime() : 0))} in offline chat.`,
               false,
             );
           } else {
             data.reply(
-              `${userName} has spent ${milliSecondsToString(watchTime.watchTime + (watchTime.inChat == 2 ? new Date().getTime() - new Date(watchTime.lastSeenOnStream ?? Date.now()).getTime() : 0))} watching the stream.`,
+              `${userName} has spent ${milliSecondsToString(watchTime.watchTime ?? 0 + (status == WatchTimeStatus.Stream && watchTime.lastSeenOnStream ? new Date().getTime() - new Date(watchTime.lastSeenOnStream).getTime() : 0))} watching the stream.`,
               false,
             );
-          }
-        },
-      },
-    ],
-    [
-      "!redeem",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          if (this.bot.twitch.redeemQueue.length == 0) {
-            data.reply("No redeem found", true);
-            return;
-          }
-          switch (data.message) {
-            case "accept":
-              this.bot.twitch.handleRedeemQueue(true);
-              break;
-            case "deny":
-              this.bot.twitch.handleRedeemQueue(false);
-              break;
-            case "scam":
-              this.bot.twitch.handleRedeemQueue(undefined);
-              break;
-            default:
-              data.reply("Usage: !redeem accept/deny", true);
-              break;
           }
         },
       },
@@ -249,6 +248,7 @@ export class MessageHandler {
           const followed =
             await this.bot.twitch.apiClient.channels.getChannelFollowers(
               this.bot.twitch.channel.id,
+              data.userId,
               data.senderId.replace("twitch-", ""),
             );
 
@@ -264,7 +264,7 @@ export class MessageHandler {
               new Date(),
             );
             data.reply(
-              `@${data.sender} has been following ${this.bot.twitch.channel.displayName} for ${timeString}`,
+              `@${data.displayName} has been following ${this.bot.twitch.channel.displayName} for ${timeString}`,
               false,
             );
           }
@@ -607,56 +607,13 @@ export class MessageHandler {
         showOnChat: true,
         commandFunction: (data): void | Promise<void> => {
           if (data.message.trim() == "") return;
-          this.bot.ttsManager.send({
+          this.bot.alertsManager.sendTTS({
+            type: "tts",
             text: data.message,
-            sender: data.sender,
+            sender: data.displayName,
             color: data.color,
-            parsedText: data.parsedMessage.split(" ").slice(1).join(" "),
             isImportant: false,
           });
-        },
-      },
-    ],
-    [
-      "!playtime",
-      {
-        timeout: 0,
-        showOnChat: false,
-        commandFunction: async (data) => {
-          try {
-            const game = (
-              await (
-                await fetch(
-                  `https://steamcommunity.com/actions/SearchApps/${encodeURIComponent(data.message)}`,
-                )
-              ).json()
-            )[0];
-            if (game == undefined) {
-              data.reply(`Can't find game ${data.message}.`, true);
-              return;
-            }
-            const response = await (
-              await fetch(
-                `http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${CONFIG.keys.steam}&steamid=76561198800357802&format=json&include_played_free_games=true&appids_filter[0]=${game.appid}`,
-              )
-            ).json();
-            if (response.response.game_count == 0) {
-              data.reply(`SweetbabooO_o doesn't own ${game.name}.`, true);
-              return;
-            }
-            const games: { appid: number; playtime_forever: number }[] =
-              response.response.games;
-            const ownedGame = games[0];
-
-            const minutes = ownedGame.playtime_forever;
-            data.reply(
-              `SweetbabooO_o has ${Math.floor(minutes / 60)} hours ${minutes % 60} minutes on ${game.name}.`,
-              true,
-            );
-          } catch (e) {
-            data.reply(`Can't find game ${data.message}`, true);
-            console.log(e);
-          }
         },
       },
     ],
@@ -669,34 +626,28 @@ export class MessageHandler {
           const args = data.message.split(" ");
           switch (args[0]) {
             case "enable":
-              this.bot.ttsManager.enabled = true;
+              this.bot.alertsManager.ttsEnabled = true;
               data.reply("TTS command has been enabled", true);
               return;
             case "disable":
-              this.bot.ttsManager.enabled = false;
+              this.bot.alertsManager.ttsEnabled = false;
               data.reply("TTS command has been disabled", true);
               return;
             case "skip":
-              this.bot.ttsManager.skip(args[1]);
+              this.bot.alertsManager.skip();
               return;
-            case "pause":
-              this.bot.ttsManager.setPause(true);
-              break;
-            case "unpause":
-              this.bot.ttsManager.setPause(false);
-              break;
             case "say":
-              this.bot.ttsManager.send({
+              this.bot.alertsManager.sendTTS({
+                type: "tts",
                 text: data.message.split(" ").slice(1).join(" "),
-                sender: data.sender,
+                sender: data.displayName,
                 color: data.color,
-                parsedText: data.parsedMessage.split(" ").slice(2).join(" "),
                 isImportant: true,
               });
               return;
             default:
               data.reply(
-                `TTS is currently ${this.bot.ttsManager.enabled ? "Enabled" : "Disabled"}`,
+                `TTS is currently ${this.bot.alertsManager.ttsEnabled ? "Enabled" : "Disabled"}`,
                 true,
               );
               return;
@@ -769,6 +720,10 @@ export class MessageHandler {
           const username = args[0];
           const nickname = args.splice(1).join(" ");
 
+          const user = await this.bot.userManager.findUser(
+            username,
+            data.platform,
+          );
           const user = await this.bot.userManager.findUser(username);
           if (!user) {
             data.reply(`Can't find user ${username}.`, true);
@@ -804,62 +759,6 @@ export class MessageHandler {
       },
     ],
     [
-      "!createpoll",
-      {
-        showOnChat: false,
-        commandFunction: async (data) => {
-          if (!data.isUserMod) return;
-          try {
-            await this.bot.broadcastMessage(
-              this.bot.poll.startPoll(data.message, (results) => {
-                const winner = results.toSorted((a, b) => a.score - b.score)[
-                  results.length - 1
-                ];
-                this.bot.broadcastMessage(
-                  `${winner.label} won with a score of ${winner.score}`,
-                );
-              }),
-            );
-          } catch (error) {
-            data.reply(error as string, true);
-          }
-        },
-      },
-    ],
-    [
-      "!endpoll",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          if (!data.isUserMod) return;
-          try {
-            this.bot.poll.endPoll();
-          } catch (error) {
-            data.reply(error as string, true);
-          }
-        },
-      },
-    ],
-    [
-      "!vote",
-      {
-        showOnChat: false,
-        commandFunction: (data) => {
-          try {
-            data.reply(
-              this.bot.poll.addVote(
-                `${data.platform}-${data.sender}`,
-                data.message,
-              ),
-              true,
-            );
-          } catch (error) {
-            console.error(error);
-          }
-        },
-      },
-    ],
-    [
       "!commands",
       {
         showOnChat: false,
@@ -891,41 +790,12 @@ export class MessageHandler {
       (!subonly || data.isUserSub);
     const doReply = customCommand.includes("(reply)");
 
-    let response = customCommand
+    const response = customCommand
       .replace(/\(modonly\)/g, "")
       .replace(/\(viponly\)/g, "")
       .replace(/\(subonly\)/g, "")
-      .replace(/\(reply\)/g, "");
-
-    response = await replaceAsync(
-      response,
-      /script\((.+)\)/g,
-      async (_message: string, script: string) => {
-        if (!canUserRunCommand) return null;
-        return await this.runScript(script, data, commandName);
-      },
-    );
-    response = (
-      await replaceAsync(
-        response,
-        /(!?fetch)\[([^]+)\]{?(\w+)?}?/g,
-
-        async (message: string, _command: string, url: string, key: string) => {
-          url = url.replace(/\$user/g, data.sender).replace(/\$args/g, message);
-          const req = await fetch(url);
-          if (key === undefined) {
-            return await req.text();
-          } else {
-            const json = await req.json();
-            return json[key];
-          }
-        },
-      )
-    )
-      .replace(/suffix\((\d+)\)/g, (_message: string, number: string) => {
-        return getSuffix(parseInt(number));
-      })
-      .replace(/\$user/g, data.sender)
+      .replace(/\(reply\)/g, "")
+      .replace(/\$user/g, data.displayName)
       .replace(/\$args/g, message);
 
     if (customCommand.includes("fetch")) {
@@ -973,22 +843,30 @@ export class MessageHandler {
     }
   }
 
-  private sendToChatList(data: MessageData) {
+  public async sendToChatList(data: OverlayMessageData) {
     this.bot.iochat.emit("message", data);
     this.bot.chatLogger.recordMessage(data);
   }
 
   public async handleMessage(data: MessageData) {
-    data.id = `${data.platform}-${data.id}`;
-    data.senderId = `${data.platform}-${data.senderId}`;
-    data.replyId = `${data.platform}-${data.replyId}`;
-
     const user = await this.bot.userManager.handleMessage(data);
 
-    data.sender = user.customName ?? data.sender;
+    data.displayName = user.customName ?? data.displayName;
     data.color = user.customColor ?? data.color;
 
     if (data.isUserMod)
+      this.bot.credits.addToCredits(
+        data.userId,
+        data.displayName,
+        data.color,
+        CreditType.Moderator,
+      );
+    this.bot.credits.addToCredits(
+      data.userId,
+      data.displayName,
+      data.color,
+      CreditType.Chatter,
+    );
       this.bot.credits.addToCredits({
         userId: data.senderId,
         userDisplayName: data.sender,
@@ -1002,12 +880,31 @@ export class MessageHandler {
       type: CreditType.Chatter,
     });
 
-    if (!data.isOld)
-      data.isCommand = data.isCommand || (await this.handleCommand(data));
+    data.isCommand = data.isCommand || (await this.handleCommand(data));
 
     this.bot.moduleManager.onChatMessage(data);
 
-    this.sendToChatList(data);
+    this.sendToChatList({
+      displayName: data.displayName,
+      userId: data.userId,
+      message: data.message,
+      isCommand: data.isCommand,
+      badges: data.badges,
+      color: data.color,
+      emoteOffsets: data.emoteOffsets,
+      highlightColor: data.highlightColor,
+      highlightMessage: data.highlightMessage,
+      isAction: data.isAction ?? false,
+      isFake: false,
+      messageId: data.id,
+      platform: data.platform,
+      replyId: data.replyId,
+      timestamp: data.timestamp.getTime(),
+      clip:
+        data.platform == "twitch"
+          ? await this.bot.twitch.parseClips(data.message)
+          : undefined,
+    });
   }
 
   public async readCustomCommands() {
@@ -1099,84 +996,5 @@ export class MessageHandler {
 
   public removeCommand(name: string): boolean {
     return this.commandMap.delete(name);
-  }
-
-  public async runScript(
-    script: string,
-    data: MessageData,
-    commandName: string | RegExpExecArray[],
-  ): Promise<string> {
-    const context = Object.create(null);
-
-    context.result = "";
-    context.command = commandName;
-    context.user = data.sender;
-    context.userId = data.senderId;
-    context.isUserMod = data.isUserMod;
-    context.isUserVip = data.isUserVip;
-    context.isUserSub = data.isUserSub;
-    context.args = data.message.split(" ");
-    context.platform = data.platform;
-    context.getOrSetConfig = async (
-      key: string,
-      defaultValue: unknown,
-    ): Promise<unknown> => {
-      return await this.bot.database.getOrSetConfig(key, defaultValue);
-    };
-    context.setConfig = async (key: string, value: unknown) => {
-      return await this.bot.database.setConfig(key, value);
-    };
-
-    context.banUser = (reason: string, duration?: number) => {
-      if (data.isTestRun)
-        context.result += `Banned user for ${duration} seconds: ${reason}\n`;
-      else data.banUser(reason, duration);
-    };
-    context.say = (message: string, reply: boolean) => {
-      if (data.isTestRun)
-        context.result += `${reply ? "Reply: " : ""}${message}\n`;
-      else data.reply(message, reply);
-    };
-    context.fetch = fetch;
-    context.broadcast = (message: string) => {
-      if (data.isTestRun) context.result += `Broadcasted message: ${message}\n`;
-      else this.bot.broadcastMessage(message);
-    };
-    context.runCommand = (command: string) => {
-      if (data.isTestRun) context.result += `Ran ${command}`;
-      else {
-        data.message = command;
-        data.parsedMessage = command;
-        data.isCommand = true;
-        this.handleCommand(data);
-      }
-    };
-
-    context.sendInDiscord = (message: string, channelId: string) =>
-      this.bot.discord.say(message, channelId);
-    context.getTimeDifference = getTimeDifference;
-    context.milliSecondsToString = milliSecondsToString;
-    context.replaceAsync = replaceAsync;
-    context.getSuffix = getSuffix;
-    context.getRandomElement = getRandomElement;
-    context.removeByIndexToUppercase = removeByIndexToUppercase;
-
-    try {
-      const func = new Function(
-        "context",
-        `
-    return (async () => {
-      with(context) {
-        ${script}
-      }
-    })();
-  `,
-      );
-      await func(context);
-      return context.result;
-    } catch (error) {
-      console.error("Error executing custom code:", error);
-      return error as string;
-    }
   }
 }

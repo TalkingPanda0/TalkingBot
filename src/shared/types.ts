@@ -40,7 +40,23 @@ export type KofiAlert = {
   amount: string;
   currency: string;
 };
-export type SubAlert = { type: "subAlert"; name: string; message: string, plan: string, months: number | null, gift: boolean, gifted: number };
+export type SubAlert = {
+  type: "subAlert";
+  name: string;
+  message: string;
+  plan: string;
+  months: number | null;
+  gift: boolean;
+  gifted: number;
+};
+
+export interface TTSAlert {
+  type: "tts";
+  text: string;
+  sender: string;
+  color: string;
+  isImportant: boolean;
+}
 
 export type Alert =
   | RaidAlert
@@ -48,8 +64,12 @@ export type Alert =
   | BitsAlert
   | SubAlert
   | DiscordJoinAlert
-  | KofiAlert;
-export type AlertEvent = Alert & {audioList: string[], messageAudioList: string[] | null};
+  | KofiAlert
+  | TTSAlert;
+export type AlertEvent = Alert & {
+  audioList: string[];
+  messageAudioList: string[] | null;
+};
 
 export type ChatControl = (
   | { target: "banUser" | "deleteMessage"; message: string }
@@ -65,11 +85,39 @@ export type ModtextControl = (
 export type AlertControl = { message: Alert; overlay: "alerts" };
 
 export type ControlMessage = ChatControl | ModtextControl | AlertControl;
-export interface TTSData {
-  text: string;
-  parsedText: string;
-  sender: string;
+
+export type StoredMessageData = {
+  messageId: string;
+  platform: string;
+  badges: string[];
+  displayName: string;
   color: string;
-  isImportant: boolean;
-}
-export type TTSEvent = TTSData & {audioList: string[]};
+  userId: string;
+  message: string;
+  emoteOffsets: string | null;
+  replyId: string | null;
+  timestamp: number;
+  isAction: boolean;
+  highlightMessage: string | null;
+  highlightColor: string | null;
+};
+
+export type Clip = {
+  title: string;
+  url: string;
+  thumbnailUrl: string;
+  creator: string;
+  start: number;
+  end: number;
+};
+
+export type OverlayMessageData = StoredMessageData & {
+  clip?: Clip;
+  isFake: boolean;
+  isCommand: boolean;
+};
+
+export type ChatMetaData = {
+  cheerEmotes: string[];
+  channelId: string;
+};
