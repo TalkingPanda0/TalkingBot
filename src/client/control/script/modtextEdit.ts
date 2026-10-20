@@ -1,5 +1,4 @@
 import Swal from "sweetalert2";
-import { TwitchEmbed, TwitchPlayerEvent } from "twitch-player";
 import "../modtextEdit.css";
 import {
   Canvas,
@@ -36,6 +35,42 @@ declare module "fabric" {
   }
 }
 
+declare namespace Twitch {
+  interface PlayerOptions {
+    channel?: string;
+    video?: string;
+    collection?: string;
+
+    width: number;
+    height: number | string;
+    parent: string[];
+
+    autoplay?: boolean;
+    muted?: boolean;
+    time?: string;
+  }
+
+  class Player {
+    constructor(element: string | HTMLElement, options: PlayerOptions);
+
+    static readonly READY: string;
+    static readonly PLAY: string;
+    static readonly PAUSE: string;
+    static readonly ENDED: string;
+    static readonly ONLINE: string;
+    static readonly OFFLINE: string;
+
+    disableCaptions(): void;
+    enableCaptions(): void;
+
+    pause(): void;
+    play(): void;
+
+    isPaused(): boolean;
+    addEventListener(event: String, callback: Function): void;
+  }
+}
+
 const deleteIcon =
   "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!DOCTYPE svg PUBLIC '-//W3C//DTD SVG 1.1//EN' 'http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd'%3E%3Csvg version='1.1' id='Ebene_1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' width='595.275px' height='595.275px' viewBox='200 215 230 470' xml:space='preserve'%3E%3Ccircle style='fill:%23F44336;' cx='299.76' cy='439.067' r='218.516'/%3E%3Cg%3E%3Crect x='267.162' y='307.978' transform='matrix(0.7071 -0.7071 0.7071 0.7071 -222.6202 340.6915)' style='fill:white;' width='65.545' height='262.18'/%3E%3Crect x='266.988' y='308.153' transform='matrix(0.7071 0.7071 -0.7071 0.7071 398.3889 -83.3116)' style='fill:white;' width='65.544' height='262.179'/%3E%3C/g%3E%3C/svg%3E";
 const deleteImg = document.createElement("img");
@@ -62,7 +97,7 @@ const playPauseButton = document.getElementById(
   "playPauseButton",
 ) as HTMLButtonElement;
 
-const player = new TwitchEmbed("player", {
+const player = new Twitch.Player("player", {
   width: 1920,
   height: 1080,
   channel: "sweetbabooo_o",
@@ -794,7 +829,7 @@ document.addEventListener("paste", async (e) => {
 
 FabricObject.customProperties = ["dataId", "counterName"];
 
-player.addEventListener(TwitchPlayerEvent.READY, () => {
+player.addEventListener(Twitch.Player.READY, () => {
   if (!canvas) initCanvas();
 });
 
@@ -831,7 +866,13 @@ window.addEventListener("keyup", (e) => {
 });
 
 file.onchange = async (event) => {
-  if (!event.target || !(event.target instanceof HTMLInputElement )|| !event.target.files || !event.target.files[0]) return;
+  if (
+    !event.target ||
+    !(event.target instanceof HTMLInputElement) ||
+    !event.target.files ||
+    !event.target.files[0]
+  )
+    return;
   await uploadImage(event.target.files[0]);
   await loadImages();
 };
@@ -843,32 +884,34 @@ file.onchange = async (event) => {
   closeDialog();
 };
 
-(document.getElementById("deleteBtn") as HTMLButtonElement).onclick = async () => {
-  if (!selectedImg) return;
-  const result = await Swal.fire({
-    target: dialog,
-    title: `Are you sure you want to delete this image?`,
-    text: "You won't be able to revert this!",
-    icon: "warning",
-    showCancelButton: true,
-    confirmButtonColor: "#3085d6",
-    cancelButtonColor: "#d33",
-    confirmButtonText: "Yes, delete it!",
-  });
-  if (!result.isConfirmed) return;
-  const res = await fetch(
-    `/api/modtext/removeImage?image=${selectedImg.dataset.image}`,
-    { method: "POST" },
-  );
-  if (!res.ok) {
-    alert("Failed deleting image");
-    console.log(await res.text());
-    return;
-  }
-  await loadImages();
-};
+(document.getElementById("deleteBtn") as HTMLButtonElement).onclick =
+  async () => {
+    if (!selectedImg) return;
+    const result = await Swal.fire({
+      target: dialog,
+      title: `Are you sure you want to delete this image?`,
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!",
+    });
+    if (!result.isConfirmed) return;
+    const res = await fetch(
+      `/api/modtext/removeImage?image=${selectedImg.dataset.image}`,
+      { method: "POST" },
+    );
+    if (!res.ok) {
+      alert("Failed deleting image");
+      console.log(await res.text());
+      return;
+    }
+    await loadImages();
+  };
 
-(document.getElementById("cancelBtn") as HTMLButtonElement).onclick = () => closeDialog();
+(document.getElementById("cancelBtn") as HTMLButtonElement).onclick = () =>
+  closeDialog();
 
 window.playPause = playPause;
 window.addSubPfp = addSubPfp;
@@ -881,4 +924,3 @@ window.sendToOverlay = sendToOverlay;
 window.toggleMode = toggleMode;
 window.setTextAlign = setTextAlign;
 window.pickImage = pickImage;
-
