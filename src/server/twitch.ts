@@ -88,6 +88,7 @@ export class Twitch {
   // only things that should also run when the bot starts during a stream and on the start of stream.
   private async onStreamOnline() {
     this.bot.onStreamOnline();
+    this.isStreamOnline = true;
   }
 
   private async handleMessage(

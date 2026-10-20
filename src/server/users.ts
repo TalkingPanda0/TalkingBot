@@ -172,7 +172,10 @@ export class UserManager {
       const platformId = this.bot.database.getPlatfromId(user.platform);
       await this.bot.database.db
         .update(users)
-        .set({ platform: platformId, userId: user.userId, xp: user.xp });
+        .set({ platform: platformId, userId: user.userId, xp: user.xp })
+        .where(
+          and(eq(users.platform, platformId), eq(users.userId, user.userId)),
+        );
     }
 
     this.recentChatters.clear();
