@@ -346,7 +346,7 @@ export class ChatHandler {
     if (message.isCommand && !this.showCommands) return;
 
     // Don't add if it's from the bot or if a message with the same id already exits
-    if (message.messageId != null && document.getElementById(message.messageId))
+    if (message.messageId != "" && document.getElementById(message.messageId))
       return;
 
     if (message.isFake && this.showCommands)

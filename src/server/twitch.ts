@@ -30,7 +30,7 @@ import { CreditType } from "./credits.ts";
 
 import { CONFIG } from "./env.ts";
 import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
-import { Clip, PollEvent, PollOption } from "../shared/types.ts";
+import { Clip, OverlayMessageData, PollEvent, PollOption } from "../shared/types.ts";
 
 export class Twitch {
   public clientId;
@@ -151,18 +151,24 @@ export class Twitch {
           await this.chatClient.say(this.channel.name, message, {
             replyTo: replyId,
           });
-          this.bot.iochat.emit("message", {
+          let data: OverlayMessageData = {
             badges: [],
-            text: message,
-            parsedMessage: message,
-            sender: "TalkingBot",
-            senderId: "bot",
+            message: message,
+            displayName: "TalkingBot",
+            userId: "bot",
             color: "green",
-            id: undefined,
             platform: "bot",
-            isFirst: false,
             isCommand: true,
-          });
+            replyId: null,
+            emoteOffsets: null,
+            highlightColor: null,
+            highlightMessage: null,
+            isAction: false,
+            isFake: false,
+            messageId: "",
+            timestamp: new Date().getTime(),
+          };
+          this.bot.iochat.emit("message", data);
           console.log(`TalkingBot - ${message}`);
         },
         banUser: async (message: string, duration?: number) => {
