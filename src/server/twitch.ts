@@ -30,7 +30,12 @@ import { CreditType } from "./credits.ts";
 
 import { CONFIG } from "./env.ts";
 import { ChannelPointReward, ChannelPointRewardStatus } from "botModule";
-import { Clip, OverlayMessageData, PollEvent, PollOption } from "../shared/types.ts";
+import {
+  Clip,
+  OverlayMessageData,
+  PollEvent,
+  PollOption,
+} from "../shared/types.ts";
 
 export class Twitch {
   public clientId;
@@ -117,6 +122,10 @@ export class Twitch {
           // Set alpha to 0.5
           highlightColor = reward.backgroundColor + "7f";
         }
+      }
+
+      if (msg.isFirst) {
+        highlightColor = "rgba(176, 11, 105, 0.5)";
       }
 
       if (msg.isCheer) {
