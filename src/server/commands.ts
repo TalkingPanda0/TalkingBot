@@ -806,8 +806,14 @@ export class MessageHandler {
   // returns true if isCommand
   public async handleCommand(data: MessageData): Promise<boolean> {
     try {
-      let commandName = data.message.split(" ")[0];
-      let commandMessage = data.message;
+      let commandMessage = data.replyId
+        ? data.message
+            .trim()
+            .replace(/^@(\w+)/g, "")
+            .trim()
+        : data.message;
+
+      let commandName = commandMessage.split(" ")[0];
       if (this.timeout.has(commandName) && !data.isUserMod) return true;
       const commandAlias = this.commandAliasMap.get(commandName);
       if (commandAlias != null) {
@@ -823,7 +829,10 @@ export class MessageHandler {
       if (builtinCommand == null) return commandName.startsWith("!");
 
       commandMessage = commandMessage.replace(commandName, "").trim();
-      await builtinCommand.commandFunction({...data,message: commandMessage});
+      await builtinCommand.commandFunction({
+        ...data,
+        message: commandMessage,
+      });
       if (builtinCommand.timeout) {
         this.timeout.add(commandName);
         setTimeout(() => {
