@@ -78,7 +78,7 @@ export class MessageHandler {
               const times = await this.bot.database.db.query.users.findMany({
                 columns: { watchTime: true, displayName: true },
                 orderBy: {
-                  chatTime: "desc",
+                  watchTime: "desc",
                 },
                 limit: 3,
               });
