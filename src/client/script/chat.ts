@@ -140,7 +140,7 @@ class EmoteWall {
 }
 
 // Recives one word
-type ParserResult = { element: HTMLElement; leftOver: string } | null;
+type ParserResult = { result: MessagePart; leftOver: string } | null;
 type Parser = (input: string) => ParserResult;
 export type MessageCallback = (
   message: OverlayMessageData,
@@ -252,7 +252,7 @@ export class ChatHandler {
       `https://api.7tv.app/v3/users/twitch/${this.channelId}`,
     );
 
-    if(!result.ok) {
+    if (!result.ok) {
       return;
     }
 
@@ -418,11 +418,11 @@ export class ChatHandler {
     const firstPart = messageParts[0].type == "text" ? messageParts[0] : null;
 
     // If it's a reply remove the first mention
-    if (firstPart && message.replyId) {
+    if (firstPart && message.replyId)
       firstPart.element.innerText = firstPart.element.innerText
+        .trim()
         .replace(/^@(\w+)/g, "")
         .trim();
-    }
 
     if (message.isAction) {
       if (firstPart) {
@@ -522,21 +522,25 @@ export class ChatHandler {
     return span;
   }
 
-  private createText(text: string): HTMLSpanElement {
-    const span = document.createElement("span");
+  private createText(text: string): MessagePart[] {
     let firstElement = true;
     let currentText = [];
+
+    const parts: MessagePart[] = [];
 
     for (const word of text.split(" ")) {
       const wordResult = this.parseWord(word);
       if (wordResult) {
-        if (firstElement) span.innerText = currentText.join(" ");
-        else if (currentText.length != 0)
-          span.appendChild(this.createRawText(currentText.join(" ")));
+        //if (firstElement) span.innerText = currentText.join(" ");
+        if (currentText.length != 0)
+          parts.push({
+            type: "text",
+            element: this.createRawText(currentText.join(" ")),
+          });
 
         firstElement = false;
         currentText.length = 0;
-        span.appendChild(wordResult.element);
+        parts.push(wordResult.result);
 
         if (wordResult.leftOver) currentText.push(wordResult.leftOver);
         continue;
@@ -545,8 +549,11 @@ export class ChatHandler {
       currentText.push(word);
     }
     if (currentText.length != 0)
-      span.appendChild(this.createRawText(currentText.join(" ")));
-    return span;
+      parts.push({
+        type: "text",
+        element: this.createRawText(currentText.join(" ")),
+      });
+    return parts;
   }
 
   private createClip(clip: Clip): HTMLElement {
@@ -604,7 +611,7 @@ export class ChatHandler {
     const parsedOffsets = parseEmoteOffsets(emoteOffsets ?? undefined);
 
     if (parsedOffsets.size == 0) {
-      return [{ type: "text", element: this.createText(text) }];
+      return this.createText(text);
     }
 
     const result: MessagePart[] = [];
@@ -613,10 +620,7 @@ export class ChatHandler {
     for (const parsedPart of parsedParts) {
       switch (parsedPart.type) {
         case "text":
-          result.push({
-            type: "text",
-            element: this.createText(parsedPart.text),
-          });
+          result.push(...this.createText(parsedPart.text));
           break;
 
         case "emote":
@@ -656,7 +660,6 @@ export class ChatHandler {
     });
   }
   parseWord(input: string): ParserResult {
-
     for (const parser of this.parsers) {
       const result = parser.bind(this)(input);
       if (result) {
@@ -668,7 +671,7 @@ export class ChatHandler {
 
   parseMentions(
     input: string,
-  ): { element: HTMLElement; leftOver: string } | null {
+  ): { result: MessagePart; leftOver: string } | null {
     if (!input.startsWith("@")) return null;
 
     let username = input.substring(1);
@@ -693,13 +696,16 @@ export class ChatHandler {
 
     element.style.color = targetElement.style.color;
 
-    return { element, leftOver };
+    return { result: { type: "text", element }, leftOver };
   }
   parseExtraEmotes(
     input: string,
-  ): { element: HTMLElement; leftOver: string } | null {
+  ): { result: MessagePart; leftOver: string } | null {
     const emote = this.extraEmotes.get(input);
     if (!emote) return null;
-    return { element: this.createEmoteUrl(emote), leftOver: "" };
+    return {
+      result: { type: "img", element: this.createEmoteUrl(emote) },
+      leftOver: "",
+    };
   }
 }
