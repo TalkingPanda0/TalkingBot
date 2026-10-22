@@ -72,44 +72,40 @@ declare module "botModule" {
     public modtext: string;
     public setLatestSub(sub: latestSub): Promise<void>;
   }
+
   export interface MessageData {
-    /**
-     * Urls of the badges of the user.
-     */
+    // Message Id from the platform
+    id: string;
+    // Urls of the badges of the user.
     badges: string[];
+    displayName: string;
+    // Sender's chat color as a css color
+    color: string;
+    message: string;
+    // String containg emote id's and their offsets in message.
+    emoteOffsets: string;
+    // Sender's id from the platfrom
+    userId: string;
+    platform: "bot" | "discord" | "twitch" | "youtube";
+    // Whether the user is a moderator. If platform is "discord" true if the user has the "Stream Moderator" role.
     isUserMod: boolean;
     isUserVip?: boolean;
     isUserSub?: boolean;
-    message: string;
-    /**
-     * Message with emotes as html imgs.
-     */
-    parsedMessage: string;
-    username: string;
-    /*
-     * Sender's display name
-     */
-    sender: string;
-    senderId: string;
-    color: string;
-    id: string;
-    platform: "bot" | "discord" | "twitch" | "youtube";
-    channelId: string;
-    /*
-     * True if its the first time this chatter messaged on the chat(only twitch).
-     */
+    // Message id of the message this message is a reply to from the platfrom.
+    replyId: string | null;
+    // True if its the first time this chatter messaged on the chat(only twitch).
     isFirst: boolean;
-    replyTo?: string;
-    replyId?: string;
-    replyText?: string;
     isCommand: boolean;
-    rewardName?: string;
-    isOld: boolean;
+    // Text shown above the message such as "Reached a 100 view streak."
+    highlightMessage: string | null;
+    // Color of the message's background for things such as channel point redemption.
+    highlightColor: string | null;
+    // Channel Id of the channel this message is from. Defined only when platform == "discord".
+    channelId?: string;
     timestamp: Date;
+    // Send a message in the chat this message is in, replies to the message if replyToUser is set to true.
     reply: (message: string, replyToUser: boolean) => void | Promise<void>;
-    /*
-     * if duration is null bans permanently.
-     */
+    // if duration is null bans permanently. Doesn't work on Discord.
     banUser: (reason: string, duration?: number) => void | Promise<void>;
   }
 
@@ -121,7 +117,7 @@ declare module "botModule" {
     /*
      * The minumum amount of miliseconds between this commands executions. Moderator's bypass this timeout.
      */
-    timeout?: number; // in ms
+    timeout?: number;
     commandFunction: (data: MessageData) => void | Promise<void>;
   }
 
@@ -194,7 +190,9 @@ declare module "botModule" {
       rewardId: string,
       listener: ChannelRedemptionListener,
     ): void;
+    // Runs listener when stream is online, or when the bot is started during a stream.
     onStreamOnline(listener: Listener): void;
+    // Runs when the stream ends. Doesn't run when the bot is restarted not during a stream.
     onStreamOffline(listener: Listener): void;
 
     bot: TalkingBot;
