@@ -120,6 +120,7 @@ body {
   height: 25px;
   width: 0;
   margin: 2px;
+  margin-left: 0px;
   vertical-align: middle;
 }
 
@@ -136,4 +137,9 @@ body {
 
 .clip img {
   padding-right: 10px;
+}
+
+.gif {
+  max-width: 256px;
+  margin: 10px;
 }

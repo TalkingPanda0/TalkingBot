@@ -132,6 +132,14 @@ export class Twitch {
         this.onCheer(msg);
       }
 
+      let gifs = msg.tags.get("gifs");
+      let gif;
+
+      if(gifs) {
+        gif = gifs.match(/\d+-\d+\|\w+\|(\S*)/)?.at(1);
+      }
+
+
       this.bot.commandHandler.handleMessage({
         badges: this.getBadges(msg.userInfo),
         displayName: formatDisplayName(msg),
@@ -154,6 +162,7 @@ export class Twitch {
         timestamp: msg.date,
         highlightMessage,
         highlightColor,
+        gif,
         reply: async (message: string, replyToUser: boolean) => {
           if (!message || message == "") return;
           const replyId = replyToUser ? msg.id : undefined;

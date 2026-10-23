@@ -256,7 +256,9 @@ export class ChatHandler {
       }
 
       if (data.body.pulled) {
-        for (const { old_value: {name: emote}} of data.body.pulled) {
+        for (const {
+          old_value: { name: emote },
+        } of data.body.pulled) {
           this.extraEmotes.delete(emote);
         }
       }
@@ -428,15 +430,41 @@ export class ChatHandler {
       badgesElement.appendChild(badgeElement);
     });
 
+    const senderElement = document.createElement("span");
+    senderElement.classList.add("sender");
+    senderElement.dataset.name = `${message.displayName}`.toLowerCase();
+    senderElement.style.color = `${message.color}`;
+
+    senderElement.innerText = message.displayName.trim();
+
+    if (message.gif) {
+      const gifElement = document.createElement("img");
+      gifElement.classList.add("gif");
+      gifElement.src = message.gif;
+
+      gifElement.onload = () => {
+        this.messageList.scrollIntoView({
+          behavior: "smooth",
+          block: "end",
+          inline: "nearest",
+        });
+      };
+
+      senderElement.innerText += ":";
+
+      spanElement.appendChild(badgesElement);
+      spanElement.appendChild(senderElement);
+      messageElement.appendChild(spanElement);
+      messageElement.appendChild(document.createElement("br"));
+      messageElement.appendChild(gifElement);
+
+      this.messageList.appendChild(messageElement);
+
+      return;
+    }
+
     const textElement = document.createElement("span");
-    textElement.classList.add("sender");
-    textElement.dataset.name = `${message.displayName}`.toLowerCase();
-    textElement.style.color = `${message.color}`;
-
-    textElement.innerText = message.displayName.trim();
-
-    const textSpanElement = document.createElement("span");
-    textSpanElement.classList.add("text");
+    textElement.classList.add("text");
     const messageParts = this.parseMessages(
       message.message,
       message.emoteOffsets,
@@ -465,18 +493,19 @@ export class ChatHandler {
             "",
           );
         });
-      textSpanElement.style.color = message.color;
+      textElement.style.color = message.color;
     } else {
-      textElement.innerText += ": ";
+      senderElement.innerText += ": ";
     }
 
     for (const part of messageParts) {
-      textSpanElement.appendChild(part.element);
+      textElement.appendChild(part.element);
     }
 
-    textElement.appendChild(textSpanElement);
+    senderElement.appendChild(textElement);
+
     spanElement.appendChild(badgesElement);
-    spanElement.appendChild(textElement);
+    spanElement.appendChild(senderElement);
     messageElement.appendChild(spanElement);
 
     if (message.clip) messageElement.appendChild(this.createClip(message.clip));

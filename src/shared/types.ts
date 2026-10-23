@@ -113,6 +113,8 @@ export type Clip = {
 
 export type OverlayMessageData = StoredMessageData & {
   clip?: Clip;
+  // Gif URL
+  gif?: string;
   isFake: boolean;
   isCommand: boolean;
 };

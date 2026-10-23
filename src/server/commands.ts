@@ -891,6 +891,7 @@ export class MessageHandler {
       platform: data.platform,
       replyId: data.replyId,
       timestamp: data.timestamp.getTime(),
+      gif: data.gif,
       clip:
         data.platform == "twitch"
           ? await this.bot.twitch.parseClips(data.message)

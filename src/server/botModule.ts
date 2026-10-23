@@ -22,6 +22,7 @@ export interface MessageData {
   highlightColor: string | null;
   channelId?: string;
   timestamp: Date;
+  gif?: string;
   reply: (message: string, replyToUser: boolean) => void | Promise<void>;
   banUser: (reason: string, duration?: number) => void | Promise<void>;
 }
