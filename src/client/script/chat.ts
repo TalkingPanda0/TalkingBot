@@ -162,6 +162,14 @@ interface SevenTVEmote {
   name: string;
 }
 
+interface EmoteSetUpdate {
+  type: "emote_set.update";
+  body: {
+    pushed?: { value: { id: string; name: string } }[];
+    pulled?: { old_value: { id: string; name: string } }[];
+  };
+}
+
 export class ChatHandler {
   recentMessagesInterval: NodeJS.Timeout | null = null;
   mentionRegex = /@(\w+)/g;
@@ -235,14 +243,30 @@ export class ChatHandler {
     });
   }
 
+  listenTo7tvEvents(id: string) {
+    const url = `https://events.7tv.io/v3@emote_set.update<object_id=${id}>`;
+    const source = new EventSource(url);
+
+    source.addEventListener("dispatch", (event) => {
+      const data: EmoteSetUpdate = JSON.parse(event.data);
+      if (data.body.pushed) {
+        for (const { value: emote } of data.body.pushed) {
+          this.extraEmotes.set(emote.name, get7TvEmote(emote.id));
+        }
+      }
+
+      if (data.body.pulled) {
+        for (const { old_value: {name: emote}} of data.body.pulled) {
+          this.extraEmotes.delete(emote);
+        }
+      }
+    });
+  }
+
   async get7TvEmotes() {
     const globalEmotes: { emotes: SevenTVEmote[] } = await (
       await fetch("https://api.7tv.app/v3/emote-sets/global")
     ).json();
-
-    function get7TvEmote(id: string) {
-      return `https://cdn.7tv.app/emote/${id}/1x.webp`;
-    }
 
     globalEmotes.emotes.forEach((value) => {
       this.extraEmotes.set(value.name, get7TvEmote(value.id));
@@ -256,12 +280,14 @@ export class ChatHandler {
       return;
     }
 
-    const channelEmotes: { emote_set: { emotes: SevenTVEmote[] } } =
+    const channel: { emote_set: { id: string; emotes: SevenTVEmote[] } } =
       await result.json();
 
-    channelEmotes.emote_set.emotes.forEach((value) => {
+    channel.emote_set.emotes.forEach((value) => {
       this.extraEmotes.set(value.name, get7TvEmote(value.id));
     });
+
+    this.listenTo7tvEvents(channel.emote_set.id);
   }
 
   listen() {
@@ -708,4 +734,7 @@ export class ChatHandler {
       leftOver: "",
     };
   }
+}
+function get7TvEmote(id: string) {
+  return `https://cdn.7tv.app/emote/${id}/1x.webp`;
 }
