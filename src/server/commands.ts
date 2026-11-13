@@ -770,9 +770,9 @@ export class MessageHandler {
     data: MessageData,
     commandName: string | RegExpExecArray[],
     customCommand: string,
+    message: string,
   ): Promise<boolean> {
-    const message = data.message;
-    const arg = this.argMap.get(`${commandName} ${data.message.split(" ")[0]}`);
+    const arg = this.argMap.get(`${commandName} ${message.split(" ")[0]}`);
     if (arg) customCommand = arg;
     const modonly = customCommand.includes("(modonly)");
     const viponly = customCommand.includes("(viponly)");
@@ -823,7 +823,7 @@ export class MessageHandler {
       const customCommand = this.customCommandMap.get(commandName);
       if (customCommand != null) {
         commandMessage = commandMessage.replace(commandName, "").trim();
-        return await this.runCommand(data, commandName, customCommand);
+        return await this.runCommand(data, commandName, customCommand,commandMessage);
       }
       const builtinCommand = this.commandMap.get(commandName);
       if (builtinCommand == null) return commandName.startsWith("!");
