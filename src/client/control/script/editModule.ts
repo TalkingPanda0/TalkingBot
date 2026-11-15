@@ -68,7 +68,7 @@ function loadEnd(success: boolean) {
 
 async function loadModule() {
   const module = await (
-    await fetch(`/api/modulemanager/get?name=${moduleName}`)
+    await fetch(`/control/api/modulemanager/get?name=${moduleName}`)
   ).text();
   editorValue = module;
   try {
@@ -80,7 +80,7 @@ async function uploadModule() {
   if (uploading) return;
   loadStart();
   const module = editor.getValue();
-  const result = await fetch(`/api/modulemanager/set?name=${moduleName}`, {
+  const result = await fetch(`/control/api/modulemanager/set?name=${moduleName}`, {
     method: "POST",
     body: module,
   });

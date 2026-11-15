@@ -56,7 +56,7 @@ document.addEventListener("click", (event) => {
 
 async function sendToControl(request: ChatControl) {
   const body = JSON.stringify(request);
-  const response = await fetch("/api/overlay", {
+  const response = await fetch("/control/api/overlay", {
     method: "POST",
     body: body,
   });

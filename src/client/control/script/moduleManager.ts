@@ -36,7 +36,7 @@ async function addModule() {
 async function getModules() {
   moduleTable.innerText = "";
 
-  const modules = await (await fetch("/api/modulemanager/list")).json();
+  const modules = await (await fetch("/control/api/modulemanager/list")).json();
   modules.forEach((module: { module: string; enabled: boolean }) => {
     gmodules.push(module.module);
     const moduleRow = document.createElement("tr");
@@ -77,7 +77,7 @@ async function getModules() {
       if (!result.isConfirmed) return;
       try {
         const response = await fetch(
-          `/api/modulemanager/delete?name=${module.module}`,
+          `/control/api/modulemanager/delete?name=${module.module}`,
           {
             method: "POST",
           },
@@ -118,7 +118,7 @@ async function getModules() {
     checkbox.addEventListener("change", async (event) => {
       const enabled = (event.target as HTMLInputElement).checked;
       const response = await fetch(
-        `/api/modulemanager/${enabled ? "enable" : "disable"}?name=${module.module}`,
+        `/control/api/modulemanager/${enabled ? "enable" : "disable"}?name=${module.module}`,
         {
           method: "POST",
         },

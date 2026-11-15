@@ -36,7 +36,7 @@ async function addCommand() {
       const response = (
         document.getElementById("swal2-textarea") as HTMLTextAreaElement
       ).value;
-      const result = await fetch(`/api/command/add?name=${command}`, {
+      const result = await fetch(`/control/api/command/add?name=${command}`, {
         method: "POST",
         body: removeNewLines(response),
       });
@@ -52,7 +52,7 @@ async function addCommand() {
 async function getCommands() {
   commandTable.innerText = "";
 
-  const commands = await (await fetch("/api/command/list")).json();
+  const commands = await (await fetch("/control/api/command/list")).json();
   commands.forEach((command: { command: string; response: string }) => {
     const commandRow = document.createElement("tr");
     commandRow.classList.add("command");
@@ -85,7 +85,7 @@ async function getCommands() {
         showLoaderOnConfirm: true,
         preConfirm: async (newResponse) => {
           const result = await fetch(
-            `/api/command/set?name=${command.command}`,
+            `/control/api/command/set?name=${command.command}`,
             {
               method: "POST",
               body: removeNewLines(newResponse),
@@ -120,7 +120,7 @@ async function getCommands() {
       if (!result.isConfirmed) return;
       try {
         const response = await fetch(
-          `/api/command/delete?name=${command.command}`,
+          `/control/api/command/delete?name=${command.command}`,
           {
             method: "POST",
           },
@@ -177,7 +177,7 @@ async function addAlias() {
         document.getElementById("swal2-textarea") as HTMLTextAreaElement
       ).value;
 
-      const result = await fetch(`/api/command/alias/add?name=${alias}`, {
+      const result = await fetch(`/control/api/command/alias/add?name=${alias}`, {
         method: "POST",
         body: removeNewLines(command),
       });
@@ -193,7 +193,7 @@ async function addAlias() {
 async function getAliases() {
   aliasTable.innerText = "";
 
-  const aliases = await (await fetch("/api/command/alias/list")).json();
+  const aliases = await (await fetch("/control/api/command/alias/list")).json();
   aliases.forEach((alias: { alias: string; command: string }) => {
     const aliasRow = document.createElement("tr");
 
@@ -226,7 +226,7 @@ async function getAliases() {
         showLoaderOnConfirm: true,
         preConfirm: async (newCommand) => {
           const result = await fetch(
-            `/api/command/alias/set?name=${alias.alias}`,
+            `/control/api/command/alias/set?name=${alias.alias}`,
             {
               method: "POST",
               body: removeNewLines(newCommand),
@@ -261,7 +261,7 @@ async function getAliases() {
       if (!result.isConfirmed) return;
       try {
         const response = await fetch(
-          `/api/command/alias/delete?name=${alias.alias}`,
+          `/control/api/command/alias/delete?name=${alias.alias}`,
           {
             method: "POST",
           },

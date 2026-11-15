@@ -537,7 +537,7 @@ async function sendToOverlay() {
     return;
   }
   const layoutData = canvas.toJSON();
-  const response = await fetch("/api/modtext/setcanvas", {
+  const response = await fetch("/control/api/modtext/setcanvas", {
     method: "POST",
     body: JSON.stringify(layoutData),
   });
@@ -549,7 +549,7 @@ async function sendModtext() {
   const html = textArea.value;
   textArea.value = html;
 
-  const response = await fetch("/api/modtext/set", {
+  const response = await fetch("/control/api/modtext/set", {
     method: "POST",
     body: html,
   });
@@ -576,7 +576,7 @@ function toggleMode() {
 
 async function getModTextdata() {
   try {
-    const response = await fetch("/api/modtext/getdata");
+    const response = await fetch("/control/api/modtext/getdata");
     const responseJSON = await response.json();
     console.log("GOT DATA: ", responseJSON);
     data = responseJSON;
@@ -587,7 +587,7 @@ async function getModTextdata() {
 
 async function getModTextCanvas() {
   try {
-    const response = await fetch("/api/modtext/getcanvas");
+    const response = await fetch("/control/api/modtext/getcanvas");
     const responseJSON = await response.json();
     console.log("GOT CANVAS:", responseJSON);
     await getModTextdata();
@@ -609,7 +609,7 @@ async function getModText() {
     return;
   }
   try {
-    const response = await fetch("/api/modtext/get");
+    const response = await fetch("/control/api/modtext/get");
     const responseText = await response.text();
     if (!response.ok) {
       alert(`Error updating modtext ${responseText}`);
@@ -636,7 +636,7 @@ async function pickImage() {
 }
 
 async function loadImages() {
-  const res = await fetch("/api/modtext/getimages");
+  const res = await fetch("/control/api/modtext/getimages");
   const images = await res.json();
 
   grid.innerHTML = "";
@@ -671,7 +671,7 @@ async function uploadImage(file: Blob): Promise<string | null> {
   const formData = new FormData();
   formData.append("image", file);
 
-  const res = await fetch("/api/modtext/addimage", {
+  const res = await fetch("/control/api/modtext/addimage", {
     method: "POST",
     body: formData,
   });
@@ -899,7 +899,7 @@ file.onchange = async (event) => {
     });
     if (!result.isConfirmed) return;
     const res = await fetch(
-      `/api/modtext/removeImage?image=${selectedImg.dataset.image}`,
+      `/control/api/modtext/removeImage?image=${selectedImg.dataset.image}`,
       { method: "POST" },
     );
     if (!res.ok) {

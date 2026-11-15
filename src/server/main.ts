@@ -1,5 +1,5 @@
 import compression from "compression";
-import express, { Express } from "express";
+import express, { Express, Request, Response } from "express";
 import bodyParser from "body-parser";
 import cookieParser from "cookie-parser";
 import * as http from "http";
@@ -17,9 +17,10 @@ import path from "node:path";
 import { getTTSSounds } from "./alerts.ts";
 
 const app: Express = express();
+
 const server = http.createServer(app);
 
-const bot: TalkingBot = new TalkingBot(server);
+const bot: TalkingBot = new TalkingBot(server, app);
 
 app.use(compression());
 app.use(express.static("public"));
@@ -79,13 +80,15 @@ app.get("/login", async (_, res) => {
   res.redirect(CONFIG.discord.loginUrl);
 });
 
-// Mod-only API
-app.use("/api", async (req, res) => {
+async function checkForMod(
+  req: Request,
+  res: Response,
+): Promise<string | null> {
   try {
     const decoded = verify(req.cookies.discord_auth, CONFIG.secrets.jwt);
     if (!isDiscordAuthData(decoded)) {
-      res.sendStatus(403);
-      return;
+      res.redirect("/login");
+      return null;
     }
 
     const discordAuth: DiscordAuthData = decoded;
@@ -93,16 +96,23 @@ app.use("/api", async (req, res) => {
     const isMod = await bot.discord.isStreamMod(discordId);
     if (!isMod) {
       res.sendStatus(403);
-      return;
+      return null;
     }
-    console.log(
-      `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
-    );
+    return discordId;
   } catch {
     // No discord_auth cookie was found
-    res.redirect(CONFIG.discord.loginUrl);
-    return;
+    res.redirect("/login");
+    return null;
   }
+}
+
+// Mod-only API
+app.use("/control/api", async (req, res) => {
+  let discordId = await checkForMod(req, res);
+  if (!discordId) return;
+  console.log(
+    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
+  );
 
   switch (req.method) {
     case "GET":
@@ -389,10 +399,13 @@ app.use("/api", async (req, res) => {
             ext = match[0];
           }
           const imagePath = `/${uploadedImage.md5}.${ext}`;
-          uploadedImage.mv(`${__dirname}/../../config/images${imagePath}`, (e) => {
-            if (e) return res.status(500).send(e);
-            res.send(imagePath);
-          });
+          uploadedImage.mv(
+            `${__dirname}/../../config/images${imagePath}`,
+            (e) => {
+              if (e) return res.status(500).send(e);
+              res.send(imagePath);
+            },
+          );
           break;
         }
         case "/modtext/removeImage": {
@@ -450,7 +463,7 @@ app.get("/auth", async (req, res) => {
   }
   const token = sign(accessData, CONFIG.secrets.jwt);
   res.set({
-    "Set-Cookie": `discord_auth=${token};path=/api;max-age=${accessData.expires_in};HttpOnly;`,
+    "Set-Cookie": `discord_auth=${token};path=/control;max-age=${accessData.expires_in};HttpOnly;`,
     Location: "/control",
   });
   res.sendStatus(302);
@@ -471,7 +484,10 @@ async function listen() {
         }
       });
     });
-    app.get("/control/:page", (req, res, next) => {
+    app.get("/control/:page", async (req, res, next) => {
+      let discordId = await checkForMod(req, res);
+      if (!discordId) return;
+
       const file = path.resolve(
         __dirname,
         `../../dist/control/${req.params.page}.html`,
