@@ -1,6 +1,7 @@
 import { Message } from "discord.js";
 import { Command } from "./commands.ts";
 import { TalkingBot } from "./talkingbot.ts";
+import { RequestHandler } from "express";
 
 export interface MessageData {
   id: string;
@@ -95,6 +96,8 @@ export interface ModuleContext {
   ): void;
 
   onStreamOnline(Listener: Listener): void;
+
+  registerRoute(method: "GET" | "POST" | "PUT" | "DELETE", path: string, handler: RequestHandler): void;
   onStreamOffline(Listener: Listener): void;
 
   bot: TalkingBot;

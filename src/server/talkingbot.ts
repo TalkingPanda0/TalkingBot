@@ -117,6 +117,7 @@ export class TalkingBot {
     await this.twitch.cleanUp();
     this.discord.cleanUp();
     await this.userManager.cleanUp();
+    this.moduleManager.cleanUp();
   }
 
   public async broadcastMessage(message: string) {

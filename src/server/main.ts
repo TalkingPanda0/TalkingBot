@@ -469,6 +469,9 @@ app.get("/auth", async (req, res) => {
   res.sendStatus(302);
 });
 
+
+app.use((req, res, next) => bot.moduleManager.handleRoute(req, res, next));
+
 async function listen() {
   if (process.env.NODE_ENV === "production") {
     app.use(express.static("dist"));
@@ -521,6 +524,7 @@ listen();
 export async function exit() {
   console.log("Exitting...");
   await bot.cleanUp();
+  server.close();
   process.exit();
 }
 

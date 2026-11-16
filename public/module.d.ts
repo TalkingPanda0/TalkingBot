@@ -1,6 +1,7 @@
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api/lib";
 import { ChatClient } from "@twurple/chat/lib";
 import { Client, Message } from "discord.js";
+import { Express, RequestHandler } from "express";
 
 declare module "botModule" {
   export class ModuleManager {
@@ -71,6 +72,7 @@ declare module "botModule" {
 
     public modtext: string;
     public setLatestSub(sub: latestSub): Promise<void>;
+    public express: Express;
   }
 
   export interface MessageData {
@@ -194,6 +196,9 @@ declare module "botModule" {
     onStreamOnline(listener: Listener): void;
     // Runs when the stream ends. Doesn't run when the bot is restarted not during a stream.
     onStreamOffline(listener: Listener): void;
+
+
+    registerRoute(method: "GET" | "POST" | "PUT" | "DELETE", path: string, handler: RequestHandler): void;
 
     bot: TalkingBot;
   }

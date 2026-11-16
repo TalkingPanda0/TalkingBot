@@ -16,6 +16,7 @@ import fs from "node:fs/promises";
 import path from "path";
 import { toPascalCase } from "../shared/util.ts";
 import { Message } from "discord.js";
+import { NextFunction, Request, RequestHandler, Response } from "express";
 
 const modulesDir = path.resolve(__dirname, "../../config/modules");
 
@@ -30,6 +31,7 @@ export class ModuleManager {
   private discordMessageListeners: DiscordMessageListener[] = [];
   private channelRedemptionListeners: Map<string, ChannelRedemptionListener> =
     new Map();
+  private routeHandlers: Map<string, RequestHandler> = new Map();
   private onlineListeners: Listener[] = [];
   private offlineListeners: Listener[] = [];
   private bot: TalkingBot;
@@ -122,6 +124,12 @@ export default ${Name};`;
     }));
   }
 
+  public handleRoute(req: Request, res: Response, next: NextFunction) {
+    const handler = this.routeHandlers.get(`${req.method} ${req.path}`);
+    if (!handler) return next();
+    Promise.resolve(handler(req, res, next)).catch(next);
+  }
+
   private getContext(): {
     context: ModuleContext;
     cleanups: CleanupFunction[];
@@ -180,6 +188,12 @@ export default ${Name};`;
     ) => {
       this.channelRedemptionListeners.set(rewardId, listener);
     };
+    const addRoute = (key: string, handler: RequestHandler) => {
+      this.routeHandlers.set(key, handler);
+    };
+    const removeRoute = (key: string) => {
+      this.routeHandlers.delete(key);
+    };
 
     const context: ModuleContext = {
       bot: this.bot,
@@ -208,6 +222,11 @@ export default ${Name};`;
       },
       onChannelPointReward(rewardId, listener) {
         addChannelPointListener(rewardId, listener);
+      },
+      registerRoute(method, path, handler) {
+        const key = `${method} ${path}`;
+        addRoute(key, handler);
+        cleanups.push(() => removeRoute(key));
       },
 
       onStreamOnline(listener) {
@@ -276,7 +295,7 @@ export default ${Name};`;
     }
   }
 
-  private loadDisabledModule(name: string) {
+  private setModuleDisabled(name: string) {
     this.modules.set(name, null);
   }
 
@@ -293,7 +312,7 @@ export default ${Name};`;
     for (const module of enabledModules.filter((m) => !this.modules.has(m)))
       await this.loadModule(module);
     for (const module of disabledModules.filter((m) => !this.modules.has(m)))
-      this.loadDisabledModule(module);
+      this.setModuleDisabled(module);
   }
 
   public async enableModule(name: string) {
@@ -310,19 +329,33 @@ export default ${Name};`;
   public async disableModule(name: string) {
     const module = this.modules.get(name);
     if (!module) return;
-    module.cleanups.forEach((cleanup) => cleanup());
-    module.module.onUnload();
-    this.loadDisabledModule(name);
+    this.unloadModule(module);
 
     const modPath = path.join(modulesDir, `${name}.ts`);
     const newPath = path.join(modulesDir, `${name}.ts.disabled`);
     await fs.rename(modPath, newPath);
   }
 
+  private unloadModule(module: {
+    module: BotModule;
+    cleanups: CleanupFunction[];
+  }) {
+    module.cleanups.forEach((cleanup) => cleanup());
+    module.module.onUnload();
+    this.setModuleDisabled(module.module.name);
+  }
+
   public async deleteModule(name: string) {
     await this.disableModule(name);
     await fs.rm(path.join(modulesDir, `${name}.ts.disabled`));
     this.modules.delete(name);
+  }
+
+  public cleanUp() {
+    this.modules
+      .values()
+      .filter((m) => m != null)
+      .forEach((m) => this.unloadModule(m));
   }
 
   public async init() {
