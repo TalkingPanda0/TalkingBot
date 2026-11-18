@@ -123,3 +123,8 @@ export type ChatMetaData = {
   cheerEmotes: string[];
   channelId: string;
 };
+
+export interface File {
+  name: string;
+  type: string;
+}

@@ -46,10 +46,12 @@ export class TalkingBot {
   public userManager: UserManager;
   public moduleManager: ModuleManager;
   public express: Express;
+  public io: Server;
 
   constructor(server: http.Server, express: Express) {
     this.express = express;
     const io = new Server(server);
+    this.io = io;
 
     this.alertsManager = new AlertsManager(io.of("alerts"));
 

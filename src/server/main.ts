@@ -12,20 +12,23 @@ import { getDiscordUserId, isDiscordAuthData } from "../shared/util.ts";
 import { handleKofiEvent, isKofiEvent } from "./kofi.ts";
 import { readdir, rename } from "node:fs/promises";
 import { CONFIG } from "./env.ts";
-import { ChatMetaData, DiscordAuthData } from "../shared/types.ts";
-import path from "node:path";
+import { ChatMetaData, DiscordAuthData, File } from "../shared/types.ts";
+import path, { join } from "node:path";
 import { getTTSSounds } from "./alerts.ts";
+import { mkdir } from "node:fs/promises";
 
 const app: Express = express();
-
 const server = http.createServer(app);
-
 const bot: TalkingBot = new TalkingBot(server, app);
+const root = join(__dirname, "../../config/");
+
+mkdir(join(root,"/public"),{recursive: true});
 
 app.use(compression());
 app.use(express.static("public"));
 app.use(express.static("config/sounds"));
 app.use(express.static("config/images"));
+app.use(express.static("config/public"));
 app.use(bodyParser.text());
 app.use(cors());
 app.use(cookieParser());
@@ -93,9 +96,8 @@ async function checkForMod(
 
     const discordAuth: DiscordAuthData = decoded;
     const discordId = await getDiscordUserId(discordAuth);
-    const isMod = await bot.discord.isStreamMod(discordId);
-    if (!isMod) {
-      res.sendStatus(403);
+    if (!discordId || !(await bot.discord.isStreamMod(discordId))) {
+      res.redirect("/login");
       return null;
     }
     return discordId;
@@ -160,12 +162,54 @@ app.use("/control/api", async (req, res) => {
         case "/modtext/getimages":
           res.send(await readdir(__dirname + "/../../config/images"));
           break;
-        case "/check":
-          res.sendStatus(200);
-          break;
         default:
           res.sendStatus(404);
           break;
+
+        case "/fm/folder": {
+          const folder = req.query.folder?.toString();
+
+          if (folder == undefined) {
+            const folders: File[] = [
+              { name: "public", type: "folder" },
+              { name: "modules", type: "folder" },
+              { name: "images", type: "folder" },
+              { name: "sounds", type: "folder" },
+            ];
+            res.send(folders);
+            break;
+          }
+
+          const files = await readdir(join(root, folder), {
+            withFileTypes: true,
+          });
+          const promises = files.map(async (file) => {
+            if (file.isDirectory()) {
+              return { name: file.name, type: "folder" };
+            }
+            const bunFile = Bun.file(join(file.parentPath, file.name));
+            const type = bunFile.type;
+            return { name: file.name, type };
+          });
+          res.send(await Promise.all(promises));
+
+          break;
+        }
+
+        case "/fm/file": {
+          const filename = req.query.file?.toString();
+          if (filename == null) {
+            res.sendStatus(400);
+            break;
+          }
+          const file = Bun.file(join(root, filename));
+          if (!(await file.exists())) {
+            res.sendStatus(404);
+            break;
+          }
+          res.send(await file.bytes());
+          break;
+        }
       }
       break;
     case "POST":
@@ -427,8 +471,72 @@ app.use("/control/api", async (req, res) => {
         default:
           res.sendStatus(404);
           break;
+
+        case "/fm/file": {
+          if (!req.files || !req.files.file || !req.body.name) {
+            return res.status(422).send("No files were uploaded");
+          }
+          const uploadedFile = req.files.file as UploadedFile;
+          const filePath = join(root, req.body.name);
+          uploadedFile.mv(filePath, (e) => {
+            if (e) return res.status(500).send(e);
+            res.sendStatus(200);
+          });
+          break;
+        }
+        case "/fm/delete": {
+          const filename = req.query.file?.toString();
+          if (filename == null) {
+            res.sendStatus(400);
+            break;
+          }
+          const file = Bun.file(join(root, filename));
+          if (!(await file.exists())) {
+            res.sendStatus(404);
+            break;
+          }
+
+          await file.delete();
+          res.sendStatus(200);
+          break;
+        }
+        case "/fm/rename": {
+          const oldpath = req.query.old?.toString();
+          const newpath = req.query.new?.toString();
+
+          if (!oldpath || !newpath) {
+            res.sendStatus(400);
+            break;
+          }
+          await rename(join(root, oldpath), join(root, newpath));
+          res.send(200);
+        }
+        case "/fm/newfile": {
+          const filename = req.query.file?.toString();
+          if (!filename) {
+            res.sendStatus(400);
+            break;
+          }
+          const file = Bun.file(join(root,filename));
+          if ((await file.exists())) {
+            res.status(400).send("File Already Exists.");
+            break;
+          }
+          await file.write("");
+          res.sendStatus(200);
+          break;
+        }
+        case "/fm/newfolder": {
+          const folderPath = req.query.folder?.toString();
+          if (!folderPath) {
+            res.sendStatus(400);
+            break;
+          }
+          await mkdir(join(root,folderPath), { recursive: true });
+          res.sendStatus(200);
+          break;
+        }
       }
-      break;
   }
 });
 
@@ -468,7 +576,6 @@ app.get("/auth", async (req, res) => {
   });
   res.sendStatus(302);
 });
-
 
 app.use((req, res, next) => bot.moduleManager.handleRoute(req, res, next));
 
@@ -517,6 +624,9 @@ async function listen() {
     console.log("listening on *:3000");
   });
 }
+
+
+
 
 bot.initBot();
 listen();
