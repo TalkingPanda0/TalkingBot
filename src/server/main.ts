@@ -19,7 +19,7 @@ import { mkdir } from "node:fs/promises";
 
 const app: Express = express();
 const server = http.createServer(app);
-const bot: TalkingBot = new TalkingBot(server, app);
+const bot: TalkingBot = new TalkingBot(server);
 const root = join(__dirname, "../../config/");
 
 mkdir(join(root,"/public"),{recursive: true});

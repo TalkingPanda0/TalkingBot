@@ -1,5 +1,4 @@
 import { Twitch } from "./twitch.ts";
-import { Express } from "express";
 import { Discord } from "./discord.ts";
 import { Namespace, Server } from "socket.io";
 import * as http from "http";
@@ -45,11 +44,9 @@ export class TalkingBot {
   public credits: Credits;
   public userManager: UserManager;
   public moduleManager: ModuleManager;
-  public express: Express;
   public io: Server;
 
-  constructor(server: http.Server, express: Express) {
-    this.express = express;
+  constructor(server: http.Server) {
     const io = new Server(server);
     this.io = io;
 

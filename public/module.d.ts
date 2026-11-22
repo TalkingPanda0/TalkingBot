@@ -1,7 +1,7 @@
 import { ApiClient, HelixCheermoteList, HelixUser } from "@twurple/api/lib";
 import { ChatClient } from "@twurple/chat/lib";
 import { Client, Message } from "discord.js";
-import { Express, RequestHandler } from "express";
+import { RequestHandler } from "express";
 import { Server } from "socket.io";
 
 declare module "botModule" {
@@ -73,7 +73,6 @@ declare module "botModule" {
 
     public modtext: string;
     public setLatestSub(sub: latestSub): Promise<void>;
-    public express: Express;
     public io: Server;
   }
 
