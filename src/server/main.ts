@@ -113,7 +113,7 @@ app.use("/control/api", async (req, res) => {
   let discordId = await checkForMod(req, res);
   if (!discordId) return;
   console.log(
-    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip}`,
+    `Control - id: ${discordId}, method: ${req.method}, path: ${req.path}, query params: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)} ip: ${req.ip} / ${req.get("X-Real-IP")}`,
   );
 
   switch (req.method) {
