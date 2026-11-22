@@ -577,7 +577,6 @@ app.get("/auth", async (req, res) => {
   res.sendStatus(302);
 });
 
-app.use((req, res, next) => bot.moduleManager.handleRoute(req, res, next));
 
 async function listen() {
   if (process.env.NODE_ENV === "production") {
@@ -629,7 +628,8 @@ async function listen() {
 
 
 bot.initBot();
-listen();
+await listen();
+app.use((req, res, next) => bot.moduleManager.handleRoute(req, res, next));
 
 export async function exit() {
   console.log("Exitting...");
