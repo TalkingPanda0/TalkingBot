@@ -107,13 +107,17 @@ export const emotes = sqliteTable("emotes", {
   isAnimated: integer({ mode: "boolean" }).default(false),
 });
 
-export const hapboos = sqliteTable("hapboos", {
-  hapbooId: text()
-    .notNull()
-    .references(() => emotes.emoteId),
-  userId: text().notNull(),
-  times: integer().default(0),
-});
+export const hapboos = sqliteTable(
+  "hapboos",
+  {
+    hapbooId: text()
+      .notNull()
+      .references(() => emotes.emoteId),
+    userId: text().notNull(),
+    times: integer().default(0),
+  },
+  (table) => [primaryKey({ columns: [table.userId, table.hapbooId] })],
+);
 
 export const emoteUsage = sqliteTable(
   "emoteUsage",
